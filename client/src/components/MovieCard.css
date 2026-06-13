@@ -137,5 +137,19 @@
 .movie-card.list-view .card-ratings {
   margin-top: 0;
   flex-shrink: 0;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .movie-card.list-view {
+    flex-wrap: wrap;
+  }
+  .movie-card.list-view .card-ratings {
+    width: 100%;
+    margin-top: 6px;
+    flex-wrap: wrap;
+  }
+  .movie-card.list-view .card-score {
+    min-width: 52px;
+  }
 }

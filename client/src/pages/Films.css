@@ -150,5 +150,6 @@
 @media (max-width: 640px) {
   .films-grid { grid-template-columns: 1fr; }
   .filter-sep { display: none; }
-  .view-toggle { display: none; }
+  .search-box { min-width: 0; flex-basis: 100%; max-width: 100%; }
+  .films-toolbar { row-gap: 8px; }
 }
