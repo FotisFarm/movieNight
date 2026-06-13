@@ -8,6 +8,8 @@ services:
     environment:
       - NODE_ENV=production
       - DATA_DIR=/app/data
+      - MN_PASSWORD=${MN_PASSWORD:-changeme}
+      - SESSION_SECRET=${SESSION_SECRET:-change-this-secret}
     restart: unless-stopped
 
 volumes:

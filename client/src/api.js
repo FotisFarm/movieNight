@@ -3,6 +3,7 @@ const BASE = '/api';
 async function request(path, options = {}) {
   const res = await fetch(`${BASE}${path}`, {
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     ...options,
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
@@ -27,4 +28,7 @@ export const api = {
   deleteMovie: (id) => request(`/movies/${id}`, { method: 'DELETE' }),
   getDirectors: () => request('/movies/directors'),
   getRankings: () => request('/rankings'),
+  login: (username, password) => request('/auth/login', { method: 'POST', body: { username, password } }),
+  logout: () => request('/auth/logout', { method: 'POST' }),
+  me: () => request('/auth/me'),
 };

@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import './Header.css';
 
-export default function Header() {
+export default function Header({ onLogout }) {
   return (
     <header className="header">
       <div className="header-inner">
@@ -11,6 +11,7 @@ export default function Header() {
           <NavLink to="/rankings" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Rankings</NavLink>
           <NavLink to="/watchlist"className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Watchlist</NavLink>
         </nav>
+        {onLogout && <button className="btn btn-ghost btn-sm" onClick={onLogout} style={{ marginLeft: 8 }}>Sign out</button>}
       </div>
     </header>
   );
