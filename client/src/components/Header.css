@@ -53,3 +53,10 @@
   color: var(--green);
   background: #52c47a10;
 }
+
+@media (max-width: 640px) {
+  .header-inner { gap: 4px; padding: 0 12px; }
+  .nav { gap: 0; }
+  .nav-link { padding: 6px 8px; font-size: 12px; }
+  .logo span { display: none; }
+}
