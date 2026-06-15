@@ -45,9 +45,10 @@ MovieNights/
 │       ├── App.jsx           # Router: / → /films, /rankings, /watchlist, /recommendations
 │       ├── index.css         # Global styles, CSS variables, shared classes
 │       ├── components/
-│       │   ├── MovieCard.jsx / .css     # Film card (grid + list view)
-│       │   ├── MovieModal.jsx / .css    # Edit ratings, top3, flags, title/director/year
-│       │   ├── AddMovieModal.jsx        # Add new film
+│       │   ├── MovieCard.jsx / .css          # Film card (grid + list view)
+│       │   ├── MovieModal.jsx / .css         # Edit ratings, top3, flags, title/director/year
+│       │   ├── AddMovieModal.jsx             # Add new film
+│       │   ├── DirectorYearModal.jsx / .css  # Click director/year in Rankings → films + mean score
 │       │   ├── RankingSection.jsx / .css
 │       │   └── Header.jsx / .css
 │       ├── hooks/
@@ -125,21 +126,27 @@ GROUP_SIZE = 5
 
 Each row has: Top 10 Films · Top Directors · Top Years
 
+Clicking a **director** or **year** row opens `DirectorYearModal` — shows all matching films as MovieCards (list view, sorted by `fairBoosted` desc) plus the mean `fairBoosted` of films with ≥2 votes. Clicking a film card within opens the standard `MovieModal`.
+
 ## Recommendations ("Picks") — `/api/recommendations`
 Surfaces films with ≤2 votes, ranked by predicted group enjoyment using a Bayesian blend:
 
 ```
-confidence    = voterCount / GROUP_SIZE
-prior         = directorAvg*0.7 + decadeAvg*0.2 + top3Bonus*0.1
+confidence     = voterCount / GROUP_SIZE
+prior          = dirAvg * dw + decAvg * ew + top3Bonus * tw   (weights user-adjustable via sliders)
 predictedScore = confidence * actualFairBoosted + (1 - confidence) * prior
 ```
 
-- `directorAvg`: mean `fairBoosted` of all rated films by the same director
-- `decadeAvg`: mean `fairBoosted` of all rated films from the same decade
+- Default weights: `dw=0.45, ew=0.45, tw=0.10` — director and decade weighted equally
+- Weights are normalised server-side so they always sum to 1
+- `dirAvg`: mean `fairBoosted` of all rated films by the same director
+- `decAvg`: mean `fairBoosted` of all rated films from the same decade
 - `top3Bonus`: min(2.0, number of top3 entries across all voters for that director)
+- When only one signal is available, the missing weight is split between the remaining two
 - Films with 0 votes use 100% prior; films with 2 votes use 40% actual + 60% prior
-- Returns top 30, each with `ratings` map, `actualScore`, `explanation` string, badges
+- Returns top 30, each with `ratings` map, `actualScore`, `predictedScore`, `explanation` string, badges
 - Frontend filters (MN, WL, voter, director, year, search) applied client-side
+- Bias sliders on the Picks page send `?dw=&ew=&tw=` to the API (debounced 400ms)
 
 ## Key implementation notes
 - `/api/movies/directors` route **must** be declared before `/:id` in Express to avoid being caught as an ID lookup
