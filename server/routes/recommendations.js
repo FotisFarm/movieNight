@@ -6,7 +6,13 @@ const GROUP_SIZE = 5;
 const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
 const RANK_BONUS = { 1: 1.0, 2: 0.6, 3: 0.4 };
 
-router.get('/', (_req, res) => {
+router.get('/', (req, res) => {
+  // Parse and normalise bias weights from query params (default 0.45 / 0.45 / 0.1)
+  let dw = Math.max(0, parseFloat(req.query.dw) || 0.45);
+  let ew = Math.max(0, parseFloat(req.query.ew) || 0.45);
+  let tw = Math.max(0, parseFloat(req.query.tw) || 0.10);
+  const total = dw + ew + tw || 1;
+  dw /= total; ew /= total; tw /= total;
   const allMovies  = db.prepare('SELECT * FROM movies').all();
   const allRatings = db.prepare('SELECT movie_id, voter, score FROM ratings').all();
   const allTop3    = db.prepare('SELECT movie_id, voter, rank FROM top3').all();
@@ -82,11 +88,16 @@ router.get('/', (_req, res) => {
     // Prior: weighted blend of director avg + decade avg + top3 bonus
     let prior = null;
     if (dirAvg !== null && decAvg !== null) {
-      prior = dirAvg * 0.7 + decAvg * 0.2 + top3Bonus * 0.1;
+      prior = dirAvg * dw + decAvg * ew + top3Bonus * tw;
     } else if (dirAvg !== null) {
-      prior = dirAvg * 0.9 + top3Bonus * 0.1;
+      // No decade data — redistribute decade weight between director and top3
+      const dwOnly = dw + ew * 0.5, twOnly = tw + ew * 0.5;
+      const tOnly = dwOnly + twOnly;
+      prior = dirAvg * (dwOnly / tOnly) + top3Bonus * (twOnly / tOnly);
     } else if (decAvg !== null) {
-      prior = decAvg * 0.9 + top3Bonus * 0.1;
+      const ewOnly = ew + dw * 0.5, twOnly = tw + dw * 0.5;
+      const tOnly = ewOnly + twOnly;
+      prior = decAvg * (ewOnly / tOnly) + top3Bonus * (twOnly / tOnly);
     }
 
     // Bayesian blend: trust actual score more as voterCount grows

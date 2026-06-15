@@ -28,7 +28,10 @@ export const api = {
   deleteMovie: (id) => request(`/movies/${id}`, { method: 'DELETE' }),
   getDirectors: () => request('/movies/directors'),
   getRankings: () => request('/rankings'),
-  getRecommendations: () => request('/recommendations'),
+  getRecommendations: (weights = {}) => {
+    const qs = new URLSearchParams(Object.fromEntries(Object.entries(weights).filter(([,v]) => v != null))).toString();
+    return request(`/recommendations${qs ? `?${qs}` : ''}`);
+  },
   login: (username, password) => request('/auth/login', { method: 'POST', body: { username, password } }),
   logout: () => request('/auth/logout', { method: 'POST' }),
   me: () => request('/auth/me'),

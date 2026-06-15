@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
 import { useToast } from '../hooks/useToast.jsx';
@@ -40,6 +40,7 @@ function VoterPills({ ratings }) {
 }
 
 const DEFAULTS = { search: '', filterMn: false, filterWl: false, filterVoter: '', filterDir: '', filterYear: '' };
+const DEFAULT_WEIGHTS = { dw: 0.45, ew: 0.45, tw: 0.10 };
 
 export default function Recommendations() {
   const [allFilms, setAllFilms] = useState([]);
@@ -54,9 +55,25 @@ export default function Recommendations() {
   const [filterDir,   setFilterDir]   = useState(DEFAULTS.filterDir);
   const [filterYear,  setFilterYear]  = useState(DEFAULTS.filterYear);
 
+  const [dw, setDw] = useState(DEFAULT_WEIGHTS.dw);
+  const [ew, setEw] = useState(DEFAULT_WEIGHTS.ew);
+  const [tw, setTw] = useState(DEFAULT_WEIGHTS.tw);
+
+  const weightTimer = useRef(null);
+
   useEffect(() => {
-    api.getRecommendations().then(setAllFilms).finally(() => setLoading(false));
-  }, []);
+    clearTimeout(weightTimer.current);
+    weightTimer.current = setTimeout(() => {
+      setLoading(true);
+      api.getRecommendations({ dw, ew, tw }).then(setAllFilms).finally(() => setLoading(false));
+    }, 400);
+  }, [dw, ew, tw]);
+
+  // Normalised display percentages
+  const wTotal = dw + ew + tw || 1;
+  const pDir = Math.round((dw / wTotal) * 100);
+  const pEra = Math.round((ew / wTotal) * 100);
+  const pTop = Math.round((tw / wTotal) * 100);
 
   const directors = [...new Set(allFilms.map(f => f.director).filter(Boolean))].sort();
 
@@ -154,6 +171,29 @@ export default function Recommendations() {
 
           <span className="filter-count">{films.length} / {allFilms.length} picks</span>
         </div>
+      </div>
+
+      {/* Bias sliders */}
+      <div className="recs-biases">
+        <span className="recs-bias-label">Bias</span>
+        <label className="recs-bias-item">
+          <span>Director <em>{pDir}%</em></span>
+          <input type="range" min={0} max={10} step={1} value={Math.round(dw * 10)}
+            onChange={e => setDw(parseFloat(e.target.value) / 10)} />
+        </label>
+        <label className="recs-bias-item">
+          <span>Era <em>{pEra}%</em></span>
+          <input type="range" min={0} max={10} step={1} value={Math.round(ew * 10)}
+            onChange={e => setEw(parseFloat(e.target.value) / 10)} />
+        </label>
+        <label className="recs-bias-item">
+          <span>Top 3 <em>{pTop}%</em></span>
+          <input type="range" min={0} max={10} step={1} value={Math.round(tw * 10)}
+            onChange={e => setTw(parseFloat(e.target.value) / 10)} />
+        </label>
+        <button className="btn btn-ghost btn-sm" onClick={() => { setDw(DEFAULT_WEIGHTS.dw); setEw(DEFAULT_WEIGHTS.ew); setTw(DEFAULT_WEIGHTS.tw); }}>
+          Reset
+        </button>
       </div>
 
       {/* List */}

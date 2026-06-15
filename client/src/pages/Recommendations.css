@@ -1,3 +1,40 @@
+.recs-biases {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 8px 16px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.recs-bias-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.recs-bias-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--text);
+  min-width: 120px;
+}
+
+.recs-bias-item span { display: flex; justify-content: space-between; }
+.recs-bias-item em { color: var(--accent); font-style: normal; font-weight: 700; }
+
+.recs-bias-item input[type=range] {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
 .recs-page {
   max-width: 820px;
   margin: 0 auto;
