@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { api } from '../api';
 import RankingSection from '../components/RankingSection';
 import MovieModal from '../components/MovieModal';
@@ -10,6 +11,7 @@ const ROWS = [
   {
     label: 'Group Score — All Films',
     description: 'Score calculated as if all 5 members always vote (sum ÷ 5), plus a Top 3 token bonus: 🥇+1.0 · 🥈+0.6 · 🥉+0.4, capped at 10. Films not yet seen by the whole group are penalised — a deliberate measure of collective buy-in.',
+    rowScoreKey: 'boostedScore', mnOnly: false,
     panels: [
       { title: '🏆 Top 10 Films',  key: 'groupAll',     scoreKey: 'boostedScore', clickable: true },
       { title: '🎭 Top Directors', key: 'groupDirsAll', scoreKey: 'avg' },
@@ -19,6 +21,7 @@ const ROWS = [
   {
     label: 'Group Score — Movie Nights Only',
     description: 'Group formula (÷5, 🥇+1.0 · 🥈+0.6 · 🥉+0.4, capped at 10) restricted to Movie Night films.',
+    rowScoreKey: 'boostedScore', mnOnly: true,
     panels: [
       { title: '🏆 Top 10 Films',  key: 'groupMn',     scoreKey: 'boostedScore', clickable: true },
       { title: '🎭 Top Directors', key: 'groupDirsMn', scoreKey: 'avg' },
@@ -28,6 +31,7 @@ const ROWS = [
   {
     label: 'Fair Score — All Films',
     description: 'Average of actual votes cast (÷ number of voters), plus a Top 3 token bonus: 🥇 Gold +1.0 · 🥈 Silver +0.6 · 🥉 Bronze +0.4. Scores are capped at 10. Films rated by fewer than 2 people are excluded.',
+    rowScoreKey: 'fairBoosted', mnOnly: false,
     panels: [
       { title: '🏆 Top 10 Films',  key: 'fairAll',     scoreKey: 'fairBoosted', clickable: true },
       { title: '🎭 Top Directors', key: 'fairDirsAll', scoreKey: 'avg' },
@@ -37,6 +41,7 @@ const ROWS = [
   {
     label: 'Fair Score — Movie Nights Only',
     description: 'Same formula (÷ voters, 🥇+1.0 · 🥈+0.6 · 🥉+0.4, capped at 10), restricted to films screened during a Movie Night session.',
+    rowScoreKey: 'fairBoosted', mnOnly: true,
     panels: [
       { title: '🏆 Top 10 Films',  key: 'fairMn',     scoreKey: 'fairBoosted', clickable: true },
       { title: '🎭 Top Directors', key: 'fairDirsMn', scoreKey: 'avg' },
@@ -51,13 +56,15 @@ export default function Rankings() {
   const [selectedId, setSelectedId]   = useState(null);
   const [selectedLabel, setSelectedLabel] = useState(null);
   const { toast, Toast }              = useToast();
+  const location                      = useLocation();
 
   useEffect(() => {
+    setLoading(true);
     api.getRankings()
       .then(setData)
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [location.key]);
 
   function handleSaved() {
     toast('Saved!');
@@ -88,9 +95,11 @@ export default function Rankings() {
                 title={panel.title}
                 rows={data[panel.key]}
                 scoreKey={panel.scoreKey}
+                rowScoreKey={row.rowScoreKey}
+                mn={row.mnOnly}
                 onMovieClick={panel.clickable ? setSelectedId : undefined}
-                onDirectorClick={d => setSelectedLabel({ type: 'director', value: d })}
-                onYearClick={y => setSelectedLabel({ type: 'year', value: String(y) })}
+                onDirectorClick={(d, sk, mnOnly) => setSelectedLabel({ type: 'director', value: d, scoreKey: sk, mnOnly })}
+                onYearClick={(y, sk, mnOnly) => setSelectedLabel({ type: 'year', value: String(y), scoreKey: sk, mnOnly })}
               />
             ))}
           </div>
@@ -109,6 +118,8 @@ export default function Rankings() {
         <DirectorYearModal
           type={selectedLabel.type}
           value={selectedLabel.value}
+          scoreKey={selectedLabel.scoreKey}
+          mnOnly={selectedLabel.mnOnly}
           onClose={() => setSelectedLabel(null)}
         />
       )}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { api } from '../api';
 import MovieCard from '../components/MovieCard';
 import MovieModal from '../components/MovieModal';
@@ -21,6 +21,7 @@ const DEFAULTS = {
 
 export default function Films() {
   const [movies, setMovies]           = useState([]);
+  const [allMovies, setAllMovies]     = useState([]);
   const [directors, setDirectors]     = useState([]);
   const [loading, setLoading]         = useState(true);
   const [page, setPage]               = useState(1);
@@ -61,9 +62,14 @@ export default function Films() {
     }
   }, []);
 
+  function refreshAllMovies() {
+    api.getMovies({}).then(setAllMovies).catch(() => {});
+  }
+
   useEffect(() => {
     api.getDirectors().then(setDirectors).catch(() => {});
     fetchMovies({});
+    refreshAllMovies();
   }, [fetchMovies]);
 
   useEffect(() => {
@@ -81,7 +87,35 @@ export default function Films() {
     }, 250);
   }, [search, filterMn, filterWl, filterRated, filterVoter, filterDir, filterYear, fetchMovies]);
 
-  const sorted = [...movies].sort((a, b) => {
+  const rankMap = useMemo(() => {
+    const rated   = allMovies.filter(m => m.voterCount >= 2);
+    const ratedMn = rated.filter(m => m.mn);
+    function tiebreak(a, b) {
+      if (b.voterCount !== a.voterCount) return b.voterCount - a.voterCount;
+      if ((b.boost ?? 0) !== (a.boost ?? 0)) return (b.boost ?? 0) - (a.boost ?? 0);
+      return (parseInt(a.year) || 9999) - (parseInt(b.year) || 9999);
+    }
+    const byFair  = (a, b) => (b.fairBoosted  - a.fairBoosted)  || tiebreak(a, b);
+    const byGroup = (a, b) => (b.boostedScore - a.boostedScore) || tiebreak(a, b);
+    const toMap   = arr => { const m = {}; arr.forEach((x, i) => { m[x.id] = i + 1; }); return m; };
+    return {
+      fair:    toMap([...rated].sort(byFair)),
+      group:   toMap([...rated].sort(byGroup)),
+      mnFair:  toMap([...ratedMn].sort(byFair)),
+      mnGroup: toMap([...ratedMn].sort(byGroup)),
+    };
+  }, [allMovies]);
+
+  function tiebreakScore(a, b) {
+    if (b.voterCount !== a.voterCount) return b.voterCount - a.voterCount;
+    if ((b.boost ?? 0) !== (a.boost ?? 0)) return (b.boost ?? 0) - (a.boost ?? 0);
+    return (parseInt(a.year) || 9999) - (parseInt(b.year) || 9999);
+  }
+
+  const scoreSortActive = sortBy === 'score-desc' || sortBy === 'group-desc';
+  const sortBase = scoreSortActive ? movies.filter(m => m.voterCount >= 2) : movies;
+
+  const sorted = [...sortBase].sort((a, b) => {
     switch (sortBy) {
       case 'alpha':      return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
       case 'alpha-dir': {
@@ -90,8 +124,8 @@ export default function Films() {
       }
       case 'year-desc':  return (parseInt(b.year) || 0) - (parseInt(a.year) || 0);
       case 'year-asc':   return (parseInt(a.year) || 0) - (parseInt(b.year) || 0);
-      case 'score-desc': return (b.fairBoosted ?? -1) - (a.fairBoosted ?? -1);
-      case 'group-desc': return (b.boostedScore ?? -1) - (a.boostedScore ?? -1);
+      case 'score-desc': return (b.fairBoosted  - a.fairBoosted)  || tiebreakScore(a, b);
+      case 'group-desc': return (b.boostedScore - a.boostedScore) || tiebreakScore(a, b);
       case 'rank-asc':   return (a.rank_global ?? 9999) - (b.rank_global ?? 9999);
       default: return 0;
     }
@@ -102,6 +136,7 @@ export default function Films() {
 
   function handleSaved(updated) {
     setMovies(ms => ms.map(m => m.id === updated.id ? updated : m));
+    setAllMovies(ms => ms.map(m => m.id === updated.id ? updated : m));
     toast('Saved!');
   }
 
@@ -243,7 +278,11 @@ export default function Films() {
             {visible.map(m => (
               <MovieCard
                 key={m.id}
-                movie={m}
+                movie={{
+                  ...m,
+                  rank_global: (scoreMode === 'group' ? rankMap.group   : rankMap.fair  )[m.id] ?? null,
+                  mn_rank:     (scoreMode === 'group' ? rankMap.mnGroup : rankMap.mnFair)[m.id] ?? null,
+                }}
                 onClick={() => setSelectedId(m.id)}
                 listView={viewMode === 'list'}
                 scoreMode={scoreMode}

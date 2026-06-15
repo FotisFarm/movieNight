@@ -16,20 +16,23 @@ function fmt(v) {
   return v.toFixed(2).replace('.', ',');
 }
 
-export default function DirectorYearModal({ type, value, onClose }) {
+export default function DirectorYearModal({ type, value, scoreKey = 'fairBoosted', mnOnly = false, onClose }) {
   const [films, setFilms]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [movieId, setMovieId] = useState(null);
 
   useEffect(() => {
     const param = type === 'director' ? { director: value } : { year: value };
+    if (mnOnly) param.mn = '1';
     api.getMovies(param)
       .then(data => {
-        const sorted = [...data].sort((a, b) => (b.fairBoosted ?? -1) - (a.fairBoosted ?? -1));
+        const sorted = [...data]
+          .filter(f => f.voterCount >= 2)
+          .sort((a, b) => (b[scoreKey] ?? -1) - (a[scoreKey] ?? -1));
         setFilms(sorted);
       })
       .finally(() => setLoading(false));
-  }, [type, value]);
+  }, [type, value, scoreKey, mnOnly]);
 
   function handleSaved(updated) {
     setFilms(fs => fs.map(f => f.id === updated.id ? updated : f));
@@ -38,9 +41,8 @@ export default function DirectorYearModal({ type, value, onClose }) {
     setFilms(fs => fs.filter(f => f.id !== id));
   }
 
-  const ratedFilms = films.filter(f => f.voterCount >= 2);
-  const meanScore  = ratedFilms.length
-    ? ratedFilms.reduce((a, f) => a + (f.fairBoosted ?? 0), 0) / ratedFilms.length
+  const meanScore = films.length
+    ? films.reduce((a, f) => a + (f[scoreKey] ?? 0), 0) / films.length
     : null;
 
   return (
@@ -51,9 +53,11 @@ export default function DirectorYearModal({ type, value, onClose }) {
             <div className="modal-title">{value}</div>
             <div className="modal-sub">
               {type === 'director' ? 'Director' : 'Year'}
+              {mnOnly ? ' · MN only' : ''}
+              {' · '}
+              {scoreKey === 'boostedScore' ? 'Group score' : 'Fair score'}
               {' · '}
               {films.length} film{films.length !== 1 ? 's' : ''}
-              {ratedFilms.length > 0 && ` · ${ratedFilms.length} rated`}
             </div>
           </div>
           {meanScore != null && (
@@ -77,6 +81,7 @@ export default function DirectorYearModal({ type, value, onClose }) {
                   key={f.id}
                   movie={f}
                   listView
+                  scoreMode={scoreKey === 'boostedScore' ? 'group' : 'fair'}
                   onClick={() => setMovieId(f.id)}
                 />
               ))}

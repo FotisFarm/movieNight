@@ -32,7 +32,7 @@ function VoterPills({ voters, top3 }) {
   );
 }
 
-export default function RankingSection({ title, rows, onMovieClick, onDirectorClick, onYearClick, scoreKey = 'fairBoosted' }) {
+export default function RankingSection({ title, rows, onMovieClick, onDirectorClick, onYearClick, scoreKey = 'fairBoosted', rowScoreKey = 'fairBoosted', mn = false }) {
   return (
     <div className="rank-section">
       <div className="rank-header">{title}</div>
@@ -45,9 +45,9 @@ export default function RankingSection({ title, rows, onMovieClick, onDirectorCl
               const val = row[scoreKey] ?? row.avg ?? null;
               const isClickable = row.id || row.director || row.year;
               function handleClick() {
-                if (row.id)       onMovieClick?.(row.id);
-                else if (row.director) onDirectorClick?.(row.director);
-                else if (row.year)     onYearClick?.(String(row.year));
+                if (row.id)            onMovieClick?.(row.id);
+                else if (row.director) onDirectorClick?.(row.director, rowScoreKey, mn);
+                else if (row.year)     onYearClick?.(String(row.year), rowScoreKey, mn);
               }
               return (
                 <tr key={row.id ?? row.director ?? row.year ?? i}

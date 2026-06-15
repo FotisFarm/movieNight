@@ -33,7 +33,7 @@ function VoterPills({ ratings, top3 }) {
 }
 
 export default function MovieCard({ movie, onClick, listView = false, scoreMode = 'fair' }) {
-  const { title, director, year, mn, watchlist, rank_global, ratings, top3, fairBoosted, voterCount } = movie;
+  const { title, director, year, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount } = movie;
 
   const hasScore = voterCount >= 2;
   const displayScore = hasScore
@@ -61,7 +61,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
         </div>
 
         <div className="card-badges">
-          {mn          && <span className="badge badge-mn">MN</span>}
+          {mn          && <span className="badge badge-mn">MN{mn_rank ? ` #${mn_rank}` : ''}</span>}
           {watchlist   && <span className="badge badge-wl">WL</span>}
           {rank_global && <span className="badge badge-ranked">#{rank_global}</span>}
         </div>
@@ -89,7 +89,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
         </p>
 
         <div className="card-badges">
-          {mn          && <span className="badge badge-mn">MN</span>}
+          {mn          && <span className="badge badge-mn">MN{mn_rank ? ` #${mn_rank}` : ''}</span>}
           {watchlist   && <span className="badge badge-wl">WL</span>}
           {rank_global && <span className="badge badge-ranked">#{rank_global}</span>}
         </div>

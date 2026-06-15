@@ -28,12 +28,13 @@ function enrichMovie(movie) {
   const n = scores.length;
   let score = null, fairScore = null, boostedScore = null, fairBoosted = null;
 
+  const RANK_BONUS = { 1: 1.0, 2: 0.6, 3: 0.4 };
+  const boost = Object.values(top3Map).reduce((acc, rank) => acc + (RANK_BONUS[rank] || 0), 0);
+
   if (n > 0) {
     const sum = scores.reduce((a, b) => a + b, 0);
     score = Math.round((sum / GROUP_SIZE) * 100) / 100;
     fairScore = Math.round((sum / n) * 100) / 100;
-    const RANK_BONUS = { 1: 1.0, 2: 0.6, 3: 0.4 };
-    const boost = Object.values(top3Map).reduce((acc, rank) => acc + (RANK_BONUS[rank] || 0), 0);
     boostedScore = Math.round(Math.min(10, score + boost) * 100) / 100;
     fairBoosted = Math.round(Math.min(10, fairScore + boost) * 100) / 100;
   }
@@ -46,6 +47,7 @@ function enrichMovie(movie) {
     comments: commentsMap,
     top3: top3Map,
     voterCount: n,
+    boost,
     score,
     fairScore,
     boostedScore,
