@@ -41,6 +41,10 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
   const [top3,     setTop3]     = useState({});  // voter -> 1|2|3|null
   const [mn,       setMn]       = useState(false);
   const [watchlist, setWatchlist] = useState(false);
+  const [editing,      setEditing]      = useState(false);
+  const [editTitle,    setEditTitle]    = useState('');
+  const [editDirector, setEditDirector] = useState('');
+  const [editYear,     setEditYear]     = useState('');
 
   useEffect(() => {
     if (!movieId) return;
@@ -58,6 +62,9 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
       setTop3(t);
       setMn(m.mn);
       setWatchlist(m.watchlist);
+      setEditTitle(m.title || '');
+      setEditDirector(m.director || '');
+      setEditYear(m.year || '');
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [movieId]);
@@ -87,6 +94,9 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
 
     try {
       const updated = await api.updateMovie(movieId, {
+        title: editTitle.trim(),
+        director: editDirector.trim(),
+        year: editYear.trim(),
         mn,
         watchlist,
         ratings: ratingPayload,
@@ -115,7 +125,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
     </div>
   );
 
-  const { title, director, year, fairBoosted, fairScore, voterCount } = movie;
+  const { fairBoosted, fairScore, voterCount } = movie;
   const RANK_BONUS = { 1: 1.0, 2: 0.6, 3: 0.4 };
   const tokenBoost = Math.round(
     Object.values(top3).reduce((acc, rank) => acc + (RANK_BONUS[rank] || 0), 0) * 100
@@ -126,12 +136,27 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
       <div className="modal">
         <div className="modal-header">
           <div className="modal-header-text">
-            <div className="modal-title">{title}</div>
-            <div className="modal-sub">
-              {director}{year ? ` · ${year}` : ''}
-            </div>
+            {editing ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <input className="input" placeholder="Title" value={editTitle} onChange={e => setEditTitle(e.target.value)} />
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <input className="input" placeholder="Director" value={editDirector} onChange={e => setEditDirector(e.target.value)} />
+                  <input className="input" placeholder="Year" value={editYear} onChange={e => setEditYear(e.target.value)} style={{ maxWidth: 80 }} />
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="modal-title">{editTitle}</div>
+                <div className="modal-sub">{editDirector}{editYear ? ` · ${editYear}` : ''}</div>
+              </>
+            )}
           </div>
-          <button className="modal-close" onClick={onClose}>✕</button>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => setEditing(e => !e)}>
+              {editing ? 'Done' : '✎'}
+            </button>
+            <button className="modal-close" onClick={onClose}>✕</button>
+          </div>
         </div>
 
         <div className="modal-body">

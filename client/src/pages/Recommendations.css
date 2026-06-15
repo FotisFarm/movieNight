@@ -1,0 +1,144 @@
+.recs-page {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.recs-header { margin-bottom: 24px; }
+
+.recs-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+
+.recs-sub {
+  font-size: 13px;
+  color: var(--text2);
+  margin: 0;
+}
+
+.recs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rec-row {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rec-row:hover { border-color: var(--accent); }
+
+/* Top row: rank · title/meta · score */
+.rec-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.rec-rank {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text2);
+  min-width: 30px;
+  padding-top: 2px;
+}
+
+.rec-title-block {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rec-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.rec-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.rec-badges {
+  display: flex;
+  gap: 4px;
+}
+
+.rec-meta {
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.rec-score {
+  font-size: 18px;
+  font-weight: 800;
+  min-width: 48px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.rec-score.score-high { color: var(--green); }
+.rec-score.score-mid  { color: var(--gold); }
+.rec-score.score-low  { color: var(--red); }
+.rec-score.score-none { color: var(--text2); }
+
+/* Bottom row: voter pills + detail text */
+.rec-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 40px; /* align under title, past rank */
+}
+
+.rec-voter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+/* Empty voter pill (unrated) */
+.voter-pill-empty {
+  opacity: 0.3;
+}
+
+.rec-detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.rec-actual strong { font-weight: 700; }
+.rec-actual strong.score-high { color: var(--green); }
+.rec-actual strong.score-mid  { color: var(--gold); }
+.rec-actual strong.score-low  { color: var(--red); }
+
+.rec-voters { color: var(--text2); }
+
+.rec-explanation {
+  color: var(--text2);
+  font-style: italic;
+}
+
+.rec-explanation::before { content: '· '; }

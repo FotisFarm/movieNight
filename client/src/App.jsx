@@ -4,6 +4,7 @@ import Header from './components/Header';
 import Films from './pages/Films';
 import Rankings from './pages/Rankings';
 import Watchlist from './pages/Watchlist';
+import Recommendations from './pages/Recommendations';
 import Login from './pages/Login';
 import { api } from './api';
 
@@ -26,6 +27,7 @@ export default function App() {
           <Route path="/films" element={<Films />} />
           <Route path="/rankings" element={<Rankings />} />
           <Route path="/watchlist" element={<Watchlist />} />
+          <Route path="/recommendations" element={<Recommendations />} />
         </Routes>
       </main>
     </div>

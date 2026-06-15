@@ -28,6 +28,7 @@ export const api = {
   deleteMovie: (id) => request(`/movies/${id}`, { method: 'DELETE' }),
   getDirectors: () => request('/movies/directors'),
   getRankings: () => request('/rankings'),
+  getRecommendations: () => request('/recommendations'),
   login: (username, password) => request('/auth/login', { method: 'POST', body: { username, password } }),
   logout: () => request('/auth/logout', { method: 'POST' }),
   me: () => request('/auth/me'),
