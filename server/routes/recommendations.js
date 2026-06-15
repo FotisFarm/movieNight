@@ -13,6 +13,9 @@ router.get('/', (req, res) => {
   let tw = Math.max(0, parseFloat(req.query.tw) || 0.10);
   const total = dw + ew + tw || 1;
   dw /= total; ew /= total; tw /= total;
+  const _mv = req.query.maxVoters !== undefined ? parseInt(req.query.maxVoters) : 2;
+  const maxVoters = Math.min(4, Math.max(0, isNaN(_mv) ? 2 : _mv));
+
   const allMovies  = db.prepare('SELECT * FROM movies').all();
   const allRatings = db.prepare('SELECT movie_id, voter, score FROM ratings').all();
   const allTop3    = db.prepare('SELECT movie_id, voter, rank FROM top3').all();
@@ -65,7 +68,7 @@ router.get('/', (req, res) => {
   }
 
   // Score all non-fully-rated films
-  const candidates = allMovies.filter(m => (ratingsByMovie[m.id] || []).length <= 2);
+  const candidates = allMovies.filter(m => (ratingsByMovie[m.id] || []).length <= maxVoters);
 
   const results = candidates.map(m => {
     const ratingRows = ratingsByMovie[m.id] || [];
@@ -150,7 +153,7 @@ router.get('/', (req, res) => {
     return b.predictedScore - a.predictedScore;
   });
 
-  res.json(results.slice(0, 30));
+  res.json(results.slice(0, 200));
 });
 
 module.exports = router;

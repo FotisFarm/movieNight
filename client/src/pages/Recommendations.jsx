@@ -58,6 +58,8 @@ export default function Recommendations() {
   const [dw, setDw] = useState(DEFAULT_WEIGHTS.dw);
   const [ew, setEw] = useState(DEFAULT_WEIGHTS.ew);
   const [tw, setTw] = useState(DEFAULT_WEIGHTS.tw);
+  const [maxVoters, setMaxVoters] = useState(2);
+  const [unvotedBy, setUnvotedBy] = useState(new Set());
 
   const weightTimer = useRef(null);
 
@@ -65,9 +67,17 @@ export default function Recommendations() {
     clearTimeout(weightTimer.current);
     weightTimer.current = setTimeout(() => {
       setLoading(true);
-      api.getRecommendations({ dw, ew, tw }).then(setAllFilms).finally(() => setLoading(false));
+      api.getRecommendations({ dw, ew, tw, maxVoters }).then(setAllFilms).finally(() => setLoading(false));
     }, 400);
-  }, [dw, ew, tw]);
+  }, [dw, ew, tw, maxVoters]);
+
+  function toggleUnvotedBy(voter) {
+    setUnvotedBy(prev => {
+      const next = new Set(prev);
+      next.has(voter) ? next.delete(voter) : next.add(voter);
+      return next;
+    });
+  }
 
   // Normalised display percentages
   const wTotal = dw + ew + tw || 1;
@@ -95,6 +105,11 @@ export default function Recommendations() {
     if (filterDir && f.director !== filterDir) return false;
     if (filterYear && f.year !== filterYear)   return false;
     if (filterVoter && f.ratings?.[filterVoter] == null) return false;
+    if (unvotedBy.size > 0) {
+      for (const v of unvotedBy) {
+        if (f.ratings?.[v] != null) return false;
+      }
+    }
     if (search) {
       const q = search.toLowerCase();
       if (!f.title.toLowerCase().includes(q) && !f.director?.toLowerCase().includes(q)) return false;
@@ -202,6 +217,34 @@ export default function Recommendations() {
               onChange={e => setTw(parseFloat(e.target.value) / 10)} />
           </div>
         </label>
+        <div className="recs-bias-sep" />
+
+        <label className="recs-bias-item recs-bias-item--inline">
+          <span className="recs-bias-label">Max voters</span>
+          <select className="select select-sm" value={maxVoters} onChange={e => setMaxVoters(parseInt(e.target.value))}>
+            {[0, 1, 2, 3, 4].map(n => (
+              <option key={n} value={n}>{n} {n === 1 ? 'vote' : 'votes'}</option>
+            ))}
+          </select>
+        </label>
+
+        <div className="recs-bias-sep" />
+
+        <div className="recs-unvoted">
+          <span className="recs-bias-label">Unvoted by</span>
+          <div className="recs-unvoted-pills">
+            {VOTERS.map(v => (
+              <button
+                key={v}
+                className={`voter-pill-toggle${unvotedBy.has(v) ? ' active' : ''}`}
+                onClick={() => toggleUnvotedBy(v)}
+              >
+                {v.slice(0, 3)}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <button className="btn btn-ghost btn-sm" onClick={() => { setDw(DEFAULT_WEIGHTS.dw); setEw(DEFAULT_WEIGHTS.ew); setTw(DEFAULT_WEIGHTS.tw); }}>
           Reset
         </button>
