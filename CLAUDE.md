@@ -144,9 +144,19 @@ predictedScore = confidence * actualFairBoosted + (1 - confidence) * prior
 - `top3Bonus`: min(2.0, number of top3 entries across all voters for that director)
 - When only one signal is available, the missing weight is split between the remaining two
 - Films with 0 votes use 100% prior; films with 2 votes use 40% actual + 60% prior
-- Returns top 30, each with `ratings` map, `actualScore`, `predictedScore`, `explanation` string, badges
-- Frontend filters (MN, WL, voter, director, year, search) applied client-side
-- Bias sliders on the Picks page send `?dw=&ew=&tw=` to the API (debounced 400ms)
+- Returns up to 200 results; client-side filters trim the visible list
+- Frontend filters (MN, WL, voter, director, year, search, unvoted-by) applied client-side
+- Bias sliders + max-voters send `?dw=&ew=&tw=&maxVoters=` to the API (debounced 400ms)
+
+### Picks page controls
+| Control | Type | Where | Effect |
+|---|---|---|---|
+| Director / Era / Top3 bias | Sliders | Bias bar | Re-weight prior formula, triggers refetch |
+| Max voters | Select (0–4) | Bias bar | Sets server-side candidacy threshold (`voterCount <= maxVoters`); default 2 |
+| Unvoted by | Voter pill toggles | Bias bar | Client-side: hides films a selected voter has already rated (intersection when multiple active) |
+| MN / WL / Voter / Director / Year / Search | Filters bar | Top | Client-side display filters |
+
+**Server caveat**: `maxVoters=0` requires explicit undefined-check (`req.query.maxVoters !== undefined`) because `parseInt('0') || 2` would incorrectly default to 2.
 
 ## Key implementation notes
 - `/api/movies/directors` route **must** be declared before `/:id` in Express to avoid being caught as an ID lookup
