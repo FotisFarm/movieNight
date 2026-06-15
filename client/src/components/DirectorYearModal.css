@@ -1,0 +1,40 @@
+.dy-overlay {
+  z-index: 200; /* above any existing modals */
+}
+
+.dy-modal {
+  max-width: 720px;
+  width: 95vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.dy-mean {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 12px;
+}
+
+.dy-mean-score {
+  font-size: 22px;
+  font-weight: 800;
+}
+.dy-mean-score.score-high { color: var(--green); }
+.dy-mean-score.score-mid  { color: var(--gold); }
+.dy-mean-score.score-low  { color: var(--red); }
+.dy-mean-score.score-none { color: var(--text2); }
+
+.dy-mean-label {
+  font-size: 10px;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dy-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 12px 20px 20px;
+}

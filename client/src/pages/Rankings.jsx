@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../api';
 import RankingSection from '../components/RankingSection';
 import MovieModal from '../components/MovieModal';
+import DirectorYearModal from '../components/DirectorYearModal';
 import { useToast } from '../hooks/useToast.jsx';
 import './Rankings.css';
 
@@ -45,10 +46,11 @@ const ROWS = [
 ];
 
 export default function Rankings() {
-  const [data, setData]             = useState(null);
-  const [loading, setLoading]       = useState(true);
-  const [selectedId, setSelectedId] = useState(null);
-  const { toast, Toast }            = useToast();
+  const [data, setData]               = useState(null);
+  const [loading, setLoading]         = useState(true);
+  const [selectedId, setSelectedId]   = useState(null);
+  const [selectedLabel, setSelectedLabel] = useState(null);
+  const { toast, Toast }              = useToast();
 
   useEffect(() => {
     api.getRankings()
@@ -87,6 +89,8 @@ export default function Rankings() {
                 rows={data[panel.key]}
                 scoreKey={panel.scoreKey}
                 onMovieClick={panel.clickable ? setSelectedId : undefined}
+                onDirectorClick={d => setSelectedLabel({ type: 'director', value: d })}
+                onYearClick={y => setSelectedLabel({ type: 'year', value: String(y) })}
               />
             ))}
           </div>
@@ -99,6 +103,13 @@ export default function Rankings() {
           onClose={() => setSelectedId(null)}
           onSaved={handleSaved}
           onDeleted={() => { setSelectedId(null); api.getRankings().then(setData); }}
+        />
+      )}
+      {selectedLabel && (
+        <DirectorYearModal
+          type={selectedLabel.type}
+          value={selectedLabel.value}
+          onClose={() => setSelectedLabel(null)}
         />
       )}
       <Toast />

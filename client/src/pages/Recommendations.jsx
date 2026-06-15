@@ -75,6 +75,11 @@ export default function Recommendations() {
   const pEra = Math.round((ew / wTotal) * 100);
   const pTop = Math.round((tw / wTotal) * 100);
 
+  // CSS variable cascades into ::webkit-slider-runnable-track pseudo-element
+  function trackStyle(val) {
+    return { '--fill': `${Math.round(val * 10) * 10}%` };
+  }
+
   const directors = [...new Set(allFilms.map(f => f.director).filter(Boolean))].sort();
 
   const filtersActive = search || filterMn || filterWl || filterVoter || filterDir || filterYear;
@@ -178,18 +183,24 @@ export default function Recommendations() {
         <span className="recs-bias-label">Bias</span>
         <label className="recs-bias-item">
           <span>Director <em>{pDir}%</em></span>
-          <input type="range" min={0} max={10} step={1} value={Math.round(dw * 10)}
-            onChange={e => setDw(parseFloat(e.target.value) / 10)} />
+          <div className="recs-slider-wrap" style={trackStyle(dw)}>
+            <input type="range" min={0} max={10} step={1} value={Math.round(dw * 10)}
+              onChange={e => setDw(parseFloat(e.target.value) / 10)} />
+          </div>
         </label>
         <label className="recs-bias-item">
           <span>Era <em>{pEra}%</em></span>
-          <input type="range" min={0} max={10} step={1} value={Math.round(ew * 10)}
-            onChange={e => setEw(parseFloat(e.target.value) / 10)} />
+          <div className="recs-slider-wrap" style={trackStyle(ew)}>
+            <input type="range" min={0} max={10} step={1} value={Math.round(ew * 10)}
+              onChange={e => setEw(parseFloat(e.target.value) / 10)} />
+          </div>
         </label>
         <label className="recs-bias-item">
           <span>Top 3 <em>{pTop}%</em></span>
-          <input type="range" min={0} max={10} step={1} value={Math.round(tw * 10)}
-            onChange={e => setTw(parseFloat(e.target.value) / 10)} />
+          <div className="recs-slider-wrap" style={trackStyle(tw)}>
+            <input type="range" min={0} max={10} step={1} value={Math.round(tw * 10)}
+              onChange={e => setTw(parseFloat(e.target.value) / 10)} />
+          </div>
         </label>
         <button className="btn btn-ghost btn-sm" onClick={() => { setDw(DEFAULT_WEIGHTS.dw); setEw(DEFAULT_WEIGHTS.ew); setTw(DEFAULT_WEIGHTS.tw); }}>
           Reset

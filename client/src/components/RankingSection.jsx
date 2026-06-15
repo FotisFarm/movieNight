@@ -32,7 +32,7 @@ function VoterPills({ voters, top3 }) {
   );
 }
 
-export default function RankingSection({ title, rows, onMovieClick, scoreKey = 'fairBoosted' }) {
+export default function RankingSection({ title, rows, onMovieClick, onDirectorClick, onYearClick, scoreKey = 'fairBoosted' }) {
   return (
     <div className="rank-section">
       <div className="rank-header">{title}</div>
@@ -43,10 +43,16 @@ export default function RankingSection({ title, rows, onMovieClick, scoreKey = '
           <tbody>
             {rows.map((row, i) => {
               const val = row[scoreKey] ?? row.avg ?? null;
+              const isClickable = row.id || row.director || row.year;
+              function handleClick() {
+                if (row.id)       onMovieClick?.(row.id);
+                else if (row.director) onDirectorClick?.(row.director);
+                else if (row.year)     onYearClick?.(String(row.year));
+              }
               return (
                 <tr key={row.id ?? row.director ?? row.year ?? i}
-                    className={row.id ? 'clickable' : ''}
-                    onClick={() => row.id && onMovieClick?.(row.id)}>
+                    className={isClickable ? 'clickable' : ''}
+                    onClick={handleClick}>
                   <td className={`rank-num ${i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : ''}`}>
                     {i < 3 ? RANK_MEDALS[i] : i + 1}
                   </td>
