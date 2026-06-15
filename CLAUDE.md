@@ -18,8 +18,7 @@ cd client && npm run build
 cp -r dist ../server/public
 
 # Start the server
-cd server
-NODE_ENV=production PORT=3000 DATA_DIR=./data node index.js
+NODE_ENV=production PORT=3000 DATA_DIR=./data node server/index.js
 ```
 App is served at `http://localhost:3000`. Express serves the React build as static files and handles all `/api/*` routes.
 
@@ -42,12 +41,12 @@ docker-compose up --build
 MovieNights/
 ├── client/                   # React + Vite frontend
 │   └── src/
-│       ├── api.js            # fetch wrapper (getMovies, getRankings, etc.)
-│       ├── App.jsx           # Router: / → /films, /rankings, /watchlist
+│       ├── api.js            # fetch wrapper (getMovies, getRankings, getRecommendations, etc.)
+│       ├── App.jsx           # Router: / → /films, /rankings, /watchlist, /recommendations
 │       ├── index.css         # Global styles, CSS variables, shared classes
 │       ├── components/
 │       │   ├── MovieCard.jsx / .css     # Film card (grid + list view)
-│       │   ├── MovieModal.jsx / .css    # Edit ratings, top3, flags
+│       │   ├── MovieModal.jsx / .css    # Edit ratings, top3, flags, title/director/year
 │       │   ├── AddMovieModal.jsx        # Add new film
 │       │   ├── RankingSection.jsx / .css
 │       │   └── Header.jsx / .css
@@ -56,17 +55,21 @@ MovieNights/
 │       └── pages/
 │           ├── Films.jsx / .css         # Main film browser
 │           ├── Rankings.jsx / .css      # 4-row rankings layout
-│           └── Watchlist.jsx / .css
+│           ├── Watchlist.jsx / .css
+│           └── Recommendations.jsx / .css  # "Picks" page — ranked unrated/partially-rated films
 ├── server/
 │   ├── index.js              # Express entry point, seeds DB, mounts routes
 │   ├── db.js                 # SQLite setup, schema creation, migrations
 │   ├── seed.js               # One-time seeding from data/seed.json
+│   ├── omdb.js               # OMDb API helper (lookupImdb) — used by scripts only
 │   ├── data/
 │   │   ├── seed.json         # 834 films (has UTF-8 BOM — stripped in seed.js)
 │   │   └── movies.db         # SQLite file (gitignored, persisted via volume)
-│   └── routes/
-│       ├── movies.js         # CRUD + enrichMovie (scores, ratings, comments)
-│       └── rankings.js       # 12 ranking panels across 4 row groups
+│   ├── routes/
+│   │   ├── movies.js         # CRUD + enrichMovie (scores, ratings, comments)
+│   │   ├── rankings.js       # 12 ranking panels across 4 row groups
+│   │   └── recommendations.js  # GET /api/recommendations — Bayesian ranked picks
+│   └── scripts/              # One-off DB maintenance scripts (IMDb enrichment etc.)
 ├── Dockerfile                # Multi-stage: Vite build → lean Node runtime
 ├── docker-compose.yml
 └── CLAUDE.md                 # This file
@@ -74,11 +77,18 @@ MovieNights/
 
 ## Database schema
 ```sql
-movies  (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts)
+movies  (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts,
+         imdb_id TEXT, imdb_rating REAL)
 ratings (id, movie_id → movies, voter TEXT, score REAL, comment TEXT,  UNIQUE(movie_id, voter))
 top3    (id, movie_id → movies, voter TEXT, rank INT CHECK IN (1,2,3),  UNIQUE(movie_id, voter))
 ```
 Seeding is idempotent — skips if `COUNT(*) > 0` in movies.
+`imdb_id` / `imdb_rating` columns exist in DB but are not exposed in the UI (IMDb feature paused).
+
+## Auth
+Single-user session auth. Username `mnAdmin`, password loaded from `.env` via `dotenv`.
+`.env` lives at repo root; `server/index.js` loads it with `require('dotenv').config({ path: '../.env' })`.
+Session secret also comes from `.env` (`SESSION_SECRET`). All `/api/*` routes except `/api/auth` require auth.
 
 ## Voters
 ```
@@ -115,13 +125,35 @@ GROUP_SIZE = 5
 
 Each row has: Top 10 Films · Top Directors · Top Years
 
+## Recommendations ("Picks") — `/api/recommendations`
+Surfaces films with ≤2 votes, ranked by predicted group enjoyment using a Bayesian blend:
+
+```
+confidence    = voterCount / GROUP_SIZE
+prior         = directorAvg*0.7 + decadeAvg*0.2 + top3Bonus*0.1
+predictedScore = confidence * actualFairBoosted + (1 - confidence) * prior
+```
+
+- `directorAvg`: mean `fairBoosted` of all rated films by the same director
+- `decadeAvg`: mean `fairBoosted` of all rated films from the same decade
+- `top3Bonus`: min(2.0, number of top3 entries across all voters for that director)
+- Films with 0 votes use 100% prior; films with 2 votes use 40% actual + 60% prior
+- Returns top 30, each with `ratings` map, `actualScore`, `explanation` string, badges
+- Frontend filters (MN, WL, voter, director, year, search) applied client-side
+
 ## Key implementation notes
 - `/api/movies/directors` route **must** be declared before `/:id` in Express to avoid being caught as an ID lookup
 - `seed.js` strips UTF-8 BOM with `.replace(/^﻿/, '')` — PowerShell writes BOM by default
 - SQLite empty string literals must use single quotes `''` not double quotes `""` (double quotes = column identifier)
-- `db.js` runs `ALTER TABLE ratings ADD COLUMN comment TEXT DEFAULT ''` in a try/catch for safe migration on existing DBs
+- `db.js` runs `ALTER TABLE` migrations in try/catch for safe schema evolution on existing DBs
 - `enrichMovie()` in `routes/movies.js` is called on every read and computes all score variants + returns `ratings`, `comments`, `top3` maps
 - Production: Express serves `server/public/` (copied from `client/dist`) as static, then a `*` catch-all for React Router
+- `MovieModal` has an inline edit mode (✎ button) for title, director, and year — PATCH payload always includes these fields
+
+## DB backup (production)
+App runs in Docker on remote server. DB is in named volume `sqlite_data`.
+Backup via systemd timer on server — copies volume to `/home/user/backups/movies_YYYYMMDD.db` daily, retains 30 days.
+Pull DB locally anytime: `ssh user@server "docker run --rm -v sqlite_data:/data alpine cat /data/movies.db" > movies_local.db`
 
 ## Color scheme (score thresholds)
 - ≥ 7.5 → green (`score-high`)
