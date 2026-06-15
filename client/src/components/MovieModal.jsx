@@ -127,7 +127,9 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
         <div className="modal-header">
           <div className="modal-header-text">
             <div className="modal-title">{title}</div>
-            <div className="modal-sub">{director}{year ? ` · ${year}` : ''}</div>
+            <div className="modal-sub">
+              {director}{year ? ` · ${year}` : ''}
+            </div>
           </div>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>

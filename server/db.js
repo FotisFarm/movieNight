@@ -45,5 +45,7 @@ db.exec(`
 
 // Migrations
 try { db.exec("ALTER TABLE ratings ADD COLUMN comment TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+try { db.exec("ALTER TABLE movies ADD COLUMN imdb_id TEXT DEFAULT NULL"); } catch (_) {}
+try { db.exec("ALTER TABLE movies ADD COLUMN imdb_rating REAL DEFAULT NULL"); } catch (_) {}
 
 module.exports = db;

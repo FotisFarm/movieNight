@@ -117,7 +117,7 @@ router.patch('/:id', (req, res) => {
   const movie = db.prepare('SELECT * FROM movies WHERE id = ?').get(id);
   if (!movie) return res.status(404).json({ error: 'Not found' });
 
-  const { director, title, year, mn, watchlist, cinobo, ratings, comments, top3 } = req.body;
+  const { director, title, year, mn, watchlist, cinobo, imdb_id, ratings, comments, top3 } = req.body;
 
   const updates = {};
   if (director !== undefined) updates.director = director;
