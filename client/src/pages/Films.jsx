@@ -118,7 +118,7 @@ export default function Films() {
       })
     : movies;
 
-  const scoreSortActive = sortBy === 'score-desc' || sortBy === 'group-desc';
+  const scoreSortActive = sortBy === 'score-desc' || sortBy === 'score-asc' || sortBy === 'group-desc' || sortBy === 'group-asc';
   const sortBase = scoreSortActive ? searchFiltered.filter(m => m.voterCount >= 2) : searchFiltered;
 
   const sorted = [...sortBase].sort((a, b) => {
@@ -131,8 +131,11 @@ export default function Films() {
       case 'year-desc':  return (parseInt(b.year) || 0) - (parseInt(a.year) || 0);
       case 'year-asc':   return (parseInt(a.year) || 0) - (parseInt(b.year) || 0);
       case 'score-desc': return (b.fairBoosted  - a.fairBoosted)  || tiebreakScore(a, b);
+      case 'score-asc':  return (a.fairBoosted  - b.fairBoosted)  || tiebreakScore(b, a);
       case 'group-desc': return (b.boostedScore - a.boostedScore) || tiebreakScore(a, b);
-      case 'rank-asc':   return (a.rank_global ?? 9999) - (b.rank_global ?? 9999);
+      case 'group-asc':  return (a.boostedScore - b.boostedScore) || tiebreakScore(b, a);
+      case 'added-desc': return b.id - a.id;
+      case 'added-asc':  return a.id - b.id;
       default: return 0;
     }
   });
@@ -201,16 +204,19 @@ export default function Films() {
             Sort
             <select className="select select-sm" value={sortBy} onChange={e => {
               setSortBy(e.target.value);
-              if (e.target.value === 'score-desc') setScoreMode('fair');
-              if (e.target.value === 'group-desc') setScoreMode('group');
+              if (e.target.value === 'score-desc' || e.target.value === 'score-asc') setScoreMode('fair');
+              if (e.target.value === 'group-desc' || e.target.value === 'group-asc') setScoreMode('group');
             }}>
               <option value="alpha">A → Z</option>
               <option value="alpha-dir">By Director</option>
               <option value="year-desc">Newest</option>
               <option value="year-asc">Oldest</option>
               <option value="score-desc">Fair Score ↓</option>
+              <option value="score-asc">Fair Score ↑</option>
               <option value="group-desc">Group Score ↓</option>
-              <option value="rank-asc">Ranked First</option>
+              <option value="group-asc">Group Score ↑</option>
+              <option value="added-desc">Recently Added</option>
+              <option value="added-asc">First Added</option>
             </select>
           </label>
 
