@@ -42,7 +42,7 @@ MovieNights/
 ├── client/                   # React + Vite frontend
 │   └── src/
 │       ├── api.js            # fetch wrapper (getMovies, getRankings, getRecommendations, etc.)
-│       ├── App.jsx           # Router: / → /films, /rankings, /watchlist, /recommendations
+│       ├── App.jsx           # Router: / → /films, /rankings, /watchlist, /recommendations, /controversy, /stats
 │       ├── index.css         # Global styles, CSS variables, shared classes
 │       ├── components/
 │       │   ├── MovieCard.jsx / .css          # Film card (grid + list view)
@@ -57,7 +57,9 @@ MovieNights/
 │           ├── Films.jsx / .css         # Main film browser
 │           ├── Rankings.jsx / .css      # 4-row rankings layout
 │           ├── Watchlist.jsx / .css
-│           └── Recommendations.jsx / .css  # "Picks" page — ranked unrated/partially-rated films
+│           ├── Recommendations.jsx / .css  # "Picks" page — ranked unrated/partially-rated films
+│           ├── Controversy.jsx / .css   # Films ranked by score std deviation
+│           └── Stats.jsx / .css         # Per-voter overview + head-to-head comparison
 ├── server/
 │   ├── index.js              # Express entry point, seeds DB, mounts routes
 │   ├── db.js                 # SQLite setup, schema creation, migrations
@@ -71,6 +73,9 @@ MovieNights/
 │   │   ├── rankings.js       # 12 ranking panels across 4 row groups
 │   │   └── recommendations.js  # GET /api/recommendations — Bayesian ranked picks
 │   └── scripts/              # One-off DB maintenance scripts (IMDb enrichment etc.)
+├── .github/
+│   └── workflows/
+│       └── db-backup.yml     # Daily DB snapshot → backups branch (02:00 UTC, 7-day rolling window)
 ├── Dockerfile                # Multi-stage: Vite build → lean Node runtime
 ├── docker-compose.yml
 └── CLAUDE.md                 # This file
@@ -124,6 +129,7 @@ GROUP_SIZE = 5
 | `group-asc` | Group Score ↑ | ≥2 voters only; switches scoreMode to group |
 | `added-desc` | Recently Added | Sort by `id DESC` (auto-increment = insertion order) |
 | `added-asc` | First Added | Sort by `id ASC` |
+| `controversial` | Most Controversial | ≥2 voters only; sorts by `stdDev DESC` |
 
 Score sorts filter out films with <2 voters before sorting (`scoreSortActive` flag). Search is always client-side (JS `.toLowerCase()` handles Greek); all other filters (mn, rated, voter, director, year) are server-side.
 
@@ -184,11 +190,36 @@ predictedScore = confidence * actualFairBoosted + (1 - confidence) * prior
 - `MovieModal` has an inline edit mode (✎ button) for title, director, and year — PATCH payload always includes these fields
 - **Live rank badges** (Films page): `allMovies` state (always full, unfiltered) feeds a `rankMap` memo that computes fair/group/mnFair/mnGroup rank positions using the same tiebreaker order as `rankings.js`. MovieCard receives `rank_global` and `mn_rank` from this map, not from the DB column. MN badge shows `MN #N` where N is the MN-specific rank matching the active score mode.
 - **Rankings refetch on navigate**: `Rankings.jsx` uses `useLocation().key` as a `useEffect` dependency — React Router changes `.key` on every navigation, so rankings always reload when switching to the Rankings tab.
+- **`stdDev`**: computed in `enrichMovie()` as `sqrt(Σ(score - mean)² / n)`, rounded to 2dp. `null` when `n < 2`. Used by Controversy page and "Most Controversial" sort. Color thresholds: `<1` → green (consensus), `1–2` → gold, `≥2` → red (polarising).
+- **Controversy page** (`/controversy`): fetches all rated films client-side, filters to `voterCount ≥ 2 && stdDev != null`, sorts by `stdDev DESC`. Per-voter score pills colored by individual score.
+- **Stats page** (`/stats`): fetches all 834 films once, computes everything client-side via `useMemo`. Per-voter cards show rated count, mean score, top3 count, fav director/decade, score distribution bar chart. Head-to-head section compares two voters across shared films sorted by absolute score difference.
 
 ## DB backup (production)
-App runs in Docker on remote server. DB is in named volume `sqlite_data`.
-Backup via systemd timer on server — copies volume to `/home/user/backups/movies_YYYYMMDD.db` daily, retains 30 days.
-Pull DB locally anytime: `ssh user@server "docker run --rm -v sqlite_data:/data alpine cat /data/movies.db" > movies_local.db`
+App runs in Docker on remote server. DB is in named volume `movienight_sqlite_data`.
+
+### Automated GitHub Actions backup
+`.github/workflows/db-backup.yml` runs daily at 02:00 UTC (also triggerable manually via Actions UI):
+- SSHes into the server, pulls the DB from the Docker volume
+- Commits it as `movies_YYYY-MM-DD.db` to the `backups` branch
+- Deletes snapshots older than 7 days — rolling 7-day window always available on GitHub
+
+Required GitHub secrets: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`.
+
+### Restore from backup
+```bash
+# Download a specific snapshot locally
+git fetch origin backups
+git checkout origin/backups -- movies_2026-06-16.db
+
+# Restore into the Docker volume (run on server)
+scp movies_2026-06-16.db user@server:/tmp/
+ssh user@server "docker run --rm -v movienight_sqlite_data:/data -v /tmp:/src alpine cp /src/movies_2026-06-16.db /data/movies.db"
+```
+
+### Manual pull
+```bash
+ssh user@server "docker run --rm -v movienight_sqlite_data:/data alpine cat /data/movies.db" > movies_local.db
+```
 
 ## Color scheme (score thresholds)
 - ≥ 7.5 → green (`score-high`)
