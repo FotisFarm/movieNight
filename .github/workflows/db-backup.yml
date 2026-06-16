@@ -1,0 +1,58 @@
+name: DB Backup
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # daily at 02:00 UTC
+  workflow_dispatch:        # allow manual trigger from GitHub UI
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout backups branch
+        uses: actions/checkout@v4
+        with:
+          ref: backups
+          fetch-depth: 0
+        continue-on-error: true
+
+      - name: Create backups branch if missing
+        run: |
+          git checkout backups 2>/dev/null || {
+            git checkout --orphan backups
+            git rm -rf . 2>/dev/null || true
+          }
+
+      - name: Configure git
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Pull DB from server
+        env:
+          SSH_KEY:  ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          ssh "$SSH_USER@$SSH_HOST" \
+            "docker run --rm -v sqlite_data:/data alpine cat /data/movies.db" \
+            > "movies_$(date +%Y-%m-%d).db"
+
+      - name: Prune backups older than 7 days
+        run: |
+          cutoff=$(date -d '7 days ago' +%Y-%m-%d)
+          for f in movies_*.db; do
+            [[ "$f" =~ movies_([0-9]{4}-[0-9]{2}-[0-9]{2})\.db ]] || continue
+            [[ "${BASH_REMATCH[1]}" < "$cutoff" ]] && git rm -f "$f" && echo "Removed $f"
+          done
+
+      - name: Commit and push
+        run: |
+          git add movies_*.db
+          git diff --cached --quiet && echo "No changes, skipping commit" && exit 0
+          git commit -m "DB snapshot $(date +%Y-%m-%d)"
+          git push origin backups
