@@ -118,7 +118,7 @@ export default function Films() {
       })
     : movies;
 
-  const scoreSortActive = sortBy === 'score-desc' || sortBy === 'score-asc' || sortBy === 'group-desc' || sortBy === 'group-asc';
+  const scoreSortActive = sortBy === 'score-desc' || sortBy === 'score-asc' || sortBy === 'group-desc' || sortBy === 'group-asc' || sortBy === 'controversial';
   const sortBase = scoreSortActive ? searchFiltered.filter(m => m.voterCount >= 2) : searchFiltered;
 
   const sorted = [...sortBase].sort((a, b) => {
@@ -134,8 +134,9 @@ export default function Films() {
       case 'score-asc':  return (a.fairBoosted  - b.fairBoosted)  || tiebreakScore(b, a);
       case 'group-desc': return (b.boostedScore - a.boostedScore) || tiebreakScore(a, b);
       case 'group-asc':  return (a.boostedScore - b.boostedScore) || tiebreakScore(b, a);
-      case 'added-desc': return b.id - a.id;
-      case 'added-asc':  return a.id - b.id;
+      case 'added-desc':   return b.id - a.id;
+      case 'added-asc':    return a.id - b.id;
+      case 'controversial': return (b.stdDev ?? -1) - (a.stdDev ?? -1);
       default: return 0;
     }
   });
@@ -215,6 +216,7 @@ export default function Films() {
               <option value="score-asc">Fair Score ↑</option>
               <option value="group-desc">Group Score ↓</option>
               <option value="group-asc">Group Score ↑</option>
+              <option value="controversial">Most Controversial</option>
               <option value="added-desc">Recently Added</option>
               <option value="added-asc">First Added</option>
             </select>

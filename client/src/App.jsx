@@ -5,6 +5,8 @@ import Films from './pages/Films';
 import Rankings from './pages/Rankings';
 import Watchlist from './pages/Watchlist';
 import Recommendations from './pages/Recommendations';
+import Controversy from './pages/Controversy';
+import Stats from './pages/Stats';
 import Login from './pages/Login';
 import { api } from './api';
 
@@ -28,6 +30,8 @@ export default function App() {
           <Route path="/rankings" element={<Rankings />} />
           <Route path="/watchlist" element={<Watchlist />} />
           <Route path="/recommendations" element={<Recommendations />} />
+          <Route path="/controversy" element={<Controversy />} />
+          <Route path="/stats" element={<Stats />} />
         </Routes>
       </main>
     </div>

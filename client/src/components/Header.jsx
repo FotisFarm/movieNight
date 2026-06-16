@@ -11,6 +11,8 @@ export default function Header({ onLogout }) {
           <NavLink to="/rankings" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Rankings</NavLink>
           <NavLink to="/watchlist"       className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Watchlist</NavLink>
           <NavLink to="/recommendations" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Picks</NavLink>
+          <NavLink to="/controversy"     className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Controversy</NavLink>
+          <NavLink to="/stats"           className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Stats</NavLink>
         </nav>
         {onLogout && <button className="btn btn-ghost btn-sm" onClick={onLogout} style={{ marginLeft: 8 }}>Sign out</button>}
       </div>
