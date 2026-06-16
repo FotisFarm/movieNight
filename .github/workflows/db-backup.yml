@@ -39,7 +39,7 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
           ssh "$SSH_USER@$SSH_HOST" \
-            "docker run --rm -v sqlite_data:/data alpine cat /data/movies.db" \
+            "docker run --rm -v movienight_sqlite_data:/data alpine cat /data/movies.db" \
             > "movies_$(date +%Y-%m-%d).db"
 
       - name: Prune backups older than 7 days
