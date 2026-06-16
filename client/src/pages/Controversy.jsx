@@ -6,6 +6,13 @@ import './Controversy.css';
 
 const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
 
+function stdDevClass(v) {
+  if (v == null) return 'score-none';
+  if (v < 1)  return 'score-high';
+  if (v < 2)  return 'score-mid';
+  return 'score-low';
+}
+
 function scoreClass(v) {
   if (v == null) return 'score-none';
   if (v >= 7.5) return 'score-high';
@@ -92,7 +99,7 @@ export default function Controversy() {
                   <span className="controversy-meta">{f.director}{f.year ? ` · ${f.year}` : ''}</span>
                 </div>
                 <div className="controversy-std">
-                  <span className="controversy-std-val">±{fmt(f.stdDev)}</span>
+                  <span className={`controversy-std-val ${stdDevClass(f.stdDev)}`}>±{fmt(f.stdDev)}</span>
                   <span className="controversy-std-lbl">std dev</span>
                 </div>
                 <div className="controversy-scores">

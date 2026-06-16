@@ -24,7 +24,11 @@
   display: flex; flex-direction: column; align-items: center;
   min-width: 56px;
 }
-.controversy-std-val { font-size: 15px; font-weight: 700; color: var(--orange); }
+.controversy-std-val { font-size: 15px; font-weight: 700; }
+.controversy-std-val.score-high { color: var(--green); }
+.controversy-std-val.score-mid  { color: var(--gold); }
+.controversy-std-val.score-low  { color: var(--red); }
+.controversy-std-val.score-none { color: var(--text3); }
 .controversy-std-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; }
 
 .controversy-scores { display: flex; gap: 6px; flex-wrap: wrap; }
