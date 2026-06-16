@@ -76,7 +76,6 @@ export default function Films() {
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
       fetchMovies({
-        search:    search || undefined,
         mn:        filterMn    ? '1' : undefined,
         watchlist: filterWl    ? '1' : undefined,
         rated:     filterRated ? '1' : undefined,
@@ -112,8 +111,15 @@ export default function Films() {
     return (parseInt(a.year) || 9999) - (parseInt(b.year) || 9999);
   }
 
+  const searchFiltered = search
+    ? movies.filter(m => {
+        const q = search.toLowerCase();
+        return m.title.toLowerCase().includes(q) || m.director?.toLowerCase().includes(q);
+      })
+    : movies;
+
   const scoreSortActive = sortBy === 'score-desc' || sortBy === 'group-desc';
-  const sortBase = scoreSortActive ? movies.filter(m => m.voterCount >= 2) : movies;
+  const sortBase = scoreSortActive ? searchFiltered.filter(m => m.voterCount >= 2) : searchFiltered;
 
   const sorted = [...sortBase].sort((a, b) => {
     switch (sortBy) {
@@ -259,7 +265,7 @@ export default function Films() {
             Reset
           </button>
 
-          <span className="filter-count">{sorted.length} / {movies.length} films</span>
+          <span className="filter-count">{searchFiltered.length} / {movies.length} films</span>
         </div>
       </div>
 

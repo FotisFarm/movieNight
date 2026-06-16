@@ -192,10 +192,11 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
                       {isOn && (
                         <input
                           type="number"
+                          key={`${v}-${val ?? 'null'}`}
                           className={`rating-number-input ${scoreClass(val)}`}
                           min={0} max={10} step={0.5}
-                          value={val}
-                          onChange={e => setScore(v, e.target.value)}
+                          defaultValue={val}
+                          onBlur={e => setScore(v, e.target.value)}
                         />
                       )}
                       <button

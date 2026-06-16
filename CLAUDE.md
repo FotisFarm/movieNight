@@ -126,7 +126,7 @@ GROUP_SIZE = 5
 
 Each row has: Top 10 Films · Top Directors · Top Years
 
-Clicking a **director** or **year** row opens `DirectorYearModal` — shows all matching films as MovieCards (list view, sorted by `fairBoosted` desc) plus the mean `fairBoosted` of films with ≥2 votes. Clicking a film card within opens the standard `MovieModal`.
+Clicking a **director** or **year** row opens `DirectorYearModal` — shows all matching films as MovieCards (list view, sorted by the clicked panel's `scoreKey` desc) plus the mean score (same `scoreKey`) of films with ≥2 votes. The `scoreKey` and `mnOnly` flag travel from ROWS config → `RankingSection` prop → click callback → `selectedLabel` state → `DirectorYearModal` prop. Clicking a film card within opens the standard `MovieModal`.
 
 ## Recommendations ("Picks") — `/api/recommendations`
 Surfaces films with ≤2 votes, ranked by predicted group enjoyment using a Bayesian blend:
@@ -163,9 +163,11 @@ predictedScore = confidence * actualFairBoosted + (1 - confidence) * prior
 - `seed.js` strips UTF-8 BOM with `.replace(/^﻿/, '')` — PowerShell writes BOM by default
 - SQLite empty string literals must use single quotes `''` not double quotes `""` (double quotes = column identifier)
 - `db.js` runs `ALTER TABLE` migrations in try/catch for safe schema evolution on existing DBs
-- `enrichMovie()` in `routes/movies.js` is called on every read and computes all score variants + returns `ratings`, `comments`, `top3` maps
+- `enrichMovie()` in `routes/movies.js` is called on every read and computes all score variants + returns `ratings`, `comments`, `top3` maps. `boost` is computed unconditionally (outside the `n > 0` block) so it's always available for client-side tiebreaking
 - Production: Express serves `server/public/` (copied from `client/dist`) as static, then a `*` catch-all for React Router
 - `MovieModal` has an inline edit mode (✎ button) for title, director, and year — PATCH payload always includes these fields
+- **Live rank badges** (Films page): `allMovies` state (always full, unfiltered) feeds a `rankMap` memo that computes fair/group/mnFair/mnGroup rank positions using the same tiebreaker order as `rankings.js`. MovieCard receives `rank_global` and `mn_rank` from this map, not from the DB column. MN badge shows `MN #N` where N is the MN-specific rank matching the active score mode.
+- **Rankings refetch on navigate**: `Rankings.jsx` uses `useLocation().key` as a `useEffect` dependency — React Router changes `.key` on every navigation, so rankings always reload when switching to the Rankings tab.
 
 ## DB backup (production)
 App runs in Docker on remote server. DB is in named volume `sqlite_data`.

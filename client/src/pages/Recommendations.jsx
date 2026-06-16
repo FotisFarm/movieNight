@@ -46,7 +46,7 @@ export default function Recommendations() {
   const [allFilms, setAllFilms] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [modalId, setModalId]   = useState(null);
-  const { Toast, showToast }    = useToast();
+  const { toast, Toast }        = useToast();
 
   const [search,      setSearch]      = useState(DEFAULTS.search);
   const [filterMn,    setFilterMn]    = useState(DEFAULTS.filterMn);
@@ -119,7 +119,7 @@ export default function Recommendations() {
 
   function handleSaved(updated) {
     setAllFilms(f => f.map(x => x.id === updated.id ? { ...x, ...updated } : x));
-    showToast('Saved');
+    toast('Saved');
   }
 
   function handleDeleted(id) {

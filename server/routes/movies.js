@@ -62,10 +62,7 @@ router.get('/', (req, res) => {
   let query = 'SELECT * FROM movies WHERE 1=1';
   const params = [];
 
-  if (search) {
-    query += ' AND (LOWER(title) LIKE ? OR LOWER(director) LIKE ?)';
-    params.push(`%${search.toLowerCase()}%`, `%${search.toLowerCase()}%`);
-  }
+
   if (director) { query += ' AND director = ?'; params.push(director); }
   if (year)     { query += ' AND year = ?';     params.push(year); }
   if (mn === '1')        { query += ' AND mn = 1'; }
