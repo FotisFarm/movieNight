@@ -111,6 +111,22 @@ GROUP_SIZE = 5
 - **Card "Group" toggle**: `boostedScore` — divides by GROUP_SIZE=5, includes Top 3 bonus (penalises films not seen by all)
 - **Minimum voters for score**: 2+ voters required — solo-rated films show voter pills but no aggregate score
 
+### Films page sort options
+| Value | Label | Notes |
+|---|---|---|
+| `alpha` | A → Z | Default |
+| `alpha-dir` | By Director | Secondary sort: title |
+| `year-desc` | Newest | By release year |
+| `year-asc` | Oldest | By release year |
+| `score-desc` | Fair Score ↓ | ≥2 voters only; switches scoreMode to fair |
+| `score-asc` | Fair Score ↑ | ≥2 voters only; switches scoreMode to fair |
+| `group-desc` | Group Score ↓ | ≥2 voters only; switches scoreMode to group |
+| `group-asc` | Group Score ↑ | ≥2 voters only; switches scoreMode to group |
+| `added-desc` | Recently Added | Sort by `id DESC` (auto-increment = insertion order) |
+| `added-asc` | First Added | Sort by `id ASC` |
+
+Score sorts filter out films with <2 voters before sorting (`scoreSortActive` flag). Search is always client-side (JS `.toLowerCase()` handles Greek); all other filters (mn, rated, voter, director, year) are server-side.
+
 ### Tiebreakers (film rankings)
 1. More voters wins
 2. Higher total token value wins (🥇=1.0 > 🥈=0.6 > 🥉=0.4)
