@@ -158,6 +158,10 @@ router.patch('/:id', (req, res) => {
       .run(...Object.values(updates), id);
   }
 
+  if (watchlist === false) {
+    db.prepare('DELETE FROM watchlist_votes WHERE movie_id = ?').run(id);
+  }
+
   if (ratings) {
     const upsertRating = db.prepare(`
       INSERT INTO ratings (movie_id, voter, score) VALUES (?, ?, ?)

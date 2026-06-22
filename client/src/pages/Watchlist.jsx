@@ -50,6 +50,12 @@ export default function Watchlist({ voter }) {
     setMovies(ms => ms.map(m => m.id === updated.id ? { ...updated, watchlistVotes: m.watchlistVotes } : m));
   }
 
+  async function watchedTonight(movie) {
+    await api.updateMovie(movie.id, { mn: true, watchlist: false });
+    setMovies(ms => ms.filter(m => m.id !== movie.id));
+    setSelectedId(movie.id);
+  }
+
   async function removeFromWatchlist(id) {
     await api.updateMovie(id, { watchlist: false });
     setMovies(ms => ms.filter(m => m.id !== id));
@@ -96,6 +102,12 @@ export default function Watchlist({ voter }) {
                     <span key={v} className="wl-vote-pill">{v}</span>
                   ))}
                 </div>
+                <button
+                  className="wl-watched-btn"
+                  onClick={e => { e.stopPropagation(); watchedTonight(m); }}
+                >
+                  ✓ Watched
+                </button>
               </li>
             ))}
           </ol>
@@ -140,6 +152,7 @@ export default function Watchlist({ voter }) {
                   >
                     {m.cinobo === 'Yes' ? '✓ Cinobo' : '✗ Cinobo'}
                   </button>
+                  <button className="wl-watched-btn" onClick={() => watchedTonight(m)}>✓ Watched</button>
                   <button className="btn btn-ghost btn-sm" onClick={() => setSelectedId(m.id)}>Rate</button>
                   <button
                     className="btn btn-ghost btn-sm"
