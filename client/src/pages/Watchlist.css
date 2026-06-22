@@ -13,12 +13,79 @@
   margin-left: 6px;
 }
 
-.wl-desc {
-  font-size: 13px;
-  color: var(--text3);
-  margin-top: 4px;
+/* Ranking panel */
+.wl-ranking {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 24px;
 }
 
+.wl-ranking-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 12px;
+}
+
+.wl-ranking-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wl-ranking-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.wl-ranking-row:hover { background: var(--surface2); }
+
+.wl-ranking-pos {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text3);
+  min-width: 20px;
+  text-align: right;
+}
+
+.wl-ranking-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wl-ranking-name {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wl-ranking-meta {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.wl-ranking-voters {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Film grid */
 .wl-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -42,6 +109,13 @@
 }
 .wl-card-body:hover { background: var(--surface2); }
 
+.wl-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .wl-movie-title {
   font-size: 14px;
   font-weight: 600;
@@ -61,6 +135,26 @@
 }
 .wl-score strong { color: var(--gold); }
 
+.wl-vote-badge {
+  flex-shrink: 0;
+  background: var(--green);
+  color: #0d1117;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 10px;
+  margin-top: 1px;
+}
+
+.wl-vote-pill {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 8px;
+  background: #52c47a20;
+  color: var(--green);
+  font-weight: 600;
+}
+
 .wl-card-actions {
   padding: 10px 16px;
   border-top: 1px solid var(--border);
@@ -69,6 +163,20 @@
   align-items: center;
   flex-wrap: wrap;
 }
+
+.wl-vote-btn {
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text2);
+  transition: all .15s;
+}
+.wl-vote-btn:hover { border-color: var(--green); color: var(--green); }
+.wl-vote-on { background: #52c47a20; border-color: #52c47a60; color: var(--green); }
 
 .cinobo-btn {
   padding: 3px 10px;

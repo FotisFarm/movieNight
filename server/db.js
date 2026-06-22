@@ -43,6 +43,15 @@ db.exec(`
   );
 `);
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS watchlist_votes (
+    id       INTEGER PRIMARY KEY,
+    movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+    voter    TEXT    NOT NULL,
+    UNIQUE(movie_id, voter)
+  )
+`);
+
 // Migrations
 try { db.exec("ALTER TABLE ratings ADD COLUMN comment TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE movies ADD COLUMN imdb_id TEXT DEFAULT NULL"); } catch (_) {}

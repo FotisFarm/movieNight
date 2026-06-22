@@ -11,24 +11,24 @@ import Login from './pages/Login';
 import { api } from './api';
 
 export default function App() {
-  const [authed, setAuthed] = useState(null); // null = checking
+  const [voter, setVoter] = useState(null); // null = checking, '' = not logged in
 
   useEffect(() => {
-    api.me().then(d => setAuthed(!!d.user)).catch(() => setAuthed(false));
+    api.me().then(d => setVoter(d.voter || '')).catch(() => setVoter(''));
   }, []);
 
-  if (authed === null) return null; // brief flash while checking session
-  if (!authed) return <Login onLogin={() => setAuthed(true)} />;
+  if (voter === null) return null;
+  if (!voter) return <Login onLogin={v => setVoter(v)} />;
 
   return (
     <div className="app">
-      <Header onLogout={() => { api.logout(); setAuthed(false); }} />
+      <Header voter={voter} onLogout={() => { api.logout(); setVoter(''); }} />
       <main className="main-content">
         <Routes>
           <Route path="/" element={<Navigate to="/films" replace />} />
           <Route path="/films" element={<Films />} />
           <Route path="/rankings" element={<Rankings />} />
-          <Route path="/watchlist" element={<Watchlist />} />
+          <Route path="/watchlist" element={<Watchlist voter={voter} />} />
           <Route path="/recommendations" element={<Recommendations />} />
           <Route path="/controversy" element={<Controversy />} />
           <Route path="/stats" element={<Stats />} />

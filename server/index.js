@@ -23,7 +23,7 @@ seed();
 app.use('/api/auth', require('./routes/auth'));
 
 function requireAuth(req, res, next) {
-  if (req.session.user) return next();
+  if (req.session.voter) return next();
   res.status(401).json({ error: 'Unauthorized' });
 }
 

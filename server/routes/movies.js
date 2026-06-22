@@ -13,6 +13,10 @@ function enrichMovie(movie) {
   const top3 = db
     .prepare('SELECT voter, rank FROM top3 WHERE movie_id = ?')
     .all(movie.id);
+  const watchlistVotes = db
+    .prepare('SELECT voter FROM watchlist_votes WHERE movie_id = ?')
+    .all(movie.id)
+    .map(r => r.voter);
 
   const ratingsMap = {};
   const commentsMap = {};
@@ -51,6 +55,7 @@ function enrichMovie(movie) {
     ratings: ratingsMap,
     comments: commentsMap,
     top3: top3Map,
+    watchlistVotes,
     voterCount: n,
     boost,
     score,
@@ -84,6 +89,19 @@ router.get('/', (req, res) => {
 
   const movies = db.prepare(query).all(...params);
   res.json(movies.map(enrichMovie));
+});
+
+// POST /api/movies/:id/watchlist-vote  — must be before /:id
+router.post('/:id/watchlist-vote', (req, res) => {
+  const id = Number(req.params.id);
+  const voter = req.session.voter;
+  const exists = db.prepare('SELECT 1 FROM watchlist_votes WHERE movie_id=? AND voter=?').get(id, voter);
+  if (exists) {
+    db.prepare('DELETE FROM watchlist_votes WHERE movie_id=? AND voter=?').run(id, voter);
+  } else {
+    db.prepare('INSERT INTO watchlist_votes (movie_id, voter) VALUES (?,?)').run(id, voter);
+  }
+  res.json({ ok: true });
 });
 
 // GET /api/movies/directors  — must be before /:id

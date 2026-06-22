@@ -32,7 +32,8 @@ export const api = {
     const qs = new URLSearchParams(Object.fromEntries(Object.entries(weights).filter(([,v]) => v != null))).toString();
     return request(`/recommendations${qs ? `?${qs}` : ''}`);
   },
-  login: (username, password) => request('/auth/login', { method: 'POST', body: { username, password } }),
+  toggleWatchlistVote: (id) => request(`/movies/${id}/watchlist-vote`, { method: 'POST' }),
+  login: (voter, password) => request('/auth/login', { method: 'POST', body: { voter, password } }),
   logout: () => request('/auth/logout', { method: 'POST' }),
   me: () => request('/auth/me'),
 };
