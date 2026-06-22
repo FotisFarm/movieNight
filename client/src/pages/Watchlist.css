@@ -194,28 +194,31 @@
 
 .wl-admin-ribbon {
   display: flex;
-  gap: 5px;
+  gap: 6px;
   flex-wrap: wrap;
-  padding: 6px 16px;
+  padding: 8px 16px;
   border-top: 1px solid var(--border);
-  background: var(--surface2);
+  background: var(--bg);
 }
 
 .wl-admin-pill {
-  padding: 2px 9px;
+  -webkit-appearance: none;
+  appearance: none;
+  padding: 4px 10px;
   border-radius: 8px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  border: 1px solid var(--border);
-  background: var(--surface3);
-  color: var(--text3);
+  border: 1px solid var(--surface3);
+  background: var(--surface2);
+  color: var(--text2);
   transition: all .15s;
+  white-space: nowrap;
 }
 .wl-admin-pill:hover { border-color: var(--green); color: var(--green); }
 .wl-admin-pill-on {
-  background: #52c47a20;
-  border-color: #52c47a60;
+  background: #52c47a25;
+  border-color: var(--green);
   color: var(--green);
 }
 
