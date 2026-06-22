@@ -221,6 +221,15 @@ ssh user@server "docker run --rm -v movienight_sqlite_data:/data -v /tmp:/src al
 ssh user@server "docker run --rm -v movienight_sqlite_data:/data alpine cat /data/movies.db" > movies_local.db
 ```
 
+## Deploy (production)
+`.github/workflows/deploy.yml` triggers automatically on every push to `main`:
+- SSHes into the server, runs `git pull` in `~/movieNight`
+- Runs `docker compose down` then `docker compose up --build -d`
+
+Reuses the same GitHub secrets: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`. No additional setup needed.
+
+**Note**: the server uses Docker Compose V2 (`docker compose`, plugin-based). The legacy `docker-compose` v1 is also installed but has a `ContainerConfig` bug with newer Docker Engine — always use `docker compose` (no hyphen) in scripts.
+
 ## Color scheme (score thresholds)
 - ≥ 7.5 → green (`score-high`)
 - ≥ 5.0 → yellow/gold (`score-mid`)
