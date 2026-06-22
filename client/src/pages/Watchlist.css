@@ -53,8 +53,38 @@
   border-radius: 6px;
   cursor: pointer;
   transition: background .15s;
+  background: var(--surface);
 }
 .wl-ranking-row:hover { background: var(--surface2); }
+
+.wl-ranking-draggable { touch-action: none; }
+
+.wl-drag-handle {
+  font-size: 16px;
+  color: var(--text3);
+  cursor: grab;
+  padding: 0 2px;
+  user-select: none;
+  line-height: 1;
+}
+.wl-drag-handle:active { cursor: grabbing; }
+
+.wl-ranking-overlay {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px #0006;
+  pointer-events: none;
+}
+
+.wl-ranking-hint {
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 6px;
+}
 
 .wl-ranking-pos {
   font-size: 13px;
