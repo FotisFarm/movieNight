@@ -14,15 +14,19 @@ export default function App() {
   const [voter, setVoter] = useState(null); // null = checking, '' = not logged in
 
   useEffect(() => {
-    api.me().then(d => setVoter(d.voter || '')).catch(() => setVoter(''));
+    api.me().then(d => {
+      const v = d.voter || '';
+      if (v) sessionStorage.setItem('voter', v);
+      setVoter(v);
+    }).catch(() => setVoter(''));
   }, []);
 
   if (voter === null) return null;
-  if (!voter) return <Login onLogin={v => setVoter(v)} />;
+  if (!voter) return <Login onLogin={v => { sessionStorage.setItem('voter', v); setVoter(v); }} />;
 
   return (
     <div className="app">
-      <Header voter={voter} onLogout={() => { api.logout(); setVoter(''); }} />
+      <Header voter={voter} onLogout={() => { api.logout(); sessionStorage.removeItem('voter'); setVoter(''); }} />
       <main className="main-content">
         <Routes>
           <Route path="/" element={<Navigate to="/films" replace />} />

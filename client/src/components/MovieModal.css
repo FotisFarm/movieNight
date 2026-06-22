@@ -16,6 +16,7 @@
 }
 
 .rating-off { opacity: .45; }
+.rating-locked { opacity: .5; pointer-events: none; }
 
 .rating-header {
   display: flex;

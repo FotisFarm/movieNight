@@ -143,6 +143,8 @@ router.patch('/:id', (req, res) => {
   if (!movie) return res.status(404).json({ error: 'Not found' });
 
   const { director, title, year, mn, watchlist, cinobo, imdb_id, ratings, comments, top3 } = req.body;
+  const sessionVoter = req.session.voter;
+  const isAdmin = sessionVoter === 'mnAdmin';
 
   const updates = {};
   if (director !== undefined) updates.director = director;
@@ -158,10 +160,6 @@ router.patch('/:id', (req, res) => {
       .run(...Object.values(updates), id);
   }
 
-  if (watchlist === false) {
-    db.prepare('DELETE FROM watchlist_votes WHERE movie_id = ?').run(id);
-  }
-
   if (ratings) {
     const upsertRating = db.prepare(`
       INSERT INTO ratings (movie_id, voter, score) VALUES (?, ?, ?)
@@ -171,6 +169,7 @@ router.patch('/:id', (req, res) => {
 
     for (const voter of VOTERS) {
       if (voter in ratings) {
+        if (!isAdmin && voter !== sessionVoter) continue;
         const score = ratings[voter];
         if (score === null || score === '') {
           deleteRating.run(id, voter);
@@ -186,7 +185,10 @@ router.patch('/:id', (req, res) => {
       'UPDATE ratings SET comment = ? WHERE movie_id = ? AND voter = ?'
     );
     for (const voter of VOTERS) {
-      if (voter in comments) updateComment.run(comments[voter] || '', id, voter);
+      if (voter in comments) {
+        if (!isAdmin && voter !== sessionVoter) continue;
+        updateComment.run(comments[voter] || '', id, voter);
+      }
     }
   }
 
@@ -199,6 +201,7 @@ router.patch('/:id', (req, res) => {
 
     for (const voter of VOTERS) {
       if (voter in top3) {
+        if (!isAdmin && voter !== sessionVoter) continue;
         const rank = top3[voter];
         if (!rank) {
           deleteTop3.run(id, voter);

@@ -186,20 +186,6 @@
 .wl-vote-on { background: #52c47a20; border-color: #52c47a60; color: var(--green); }
 .wl-vote-disabled { opacity: .35; cursor: default; }
 
-.wl-watched-btn {
-  padding: 3px 10px;
-  border-radius: 10px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  background: #52c47a20;
-  border: 1px solid #52c47a60;
-  color: var(--green);
-  transition: all .15s;
-  white-space: nowrap;
-}
-.wl-watched-btn:hover { background: #52c47a35; }
-
 .cinobo-btn {
   padding: 3px 10px;
   border-radius: 10px;

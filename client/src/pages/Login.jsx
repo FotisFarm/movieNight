@@ -32,17 +32,28 @@ export default function Login({ onLogin }) {
         </div>
 
         {!selected ? (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {VOTERS.map(v => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {VOTERS.map(v => (
+                <button
+                  key={v}
+                  className="btn btn-ghost"
+                  style={{ justifyContent: 'center', padding: '10px', fontSize: 14, fontWeight: 600 }}
+                  onClick={() => setSelected(v)}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
               <button
-                key={v}
                 className="btn btn-ghost"
-                style={{ justifyContent: 'center', padding: '10px', fontSize: 14, fontWeight: 600 }}
-                onClick={() => setSelected(v)}
+                style={{ width: '100%', justifyContent: 'center', fontSize: 12, color: 'var(--text3)' }}
+                onClick={() => setSelected('mnAdmin')}
               >
-                {v}
+                Admin
               </button>
-            ))}
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>

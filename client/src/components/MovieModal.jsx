@@ -32,6 +32,8 @@ function rankClass(r) {
 }
 
 export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
+  const currentVoter = sessionStorage.getItem('voter');
+  const isAdmin = currentVoter === 'mnAdmin';
   const [movie, setMovie]     = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
@@ -184,8 +186,9 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
             {VOTERS.map(v => {
               const val = ratings[v];
               const isOn = val != null;
+              const canEdit = isAdmin || v === currentVoter;
               return (
-                <div key={v} className={`rating-row${isOn ? '' : ' rating-off'}`}>
+                <div key={v} className={`rating-row${isOn ? '' : ' rating-off'}${!canEdit ? ' rating-locked' : ''}`}>
                   <div className="rating-header">
                     <span className="rating-voter">{v}</span>
                     <div className="rating-controls">
@@ -196,14 +199,17 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
                           className={`rating-number-input ${scoreClass(val)}`}
                           min={0} max={10} step={0.5}
                           defaultValue={val}
-                          onBlur={e => setScore(v, e.target.value)}
+                          onBlur={e => canEdit && setScore(v, e.target.value)}
+                          readOnly={!canEdit}
                         />
                       )}
-                      <button
-                        className={`btn btn-sm btn-ghost rating-toggle`}
-                        onClick={() => toggleVoter(v)}
-                        title={isOn ? 'Remove rating' : 'Add rating'}
-                      >{isOn ? '✕' : '+'}</button>
+                      {canEdit && (
+                        <button
+                          className={`btn btn-sm btn-ghost rating-toggle`}
+                          onClick={() => toggleVoter(v)}
+                          title={isOn ? 'Remove rating' : 'Add rating'}
+                        >{isOn ? '✕' : '+'}</button>
+                      )}
                     </div>
                   </div>
 
@@ -218,10 +224,11 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
                       <input
                         type="text"
                         className="rating-comment"
-                        placeholder="Add a note…"
+                        placeholder={canEdit ? 'Add a note…' : ''}
                         maxLength={300}
                         value={comments[v] || ''}
-                        onChange={e => setComments(c => ({ ...c, [v]: e.target.value }))}
+                        onChange={e => canEdit && setComments(c => ({ ...c, [v]: e.target.value }))}
+                        readOnly={!canEdit}
                       />
                     </>
                   )}
@@ -233,23 +240,27 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
           {/* Top 3 */}
           <div className="modal-section-label section-label" style={{ marginTop: 20 }}>Top 3 Picks</div>
           <div className="top3-grid">
-            {VOTERS.map(v => (
-              <div key={v} className="top3-voter-row">
-                <span className="top3-voter-name">{v}</span>
-                <div className="top3-btns">
-                  {[1, 2, 3].map(rank => (
-                    <button
-                      key={rank}
-                      className={`top3-btn${top3[v] === rank ? ' active' : ''}`}
-                      onClick={() => toggleTop3(v, rank)}
-                      title={`${MEDALS[rank]} #${rank}`}
-                    >
-                      {MEDALS[rank]}
-                    </button>
-                  ))}
+            {VOTERS.map(v => {
+              const canEdit = isAdmin || v === currentVoter;
+              return (
+                <div key={v} className={`top3-voter-row${!canEdit ? ' rating-locked' : ''}`}>
+                  <span className="top3-voter-name">{v}</span>
+                  <div className="top3-btns">
+                    {[1, 2, 3].map(rank => (
+                      <button
+                        key={rank}
+                        className={`top3-btn${top3[v] === rank ? ' active' : ''}`}
+                        onClick={() => canEdit && toggleTop3(v, rank)}
+                        title={`${MEDALS[rank]} #${rank}`}
+                        style={!canEdit ? { opacity: 0.4, cursor: 'default' } : {}}
+                      >
+                        {MEDALS[rank]}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Flags */}
