@@ -7,6 +7,13 @@
   font-weight: 700;
 }
 
+.wl-desc {
+  font-size: 13px;
+  color: var(--text3);
+  margin-top: 4px;
+}
+.wl-desc strong { color: var(--text2); }
+
 .wl-title span {
   font-size: 16px;
   color: var(--text3);
@@ -175,8 +182,9 @@
   color: var(--text2);
   transition: all .15s;
 }
-.wl-vote-btn:hover { border-color: var(--green); color: var(--green); }
+.wl-vote-btn:hover:not(.wl-vote-disabled) { border-color: var(--green); color: var(--green); }
 .wl-vote-on { background: #52c47a20; border-color: #52c47a60; color: var(--green); }
+.wl-vote-disabled { opacity: .35; cursor: default; }
 
 .cinobo-btn {
   padding: 3px 10px;

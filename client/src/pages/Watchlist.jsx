@@ -32,6 +32,7 @@ export default function Watchlist({ voter }) {
 
   async function toggleVote(movie) {
     const hasVoted = movie.watchlistVotes?.includes(voter);
+    if (!hasVoted && myVoteCount >= 3) return;
     setMovies(ms => ms.map(m => {
       if (m.id !== movie.id) return m;
       const votes = hasVoted
@@ -69,12 +70,14 @@ export default function Watchlist({ voter }) {
 
   if (loading) return <div className="spinner" />;
 
+  const myVoteCount = movies.filter(m => m.watchlistVotes?.includes(voter)).length;
   const ranked = movies.filter(m => (m.watchlistVotes?.length ?? 0) > 0);
 
   return (
     <div>
       <div className="wl-header">
         <h2 className="wl-title">Watchlist <span>{movies.length}</span></h2>
+        <p className="wl-desc">You have used <strong>{myVoteCount}</strong> of 3 votes.</p>
       </div>
 
       {ranked.length > 0 && (
@@ -125,7 +128,7 @@ export default function Watchlist({ voter }) {
                 </div>
                 <div className="wl-card-actions">
                   <button
-                    className={`wl-vote-btn ${hasVoted ? 'wl-vote-on' : ''}`}
+                    className={`wl-vote-btn ${hasVoted ? 'wl-vote-on' : ''} ${!hasVoted && myVoteCount >= 3 ? 'wl-vote-disabled' : ''}`}
                     onClick={() => toggleVote(m)}
                   >
                     {hasVoted ? '★ Voted' : '☆ Vote'}
