@@ -87,14 +87,16 @@ movies  (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, 
          imdb_id TEXT, imdb_rating REAL)
 ratings (id, movie_id → movies, voter TEXT, score REAL, comment TEXT,  UNIQUE(movie_id, voter))
 top3    (id, movie_id → movies, voter TEXT, rank INT CHECK IN (1,2,3),  UNIQUE(movie_id, voter))
+watchlist_votes (id, movie_id → movies, voter TEXT,  UNIQUE(movie_id, voter))
 ```
 Seeding is idempotent — skips if `COUNT(*) > 0` in movies.
 `imdb_id` / `imdb_rating` columns exist in DB but are not exposed in the UI (IMDb feature paused).
 
 ## Auth
-Single-user session auth. Username `mnAdmin`, password loaded from `.env` via `dotenv`.
+Per-voter session auth. Login page shows the 5 voter names as buttons; all share the same password (`MN_PASSWORD` from `.env`).
+`req.session.voter` stores the logged-in voter name. `GET /api/auth/me` returns `{ voter }`.
 `.env` lives at repo root; `server/index.js` loads it with `require('dotenv').config({ path: '../.env' })`.
-Session secret also comes from `.env` (`SESSION_SECRET`). All `/api/*` routes except `/api/auth` require auth.
+Session secret also comes from `.env` (`SESSION_SECRET`). All `/api/*` routes except `/api/auth` require auth (`req.session.voter` must be set).
 
 ## Voters
 ```
@@ -194,6 +196,8 @@ predictedScore = confidence * actualFairBoosted + (1 - confidence) * prior
 - **`stdDev`**: computed in `enrichMovie()` as `sqrt(Σ(score - mean)² / n)`, rounded to 2dp. `null` when `n < 2`. Used by Controversy page and "Most Controversial" sort. Color thresholds: `<1` → green (consensus), `1–2` → gold, `≥2` → red (polarising).
 - **Controversy page** (`/controversy`): fetches all rated films client-side, filters to `voterCount ≥ 2 && stdDev != null`, sorts by `stdDev DESC`. Per-voter score pills colored by individual score.
 - **Stats page** (`/stats`): fetches all 834 films once, computes everything client-side via `useMemo`. Per-voter cards show rated count, mean score, top3 count, fav director/decade, score distribution bar chart. Head-to-head section compares two voters across shared films sorted by absolute score difference.
+- **Watchlist voting**: `watchlist_votes` table tracks per-voter votes. `enrichMovie()` adds `watchlistVotes: string[]` to every movie. `POST /api/movies/:id/watchlist-vote` toggles the session voter's vote (insert or delete). Watchlist page shows a "Most Wanted" ranking panel (films with ≥1 vote, sorted by vote count desc, tiebreak: voterCount desc) above the card grid. Vote button on each card reflects the logged-in voter's vote status. The `voter` prop is passed from `App.jsx` (sourced from session via `api.me()`).
+- **`/api/movies/:id/watchlist-vote`** must be declared before `/:id` in Express (same rule as `/directors`).
 
 ## DB backup (production)
 App runs in Docker on remote server. DB is in named volume `movienight_sqlite_data`.
