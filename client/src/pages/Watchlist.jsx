@@ -118,7 +118,7 @@ export default function Watchlist({ voter }) {
     const overM    = ranked.find(m => m.id === over.id);
     if (!draggedM || !overM) return;
     const vc = draggedM.watchlistVotes.length;
-    if (overM.watchlistVotes.length !== vc) return; // cross-group drop — no-op
+    if (overM.watchlistVotes.length !== vc) return;
 
     const group = ranked.filter(m => m.watchlistVotes.length === vc).map(m => m.id);
     const currentOrder = manualOrder[vc] ?? group;
@@ -131,18 +131,20 @@ export default function Watchlist({ voter }) {
     setManualOrder(updated);
   }
 
-  async function toggleVote(movie) {
-    const hasVoted = movie.watchlistVotes?.includes(voter);
-    const myVoteCount = sortedMovies.filter(m => m.watchlistVotes?.includes(voter)).length;
-    if (!hasVoted && myVoteCount >= 3) return;
+  async function toggleVote(movie, targetVoter = voter) {
+    const hasVoted = movie.watchlistVotes?.includes(targetVoter);
+    if (!hasVoted && !isAdmin) {
+      const myVoteCount = sortedMovies.filter(m => m.watchlistVotes?.includes(targetVoter)).length;
+      if (myVoteCount >= 3) return;
+    }
     setMovies(ms => ms.map(m => {
       if (m.id !== movie.id) return m;
       const votes = hasVoted
-        ? m.watchlistVotes.filter(v => v !== voter)
-        : [...(m.watchlistVotes ?? []), voter];
+        ? m.watchlistVotes.filter(v => v !== targetVoter)
+        : [...(m.watchlistVotes ?? []), targetVoter];
       return { ...m, watchlistVotes: votes };
     }));
-    await api.toggleWatchlistVote(movie.id);
+    await api.toggleWatchlistVote(movie.id, isAdmin ? targetVoter : undefined);
   }
 
   async function toggleCinobo(movie) {
@@ -180,7 +182,7 @@ export default function Watchlist({ voter }) {
     <div>
       <div className="wl-header">
         <h2 className="wl-title">Watchlist <span>{sortedMovies.length}</span></h2>
-        {voter !== 'mnAdmin' && (
+        {!isAdmin && (
           <p className="wl-desc">You have used <strong>{myVoteCount}</strong> of 3 votes.</p>
         )}
       </div>
@@ -248,8 +250,27 @@ export default function Watchlist({ voter }) {
                     <div className="wl-score">Fair avg: <strong>{fmt(m.fairScore)}</strong></div>
                   )}
                 </div>
+
+                {isAdmin && (
+                  <div className="wl-admin-ribbon">
+                    {VOTERS.map(v => {
+                      const voted = m.watchlistVotes?.includes(v);
+                      return (
+                        <button
+                          key={v}
+                          className={`wl-admin-pill${voted ? ' wl-admin-pill-on' : ''}`}
+                          onClick={() => toggleVote(m, v)}
+                          title={voted ? `Remove ${v}'s vote` : `Add ${v}'s vote`}
+                        >
+                          {v}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
                 <div className="wl-card-actions">
-                  {voter !== 'mnAdmin' && (
+                  {!isAdmin && (
                     <button
                       className={`wl-vote-btn ${hasVoted ? 'wl-vote-on' : ''} ${!hasVoted && myVoteCount >= 3 ? 'wl-vote-disabled' : ''}`}
                       onClick={() => toggleVote(m)}

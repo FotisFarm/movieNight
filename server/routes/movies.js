@@ -94,13 +94,16 @@ router.get('/', (req, res) => {
 // POST /api/movies/:id/watchlist-vote  — must be before /:id
 router.post('/:id/watchlist-vote', (req, res) => {
   const id = Number(req.params.id);
-  const voter = req.session.voter;
+  const sessionVoter = req.session.voter;
+  const voter = (sessionVoter === 'mnAdmin' && req.body.targetVoter) ? req.body.targetVoter : sessionVoter;
   const exists = db.prepare('SELECT 1 FROM watchlist_votes WHERE movie_id=? AND voter=?').get(id, voter);
   if (exists) {
     db.prepare('DELETE FROM watchlist_votes WHERE movie_id=? AND voter=?').run(id, voter);
   } else {
-    const count = db.prepare('SELECT COUNT(*) as c FROM watchlist_votes WHERE voter=?').get(voter).c;
-    if (count >= 3) return res.status(400).json({ error: 'vote_limit' });
+    if (sessionVoter !== 'mnAdmin') {
+      const count = db.prepare('SELECT COUNT(*) as c FROM watchlist_votes WHERE voter=?').get(voter).c;
+      if (count >= 3) return res.status(400).json({ error: 'vote_limit' });
+    }
     db.prepare('INSERT INTO watchlist_votes (movie_id, voter) VALUES (?,?)').run(id, voter);
   }
   res.json({ ok: true });

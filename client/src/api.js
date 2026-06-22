@@ -32,7 +32,7 @@ export const api = {
     const qs = new URLSearchParams(Object.fromEntries(Object.entries(weights).filter(([,v]) => v != null))).toString();
     return request(`/recommendations${qs ? `?${qs}` : ''}`);
   },
-  toggleWatchlistVote: (id) => request(`/movies/${id}/watchlist-vote`, { method: 'POST' }),
+  toggleWatchlistVote: (id, targetVoter) => request(`/movies/${id}/watchlist-vote`, { method: 'POST', body: targetVoter ? { targetVoter } : undefined }),
   login: (voter, password) => request('/auth/login', { method: 'POST', body: { voter, password } }),
   logout: () => request('/auth/logout', { method: 'POST' }),
   me: () => request('/auth/me'),

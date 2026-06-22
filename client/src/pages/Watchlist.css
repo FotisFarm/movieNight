@@ -192,6 +192,33 @@
   font-weight: 600;
 }
 
+.wl-admin-ribbon {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  padding: 6px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--surface2);
+}
+
+.wl-admin-pill {
+  padding: 2px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface3);
+  color: var(--text3);
+  transition: all .15s;
+}
+.wl-admin-pill:hover { border-color: var(--green); color: var(--green); }
+.wl-admin-pill-on {
+  background: #52c47a20;
+  border-color: #52c47a60;
+  color: var(--green);
+}
+
 .wl-card-actions {
   padding: 10px 16px;
   border-top: 1px solid var(--border);
