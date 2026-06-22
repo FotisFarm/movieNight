@@ -66,7 +66,7 @@ MovieNights/
 │   ├── seed.js               # One-time seeding from data/seed.json
 │   ├── omdb.js               # OMDb API helper (lookupImdb) — used by scripts only
 │   ├── data/
-│   │   ├── seed.json         # 834 films (has UTF-8 BOM — stripped in seed.js)
+│   │   ├── seed.json         # 834 films (has UTF-8 BOM — stripped in seed.js); directors stored as full names
 │   │   └── movies.db         # SQLite file (gitignored, persisted via volume)
 │   ├── routes/
 │   │   ├── movies.js         # CRUD + enrichMovie (scores, ratings, comments)
@@ -183,6 +183,7 @@ predictedScore = confidence * actualFairBoosted + (1 - confidence) * prior
 ## Key implementation notes
 - `/api/movies/directors` route **must** be declared before `/:id` in Express to avoid being caught as an ID lookup
 - `seed.js` strips UTF-8 BOM with `.replace(/^﻿/, '')` — PowerShell writes BOM by default
+- Directors in `seed.json` and the DB are stored as full names (e.g. "Stanley Kubrick", not "Kubrick"). `server/scripts/fix-directors.js` was used to enrich single-word entries via OMDb; keep seed.json in sync if adding new films.
 - SQLite empty string literals must use single quotes `''` not double quotes `""` (double quotes = column identifier)
 - `db.js` runs `ALTER TABLE` migrations in try/catch for safe schema evolution on existing DBs
 - `enrichMovie()` in `routes/movies.js` is called on every read and computes all score variants + returns `ratings`, `comments`, `top3` maps. `boost` is computed unconditionally (outside the `n > 0` block) so it's always available for client-side tiebreaking
