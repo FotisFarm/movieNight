@@ -27,6 +27,7 @@ jobs:
             set -e
             cd ~/movieNight
             git pull
+            docker compose down
             docker compose up --build -d
             echo "Deploy complete"
           ENDSSH
