@@ -56,7 +56,9 @@
 
 @media (max-width: 640px) {
   .header-inner { gap: 4px; padding: 0 12px; }
-  .nav { gap: 0; }
-  .nav-link { padding: 6px 8px; font-size: 12px; }
+  .logo { flex-shrink: 0; }
   .logo span { display: none; }
+  .nav { gap: 0; flex: 1; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-link { padding: 6px 8px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
 }

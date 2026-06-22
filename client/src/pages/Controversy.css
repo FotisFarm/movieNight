@@ -31,7 +31,25 @@
 .controversy-std-val.score-none { color: var(--text3); }
 .controversy-std-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; }
 
-.controversy-scores { display: flex; gap: 6px; flex-wrap: wrap; }
+.controversy-scores { display: flex; gap: 6px; flex-wrap: nowrap; }
+
+@media (max-width: 640px) {
+  .controversy-row {
+    display: grid;
+    grid-template-columns: 32px 1fr 56px;
+    grid-template-rows: auto auto;
+    gap: 8px 12px;
+  }
+  .controversy-scores {
+    grid-column: 1 / -1;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+  .controversy-scores::-webkit-scrollbar { display: none; }
+  .controversy-rank { align-self: center; }
+  .controversy-std  { align-self: center; }
+}
 
 .controversy-pill {
   display: flex; flex-direction: column; align-items: center;
