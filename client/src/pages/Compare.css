@@ -125,8 +125,15 @@
 .cmp-mini-sep { color: var(--text3); font-size: 11px; }
 
 @media (max-width: 760px) {
+  /* panels stack AND their side-by-side lists stack together — no overflow window */
   .cmp-cols { grid-template-columns: 1fr; }
+  .cmp-detail-row { flex-direction: column; }
+  .cmp-detail-row > .cmp-details { width: 100%; }
+  .cmp-col { padding: 12px; }
+  .cmp-pickers { gap: 8px; }
 }
+/* belt-and-braces: never let the page itself scroll sideways */
+.compare-page { overflow-x: hidden; }
 .cmp-details {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 4px 12px;
