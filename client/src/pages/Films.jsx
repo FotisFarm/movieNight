@@ -116,6 +116,14 @@ export default function Films() {
     return (parseInt(a.year) || 9999) - (parseInt(b.year) || 9999);
   }
 
+  // For the per-voter sort: tie → better top-10 pick wins, then oldest year
+  function voterTiebreak(a, b) {
+    const ra = a.top3?.[sortVoter] ?? 99;
+    const rb = b.top3?.[sortVoter] ?? 99;
+    if (ra !== rb) return ra - rb;
+    return (parseInt(a.year) || 9999) - (parseInt(b.year) || 9999);
+  }
+
   const searchFiltered = search
     ? movies.filter(m => {
         const q = search.toLowerCase();
@@ -141,8 +149,8 @@ export default function Films() {
       case 'group-asc':  return (a.boostedScore - b.boostedScore) || tiebreakScore(b, a);
       case 'added-desc':   return b.id - a.id;
       case 'added-asc':    return a.id - b.id;
-      case 'voter-desc':   return (b.ratings?.[sortVoter] ?? -1) - (a.ratings?.[sortVoter] ?? -1);
-      case 'voter-asc':    return (a.ratings?.[sortVoter] ?? 11) - (b.ratings?.[sortVoter] ?? 11);
+      case 'voter-desc':   return ((b.ratings?.[sortVoter] ?? -1) - (a.ratings?.[sortVoter] ?? -1)) || voterTiebreak(a, b);
+      case 'voter-asc':    return ((a.ratings?.[sortVoter] ?? 11) - (b.ratings?.[sortVoter] ?? 11)) || voterTiebreak(a, b);
       case 'controversial': return (b.stdDev ?? -1) - (a.stdDev ?? -1);
       default: return 0;
     }
