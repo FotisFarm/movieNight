@@ -38,7 +38,7 @@ db.exec(`
     id       INTEGER PRIMARY KEY AUTOINCREMENT,
     movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
     voter    TEXT    NOT NULL,
-    rank     INTEGER NOT NULL CHECK(rank IN (1,2,3)),
+    rank     INTEGER NOT NULL CHECK(rank >= 1 AND rank <= 10),
     UNIQUE(movie_id, voter)
   );
 `);
@@ -56,5 +56,26 @@ db.exec(`
 try { db.exec("ALTER TABLE ratings ADD COLUMN comment TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE movies ADD COLUMN imdb_id TEXT DEFAULT NULL"); } catch (_) {}
 try { db.exec("ALTER TABLE movies ADD COLUMN imdb_rating REAL DEFAULT NULL"); } catch (_) {}
+
+// Widen top3 rank constraint 1–3 → 1–10 (SQLite can't ALTER a CHECK, so rebuild). Idempotent.
+try {
+  const t = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='top3'").get();
+  if (t && t.sql.includes('1,2,3')) {
+    db.exec(`
+      PRAGMA foreign_keys=OFF;
+      CREATE TABLE top3_new (
+        id       INTEGER PRIMARY KEY AUTOINCREMENT,
+        movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+        voter    TEXT    NOT NULL,
+        rank     INTEGER NOT NULL CHECK(rank >= 1 AND rank <= 10),
+        UNIQUE(movie_id, voter)
+      );
+      INSERT INTO top3_new SELECT * FROM top3;
+      DROP TABLE top3;
+      ALTER TABLE top3_new RENAME TO top3;
+      PRAGMA foreign_keys=ON;
+    `);
+  }
+} catch (_) {}
 
 module.exports = db;

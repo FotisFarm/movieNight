@@ -13,6 +13,7 @@ export default function Header({ voter, onLogout }) {
           <NavLink to="/recommendations" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Picks</NavLink>
           <NavLink to="/controversy"     className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Controversy</NavLink>
           <NavLink to="/stats"           className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Stats</NavLink>
+          <NavLink to="/compare"         className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Compare</NavLink>
         </nav>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto', flexShrink: 0 }}>
           {voter && <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>{voter}</span>}

@@ -1,7 +1,7 @@
+import RankIcon from './RankIcon';
 import './MovieCard.css';
 
 const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
-const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
 function scoreClass(v) {
   if (v === null || v === undefined) return 'score-none';
@@ -22,7 +22,7 @@ function VoterPills({ ratings, top3 }) {
     const rank = top3?.[v];
     return (
       <span key={v} className="voter-pill">
-        {rank && <span className="voter-medal">{MEDALS[rank]}</span>}
+        {rank && <span className="voter-medal"><RankIcon rank={rank} /></span>}
         <span className="voter-abbr">{v.slice(0, 3)}</span>
         <span className={`voter-score ${scoreClass(score)}`}>
           {Number.isInteger(score) ? score : score.toFixed(1)}

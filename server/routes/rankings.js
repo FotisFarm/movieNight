@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../db');
+const { rankBonus } = require('../scoring');
 
 const router = express.Router();
 
@@ -18,8 +19,6 @@ function getAllEnriched(mnOnly = false) {
     `
   ).all();
 
-  const RANK_BONUS = { 1: 1.0, 2: 0.6, 3: 0.4 };
-
   return movies.map(m => {
     const n = m.voter_count;
     const sum = m.score_sum || 0;
@@ -34,7 +33,7 @@ function getAllEnriched(mnOnly = false) {
         if (voter) top3Map[voter] = parseInt(rank);
       }
     }
-    const boost = Object.values(top3Map).reduce((acc, rank) => acc + (RANK_BONUS[rank] || 0), 0);
+    const boost = Object.values(top3Map).reduce((acc, rank) => acc + rankBonus(rank), 0);
 
     return {
       id: m.id,

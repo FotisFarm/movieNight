@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
 import DirectorYearModal from '../components/DirectorYearModal';
+import RankIcon from '../components/RankIcon';
 import { useToast } from '../hooks/useToast.jsx';
 import './Stats.css';
 
@@ -26,8 +27,11 @@ function computeStats(movies) {
     const scores  = myFilms.map(m => m.ratings[voter]);
     const mean    = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
 
-    // top3 count
-    const top3Count = movies.reduce((acc, m) => acc + (m.top3?.[voter] != null ? 1 : 0), 0);
+    // top picks (rank 1–10), sorted by rank
+    const topPicks = movies
+      .filter(m => m.top3?.[voter] != null)
+      .sort((a, b) => a.top3[voter] - b.top3[voter]);
+    const top3Count = topPicks.length;
 
     // fav director (min 2 rated, highest mean score by this voter)
     const dirMap = {};
@@ -67,7 +71,7 @@ function computeStats(movies) {
     const topFilms = ranked.slice(0, 10);
     const bottomFilms = ranked.slice(-10).reverse();
 
-    return { voter, ratedCount: myFilms.length, mean, top3Count, favDirector, favDecade, dist, dirBreakdown, decBreakdown, topFilms, bottomFilms };
+    return { voter, ratedCount: myFilms.length, mean, top3Count, topPicks, favDirector, favDecade, dist, dirBreakdown, decBreakdown, topFilms, bottomFilms };
   });
 }
 
@@ -79,8 +83,6 @@ export default function Stats() {
   const [modalId, setModalId] = useState(null);
   const [selectedVoter, setSelectedVoter] = useState(null);
   const [dyTarget, setDyTarget] = useState(null); // { type, value } for director/decade modal
-  const [h2hA, setH2hA]      = useState(VOTERS[0]);
-  const [h2hB, setH2hB]      = useState(VOTERS[1]);
   const { toast, Toast }      = useToast();
 
   useEffect(() => {
@@ -93,21 +95,6 @@ export default function Stats() {
   }
 
   const stats = useMemo(() => computeStats(movies), [movies]);
-
-  // Head-to-head
-  const h2h = useMemo(() => {
-    if (h2hA === h2hB) return [];
-    return movies
-      .filter(m => m.ratings?.[h2hA] != null && m.ratings?.[h2hB] != null)
-      .sort((a, b) => {
-        const diff = Math.abs(a.ratings[h2hA] - a.ratings[h2hB]) - Math.abs(b.ratings[h2hA] - b.ratings[h2hB]);
-        return -diff; // most disagreed first
-      });
-  }, [movies, h2hA, h2hB]);
-
-  const h2hMeanDiff = h2h.length
-    ? h2h.reduce((acc, m) => acc + Math.abs(m.ratings[h2hA] - m.ratings[h2hB]), 0) / h2h.length
-    : null;
 
   if (loading) return <div className="spinner" style={{ margin: '60px auto' }} />;
 
@@ -138,7 +125,7 @@ export default function Stats() {
                 </div>
                 <div className="stats-kv">
                   <span className="stats-val">{s.top3Count}</span>
-                  <span className="stats-lbl">top 3 picks</span>
+                  <span className="stats-lbl">top 10 picks</span>
                 </div>
               </div>
 
@@ -183,59 +170,27 @@ export default function Stats() {
 
       </section>
 
-      {/* ── Head-to-Head ── */}
+      {/* ── All Voters' Top 10 ── */}
       <section className="stats-section">
-        <h2 className="stats-heading">Head-to-Head</h2>
-        <div className="h2h-controls">
-          <select className="select" value={h2hA} onChange={e => setH2hA(e.target.value)}>
-            {VOTERS.map(v => <option key={v}>{v}</option>)}
-          </select>
-          <span className="h2h-vs">vs</span>
-          <select className="select" value={h2hB} onChange={e => setH2hB(e.target.value)}>
-            {VOTERS.map(v => <option key={v}>{v}</option>)}
-          </select>
-          {h2hMeanDiff != null && (
-            <span className="h2h-summary">
-              {h2h.length} shared films · mean diff <strong>{fmt(h2hMeanDiff, 2)}</strong>
-            </span>
-          )}
-        </div>
-
-        {h2hA === h2hB ? (
-          <p style={{ color: 'var(--text2)', marginTop: 16 }}>Select two different voters.</p>
-        ) : h2h.length === 0 ? (
-          <p style={{ color: 'var(--text2)', marginTop: 16 }}>No films rated by both voters.</p>
-        ) : (
-          <div className="h2h-list">
-            <div className="h2h-header-row">
-              <span className="h2h-film-col">Film</span>
-              <span className="h2h-score-col">{h2hA.slice(0, 3)}</span>
-              <span className="h2h-score-col">{h2hB.slice(0, 3)}</span>
-              <span className="h2h-diff-col">Δ</span>
+        <h2 className="stats-heading">Everyone's Top 10</h2>
+        <div className="top10-grid">
+          {stats.map(s => (
+            <div key={s.voter} className="top10-card">
+              <div className="top10-name">{s.voter}</div>
+              {s.topPicks.length === 0 ? (
+                <div className="top10-empty">No picks yet</div>
+              ) : (
+                s.topPicks.map(m => (
+                  <div key={m.id} className="top10-row" onClick={() => setModalId(m.id)}>
+                    <span className="top10-rank"><RankIcon rank={m.top3[s.voter]} /></span>
+                    <span className="top10-title">{m.title}</span>
+                    <span className="top10-year">{m.year || ''}</span>
+                  </div>
+                ))
+              )}
             </div>
-            {h2h.map(m => {
-              const sA = m.ratings[h2hA];
-              const sB = m.ratings[h2hB];
-              const diff = Math.abs(sA - sB);
-              const aWins = sA > sB;
-              return (
-                <div key={m.id} className="h2h-row" onClick={() => setModalId(m.id)}>
-                  <span className="h2h-film-col">
-                    <span className="h2h-title">{m.title}</span>
-                    <span className="h2h-meta">{m.director}{m.year ? ` · ${m.year}` : ''}</span>
-                  </span>
-                  <span className={`h2h-score-col h2h-score ${scoreClass(sA)}${aWins ? ' h2h-winner' : ''}`}>
-                    {Number.isInteger(sA) ? sA : sA.toFixed(1)}
-                  </span>
-                  <span className={`h2h-score-col h2h-score ${scoreClass(sB)}${!aWins && sA !== sB ? ' h2h-winner' : ''}`}>
-                    {Number.isInteger(sB) ? sB : sB.toFixed(1)}
-                  </span>
-                  <span className="h2h-diff-col">{diff === 0 ? '=' : fmt(diff, 1)}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
+          ))}
+        </div>
       </section>
 
       {/* ── Voter breakdown modal ── */}

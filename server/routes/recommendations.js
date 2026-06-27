@@ -1,10 +1,10 @@
 const express = require('express');
 const db = require('../db');
+const { rankBonus } = require('../scoring');
 
 const router = express.Router();
 const GROUP_SIZE = 5;
 const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
-const RANK_BONUS = { 1: 1.0, 2: 0.6, 3: 0.4 };
 
 router.get('/', (req, res) => {
   // Parse and normalise bias weights from query params (default 0.45 / 0.45 / 0.1)
@@ -38,14 +38,14 @@ router.get('/', (req, res) => {
     if (rs.length < 2) return null;
     const sum   = rs.reduce((a, r) => a + r.score, 0);
     const fair  = sum / rs.length;
-    const boost = (top3ByMovie[movieId] || []).reduce((a, rank) => a + (RANK_BONUS[rank] || 0), 0);
+    const boost = (top3ByMovie[movieId] || []).reduce((a, rank) => a + rankBonus(rank), 0);
     return Math.min(10, fair + boost);
   }
 
   // Build director and decade averages from fully-eligible rated films (≥2 voters)
   const dirScores    = {};  // director → [fairBoosted]
   const decadeScores = {};  // decade   → [fairBoosted]
-  const top3CountByDirector = {};
+  const top10WeightByDirector = {};  // director → Σ rankBonus(rank), rank-weighted pick strength
 
   for (const m of allMovies) {
     const fb = computeFairBoosted(m.id);
@@ -59,7 +59,7 @@ router.get('/', (req, res) => {
   }
   for (const t of allTop3) {
     const m = allMovies.find(x => x.id === t.movie_id);
-    if (m?.director) top3CountByDirector[m.director] = (top3CountByDirector[m.director] || 0) + 1;
+    if (m?.director) top10WeightByDirector[m.director] = (top10WeightByDirector[m.director] || 0) + rankBonus(t.rank);
   }
 
   function avg(arr) {
@@ -85,22 +85,22 @@ router.get('/', (req, res) => {
     const decade     = m.year ? Math.floor(parseInt(m.year) / 10) * 10 : null;
     const dirAvg     = avg(dirScores[m.director]) ?? null;
     const decAvg     = (decade && !isNaN(decade)) ? avg(decadeScores[decade]) ?? null : null;
-    const top3Count  = top3CountByDirector[m.director] || 0;
-    const top3Bonus  = Math.min(2.0, top3Count);
+    const top10Weight = top10WeightByDirector[m.director] || 0;
+    const top10Bonus  = Math.min(5.0, top10Weight);  // rank-weighted (Σ rankBonus), cap 5
 
     // Prior: weighted blend of director avg + decade avg + top3 bonus
     let prior = null;
     if (dirAvg !== null && decAvg !== null) {
-      prior = dirAvg * dw + decAvg * ew + top3Bonus * tw;
+      prior = dirAvg * dw + decAvg * ew + top10Bonus * tw;
     } else if (dirAvg !== null) {
       // No decade data — redistribute decade weight between director and top3
       const dwOnly = dw + ew * 0.5, twOnly = tw + ew * 0.5;
       const tOnly = dwOnly + twOnly;
-      prior = dirAvg * (dwOnly / tOnly) + top3Bonus * (twOnly / tOnly);
+      prior = dirAvg * (dwOnly / tOnly) + top10Bonus * (twOnly / tOnly);
     } else if (decAvg !== null) {
       const ewOnly = ew + dw * 0.5, twOnly = tw + dw * 0.5;
       const tOnly = ewOnly + twOnly;
-      prior = decAvg * (ewOnly / tOnly) + top3Bonus * (twOnly / tOnly);
+      prior = decAvg * (ewOnly / tOnly) + top10Bonus * (twOnly / tOnly);
     }
 
     // Bayesian blend: trust actual score more as voterCount grows
@@ -123,7 +123,7 @@ router.get('/', (req, res) => {
     const parts = [];
     if (dirAvg !== null) parts.push(`${m.director} avg ${dirAvg.toFixed(1)}`);
     if (decAvg !== null && decade) parts.push(`${decade}s avg ${decAvg.toFixed(1)}`);
-    if (top3Count > 0) parts.push(`${top3Count} top3 pick${top3Count > 1 ? 's' : ''}`);
+    if (top10Weight > 0) parts.push(`top-pick boost +${top10Bonus.toFixed(1)}`);
     if (actualScore !== null) parts.push(`${voterCount} vote${voterCount > 1 ? 's' : ''} so far`);
     const explanation = parts.join(' · ') || null;
 
@@ -141,7 +141,7 @@ router.get('/', (req, res) => {
       dirAvg:  dirAvg  !== null ? Math.round(dirAvg  * 100) / 100 : null,
       decAvg:  decAvg  !== null ? Math.round(decAvg  * 100) / 100 : null,
       decade,
-      top3Count,
+      top10Bonus: Math.round(top10Bonus * 100) / 100,
       explanation,
     };
   });

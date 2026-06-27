@@ -97,27 +97,7 @@
   flex: 1;
 }
 
-.top3-btns {
-  display: flex;
-  gap: 6px;
-}
-
-.top3-btn {
-  background: var(--surface3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 5px 10px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background .15s, border-color .15s, transform .1s;
-  line-height: 1;
-}
-.top3-btn:hover { background: var(--surface); border-color: var(--text3); }
-.top3-btn.active {
-  background: #e8c54720;
-  border-color: var(--gold);
-  transform: scale(1.1);
-}
+.top3-select { width: 150px; flex-shrink: 0; }
 
 /* ── Flags ── */
 .flags-row {

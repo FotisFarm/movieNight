@@ -211,7 +211,7 @@ export default function Recommendations() {
           </div>
         </label>
         <label className="recs-bias-item">
-          <span>Top 3 <em>{pTop}%</em></span>
+          <span>Top 10 <em>{pTop}%</em></span>
           <div className="recs-slider-wrap" style={trackStyle(tw)}>
             <input type="range" min={0} max={10} step={1} value={Math.round(tw * 10)}
               onChange={e => setTw(parseFloat(e.target.value) / 10)} />

@@ -7,6 +7,7 @@ import Watchlist from './pages/Watchlist';
 import Recommendations from './pages/Recommendations';
 import Controversy from './pages/Controversy';
 import Stats from './pages/Stats';
+import Compare from './pages/Compare';
 import Login from './pages/Login';
 import { api } from './api';
 
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="/recommendations" element={<Recommendations />} />
           <Route path="/controversy" element={<Controversy />} />
           <Route path="/stats" element={<Stats />} />
+          <Route path="/compare" element={<Compare />} />
         </Routes>
       </main>
     </div>

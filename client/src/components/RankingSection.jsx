@@ -1,7 +1,7 @@
+import RankIcon from './RankIcon';
 import './RankingSection.css';
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
-const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
 function fmt(v) {
   if (v == null) return '–';
@@ -23,7 +23,7 @@ function VoterPills({ voters, top3 }) {
         const rank = top3?.[v];
         return (
           <span key={v} className="rank-voter-pill">
-            {rank && <span className="rank-voter-medal">{MEDALS[rank]}</span>}
+            {rank && <span className="rank-voter-medal"><RankIcon rank={rank} /></span>}
             <span className="rank-voter-name">{v.slice(0, 3)}</span>
           </span>
         );

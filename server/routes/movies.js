@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../db');
+const { rankBonus } = require('../scoring');
 
 const router = express.Router();
 
@@ -32,8 +33,7 @@ function enrichMovie(movie) {
   const n = scores.length;
   let score = null, fairScore = null, boostedScore = null, fairBoosted = null;
 
-  const RANK_BONUS = { 1: 1.0, 2: 0.6, 3: 0.4 };
-  const boost = Object.values(top3Map).reduce((acc, rank) => acc + (RANK_BONUS[rank] || 0), 0);
+  const boost = Object.values(top3Map).reduce((acc, rank) => acc + rankBonus(rank), 0);
 
   let stdDev = null;
   if (n > 0) {
@@ -212,11 +212,11 @@ router.patch('/:id', (req, res) => {
     for (const voter of VOTERS) {
       if (voter in top3) {
         if (!isAdmin && voter !== sessionVoter) continue;
-        const rank = top3[voter];
-        if (!rank) {
+        const rankNum = parseInt(top3[voter]);
+        if (!rankNum) {
           deleteTop3.run(id, voter);
-        } else {
-          upsertTop3.run(id, voter, parseInt(rank));
+        } else if (rankNum >= 1 && rankNum <= 10) {
+          upsertTop3.run(id, voter, rankNum);
         }
       }
     }

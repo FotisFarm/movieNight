@@ -58,9 +58,9 @@ function seed() {
         const score = parseRating(row.ratings?.[voter]);
         if (score !== null) insertRating.run(movieId, voter, score);
 
-        const top3rank = row.top3?.[voter];
-        if (top3rank && ['1', '2', '3'].includes(String(top3rank))) {
-          insertTop3.run(movieId, voter, parseInt(top3rank));
+        const top3rank = parseInt(row.top3?.[voter]);
+        if (top3rank >= 1 && top3rank <= 10) {
+          insertTop3.run(movieId, voter, top3rank);
         }
       }
     }

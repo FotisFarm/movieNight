@@ -86,7 +86,7 @@ MovieNights/
 movies  (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts,
          imdb_id TEXT, imdb_rating REAL)
 ratings (id, movie_id → movies, voter TEXT, score REAL, comment TEXT,  UNIQUE(movie_id, voter))
-top3    (id, movie_id → movies, voter TEXT, rank INT CHECK IN (1,2,3),  UNIQUE(movie_id, voter))
+top3    (id, movie_id → movies, voter TEXT, rank INT CHECK(rank>=1 AND rank<=10),  UNIQUE(movie_id, voter))  -- legacy name; now Top 10
 watchlist_votes (id, movie_id → movies, voter TEXT,  UNIQUE(movie_id, voter))
 ```
 Seeding is idempotent — skips if `COUNT(*) > 0` in movies.
@@ -111,11 +111,11 @@ GROUP_SIZE = 5
 | `fairScore` | sum / n | pure mean, no token bonus |
 | `boostedScore` | score + boost | **Group score** (÷5 + tokens) |
 | `fairBoosted` | min(10, fairScore + boost) | **Fair score** (÷voters + tokens) |
-| `boost` | Σ rank bonuses | 🥇+1.0, 🥈+0.6, 🥉+0.4 per voter who placed film in Top 3 |
+| `boost` | Σ rank bonuses | `rankBonus(r) = (11 − r)/10` per voter who placed film in their Top 10 |
 
-- **Top 3 bonus**: rank-weighted — 🥇 Gold = +1.0, 🥈 Silver = +0.6, 🥉 Bronze = +0.4. Max boost = 5 × 1.0 = +5.0. Both `boostedScore` and `fairBoosted` are capped at 10.
-- **Card default ("Fair")**: `fairBoosted` — divides by actual voters, includes Top 3 bonus
-- **Card "Group" toggle**: `boostedScore` — divides by GROUP_SIZE=5, includes Top 3 bonus (penalises films not seen by all)
+- **Top 10 bonus**: linear rank-weighted — `rankBonus(rank) = (11 − rank) / 10`, i.e. #1 = +1.0, #2 = +0.9 … #10 = +0.1. Defined once in `server/scoring.js` (and mirrored in `MovieModal.jsx` for the live preview). Max boost = 5 × 1.0 = +5.0. Both `boostedScore` and `fairBoosted` are capped at 10. Icons: 🥇🥈🥉 for ranks 1–3, a number badge (`RankIcon`) for 4–10.
+- **Card default ("Fair")**: `fairBoosted` — divides by actual voters, includes Top 10 bonus
+- **Card "Group" toggle**: `boostedScore` — divides by GROUP_SIZE=5, includes Top 10 bonus (penalises films not seen by all)
 - **Minimum voters for score**: 2+ voters required — solo-rated films show voter pills but no aggregate score
 
 ### Films page sort options
@@ -137,7 +137,7 @@ Score sorts filter out films with <2 voters before sorting (`scoreSortActive` fl
 
 ### Tiebreakers (film rankings)
 1. More voters wins
-2. Higher total token value wins (🥇=1.0 > 🥈=0.6 > 🥉=0.4)
+2. Higher total token value wins (rankBonus: #1=1.0 > #2=0.9 > … > #10=0.1)
 3. Older year wins
 
 ## Rankings layout (4 rows × 3 panels)
@@ -153,11 +153,12 @@ Each row has: Top 10 Films · Top Directors · Top Years
 Clicking a **director** or **year** row opens `DirectorYearModal` — shows all matching films as MovieCards (list view, sorted by the clicked panel's `scoreKey` desc) plus the mean score (same `scoreKey`) of films with ≥2 votes. The `scoreKey` and `mnOnly` flag travel from ROWS config → `RankingSection` prop → click callback → `selectedLabel` state → `DirectorYearModal` prop. Clicking a film card within opens the standard `MovieModal`.
 
 ## Recommendations ("Picks") — `/api/recommendations`
-Surfaces films with ≤2 votes, ranked by predicted group enjoyment using a Bayesian blend:
+Surfaces films with ≤2 votes, ranked by predicted group enjoyment using a Bayesian blend.
+**Full walkthrough with worked examples: [`PICKS.md`](PICKS.md).**
 
 ```
 confidence     = voterCount / GROUP_SIZE
-prior          = dirAvg * dw + decAvg * ew + top3Bonus * tw   (weights user-adjustable via sliders)
+prior          = dirAvg * dw + decAvg * ew + top10Bonus * tw   (weights user-adjustable via sliders)
 predictedScore = confidence * actualFairBoosted + (1 - confidence) * prior
 ```
 
@@ -165,7 +166,7 @@ predictedScore = confidence * actualFairBoosted + (1 - confidence) * prior
 - Weights are normalised server-side so they always sum to 1
 - `dirAvg`: mean `fairBoosted` of all rated films by the same director
 - `decAvg`: mean `fairBoosted` of all rated films from the same decade
-- `top3Bonus`: min(2.0, number of top3 entries across all voters for that director)
+- `top10Bonus`: min(5.0, Σ `rankBonus(rank)` of all top-pick entries for that director, across voters) — rank-weighted so a #1 pick counts more than a #10
 - When only one signal is available, the missing weight is split between the remaining two
 - Films with 0 votes use 100% prior; films with 2 votes use 40% actual + 60% prior
 - Returns up to 200 results; client-side filters trim the visible list
@@ -175,7 +176,7 @@ predictedScore = confidence * actualFairBoosted + (1 - confidence) * prior
 ### Picks page controls
 | Control | Type | Where | Effect |
 |---|---|---|---|
-| Director / Era / Top3 bias | Sliders | Bias bar | Re-weight prior formula, triggers refetch |
+| Director / Era / Top10 bias | Sliders | Bias bar | Re-weight prior formula, triggers refetch |
 | Max voters | Select (0–4) | Bias bar | Sets server-side candidacy threshold (`voterCount <= maxVoters`); default 2 |
 | Unvoted by | Voter pill toggles | Bias bar | Client-side: hides films a selected voter has already rated (intersection when multiple active) |
 | MN / WL / Voter / Director / Year / Search | Filters bar | Top | Client-side display filters |
@@ -195,7 +196,7 @@ predictedScore = confidence * actualFairBoosted + (1 - confidence) * prior
 - **Rankings refetch on navigate**: `Rankings.jsx` uses `useLocation().key` as a `useEffect` dependency — React Router changes `.key` on every navigation, so rankings always reload when switching to the Rankings tab.
 - **`stdDev`**: computed in `enrichMovie()` as `sqrt(Σ(score - mean)² / n)`, rounded to 2dp. `null` when `n < 2`. Used by Controversy page and "Most Controversial" sort. Color thresholds: `<1` → green (consensus), `1–2` → gold, `≥2` → red (polarising).
 - **Controversy page** (`/controversy`): fetches all rated films client-side, filters to `voterCount ≥ 2 && stdDev != null`, sorts by `stdDev DESC`. Per-voter score pills colored by individual score.
-- **Stats page** (`/stats`): fetches all 834 films once, computes everything client-side via `useMemo`. Per-voter cards show rated count, mean score, top3 count, fav director/decade, score distribution bar chart. Head-to-head section compares two voters across shared films sorted by absolute score difference.
+- **Stats page** (`/stats`): fetches all 834 films once, computes everything client-side via `useMemo`. Per-voter cards show rated count, mean score, top-10 pick count, fav director/decade, score distribution bar chart; clicking a card opens a drill-down modal (top/bottom films, director/decade breakdown). An "Everyone's Top 10" section lists each voter's ranked picks. (Voter head-to-head moved to the `/compare` page.)
 - **Watchlist voting**: `watchlist_votes` table tracks per-voter votes. `enrichMovie()` adds `watchlistVotes: string[]` to every movie. `POST /api/movies/:id/watchlist-vote` toggles the session voter's vote (insert or delete). Watchlist page shows a "Most Wanted" ranking panel (films with ≥1 vote, sorted by vote count desc, tiebreak: voterCount desc) above the card grid. Vote button on each card reflects the logged-in voter's vote status. The `voter` prop is passed from `App.jsx` (sourced from session via `api.me()`).
 - **`/api/movies/:id/watchlist-vote`** must be declared before `/:id` in Express (same rule as `/directors`).
 

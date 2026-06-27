@@ -5,6 +5,9 @@ import './MovieModal.css';
 const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
 const GROUP_SIZE = 5;
 const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
+const RANKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const rankBonus = r => (r >= 1 && r <= 10 ? (11 - r) / 10 : 0);
+const rankLabel = r => `${MEDALS[r] ? MEDALS[r] + ' ' : ''}#${r}  (+${rankBonus(r).toFixed(1)})`;
 
 function fmt(v) {
   if (v == null) return '–';
@@ -81,9 +84,6 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
     setRatings(r => ({ ...r, [voter]: Math.min(10, Math.max(0, n)) }));
   }
 
-  function toggleTop3(voter, rank) {
-    setTop3(t => ({ ...t, [voter]: t[voter] === rank ? null : rank }));
-  }
 
   async function handleSave() {
     setSaving(true);
@@ -128,9 +128,8 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
   );
 
   const { fairBoosted, fairScore, voterCount } = movie;
-  const RANK_BONUS = { 1: 1.0, 2: 0.6, 3: 0.4 };
   const tokenBoost = Math.round(
-    Object.values(top3).reduce((acc, rank) => acc + (RANK_BONUS[rank] || 0), 0) * 100
+    Object.values(top3).reduce((acc, rank) => acc + rankBonus(rank), 0) * 100
   ) / 100;
 
   return (
@@ -237,27 +236,25 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
             })}
           </div>
 
-          {/* Top 3 */}
-          <div className="modal-section-label section-label" style={{ marginTop: 20 }}>Top 3 Picks</div>
+          {/* Top 10 */}
+          <div className="modal-section-label section-label" style={{ marginTop: 20 }}>Top 10 Picks</div>
           <div className="top3-grid">
             {VOTERS.map(v => {
               const canEdit = isAdmin || v === currentVoter;
               return (
                 <div key={v} className={`top3-voter-row${!canEdit ? ' rating-locked' : ''}`}>
                   <span className="top3-voter-name">{v}</span>
-                  <div className="top3-btns">
-                    {[1, 2, 3].map(rank => (
-                      <button
-                        key={rank}
-                        className={`top3-btn${top3[v] === rank ? ' active' : ''}`}
-                        onClick={() => canEdit && toggleTop3(v, rank)}
-                        title={`${MEDALS[rank]} #${rank}`}
-                        style={!canEdit ? { opacity: 0.4, cursor: 'default' } : {}}
-                      >
-                        {MEDALS[rank]}
-                      </button>
+                  <select
+                    className="select select-sm top3-select"
+                    value={top3[v] ?? ''}
+                    disabled={!canEdit}
+                    onChange={e => setTop3(t => ({ ...t, [v]: e.target.value ? parseInt(e.target.value) : null }))}
+                  >
+                    <option value="">—</option>
+                    {RANKS.map(rank => (
+                      <option key={rank} value={rank}>{rankLabel(rank)}</option>
                     ))}
-                  </div>
+                  </select>
                 </div>
               );
             })}
