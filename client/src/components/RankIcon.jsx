@@ -5,5 +5,5 @@ export default function RankIcon({ rank }) {
   if (!rank) return null;
   return MEDALS[rank]
     ? <span className="rank-icon">{MEDALS[rank]}</span>
-    : <span className="rank-icon rank-badge">{rank}</span>;
+    : <span className="rank-icon rank-badge">#{rank}</span>;
 }

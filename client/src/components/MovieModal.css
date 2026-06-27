@@ -97,7 +97,7 @@
   flex: 1;
 }
 
-.top3-select { width: 150px; flex-shrink: 0; }
+.select.top3-select { width: 130px; flex: 0 0 130px; }
 
 /* ── Flags ── */
 .flags-row {

@@ -7,7 +7,7 @@ const GROUP_SIZE = 5;
 const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
 const RANKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const rankBonus = r => (r >= 1 && r <= 10 ? (11 - r) / 10 : 0);
-const rankLabel = r => `${MEDALS[r] ? MEDALS[r] + ' ' : ''}#${r}  (+${rankBonus(r).toFixed(1)})`;
+const rankLabel = r => `${MEDALS[r] ? MEDALS[r] + ' ' : ''}#${r}`;
 
 function fmt(v) {
   if (v == null) return '–';
