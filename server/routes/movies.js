@@ -227,6 +227,7 @@ router.patch('/:id', (req, res) => {
       ON CONFLICT(movie_id, voter) DO UPDATE SET rank = excluded.rank
     `);
     const deleteTop3 = db.prepare('DELETE FROM top3 WHERE movie_id = ? AND voter = ?');
+    const touched = new Set();
 
     for (const voter of VOTERS) {
       if (voter in top3) {
@@ -237,8 +238,17 @@ router.patch('/:id', (req, res) => {
         } else if (rankNum >= 1 && rankNum <= 10) {
           upsertTop3.run(id, voter, rankNum);
         }
+        touched.add(voter);
       }
     }
+
+    // Re-normalise each touched voter's picks to contiguous ranks 1..N — closes the gap a removal leaves.
+    const renumber = db.transaction(v => {
+      const rows = db.prepare('SELECT id FROM top3 WHERE voter = ? ORDER BY rank, id').all(v);
+      const upd = db.prepare('UPDATE top3 SET rank = ? WHERE id = ?');
+      rows.forEach((r, i) => upd.run(i + 1, r.id));
+    });
+    for (const v of touched) renumber(v);
   }
 
   res.json(enrichMovie(db.prepare('SELECT * FROM movies WHERE id = ?').get(id)));
