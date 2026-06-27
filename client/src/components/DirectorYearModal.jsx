@@ -16,23 +16,26 @@ function fmt(v) {
   return v.toFixed(2).replace('.', ',');
 }
 
-export default function DirectorYearModal({ type, value, scoreKey = 'fairBoosted', mnOnly = false, onClose }) {
+export default function DirectorYearModal({ type, value, scoreKey = 'fairBoosted', mnOnly = false, voter = null, onClose }) {
   const [films, setFilms]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [movieId, setMovieId] = useState(null);
 
   useEffect(() => {
-    const param = type === 'director' ? { director: value } : { year: value };
+    const param =
+      type === 'director' ? { director: value }
+      : type === 'decade' ? { yearMin: value, yearMax: value + 9 }
+      : { year: value };
     if (mnOnly) param.mn = '1';
     api.getMovies(param)
       .then(data => {
-        const sorted = [...data]
-          .filter(f => f.voterCount >= 2)
-          .sort((a, b) => (b[scoreKey] ?? -1) - (a[scoreKey] ?? -1));
+        const sorted = voter
+          ? [...data].filter(f => f.ratings?.[voter] != null).sort((a, b) => b.ratings[voter] - a.ratings[voter])
+          : [...data].filter(f => f.voterCount >= 2).sort((a, b) => (b[scoreKey] ?? -1) - (a[scoreKey] ?? -1));
         setFilms(sorted);
       })
       .finally(() => setLoading(false));
-  }, [type, value, scoreKey, mnOnly]);
+  }, [type, value, scoreKey, mnOnly, voter]);
 
   function handleSaved(updated) {
     setFilms(fs => fs.map(f => f.id === updated.id ? updated : f));
@@ -42,7 +45,7 @@ export default function DirectorYearModal({ type, value, scoreKey = 'fairBoosted
   }
 
   const meanScore = films.length
-    ? films.reduce((a, f) => a + (f[scoreKey] ?? 0), 0) / films.length
+    ? films.reduce((a, f) => a + (voter ? f.ratings[voter] : (f[scoreKey] ?? 0)), 0) / films.length
     : null;
 
   return (
@@ -50,12 +53,12 @@ export default function DirectorYearModal({ type, value, scoreKey = 'fairBoosted
       <div className="modal dy-modal">
         <div className="modal-header">
           <div className="modal-header-text">
-            <div className="modal-title">{value}</div>
+            <div className="modal-title">{type === 'decade' ? `${value}s` : value}</div>
             <div className="modal-sub">
-              {type === 'director' ? 'Director' : 'Year'}
+              {type === 'director' ? 'Director' : type === 'decade' ? 'Decade' : 'Year'}
               {mnOnly ? ' · MN only' : ''}
               {' · '}
-              {scoreKey === 'boostedScore' ? 'Group score' : 'Fair score'}
+              {voter ? `${voter}'s score` : scoreKey === 'boostedScore' ? 'Group score' : 'Fair score'}
               {' · '}
               {films.length} film{films.length !== 1 ? 's' : ''}
             </div>

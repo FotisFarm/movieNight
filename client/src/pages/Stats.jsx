@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
+import DirectorYearModal from '../components/DirectorYearModal';
 import { useToast } from '../hooks/useToast.jsx';
 import './Stats.css';
 
@@ -35,9 +36,10 @@ function computeStats(movies) {
       if (!dirMap[m.director]) dirMap[m.director] = [];
       dirMap[m.director].push(m.ratings[voter]);
     }
-    const favDirector = Object.entries(dirMap)
-      .filter(([, scores]) => scores.length >= 2)
-      .sort((a, b) => avg(b[1]) - avg(a[1]))[0]?.[0] ?? null;
+    const dirBreakdown = Object.entries(dirMap)
+      .map(([name, scores]) => ({ name, count: scores.length, mean: avg(scores) }))
+      .sort((a, b) => b.mean - a.mean || b.count - a.count);
+    const favDirector = dirBreakdown.find(d => d.count >= 2)?.name ?? null;
 
     // fav decade (min 2 rated, highest mean)
     const decMap = {};
@@ -48,9 +50,10 @@ function computeStats(movies) {
       if (!decMap[dec]) decMap[dec] = [];
       decMap[dec].push(m.ratings[voter]);
     }
-    const favDecade = Object.entries(decMap)
-      .filter(([, scores]) => scores.length >= 2)
-      .sort((a, b) => avg(b[1]) - avg(a[1]))[0]?.[0] ?? null;
+    const decBreakdown = Object.entries(decMap)
+      .map(([dec, scores]) => ({ dec: parseInt(dec), count: scores.length, mean: avg(scores) }))
+      .sort((a, b) => b.mean - a.mean || b.count - a.count);
+    const favDecade = decBreakdown.find(d => d.count >= 2)?.dec ?? null;
 
     // score distribution — bucket by whole number (floor)
     const dist = {};
@@ -59,7 +62,12 @@ function computeStats(movies) {
       dist[bucket] = (dist[bucket] || 0) + 1;
     }
 
-    return { voter, ratedCount: myFilms.length, mean, top3Count, favDirector, favDecade, dist };
+    // top & bottom films by this voter's own score
+    const ranked = [...myFilms].sort((a, b) => b.ratings[voter] - a.ratings[voter]);
+    const topFilms = ranked.slice(0, 10);
+    const bottomFilms = ranked.slice(-10).reverse();
+
+    return { voter, ratedCount: myFilms.length, mean, top3Count, favDirector, favDecade, dist, dirBreakdown, decBreakdown, topFilms, bottomFilms };
   });
 }
 
@@ -69,6 +77,8 @@ export default function Stats() {
   const [movies, setMovies]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalId, setModalId] = useState(null);
+  const [selectedVoter, setSelectedVoter] = useState(null);
+  const [dyTarget, setDyTarget] = useState(null); // { type, value } for director/decade modal
   const [h2hA, setH2hA]      = useState(VOTERS[0]);
   const [h2hB, setH2hB]      = useState(VOTERS[1]);
   const { toast, Toast }      = useToast();
@@ -110,7 +120,11 @@ export default function Stats() {
         <h2 className="stats-heading">Voter Overview</h2>
         <div className="stats-voter-cards">
           {stats.map(s => (
-            <div key={s.voter} className="stats-voter-card">
+            <div
+              key={s.voter}
+              className={`stats-voter-card${selectedVoter === s.voter ? ' active' : ''}`}
+              onClick={() => setSelectedVoter(v => v === s.voter ? null : s.voter)}
+            >
               <div className="stats-voter-name">{s.voter}</div>
 
               <div className="stats-kv-grid">
@@ -166,6 +180,7 @@ export default function Stats() {
             </div>
           ))}
         </div>
+
       </section>
 
       {/* ── Head-to-Head ── */}
@@ -222,6 +237,75 @@ export default function Stats() {
           </div>
         )}
       </section>
+
+      {/* ── Voter breakdown modal ── */}
+      {selectedVoter && (() => {
+        const sel = stats.find(s => s.voter === selectedVoter);
+        if (!sel) return null;
+        const filmRow = m => (
+          <div key={m.id} className="vd-film-row" onClick={() => setModalId(m.id)}>
+            <span className="vd-film-title">{m.title}</span>
+            <span className="vd-film-meta">{m.year || ''}</span>
+            <span className={`vd-film-score ${scoreClass(m.ratings[selectedVoter])}`}>
+              {Number.isInteger(m.ratings[selectedVoter]) ? m.ratings[selectedVoter] : m.ratings[selectedVoter].toFixed(1)}
+            </span>
+          </div>
+        );
+        return (
+          <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setSelectedVoter(null)}>
+            <div className="modal vd-modal">
+              <div className="modal-header">
+                <div className="modal-header-text">
+                  <div className="modal-title">{selectedVoter}</div>
+                  <div className="modal-sub">{sel.ratedCount} films rated · mean {fmt(sel.mean)}</div>
+                </div>
+                <button className="modal-close" onClick={() => setSelectedVoter(null)}>✕</button>
+              </div>
+              <div className="vd-body">
+                <div className="vd-grid">
+                  <div className="vd-col">
+                    <div className="vd-col-title">Top rated</div>
+                    {sel.topFilms.map(filmRow)}
+                  </div>
+                  <div className="vd-col">
+                    <div className="vd-col-title">Lowest rated</div>
+                    {sel.bottomFilms.map(filmRow)}
+                  </div>
+                  <div className="vd-col">
+                    <div className="vd-col-title">Directors ({sel.dirBreakdown.length})</div>
+                    {sel.dirBreakdown.map(d => (
+                      <div key={d.name} className="vd-bd-row vd-clickable" onClick={() => setDyTarget({ type: 'director', value: d.name })}>
+                        <span className="vd-bd-name">{d.name}</span>
+                        <span className="vd-bd-count">{d.count}</span>
+                        <span className={`vd-bd-mean ${scoreClass(d.mean)}`}>{fmt(d.mean, 1)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="vd-col">
+                    <div className="vd-col-title">Decades</div>
+                    {sel.decBreakdown.map(d => (
+                      <div key={d.dec} className="vd-bd-row vd-clickable" onClick={() => setDyTarget({ type: 'decade', value: d.dec })}>
+                        <span className="vd-bd-name">{d.dec}s</span>
+                        <span className="vd-bd-count">{d.count}</span>
+                        <span className={`vd-bd-mean ${scoreClass(d.mean)}`}>{fmt(d.mean, 1)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {dyTarget && (
+        <DirectorYearModal
+          type={dyTarget.type}
+          value={dyTarget.value}
+          voter={selectedVoter}
+          onClose={() => setDyTarget(null)}
+        />
+      )}
 
       {modalId && (
         <MovieModal

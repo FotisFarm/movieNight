@@ -19,7 +19,40 @@
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius-lg); padding: 18px;
   display: flex; flex-direction: column; gap: 14px;
+  cursor: pointer; transition: border-color .15s;
 }
+.stats-voter-card:hover { border-color: var(--accent); }
+.stats-voter-card.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+/* ── Voter drill-down modal ── */
+.vd-modal { max-width: 920px; width: 92%; }
+.vd-body { padding: 18px; overflow-y: auto; }
+.vd-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;
+}
+.vd-col { display: flex; flex-direction: column; gap: 2px; }
+.vd-col-title {
+  font-size: 11px; color: var(--text2); text-transform: uppercase;
+  letter-spacing: .04em; margin-bottom: 6px;
+}
+.vd-film-row {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 4px 6px; border-radius: var(--radius); cursor: pointer;
+}
+.vd-film-row:hover { background: var(--bg); }
+.vd-film-title { flex: 1; font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vd-film-meta { font-size: 11px; color: var(--text3); }
+.vd-film-score { font-size: 13px; font-weight: 700; min-width: 28px; text-align: right; }
+.vd-bd-row { display: flex; align-items: baseline; gap: 8px; padding: 3px 6px; border-radius: var(--radius); }
+.vd-clickable { cursor: pointer; }
+.vd-clickable:hover { background: var(--bg); }
+.vd-clickable:hover .vd-bd-name { color: var(--accent); }
+.vd-bd-name { flex: 1; font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vd-bd-count { font-size: 11px; color: var(--text3); }
+.vd-bd-mean { font-size: 13px; font-weight: 700; min-width: 28px; text-align: right; }
+.vd-film-score.score-high, .vd-bd-mean.score-high { color: var(--green); }
+.vd-film-score.score-mid,  .vd-bd-mean.score-mid  { color: var(--gold); }
+.vd-film-score.score-low,  .vd-bd-mean.score-low  { color: var(--red); }
 
 .stats-voter-name {
   font-size: 16px; font-weight: 700; color: var(--text);

@@ -68,7 +68,7 @@ function enrichMovie(movie) {
 
 // GET /api/movies
 router.get('/', (req, res) => {
-  const { search, director, year, voter, mn, watchlist, rated } = req.query;
+  const { search, director, year, yearMin, yearMax, voter, voters, mn, watchlist, rated } = req.query;
 
   let query = 'SELECT * FROM movies WHERE 1=1';
   const params = [];
@@ -76,11 +76,18 @@ router.get('/', (req, res) => {
 
   if (director) { query += ' AND director = ?'; params.push(director); }
   if (year)     { query += ' AND year = ?';     params.push(year); }
+  if (yearMin)  { query += ' AND CAST(year AS INTEGER) >= ?'; params.push(parseInt(yearMin)); }
+  if (yearMax)  { query += ' AND CAST(year AS INTEGER) <= ?'; params.push(parseInt(yearMax)); }
   if (mn === '1')        { query += ' AND mn = 1'; }
   if (watchlist === '1') { query += ' AND watchlist = 1'; }
-  if (voter) {
-    query += ' AND EXISTS (SELECT 1 FROM ratings WHERE movie_id = movies.id AND voter = ?)';
-    params.push(voter);
+
+  // Multi-voter AND filter: film must be rated by every listed voter
+  const voterList = (voters ? voters.split(',') : voter ? [voter] : []).map(v => v.trim()).filter(Boolean);
+  if (voterList.length) {
+    for (const v of voterList) {
+      query += ' AND EXISTS (SELECT 1 FROM ratings WHERE movie_id = movies.id AND voter = ?)';
+      params.push(v);
+    }
   } else if (rated === '1') {
     query += ' AND EXISTS (SELECT 1 FROM ratings WHERE movie_id = movies.id)';
   }

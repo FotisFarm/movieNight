@@ -8,21 +8,23 @@ import './Films.css';
 
 const PAGE_SIZE = 60;
 
+const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
+
 const DEFAULTS = {
   search: '',
   sortBy: 'alpha',
+  sortVoter: 'Φώτης',
   filterMn: false,
   filterRated: false,
   filterWl: false,
-  filterVoter: '',
-  filterDir: '',
-  filterYear: '',
+  filterVoters: [],
+  filterYearMin: '',
+  filterYearMax: '',
 };
 
 export default function Films() {
   const [movies, setMovies]           = useState([]);
   const [allMovies, setAllMovies]     = useState([]);
-  const [directors, setDirectors]     = useState([]);
   const [loading, setLoading]         = useState(true);
   const [page, setPage]               = useState(1);
   const [selectedId, setSelectedId]   = useState(null);
@@ -31,22 +33,26 @@ export default function Films() {
   const [scoreMode, setScoreMode]     = useState('fair');
   const { toast, Toast }              = useToast();
 
-  const [search, setSearch]           = useState(DEFAULTS.search);
-  const [sortBy, setSortBy]           = useState(DEFAULTS.sortBy);
-  const [filterMn, setFilterMn]       = useState(DEFAULTS.filterMn);
-  const [filterRated, setFilterRated] = useState(DEFAULTS.filterRated);
-  const [filterWl, setFilterWl]       = useState(DEFAULTS.filterWl);
-  const [filterVoter, setFilterVoter] = useState(DEFAULTS.filterVoter);
-  const [filterDir, setFilterDir]     = useState(DEFAULTS.filterDir);
-  const [filterYear, setFilterYear]   = useState(DEFAULTS.filterYear);
+  const [search, setSearch]               = useState(DEFAULTS.search);
+  const [sortBy, setSortBy]               = useState(DEFAULTS.sortBy);
+  const [sortVoter, setSortVoter]         = useState(DEFAULTS.sortVoter);
+  const [filterMn, setFilterMn]           = useState(DEFAULTS.filterMn);
+  const [filterRated, setFilterRated]     = useState(DEFAULTS.filterRated);
+  const [filterWl, setFilterWl]           = useState(DEFAULTS.filterWl);
+  const [filterVoters, setFilterVoters]   = useState(DEFAULTS.filterVoters);
+  const [filterYearMin, setFilterYearMin] = useState(DEFAULTS.filterYearMin);
+  const [filterYearMax, setFilterYearMax] = useState(DEFAULTS.filterYearMax);
 
   const searchTimer = useRef(null);
 
-  const filtersActive = search || filterMn || filterRated || filterWl || filterVoter || filterDir || filterYear;
+  const filtersActive = search || filterMn || filterRated || filterWl || filterVoters.length || filterYearMin || filterYearMax;
 
-  const setters = { search: setSearch, sortBy: setSortBy, filterMn: setFilterMn, filterRated: setFilterRated, filterWl: setFilterWl, filterVoter: setFilterVoter, filterDir: setFilterDir, filterYear: setFilterYear };
+  const setters = { search: setSearch, sortBy: setSortBy, sortVoter: setSortVoter, filterMn: setFilterMn, filterRated: setFilterRated, filterWl: setFilterWl, filterVoters: setFilterVoters, filterYearMin: setFilterYearMin, filterYearMax: setFilterYearMax };
   function resetFilters() {
     Object.entries(DEFAULTS).forEach(([k, v]) => setters[k](v));
+  }
+  function toggleVoter(v) {
+    setFilterVoters(vs => vs.includes(v) ? vs.filter(x => x !== v) : [...vs, v]);
   }
 
   const fetchMovies = useCallback(async (params) => {
@@ -67,7 +73,6 @@ export default function Films() {
   }
 
   useEffect(() => {
-    api.getDirectors().then(setDirectors).catch(() => {});
     fetchMovies({});
     refreshAllMovies();
   }, [fetchMovies]);
@@ -79,12 +84,12 @@ export default function Films() {
         mn:        filterMn    ? '1' : undefined,
         watchlist: filterWl    ? '1' : undefined,
         rated:     filterRated ? '1' : undefined,
-        voter:     filterVoter || undefined,
-        director:  filterDir   || undefined,
-        year:      filterYear  || undefined,
+        voters:    filterVoters.length ? filterVoters.join(',') : undefined,
+        yearMin:   filterYearMin || undefined,
+        yearMax:   filterYearMax || undefined,
       });
     }, 250);
-  }, [search, filterMn, filterWl, filterRated, filterVoter, filterDir, filterYear, fetchMovies]);
+  }, [search, filterMn, filterWl, filterRated, filterVoters, filterYearMin, filterYearMax, fetchMovies]);
 
   const rankMap = useMemo(() => {
     const rated   = allMovies.filter(m => m.voterCount >= 2);
@@ -136,6 +141,8 @@ export default function Films() {
       case 'group-asc':  return (a.boostedScore - b.boostedScore) || tiebreakScore(b, a);
       case 'added-desc':   return b.id - a.id;
       case 'added-asc':    return a.id - b.id;
+      case 'voter-desc':   return (b.ratings?.[sortVoter] ?? -1) - (a.ratings?.[sortVoter] ?? -1);
+      case 'voter-asc':    return (a.ratings?.[sortVoter] ?? 11) - (b.ratings?.[sortVoter] ?? 11);
       case 'controversial': return (b.stdDev ?? -1) - (a.stdDev ?? -1);
       default: return 0;
     }
@@ -216,11 +223,22 @@ export default function Films() {
               <option value="score-asc">Fair Score ↑</option>
               <option value="group-desc">Group Score ↓</option>
               <option value="group-asc">Group Score ↑</option>
+              <option value="voter-desc">Voter Rating ↓</option>
+              <option value="voter-asc">Voter Rating ↑</option>
               <option value="controversial">Most Controversial</option>
               <option value="added-desc">Recently Added</option>
               <option value="added-asc">First Added</option>
             </select>
           </label>
+
+          {(sortBy === 'voter-desc' || sortBy === 'voter-asc') && (
+            <label className="filter-item">
+              by
+              <select className="select select-sm" value={sortVoter} onChange={e => setSortVoter(e.target.value)}>
+                {VOTERS.map(v => <option key={v}>{v}</option>)}
+              </select>
+            </label>
+          )}
 
           <div className="filter-sep" />
 
@@ -239,28 +257,30 @@ export default function Films() {
 
           <div className="filter-sep" />
 
-          <label className="filter-item">
-            Voter
-            <select className="select select-sm" value={filterVoter} onChange={e => setFilterVoter(e.target.value)}>
-              <option value="">All</option>
-              {['Μητσέας','Παντελής','Στέλιας','Φώτης','Λεόντιος'].map(v => (
-                <option key={v}>{v}</option>
+          <div className="filter-item">
+            Voted
+            <div className="filter-voters">
+              {VOTERS.map(v => (
+                <button
+                  key={v}
+                  type="button"
+                  className={`voter-pill${filterVoters.includes(v) ? ' active' : ''}`}
+                  onClick={() => toggleVoter(v)}
+                  title={`Films ${v} has rated`}
+                >
+                  {v}
+                </button>
               ))}
-            </select>
-          </label>
-
-          <label className="filter-item">
-            Director
-            <select className="select select-sm" value={filterDir} onChange={e => setFilterDir(e.target.value)}>
-              <option value="">All</option>
-              {directors.map(d => <option key={d}>{d}</option>)}
-            </select>
-          </label>
+            </div>
+          </div>
 
           <label className="filter-item">
             Year
-            <input className="input input-sm" style={{ width: 74 }} placeholder="1972"
-              value={filterYear} onChange={e => setFilterYear(e.target.value)} />
+            <input className="input input-sm" style={{ width: 62 }} placeholder="From"
+              value={filterYearMin} onChange={e => setFilterYearMin(e.target.value)} />
+            <span style={{ color: 'var(--text3)' }}>–</span>
+            <input className="input input-sm" style={{ width: 62 }} placeholder="To"
+              value={filterYearMax} onChange={e => setFilterYearMax(e.target.value)} />
           </label>
 
           <div className="filter-sep" />

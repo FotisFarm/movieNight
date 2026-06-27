@@ -115,6 +115,33 @@
   accent-color: var(--green);
 }
 
+.filter-voters {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.voter-pill {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.voter-pill:hover {
+  border-color: var(--accent);
+}
+
+.voter-pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 .filter-sep {
   width: 1px;
   height: 18px;
