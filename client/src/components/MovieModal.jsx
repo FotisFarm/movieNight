@@ -5,7 +5,6 @@ import './MovieModal.css';
 const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
 const GROUP_SIZE = 5;
 const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
-const RANKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const rankBonus = r => (r >= 1 && r <= 10 ? (11 - r) / 10 : 0);
 const rankLabel = r => `${MEDALS[r] ? MEDALS[r] + ' ' : ''}#${r}`;
 
@@ -43,13 +42,18 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
 
   const [ratings,  setRatings]  = useState({});  // voter -> number | null
   const [comments, setComments] = useState({});  // voter -> string
-  const [top3,     setTop3]     = useState({});  // voter -> 1|2|3|null
+  const [top3,     setTop3]     = useState({});  // voter -> rank | null
+  const [top10Counts, setTop10Counts] = useState({});  // voter -> total picks
   const [mn,       setMn]       = useState(false);
   const [watchlist, setWatchlist] = useState(false);
   const [editing,      setEditing]      = useState(false);
   const [editTitle,    setEditTitle]    = useState('');
   const [editDirector, setEditDirector] = useState('');
   const [editYear,     setEditYear]     = useState('');
+
+  useEffect(() => {
+    api.getTop10Counts().then(setTop10Counts).catch(() => {});
+  }, [movieId]);
 
   useEffect(() => {
     if (!movieId) return;
@@ -241,17 +245,23 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
           <div className="top3-grid">
             {VOTERS.map(v => {
               const canEdit = isAdmin || v === currentVoter;
+              const current = top3[v] ?? null;
+              // Append/remove only — reordering happens via drag-and-drop on the Stats page.
+              // If this film is already a pick, the only option besides "remove" is its current rank.
+              // Otherwise it can only be added to the next free slot (count + 1).
+              const nextSlot = (top10Counts[v] ?? 0) + 1;
+              const opts = current != null ? [current] : (nextSlot <= 10 ? [nextSlot] : []);
               return (
                 <div key={v} className={`top3-voter-row${!canEdit ? ' rating-locked' : ''}`}>
                   <span className="top3-voter-name">{v}</span>
                   <select
                     className="select select-sm top3-select"
-                    value={top3[v] ?? ''}
+                    value={current ?? ''}
                     disabled={!canEdit}
                     onChange={e => setTop3(t => ({ ...t, [v]: e.target.value ? parseInt(e.target.value) : null }))}
                   >
                     <option value="">—</option>
-                    {RANKS.map(rank => (
+                    {opts.map(rank => (
                       <option key={rank} value={rank}>{rankLabel(rank)}</option>
                     ))}
                   </select>

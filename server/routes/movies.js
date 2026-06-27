@@ -124,6 +124,15 @@ router.get('/directors', (_req, res) => {
   res.json(rows.map(r => r.director));
 });
 
+// GET /api/movies/top10-counts  — { voter: number of top picks }. Must be before /:id.
+router.get('/top10-counts', (_req, res) => {
+  const rows = db.prepare('SELECT voter, COUNT(*) AS n FROM top3 GROUP BY voter').all();
+  const counts = {};
+  for (const v of VOTERS) counts[v] = 0;
+  for (const r of rows) counts[r.voter] = r.n;
+  res.json(counts);
+});
+
 // PUT /api/movies/top10  — rewrite the session voter's own top picks (ranks 1..N) in order.
 // Must be before /:id. Permission is implicit: it only ever touches req.session.voter's rows.
 router.put('/top10', (req, res) => {

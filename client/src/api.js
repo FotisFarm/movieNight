@@ -28,6 +28,7 @@ export const api = {
   deleteMovie: (id) => request(`/movies/${id}`, { method: 'DELETE' }),
   getDirectors: () => request('/movies/directors'),
   reorderTop10: (order, voter) => request('/movies/top10', { method: 'PUT', body: voter ? { order, voter } : { order } }),
+  getTop10Counts: () => request('/movies/top10-counts'),
   getRankings: () => request('/rankings'),
   getRecommendations: (weights = {}) => {
     const qs = new URLSearchParams(Object.fromEntries(Object.entries(weights).filter(([,v]) => v != null))).toString();
