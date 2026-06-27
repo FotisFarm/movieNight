@@ -129,7 +129,8 @@
      minmax(0,1fr) (not plain 1fr) lets the column shrink below content width so rows ellipsis-truncate */
   .cmp-cols { grid-template-columns: minmax(0, 1fr); }
   .cmp-detail-row { flex-direction: column; }
-  .cmp-detail-row > .cmp-details { width: 100%; }
+  /* reset the horizontal flex:1 1 0 — in a column its basis:0 collapses height */
+  .cmp-detail-row > .cmp-details { flex: none; width: 100%; }
   .cmp-col { padding: 12px; }
   .cmp-pickers { gap: 8px; }
 }
