@@ -125,8 +125,9 @@
 .cmp-mini-sep { color: var(--text3); font-size: 11px; }
 
 @media (max-width: 760px) {
-  /* panels stack AND their side-by-side lists stack together — no overflow window */
-  .cmp-cols { grid-template-columns: 1fr; }
+  /* panels stack AND their side-by-side lists stack together — no overflow window.
+     minmax(0,1fr) (not plain 1fr) lets the column shrink below content width so rows ellipsis-truncate */
+  .cmp-cols { grid-template-columns: minmax(0, 1fr); }
   .cmp-detail-row { flex-direction: column; }
   .cmp-detail-row > .cmp-details { width: 100%; }
   .cmp-col { padding: 12px; }
