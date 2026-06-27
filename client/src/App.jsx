@@ -36,7 +36,7 @@ export default function App() {
           <Route path="/watchlist" element={<Watchlist voter={voter} />} />
           <Route path="/recommendations" element={<Recommendations />} />
           <Route path="/controversy" element={<Controversy />} />
-          <Route path="/stats" element={<Stats />} />
+          <Route path="/stats" element={<Stats voter={voter} />} />
           <Route path="/compare" element={<Compare />} />
         </Routes>
       </main>

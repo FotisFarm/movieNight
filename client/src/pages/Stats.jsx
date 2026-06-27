@@ -1,4 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
+import {
+  DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext, verticalListSortingStrategy, useSortable, arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
 import DirectorYearModal from '../components/DirectorYearModal';
@@ -77,7 +84,31 @@ function computeStats(movies) {
 
 function avg(arr) { return arr.reduce((a, b) => a + b, 0) / arr.length; }
 
-export default function Stats() {
+function Top10StaticRow({ m, voter, onOpen }) {
+  return (
+    <div className="top10-row" onClick={() => onOpen(m.id)}>
+      <span className="top10-rank"><RankIcon rank={m.top3[voter]} /></span>
+      <span className="top10-title">{m.title}</span>
+      <span className="top10-year">{m.year || ''}</span>
+    </div>
+  );
+}
+
+function Top10SortableRow({ m, voter, onOpen }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: m.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
+  return (
+    <div ref={setNodeRef} style={style} className="top10-row" onClick={() => !isDragging && onOpen(m.id)}>
+      <span className="top10-handle" {...attributes} {...listeners} onClick={e => e.stopPropagation()}>⠿</span>
+      <span className="top10-rank"><RankIcon rank={m.top3[voter]} /></span>
+      <span className="top10-title">{m.title}</span>
+      <span className="top10-year">{m.year || ''}</span>
+    </div>
+  );
+}
+
+export default function Stats({ voter }) {
   const [movies, setMovies]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalId, setModalId] = useState(null);
@@ -85,9 +116,28 @@ export default function Stats() {
   const [dyTarget, setDyTarget] = useState(null); // { type, value } for director/decade modal
   const { toast, Toast }      = useToast();
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor,   { activationConstraint: { delay: 150, tolerance: 5 } }),
+  );
+
   useEffect(() => {
     api.getMovies({}).then(setMovies).finally(() => setLoading(false));
   }, []);
+
+  // Reorder the logged-in voter's own Top 10 (optimistic), then persist ranks 1..N
+  function handleTop10DragEnd(picks, { active, over }) {
+    if (!over || active.id === over.id) return;
+    const ids = picks.map(p => p.id);
+    const from = ids.indexOf(active.id), to = ids.indexOf(over.id);
+    if (from === -1 || to === -1) return;
+    const newOrder = arrayMove(ids, from, to);
+    setMovies(ms => ms.map(m => {
+      const idx = newOrder.indexOf(m.id);
+      return idx === -1 ? m : { ...m, top3: { ...m.top3, [voter]: idx + 1 } };
+    }));
+    api.reorderTop10(newOrder).catch(() => toast('Could not save order'));
+  }
 
   function handleSaved(updated) {
     setMovies(ms => ms.map(m => m.id === updated.id ? { ...m, ...updated } : m));
@@ -174,22 +224,33 @@ export default function Stats() {
       <section className="stats-section">
         <h2 className="stats-heading">Everyone's Top 10</h2>
         <div className="top10-grid">
-          {stats.map(s => (
-            <div key={s.voter} className="top10-card">
-              <div className="top10-name">{s.voter}</div>
-              {s.topPicks.length === 0 ? (
-                <div className="top10-empty">No picks yet</div>
-              ) : (
-                s.topPicks.map(m => (
-                  <div key={m.id} className="top10-row" onClick={() => setModalId(m.id)}>
-                    <span className="top10-rank"><RankIcon rank={m.top3[s.voter]} /></span>
-                    <span className="top10-title">{m.title}</span>
-                    <span className="top10-year">{m.year || ''}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          ))}
+          {stats.map(s => {
+            const editable = s.voter === voter && s.topPicks.length > 1;
+            return (
+              <div key={s.voter} className={`top10-card${editable ? ' top10-card-editable' : ''}`}>
+                <div className="top10-name">
+                  {s.voter}
+                  {editable && <span className="top10-hint">drag to reorder</span>}
+                </div>
+                {s.topPicks.length === 0 ? (
+                  <div className="top10-empty">No picks yet</div>
+                ) : editable ? (
+                  <DndContext sensors={sensors} collisionDetection={closestCenter}
+                    onDragEnd={e => handleTop10DragEnd(s.topPicks, e)}>
+                    <SortableContext items={s.topPicks.map(m => m.id)} strategy={verticalListSortingStrategy}>
+                      {s.topPicks.map(m => (
+                        <Top10SortableRow key={m.id} m={m} voter={s.voter} onOpen={setModalId} />
+                      ))}
+                    </SortableContext>
+                  </DndContext>
+                ) : (
+                  s.topPicks.map(m => (
+                    <Top10StaticRow key={m.id} m={m} voter={s.voter} onOpen={setModalId} />
+                  ))
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
 

@@ -110,3 +110,8 @@
 .top10-rank { flex-shrink: 0; width: 20px; text-align: center; }
 .top10-title { flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .top10-year { font-size: 11px; color: var(--text3); flex-shrink: 0; }
+
+.top10-card-editable { border-color: var(--accent); }
+.top10-hint { font-size: 10px; color: var(--text3); font-weight: 400; margin-left: 8px; }
+.top10-handle { flex-shrink: 0; cursor: grab; color: var(--text3); font-size: 13px; touch-action: none; }
+.top10-handle:active { cursor: grabbing; }
