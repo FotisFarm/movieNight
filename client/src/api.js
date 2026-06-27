@@ -27,7 +27,7 @@ export const api = {
   updateMovie: (id, data) => request(`/movies/${id}`, { method: 'PATCH', body: data }),
   deleteMovie: (id) => request(`/movies/${id}`, { method: 'DELETE' }),
   getDirectors: () => request('/movies/directors'),
-  reorderTop10: (order) => request('/movies/top10', { method: 'PUT', body: { order } }),
+  reorderTop10: (order, voter) => request('/movies/top10', { method: 'PUT', body: voter ? { order, voter } : { order } }),
   getRankings: () => request('/rankings'),
   getRecommendations: (weights = {}) => {
     const qs = new URLSearchParams(Object.fromEntries(Object.entries(weights).filter(([,v]) => v != null))).toString();

@@ -127,9 +127,12 @@ router.get('/directors', (_req, res) => {
 // PUT /api/movies/top10  — rewrite the session voter's own top picks (ranks 1..N) in order.
 // Must be before /:id. Permission is implicit: it only ever touches req.session.voter's rows.
 router.put('/top10', (req, res) => {
-  const voter = req.session.voter;
+  const sessionVoter = req.session.voter;
+  const isAdmin = sessionVoter === 'mnAdmin';
+  // Admins may target any voter; everyone else can only rewrite their own.
+  const voter = isAdmin && req.body.voter ? req.body.voter : sessionVoter;
   const order = Array.isArray(req.body.order) ? req.body.order : null;
-  if (!voter || !order) return res.status(400).json({ error: 'Bad request' });
+  if (!order || !VOTERS.includes(voter)) return res.status(400).json({ error: 'Bad request' });
   const ids = order.map(Number).filter(Boolean).slice(0, 10);
   const tx = db.transaction(() => {
     db.prepare('DELETE FROM top3 WHERE voter = ?').run(voter);

@@ -125,8 +125,8 @@ export default function Stats({ voter }) {
     api.getMovies({}).then(setMovies).finally(() => setLoading(false));
   }, []);
 
-  // Reorder the logged-in voter's own Top 10 (optimistic), then persist ranks 1..N
-  function handleTop10DragEnd(picks, { active, over }) {
+  // Reorder a voter's Top 10 (optimistic), then persist ranks 1..N
+  function handleTop10DragEnd(cardVoter, picks, { active, over }) {
     if (!over || active.id === over.id) return;
     const ids = picks.map(p => p.id);
     const from = ids.indexOf(active.id), to = ids.indexOf(over.id);
@@ -134,9 +134,9 @@ export default function Stats({ voter }) {
     const newOrder = arrayMove(ids, from, to);
     setMovies(ms => ms.map(m => {
       const idx = newOrder.indexOf(m.id);
-      return idx === -1 ? m : { ...m, top3: { ...m.top3, [voter]: idx + 1 } };
+      return idx === -1 ? m : { ...m, top3: { ...m.top3, [cardVoter]: idx + 1 } };
     }));
-    api.reorderTop10(newOrder).catch(() => toast('Could not save order'));
+    api.reorderTop10(newOrder, cardVoter).catch(() => toast('Could not save order'));
   }
 
   function handleSaved(updated) {
@@ -225,7 +225,7 @@ export default function Stats({ voter }) {
         <h2 className="stats-heading">Everyone's Top 10</h2>
         <div className="top10-grid">
           {stats.map(s => {
-            const editable = s.voter === voter && s.topPicks.length > 1;
+            const editable = (voter === 'mnAdmin' || s.voter === voter) && s.topPicks.length > 1;
             return (
               <div key={s.voter} className={`top10-card${editable ? ' top10-card-editable' : ''}`}>
                 <div className="top10-name">
@@ -236,7 +236,7 @@ export default function Stats({ voter }) {
                   <div className="top10-empty">No picks yet</div>
                 ) : editable ? (
                   <DndContext sensors={sensors} collisionDetection={closestCenter}
-                    onDragEnd={e => handleTop10DragEnd(s.topPicks, e)}>
+                    onDragEnd={e => handleTop10DragEnd(s.voter, s.topPicks, e)}>
                     <SortableContext items={s.topPicks.map(m => m.id)} strategy={verticalListSortingStrategy}>
                       {s.topPicks.map(m => (
                         <Top10SortableRow key={m.id} m={m} voter={s.voter} onOpen={setModalId} />
