@@ -56,7 +56,8 @@ function getAllEnriched(mnOnly = false) {
 }
 
 // GET /api/rankings
-router.get('/', (_req, res) => {
+router.get('/', (req, res) => {
+  const minDirFilms = Math.max(1, parseInt(req.query.minDirFilms) || 2);
   const all = getAllEnriched(false);
   const mn  = all.filter(m => m.mn);
 
@@ -68,7 +69,7 @@ router.get('/', (_req, res) => {
       || (parseInt(a.year) || 9999) - (parseInt(b.year) || 9999)   // tiebreak 3: oldest year wins
     ).slice(0, n);
 
-  const topByField = (arr, groupKey, scoreKey) => {
+  const topByField = (arr, groupKey, scoreKey, { minCount = 1 } = {}) => {
     const map = {};
     for (const m of arr) {
       const k = groupKey === 'year' ? (m.year || '').substring(0, 4) : m[groupKey];
@@ -79,27 +80,30 @@ router.get('/', (_req, res) => {
     }
     return Object.entries(map)
       .map(([k, v]) => ({ [groupKey]: k, avg: Math.round((v.sum / v.count) * 100) / 100, count: v.count }))
+      .filter(e => e.count >= minCount)
       .sort((a, b) => b.avg - a.avg || b.count - a.count)
       .slice(0, 10);
   };
 
+  const dirOpts = { minCount: minDirFilms };
+
   res.json({
     // Fair score (÷voters + tokens)
     fairAll:      top(all, 'fairBoosted'),
-    fairDirsAll:  topByField(all, 'director', 'fairBoosted'),
+    fairDirsAll:  topByField(all, 'director', 'fairBoosted', dirOpts),
     fairYearsAll: topByField(all, 'year', 'fairBoosted'),
 
     fairMn:       top(mn,  'fairBoosted'),
-    fairDirsMn:   topByField(mn,  'director', 'fairBoosted'),
+    fairDirsMn:   topByField(mn,  'director', 'fairBoosted', dirOpts),
     fairYearsMn:  topByField(mn,  'year', 'fairBoosted'),
 
     // Group score (÷5 + tokens)
     groupAll:      top(all, 'boostedScore'),
-    groupDirsAll:  topByField(all, 'director', 'boostedScore'),
+    groupDirsAll:  topByField(all, 'director', 'boostedScore', dirOpts),
     groupYearsAll: topByField(all, 'year', 'boostedScore'),
 
     groupMn:       top(mn,  'boostedScore'),
-    groupDirsMn:   topByField(mn,  'director', 'boostedScore'),
+    groupDirsMn:   topByField(mn,  'director', 'boostedScore', dirOpts),
     groupYearsMn:  topByField(mn,  'year', 'boostedScore'),
   });
 });

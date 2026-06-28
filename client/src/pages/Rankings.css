@@ -4,6 +4,11 @@
   gap: 40px;
 }
 
+.ranking-controls {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .ranking-row-group {
   display: flex;
   flex-direction: column;

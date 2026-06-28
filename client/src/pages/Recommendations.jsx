@@ -59,6 +59,7 @@ export default function Recommendations() {
   const [ew, setEw] = useState(DEFAULT_WEIGHTS.ew);
   const [tw, setTw] = useState(DEFAULT_WEIGHTS.tw);
   const [maxVoters, setMaxVoters] = useState(2);
+  const [minDirFilms, setMinDirFilms] = useState(() => parseInt(localStorage.getItem('mn_minDirFilms')) || 2);
   const [unvotedBy, setUnvotedBy] = useState(new Set());
 
   const weightTimer = useRef(null);
@@ -67,9 +68,14 @@ export default function Recommendations() {
     clearTimeout(weightTimer.current);
     weightTimer.current = setTimeout(() => {
       setLoading(true);
-      api.getRecommendations({ dw, ew, tw, maxVoters }).then(setAllFilms).finally(() => setLoading(false));
+      api.getRecommendations({ dw, ew, tw, maxVoters, minDirFilms }).then(setAllFilms).finally(() => setLoading(false));
     }, 400);
-  }, [dw, ew, tw, maxVoters]);
+  }, [dw, ew, tw, maxVoters, minDirFilms]);
+
+  function changeMinDirFilms(n) {
+    setMinDirFilms(n);
+    localStorage.setItem('mn_minDirFilms', n);
+  }
 
   function toggleUnvotedBy(voter) {
     setUnvotedBy(prev => {
@@ -224,6 +230,15 @@ export default function Recommendations() {
           <select className="select select-sm" value={maxVoters} onChange={e => setMaxVoters(parseInt(e.target.value))}>
             {[0, 1, 2, 3, 4].map(n => (
               <option key={n} value={n}>{n} {n === 1 ? 'vote' : 'votes'}</option>
+            ))}
+          </select>
+        </label>
+
+        <label className="recs-bias-item recs-bias-item--inline">
+          <span className="recs-bias-label">Min dir films</span>
+          <select className="select select-sm" value={minDirFilms} onChange={e => changeMinDirFilms(parseInt(e.target.value))}>
+            {[1, 2, 3, 4].map(n => (
+              <option key={n} value={n}>{n === 1 ? 'No min' : `${n} films`}</option>
             ))}
           </select>
         </label>

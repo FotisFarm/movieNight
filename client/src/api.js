@@ -29,7 +29,10 @@ export const api = {
   getDirectors: () => request('/movies/directors'),
   reorderTop10: (order, voter) => request('/movies/top10', { method: 'PUT', body: voter ? { order, voter } : { order } }),
   getTop10Counts: () => request('/movies/top10-counts'),
-  getRankings: () => request('/rankings'),
+  getRankings: (params = {}) => {
+    const qs = new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([, v]) => v != null))).toString();
+    return request(`/rankings${qs ? `?${qs}` : ''}`);
+  },
   getRecommendations: (weights = {}) => {
     const qs = new URLSearchParams(Object.fromEntries(Object.entries(weights).filter(([,v]) => v != null))).toString();
     return request(`/recommendations${qs ? `?${qs}` : ''}`);

@@ -15,6 +15,7 @@ router.get('/', (req, res) => {
   dw /= total; ew /= total; tw /= total;
   const _mv = req.query.maxVoters !== undefined ? parseInt(req.query.maxVoters) : 2;
   const maxVoters = Math.min(4, Math.max(0, isNaN(_mv) ? 2 : _mv));
+  const minDirFilms = Math.max(1, parseInt(req.query.minDirFilms) || 2);
 
   const allMovies  = db.prepare('SELECT * FROM movies').all();
   const allRatings = db.prepare('SELECT movie_id, voter, score FROM ratings').all();
@@ -83,7 +84,8 @@ router.get('/', (req, res) => {
 
     // Prior components
     const decade     = m.year ? Math.floor(parseInt(m.year) / 10) * 10 : null;
-    const dirAvg     = avg(dirScores[m.director]) ?? null;
+    const dirVals    = dirScores[m.director];
+    const dirAvg     = (dirVals && dirVals.length >= minDirFilms) ? avg(dirVals) : null;
     const decAvg     = (decade && !isNaN(decade)) ? avg(decadeScores[decade]) ?? null : null;
     const top10Weight = top10WeightByDirector[m.director] || 0;
     const top10Bonus  = Math.min(5.0, top10Weight);  // rank-weighted (Σ rankBonus), cap 5
@@ -121,7 +123,7 @@ router.get('/', (req, res) => {
 
     // Human-readable explanation
     const parts = [];
-    if (dirAvg !== null) parts.push(`${m.director} avg ${dirAvg.toFixed(1)}`);
+    if (dirAvg !== null) parts.push(`${m.director} avg ${dirAvg.toFixed(1)} (${dirVals.length} film${dirVals.length !== 1 ? 's' : ''})`);
     if (decAvg !== null && decade) parts.push(`${decade}s avg ${decAvg.toFixed(1)}`);
     if (top10Weight > 0) parts.push(`top-pick boost +${top10Bonus.toFixed(1)}`);
     if (actualScore !== null) parts.push(`${voterCount} vote${voterCount > 1 ? 's' : ''} so far`);

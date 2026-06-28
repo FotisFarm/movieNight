@@ -55,20 +55,26 @@ export default function Rankings() {
   const [loading, setLoading]         = useState(true);
   const [selectedId, setSelectedId]   = useState(null);
   const [selectedLabel, setSelectedLabel] = useState(null);
+  const [minDirFilms, setMinDirFilms] = useState(() => parseInt(localStorage.getItem('mn_minDirFilms')) || 2);
   const { toast, Toast }              = useToast();
   const location                      = useLocation();
 
   useEffect(() => {
     setLoading(true);
-    api.getRankings()
+    api.getRankings({ minDirFilms })
       .then(setData)
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [location.key]);
+  }, [location.key, minDirFilms]);
+
+  function changeMinDirFilms(n) {
+    setMinDirFilms(n);
+    localStorage.setItem('mn_minDirFilms', n);
+  }
 
   function handleSaved() {
     toast('Saved!');
-    api.getRankings().then(setData).catch(console.error);
+    api.getRankings({ minDirFilms }).then(setData).catch(console.error);
   }
 
   if (loading) return <div className="spinner" />;
@@ -82,6 +88,16 @@ export default function Rankings() {
 
   return (
     <div className="rankings-rows">
+      <div className="ranking-controls">
+        <label className="filter-item">
+          Min director films
+          <select className="select select-sm" value={minDirFilms} onChange={e => changeMinDirFilms(parseInt(e.target.value))}>
+            {[1, 2, 3, 4].map(n => (
+              <option key={n} value={n}>{n === 1 ? 'No minimum' : `${n} films`}</option>
+            ))}
+          </select>
+        </label>
+      </div>
       {ROWS.map(row => (
         <div key={row.label} className="ranking-row-group">
           <div className="ranking-row-header">
@@ -111,7 +127,7 @@ export default function Rankings() {
           movieId={selectedId}
           onClose={() => setSelectedId(null)}
           onSaved={handleSaved}
-          onDeleted={() => { setSelectedId(null); api.getRankings().then(setData); }}
+          onDeleted={() => { setSelectedId(null); api.getRankings({ minDirFilms }).then(setData); }}
         />
       )}
       {selectedLabel && (
