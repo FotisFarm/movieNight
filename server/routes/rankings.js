@@ -85,26 +85,26 @@ router.get('/', (req, res) => {
       .slice(0, 10);
   };
 
-  const dirOpts = { minCount: minDirFilms };
+  const gate = { minCount: minDirFilms };
 
   res.json({
     // Fair score (÷voters + tokens)
     fairAll:      top(all, 'fairBoosted'),
-    fairDirsAll:  topByField(all, 'director', 'fairBoosted', dirOpts),
-    fairYearsAll: topByField(all, 'year', 'fairBoosted'),
+    fairDirsAll:  topByField(all, 'director', 'fairBoosted', gate),
+    fairYearsAll: topByField(all, 'year', 'fairBoosted', gate),
 
     fairMn:       top(mn,  'fairBoosted'),
-    fairDirsMn:   topByField(mn,  'director', 'fairBoosted', dirOpts),
-    fairYearsMn:  topByField(mn,  'year', 'fairBoosted'),
+    fairDirsMn:   topByField(mn,  'director', 'fairBoosted', gate),
+    fairYearsMn:  topByField(mn,  'year', 'fairBoosted', gate),
 
     // Group score (÷5 + tokens)
     groupAll:      top(all, 'boostedScore'),
-    groupDirsAll:  topByField(all, 'director', 'boostedScore', dirOpts),
-    groupYearsAll: topByField(all, 'year', 'boostedScore'),
+    groupDirsAll:  topByField(all, 'director', 'boostedScore', gate),
+    groupYearsAll: topByField(all, 'year', 'boostedScore', gate),
 
     groupMn:       top(mn,  'boostedScore'),
-    groupDirsMn:   topByField(mn,  'director', 'boostedScore', dirOpts),
-    groupYearsMn:  topByField(mn,  'year', 'boostedScore'),
+    groupDirsMn:   topByField(mn,  'director', 'boostedScore', gate),
+    groupYearsMn:  topByField(mn,  'year', 'boostedScore', gate),
   });
 });
 

@@ -90,7 +90,7 @@ export default function Rankings() {
     <div className="rankings-rows">
       <div className="ranking-controls">
         <label className="filter-item">
-          Min director films
+          Min films
           <select className="select select-sm" value={minDirFilms} onChange={e => changeMinDirFilms(parseInt(e.target.value))}>
             {[1, 2, 3, 4].map(n => (
               <option key={n} value={n}>{n === 1 ? 'No minimum' : `${n} films`}</option>
