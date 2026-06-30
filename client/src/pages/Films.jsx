@@ -18,6 +18,7 @@ const DEFAULTS = {
   filterRated: false,
   filterWl: false,
   filterVoters: [],
+  filterDirector: '',
   filterYearMin: '',
   filterYearMax: '',
 };
@@ -39,15 +40,17 @@ export default function Films() {
   const [filterMn, setFilterMn]           = useState(DEFAULTS.filterMn);
   const [filterRated, setFilterRated]     = useState(DEFAULTS.filterRated);
   const [filterWl, setFilterWl]           = useState(DEFAULTS.filterWl);
-  const [filterVoters, setFilterVoters]   = useState(DEFAULTS.filterVoters);
-  const [filterYearMin, setFilterYearMin] = useState(DEFAULTS.filterYearMin);
-  const [filterYearMax, setFilterYearMax] = useState(DEFAULTS.filterYearMax);
+  const [filterVoters, setFilterVoters]       = useState(DEFAULTS.filterVoters);
+  const [filterDirector, setFilterDirector]   = useState(DEFAULTS.filterDirector);
+  const [filterYearMin, setFilterYearMin]     = useState(DEFAULTS.filterYearMin);
+  const [filterYearMax, setFilterYearMax]     = useState(DEFAULTS.filterYearMax);
+  const [directors, setDirectors]             = useState([]);
 
   const searchTimer = useRef(null);
 
-  const filtersActive = search || filterMn || filterRated || filterWl || filterVoters.length || filterYearMin || filterYearMax;
+  const filtersActive = search || filterMn || filterRated || filterWl || filterVoters.length || filterDirector || filterYearMin || filterYearMax;
 
-  const setters = { search: setSearch, sortBy: setSortBy, sortVoter: setSortVoter, filterMn: setFilterMn, filterRated: setFilterRated, filterWl: setFilterWl, filterVoters: setFilterVoters, filterYearMin: setFilterYearMin, filterYearMax: setFilterYearMax };
+  const setters = { search: setSearch, sortBy: setSortBy, sortVoter: setSortVoter, filterMn: setFilterMn, filterRated: setFilterRated, filterWl: setFilterWl, filterVoters: setFilterVoters, filterDirector: setFilterDirector, filterYearMin: setFilterYearMin, filterYearMax: setFilterYearMax };
   function resetFilters() {
     Object.entries(DEFAULTS).forEach(([k, v]) => setters[k](v));
   }
@@ -75,21 +78,23 @@ export default function Films() {
   useEffect(() => {
     fetchMovies({});
     refreshAllMovies();
+    api.getDirectors().then(setDirectors).catch(() => {});
   }, [fetchMovies]);
 
   useEffect(() => {
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
       fetchMovies({
-        mn:        filterMn    ? '1' : undefined,
-        watchlist: filterWl    ? '1' : undefined,
-        rated:     filterRated ? '1' : undefined,
+        mn:        filterMn       ? '1' : undefined,
+        watchlist: filterWl       ? '1' : undefined,
+        rated:     filterRated    ? '1' : undefined,
         voters:    filterVoters.length ? filterVoters.join(',') : undefined,
-        yearMin:   filterYearMin || undefined,
-        yearMax:   filterYearMax || undefined,
+        director:  filterDirector || undefined,
+        yearMin:   filterYearMin  || undefined,
+        yearMax:   filterYearMax  || undefined,
       });
     }, 250);
-  }, [search, filterMn, filterWl, filterRated, filterVoters, filterYearMin, filterYearMax, fetchMovies]);
+  }, [search, filterMn, filterWl, filterRated, filterVoters, filterDirector, filterYearMin, filterYearMax, fetchMovies]);
 
   const rankMap = useMemo(() => {
     const rated   = allMovies.filter(m => m.voterCount >= 2);
@@ -281,6 +286,14 @@ export default function Films() {
               ))}
             </div>
           </div>
+
+          <label className="filter-item">
+            Director
+            <select className="select select-sm" value={filterDirector} onChange={e => setFilterDirector(e.target.value)}>
+              <option value="">All</option>
+              {directors.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </label>
 
           <label className="filter-item">
             Year
