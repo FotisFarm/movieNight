@@ -21,6 +21,236 @@
   --radius-lg: 12px;
 }
 
+/* ── Theme: Cold Press ── */
+[data-theme="cold-press"] {
+  --bg:       #130D08;
+  --surface:  #1E1510;
+  --surface2: #281E14;
+  --surface3: #342618;
+  --accent:   #C03535;
+  --accent2:  #9E2626;
+  --text:     #F0E4CC;
+  --text2:    #B09070;
+  --text3:    #6A5035;
+  --border:   #3A2218;
+  --green:    #5AAA82;
+  --gold:     #C89A30;
+  --gold2:    #A87E28;
+  --red:      #E05050;
+  --orange:   #C8783A;
+  --blue:     #5294e0;
+}
+
+/* ── Theme: Signal ── */
+[data-theme="signal"] {
+  --bg:       #080B12;
+  --surface:  #0F1520;
+  --surface2: #172030;
+  --surface3: #1F2A3E;
+  --accent:   #4A9EFF;
+  --accent2:  #2A7EDF;
+  --text:     #D8ECFF;
+  --text2:    #6A8EB0;
+  --text3:    #354C66;
+  --border:   #1A2D46;
+  --green:    #3EC87A;
+  --gold:     #FFD060;
+  --gold2:    #DFB040;
+  --red:      #FF5C5C;
+  --orange:   #FF9040;
+  --blue:     #4A9EFF;
+}
+
+/* ── Theme: Blanc (Three Colors: White) ── */
+[data-theme="blanc"] {
+  --bg:       #F4EFE4;
+  --surface:  #EDE5D6;
+  --surface2: #E4D9C5;
+  --surface3: #D8CCB8;
+  --accent:   #946A10;
+  --accent2:  #6E4E0C;
+  --text:     #1C1510;
+  --text2:    #5A4830;
+  --text3:    #8A7860;
+  --border:   #CEBFA8;
+  --green:    #4A7A40;
+  --gold:     #9A7820;
+  --gold2:    #7A5E18;
+  --red:      #A03030;
+  --orange:   #A05028;
+  --blue:     #3A5A8A;
+  --radius:   8px;
+  --radius-lg: 12px;
+}
+
+/* ── Theme: Blade Runner (Ridley Scott, 1982) ── */
+/* Neon cyan on deep blue-black: Atari ads, rain, Roy Batty, fire stacks */
+[data-theme="blade-runner"] {
+  --bg:       #05080E;
+  --surface:  #0A1018;
+  --surface2: #101820;
+  --surface3: #182028;
+  --accent:   #00C8E8;
+  --accent2:  #0098B8;
+  --text:     #C8DCE8;
+  --text2:    #607888;
+  --text3:    #384858;
+  --border:   #182030;
+  --green:    #00B890;
+  --gold:     #C87830;
+  --gold2:    #A05820;
+  --red:      #C82040;
+  --orange:   #C86830;
+  --blue:     #00C8E8;
+}
+
+/* ── Theme: Amélie ── */
+[data-theme="amelie"] {
+  --bg:       #0E0508;
+  --surface:  #1A0A0E;
+  --surface2: #240E14;
+  --surface3: #30121A;
+  --accent:   #D4355A;
+  --accent2:  #AA2848;
+  --text:     #F0D8C0;
+  --text2:    #A08868;
+  --text3:    #5E4A38;
+  --border:   #3A1520;
+  --green:    #5AA040;
+  --gold:     #D4A020;
+  --gold2:    #AA8018;
+  --red:      #E04040;
+  --orange:   #C87030;
+  --blue:     #3A60A0;
+}
+
+/* ── Theme: The Matrix (Wachowskis, 1999) ── */
+/* Terminal green rain on pure black */
+[data-theme="matrix"] {
+  --bg:       #000300;
+  --surface:  #060E06;
+  --surface2: #0A160A;
+  --surface3: #0E1E0E;
+  --accent:   #00C832;
+  --accent2:  #009A26;
+  --text:     #B8EAB8;
+  --text2:    #508A50;
+  --text3:    #286028;
+  --border:   #0C220C;
+  --green:    #00C832;
+  --gold:     #78C040;
+  --gold2:    #58A030;
+  --red:      #B04040;
+  --orange:   #88A030;
+  --blue:     #3080A0;
+}
+
+/* ── Theme: Vertigo (Hitchcock, 1958) ── */
+/* Saul Bass poster: burnt orange spiral, Madeleine ghost green, SF fog blue */
+[data-theme="vertigo"] {
+  --bg:       #080A10;
+  --surface:  #10101A;
+  --surface2: #181826;
+  --surface3: #202032;
+  --accent:   #D04800;
+  --accent2:  #A83800;
+  --text:     #E0DCF0;
+  --text2:    #8078A0;
+  --text3:    #484068;
+  --border:   #201C30;
+  --green:    #3A9A5A;
+  --gold:     #C88030;
+  --gold2:    #A06020;
+  --red:      #C83048;
+  --orange:   #D04800;
+  --blue:     #5060A8;
+}
+
+/* ── Theme: A Clockwork Orange (Kubrick, 1971) ── */
+/* Stark white, ultraviolent orange — light theme */
+[data-theme="clockwork"] {
+  --bg:       #F0F0EE;
+  --surface:  #E6E6E4;
+  --surface2: #DADAD8;
+  --surface3: #CECECE;
+  --accent:   #F05000;
+  --accent2:  #C83C00;
+  --text:     #0C0C0C;
+  --text2:    #444444;
+  --text3:    #888888;
+  --border:   #C4C4C2;
+  --green:    #2A7A2A;
+  --gold:     #C07800;
+  --gold2:    #9A6000;
+  --red:      #D02020;
+  --orange:   #F05000;
+  --blue:     #1A50C0;
+  --radius:   8px;
+  --radius-lg: 12px;
+}
+
+/* ── Theme: Taxi Driver (Scorsese, 1976) ── */
+/* Neon bleed on wet asphalt: bright cab yellow, searing red, dark charcoal */
+[data-theme="taxi-driver"] {
+  --bg:       #080906;
+  --surface:  #111210;
+  --surface2: #1A1C18;
+  --surface3: #222420;
+  --accent:   #F2C200;
+  --accent2:  #C89A00;
+  --text:     #D8D4BC;
+  --text2:    #787060;
+  --text3:    #484440;
+  --border:   #2A2C28;
+  --green:    #6A9A40;
+  --gold:     #F2C200;
+  --gold2:    #C89A00;
+  --red:      #E82828;
+  --orange:   #D07828;
+  --blue:     #3A5A8A;
+}
+
+/* ── Theme: The Grand Budapest Hotel (Anderson, 2014) ── */
+/* Deep plum-purple, Mendl's rose, pale lavender text */
+[data-theme="grand-budapest"] {
+  --bg:       #0C0810;
+  --surface:  #18101E;
+  --surface2: #22182A;
+  --surface3: #2C2038;
+  --accent:   #E86888;
+  --accent2:  #C04E6A;
+  --text:     #F2EAF4;
+  --text2:    #A898B0;
+  --text3:    #685878;
+  --border:   #342040;
+  --green:    #78B058;
+  --gold:     #D4B040;
+  --gold2:    #AC9030;
+  --red:      #E86060;
+  --orange:   #D88050;
+  --blue:     #6878D0;
+}
+
+/* ── Theme: The Godfather ── */
+[data-theme="godfather"] {
+  --bg:       #080504;
+  --surface:  #120A06;
+  --surface2: #1C1008;
+  --surface3: #26160A;
+  --accent:   #8C1A1A;
+  --accent2:  #6A1010;
+  --text:     #D8C8A8;
+  --text2:    #8A7858;
+  --text3:    #504030;
+  --border:   #2A1808;
+  --green:    #487840;
+  --gold:     #C09828;
+  --gold2:    #A07820;
+  --red:      #8C1A1A;
+  --orange:   #A05828;
+  --blue:     #2A3E60;
+}
+
 html { font-size: 16px; overflow-x: hidden; }
 body { overflow-x: hidden; }
 
@@ -80,8 +310,7 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 .modal {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius-lg); width: 100%; max-width: 620px;
-  max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column;
-  animation: slideUp .18s;
+  max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; animation: slideUp .18s;
 }
 .modal-header {
   padding: 20px 20px 16px; border-bottom: 1px solid var(--border);
@@ -183,6 +412,9 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
 
+/* ── Accessibility ── */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
 /* ── Animations ── */
 @keyframes fadeIn  { from { opacity: 0; }              to { opacity: 1; } }
 @keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -194,8 +426,226 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
   animation: spin .7s linear infinite; margin: 60px auto;
 }
 
+/* ── Modal — Cold Press ── */
+[data-theme="cold-press"] .modal-header {
+  border-bottom: 2px solid var(--accent);
+}
+[data-theme="cold-press"] .modal-title {
+  font-family: 'Century Gothic', Century, sans-serif;
+  letter-spacing: .04em;
+  font-size: 17px;
+  font-weight: 600;
+}
+[data-theme="cold-press"] .modal-sub {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-top: 5px;
+}
+[data-theme="cold-press"] .section-label {
+  font-family: 'Century Gothic', Century, sans-serif;
+  letter-spacing: .14em;
+}
+[data-theme="cold-press"] .info-val {
+  font-family: 'Courier New', monospace;
+  font-size: 18px;
+}
+[data-theme="cold-press"] .info-lbl {
+  font-family: 'Century Gothic', Century, sans-serif;
+  font-size: 9px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+[data-theme="cold-press"] .rating-voter,
+[data-theme="cold-press"] .top3-voter-name {
+  font-family: 'Century Gothic', Century, sans-serif;
+  font-size: 11px;
+  letter-spacing: .04em;
+  text-transform: none;
+}
+
+/* ── Modal — Signal ── */
+[data-theme="signal"] .modal-header {
+  border-bottom: 2px solid var(--accent);
+}
+[data-theme="signal"] .modal-title {
+  font-family: Consolas, monospace;
+  font-size: 16px;
+  letter-spacing: -.01em;
+}
+[data-theme="signal"] .modal-sub {
+  font-family: Consolas, monospace;
+  font-size: 11px;
+  color: var(--accent);
+  letter-spacing: .02em;
+}
+[data-theme="signal"] .info-val {
+  font-family: Consolas, monospace;
+  font-weight: 700;
+}
+[data-theme="signal"] .info-lbl {
+  font-family: Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+[data-theme="signal"] .rating-voter,
+[data-theme="signal"] .top3-voter-name {
+  font-family: Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: -.01em;
+}
+
+/* ── Per-theme element colours ── */
+
+/* ── The Matrix ── */
+[data-theme="matrix"] .logo                    { color: var(--accent); }
+[data-theme="matrix"] .nav-link:hover          { color: var(--accent); }
+[data-theme="matrix"] .nav-link.active         { color: var(--accent); background: rgba(0,200,50,.1); }
+[data-theme="matrix"] .score-high              { color: var(--accent); }
+[data-theme="matrix"] .badge-mn                { color: var(--accent); border-color: rgba(0,200,50,.4); background: rgba(0,200,50,.08); }
+[data-theme="matrix"] .badge-top3              { color: var(--accent); border-color: rgba(0,200,50,.3); background: rgba(0,200,50,.06); }
+[data-theme="matrix"] .rank-num.gold           { color: #00FF40; }
+[data-theme="matrix"] .rank-num.silver         { color: #00B030; }
+[data-theme="matrix"] .rank-num.bronze         { color: #007820; }
+[data-theme="matrix"] .rank-score              { color: var(--accent); }
+[data-theme="matrix"] .rank-mn                 { color: var(--accent); border-color: rgba(0,200,50,.4); background: rgba(0,200,50,.08); }
+
+/* ── Vertigo ── */
+[data-theme="vertigo"] .logo                   { color: var(--accent); }
+[data-theme="vertigo"] .nav-link:hover         { color: var(--blue); }
+[data-theme="vertigo"] .nav-link.active        { color: var(--accent); background: rgba(208,72,0,.12); }
+[data-theme="vertigo"] .movie-card:hover,
+[data-theme="vertigo"] .movie-card:focus-visible { border-color: var(--green); }
+[data-theme="vertigo"] .score-high             { color: var(--green); }
+[data-theme="vertigo"] .badge-mn               { color: var(--green); border-color: rgba(58,154,90,.5); background: rgba(58,154,90,.1); }
+[data-theme="vertigo"] .badge-top3             { color: var(--accent); border-color: rgba(208,72,0,.4); background: rgba(208,72,0,.1); }
+[data-theme="vertigo"] .rank-num.gold          { color: var(--accent); }
+[data-theme="vertigo"] .rank-num.silver        { color: var(--blue); }
+[data-theme="vertigo"] .rank-num.bronze        { color: var(--green); }
+[data-theme="vertigo"] .rank-score             { color: var(--accent); }
+[data-theme="vertigo"] .rank-mn                { color: var(--green); border-color: rgba(58,154,90,.4); background: rgba(58,154,90,.08); }
+
+/* ── A Clockwork Orange ── */
+[data-theme="clockwork"] .logo                 { color: var(--accent); }
+[data-theme="clockwork"] .nav-link:hover       { color: var(--accent); }
+[data-theme="clockwork"] .score-high           { color: var(--green); }
+[data-theme="clockwork"] .badge-mn             { color: var(--green); border-color: rgba(42,122,42,.5); background: rgba(42,122,42,.08); }
+[data-theme="clockwork"] .badge-top3           { color: var(--accent); border-color: rgba(240,80,0,.4); background: rgba(240,80,0,.07); }
+[data-theme="clockwork"] .rank-num.gold        { color: var(--accent); }
+[data-theme="clockwork"] .rank-num.silver      { color: #888; }
+[data-theme="clockwork"] .rank-num.bronze      { color: #aaa; }
+[data-theme="clockwork"] .rank-score           { color: var(--accent); }
+[data-theme="clockwork"] .rank-mn              { color: var(--green); border-color: rgba(42,122,42,.5); background: rgba(42,122,42,.08); }
+
+/* ── Taxi Driver ── */
+[data-theme="taxi-driver"] .logo               { color: var(--gold); }
+[data-theme="taxi-driver"] .nav-link:hover     { color: var(--gold); }
+[data-theme="taxi-driver"] .nav-link.active    { color: var(--gold); background: rgba(242,194,0,.1); }
+[data-theme="taxi-driver"] .movie-card:hover,
+[data-theme="taxi-driver"] .movie-card:focus-visible { border-color: var(--red); }
+[data-theme="taxi-driver"] .score-high         { color: var(--gold); }
+[data-theme="taxi-driver"] .badge-mn           { color: var(--green); border-color: rgba(106,154,64,.5); background: rgba(106,154,64,.1); }
+[data-theme="taxi-driver"] .badge-top3         { color: var(--red); border-color: rgba(232,40,40,.4); background: rgba(232,40,40,.08); }
+[data-theme="taxi-driver"] .rank-num.gold      { color: var(--gold); }
+[data-theme="taxi-driver"] .rank-num.silver    { color: #B0B090; }
+[data-theme="taxi-driver"] .rank-num.bronze    { color: var(--red); }
+[data-theme="taxi-driver"] .rank-score         { color: var(--gold); }
+[data-theme="taxi-driver"] .rank-mn            { color: var(--green); border-color: rgba(106,154,64,.4); background: rgba(106,154,64,.08); }
+
+/* ── Blade Runner ── */
+[data-theme="blade-runner"] .logo              { color: var(--accent); }
+[data-theme="blade-runner"] .nav-link:hover    { color: var(--accent); }
+[data-theme="blade-runner"] .nav-link.active   { color: var(--accent); background: rgba(0,200,232,.1); }
+[data-theme="blade-runner"] .movie-card:hover,
+[data-theme="blade-runner"] .movie-card:focus-visible { border-color: var(--green); }
+[data-theme="blade-runner"] .score-high        { color: var(--green); }
+[data-theme="blade-runner"] .badge-mn          { color: var(--green); border-color: rgba(0,184,144,.5); background: rgba(0,184,144,.08); }
+[data-theme="blade-runner"] .badge-top3        { color: var(--accent); border-color: rgba(0,200,232,.4); background: rgba(0,200,232,.08); }
+[data-theme="blade-runner"] .rank-num.gold     { color: var(--accent); }
+[data-theme="blade-runner"] .rank-num.silver   { color: #0090B0; }
+[data-theme="blade-runner"] .rank-num.bronze   { color: var(--gold); }
+[data-theme="blade-runner"] .rank-score        { color: var(--accent); }
+[data-theme="blade-runner"] .rank-mn           { color: var(--green); border-color: rgba(0,184,144,.4); background: rgba(0,184,144,.08); }
+
+/* ── Amélie ── */
+[data-theme="amelie"] .logo                    { color: var(--accent); }
+[data-theme="amelie"] .nav-link:hover          { color: var(--green); }
+[data-theme="amelie"] .nav-link.active         { color: var(--accent); background: rgba(212,53,90,.1); }
+[data-theme="amelie"] .movie-card:hover,
+[data-theme="amelie"] .movie-card:focus-visible { border-color: var(--accent); }
+[data-theme="amelie"] .score-high              { color: var(--green); }
+[data-theme="amelie"] .badge-mn                { color: var(--green); border-color: rgba(90,160,64,.5); background: rgba(90,160,64,.1); }
+[data-theme="amelie"] .badge-top3              { color: var(--gold); border-color: rgba(212,160,32,.4); background: rgba(212,160,32,.08); }
+[data-theme="amelie"] .rank-num.gold           { color: var(--accent); }
+[data-theme="amelie"] .rank-num.silver         { color: var(--green); }
+[data-theme="amelie"] .rank-num.bronze         { color: var(--gold); }
+[data-theme="amelie"] .rank-mn                 { color: var(--green); border-color: rgba(90,160,64,.4); background: rgba(90,160,64,.08); }
+
+/* ── The Godfather ── */
+[data-theme="godfather"] .logo                 { color: var(--gold); }
+[data-theme="godfather"] .nav-link:hover       { color: var(--gold); }
+[data-theme="godfather"] .nav-link.active      { color: var(--gold); background: rgba(192,152,40,.1); }
+[data-theme="godfather"] .score-high           { color: var(--gold); }
+[data-theme="godfather"] .badge-mn             { color: var(--green); border-color: rgba(72,120,64,.5); background: rgba(72,120,64,.1); }
+[data-theme="godfather"] .badge-top3           { color: var(--gold); border-color: rgba(192,152,40,.4); background: rgba(192,152,40,.08); }
+[data-theme="godfather"] .rank-num.gold        { color: var(--gold); }
+[data-theme="godfather"] .rank-num.silver      { color: #A08060; }
+[data-theme="godfather"] .rank-num.bronze      { color: #705040; }
+[data-theme="godfather"] .rank-score           { color: var(--gold); }
+[data-theme="godfather"] .rank-mn              { color: var(--green); border-color: rgba(72,120,64,.4); background: rgba(72,120,64,.08); }
+
+/* ── The Grand Budapest Hotel ── */
+[data-theme="grand-budapest"] .logo            { color: var(--accent); }
+[data-theme="grand-budapest"] .nav-link:hover  { color: var(--accent); }
+[data-theme="grand-budapest"] .nav-link.active { color: var(--accent); background: rgba(232,104,136,.12); }
+[data-theme="grand-budapest"] .score-high      { color: var(--gold); }
+[data-theme="grand-budapest"] .badge-mn        { color: var(--green); border-color: rgba(120,176,88,.5); background: rgba(120,176,88,.1); }
+[data-theme="grand-budapest"] .badge-top3      { color: var(--accent); border-color: rgba(232,104,136,.4); background: rgba(232,104,136,.08); }
+[data-theme="grand-budapest"] .rank-num.gold   { color: var(--accent); }
+[data-theme="grand-budapest"] .rank-num.silver { color: var(--gold); }
+[data-theme="grand-budapest"] .rank-num.bronze { color: var(--blue); }
+[data-theme="grand-budapest"] .rank-score      { color: var(--accent); }
+[data-theme="grand-budapest"] .rank-mn         { color: var(--green); border-color: rgba(120,176,88,.4); background: rgba(120,176,88,.08); }
+
+/* ── Light-theme overrides (Blanc, Clockwork Orange) ── */
+[data-theme="blanc"] .rank-badge,
+[data-theme="clockwork"] .rank-badge {
+  border-color: var(--text3);
+  color: var(--text2);
+}
+
+[data-theme="blanc"] .modal-overlay,
+[data-theme="clockwork"] .modal-overlay {
+  background: rgba(0,0,0,.45);
+}
+
+[data-theme="blanc"] .modal,
+[data-theme="clockwork"] .modal {
+  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+}
+
+[data-theme="blanc"] ::-webkit-scrollbar-track,
+[data-theme="clockwork"] ::-webkit-scrollbar-track { background: var(--surface2); }
+[data-theme="blanc"] ::-webkit-scrollbar-thumb,
+[data-theme="clockwork"] ::-webkit-scrollbar-thumb { background: var(--border); }
+
+[data-theme="clockwork"] .header {
+  border-bottom: 2px solid var(--accent);
+  box-shadow: 0 1px 6px rgba(0,0,0,.08);
+}
+
+[data-theme="clockwork"] .nav-link.active {
+  color: var(--accent);
+  background: rgba(240,80,0,.08);
+}
+
+[data-theme="clockwork"] .theme-drop-menu {
+  box-shadow: 0 6px 20px rgba(0,0,0,.15);
+}
+
 /* ── Responsive ── */
 @media (max-width: 640px) {
-  .main-content { padding: 16px; }
+  .main-content { padding: 16px; padding-bottom: 68px; }
   .info-grid { grid-template-columns: 1fr 1fr; }
 }

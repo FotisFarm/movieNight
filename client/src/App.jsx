@@ -10,8 +10,17 @@ import Stats from './pages/Stats';
 import Compare from './pages/Compare';
 import Login from './pages/Login';
 import { api } from './api';
+import { ThemeProvider } from './ThemeContext';
 
 export default function App() {
+  return (
+    <ThemeProvider>
+      <AppInner />
+    </ThemeProvider>
+  );
+}
+
+function AppInner() {
   const [voter, setVoter] = useState(null); // null = checking, '' = not logged in
 
   useEffect(() => {

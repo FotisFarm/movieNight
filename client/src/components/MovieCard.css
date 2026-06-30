@@ -140,6 +140,153 @@
   flex-wrap: wrap;
 }
 
+/* ── Cold Press list-view card ── */
+[data-theme="cold-press"] .movie-card.list-view {
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid transparent;
+  background: transparent;
+  transition: background .1s, border-left-color .1s;
+}
+
+[data-theme="cold-press"] .movie-card.list-view:hover,
+[data-theme="cold-press"] .movie-card.list-view:focus-visible {
+  background: var(--surface);
+  border-left-color: var(--accent);
+}
+
+[data-theme="cold-press"] .movie-card.list-view.mn {
+  border-left-color: var(--green);
+}
+[data-theme="cold-press"] .movie-card.list-view.mn:hover {
+  border-left-color: var(--accent);
+}
+
+[data-theme="cold-press"] .movie-card.list-view .score-big {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+[data-theme="cold-press"] .movie-card.list-view .card-title {
+  font-family: 'Century Gothic', Century, sans-serif;
+  font-style: normal;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: .02em;
+}
+
+[data-theme="cold-press"] .movie-card.list-view .card-meta {
+  font-family: 'Century Gothic', Century, sans-serif;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+}
+
+[data-theme="cold-press"] .movie-card.list-view .voter-pill {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 7px;
+  gap: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+}
+
+[data-theme="cold-press"] .movie-card.list-view .voter-abbr {
+  font-family: 'Century Gothic', Century, sans-serif;
+  font-size: 11px;
+  letter-spacing: .03em;
+  color: var(--text2);
+}
+
+[data-theme="cold-press"] .movie-card.list-view .voter-score {
+  font-size: 11px;
+}
+
+[data-theme="cold-press"] .movie-card.list-view .voter-medal {
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* ── Signal list-view card ── */
+[data-theme="signal"] .movie-card.list-view {
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  position: relative;
+  transition: background .1s;
+}
+
+[data-theme="signal"] .movie-card.list-view::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: transparent;
+  transition: background .1s;
+}
+
+[data-theme="signal"] .movie-card.list-view:hover,
+[data-theme="signal"] .movie-card.list-view:focus-visible {
+  background: var(--surface);
+}
+
+[data-theme="signal"] .movie-card.list-view:hover::before,
+[data-theme="signal"] .movie-card.list-view:focus-visible::before {
+  background: var(--accent);
+}
+
+[data-theme="signal"] .movie-card.list-view.mn::before {
+  background: var(--green);
+}
+
+[data-theme="signal"] .movie-card.list-view .score-big {
+  font-family: Consolas, monospace;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+
+[data-theme="signal"] .movie-card.list-view .card-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+[data-theme="signal"] .movie-card.list-view .voter-pill {
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-family: Consolas, monospace;
+  font-size: 11px;
+}
+
+[data-theme="signal"] .movie-card.list-view .voter-abbr {
+  font-family: Consolas, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+[data-theme="signal"] .movie-card.list-view .voter-score {
+  font-family: Consolas, monospace;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+[data-theme="signal"] .movie-card.list-view .voter-medal {
+  font-size: 10px;
+  line-height: 1;
+}
+
 @media (max-width: 640px) {
   .movie-card.list-view {
     flex-wrap: wrap;

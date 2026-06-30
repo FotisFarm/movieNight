@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../api';
 import MovieCard from '../components/MovieCard';
 import MovieModal from '../components/MovieModal';
@@ -330,19 +331,29 @@ export default function Films() {
       ) : (
         <>
           <div className={viewMode === 'grid' ? 'films-grid' : 'films-list'}>
-            {visible.map(m => (
-              <MovieCard
-                key={m.id}
-                movie={{
-                  ...m,
-                  rank_global: (scoreMode === 'group' ? rankMap.group   : rankMap.fair  )[m.id] ?? null,
-                  mn_rank:     (scoreMode === 'group' ? rankMap.mnGroup : rankMap.mnFair)[m.id] ?? null,
-                }}
-                onClick={() => setSelectedId(m.id)}
-                listView={viewMode === 'list'}
-                scoreMode={scoreMode}
-              />
-            ))}
+            <AnimatePresence initial={false}>
+              {visible.map((m, i) => (
+                <motion.div
+                  key={m.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18, delay: Math.min(i * 0.025, 0.4) }}
+                  layout
+                >
+                  <MovieCard
+                    movie={{
+                      ...m,
+                      rank_global: (scoreMode === 'group' ? rankMap.group   : rankMap.fair  )[m.id] ?? null,
+                      mn_rank:     (scoreMode === 'group' ? rankMap.mnGroup : rankMap.mnFair)[m.id] ?? null,
+                    }}
+                    onClick={() => setSelectedId(m.id)}
+                    listView={viewMode === 'list'}
+                    scoreMode={scoreMode}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
           {hasMore && (
             <div style={{ textAlign: 'center', marginTop: 24 }}>
