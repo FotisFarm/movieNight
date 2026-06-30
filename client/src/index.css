@@ -127,16 +127,16 @@
 /* ── Theme: The Matrix (Wachowskis, 1999) ── */
 /* Terminal green rain on pure black */
 [data-theme="matrix"] {
-  --bg:       #000300;
-  --surface:  #060E06;
-  --surface2: #0A160A;
-  --surface3: #0E1E0E;
+  --bg:       #000000;
+  --surface:  #030803;
+  --surface2: #061006;
+  --surface3: #091809;
   --accent:   #00C832;
   --accent2:  #009A26;
   --text:     #B8EAB8;
   --text2:    #508A50;
   --text3:    #286028;
-  --border:   #0C220C;
+  --border:   #091E09;
   --green:    #00C832;
   --gold:     #78C040;
   --gold2:    #58A030;
@@ -518,6 +518,8 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 [data-theme="vertigo"] .movie-card:hover,
 [data-theme="vertigo"] .movie-card:focus-visible { border-color: var(--green); }
 [data-theme="vertigo"] .score-high             { color: var(--green); }
+[data-theme="vertigo"] .score-mid              { color: var(--accent); }
+[data-theme="vertigo"] .score-low              { color: #B03040; }
 [data-theme="vertigo"] .badge-mn               { color: var(--green); border-color: rgba(58,154,90,.5); background: rgba(58,154,90,.1); }
 [data-theme="vertigo"] .badge-top3             { color: var(--accent); border-color: rgba(208,72,0,.4); background: rgba(208,72,0,.1); }
 [data-theme="vertigo"] .rank-num.gold          { color: var(--accent); }
@@ -530,6 +532,8 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 [data-theme="clockwork"] .logo                 { color: var(--accent); }
 [data-theme="clockwork"] .nav-link:hover       { color: var(--accent); }
 [data-theme="clockwork"] .score-high           { color: var(--green); }
+[data-theme="clockwork"] .score-mid            { color: var(--accent); }
+[data-theme="clockwork"] .score-low            { color: var(--red); }
 [data-theme="clockwork"] .badge-mn             { color: var(--green); border-color: rgba(42,122,42,.5); background: rgba(42,122,42,.08); }
 [data-theme="clockwork"] .badge-top3           { color: var(--accent); border-color: rgba(240,80,0,.4); background: rgba(240,80,0,.07); }
 [data-theme="clockwork"] .rank-num.gold        { color: var(--accent); }
@@ -545,6 +549,8 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 [data-theme="taxi-driver"] .movie-card:hover,
 [data-theme="taxi-driver"] .movie-card:focus-visible { border-color: var(--red); }
 [data-theme="taxi-driver"] .score-high         { color: var(--gold); }
+[data-theme="taxi-driver"] .score-mid          { color: #B0B060; }
+[data-theme="taxi-driver"] .score-low          { color: var(--red); }
 [data-theme="taxi-driver"] .badge-mn           { color: var(--green); border-color: rgba(106,154,64,.5); background: rgba(106,154,64,.1); }
 [data-theme="taxi-driver"] .badge-top3         { color: var(--red); border-color: rgba(232,40,40,.4); background: rgba(232,40,40,.08); }
 [data-theme="taxi-driver"] .rank-num.gold      { color: var(--gold); }
@@ -560,6 +566,8 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 [data-theme="blade-runner"] .movie-card:hover,
 [data-theme="blade-runner"] .movie-card:focus-visible { border-color: var(--green); }
 [data-theme="blade-runner"] .score-high        { color: var(--green); }
+[data-theme="blade-runner"] .score-mid         { color: var(--accent); }
+[data-theme="blade-runner"] .score-low         { color: #D04040; }
 [data-theme="blade-runner"] .badge-mn          { color: var(--green); border-color: rgba(0,184,144,.5); background: rgba(0,184,144,.08); }
 [data-theme="blade-runner"] .badge-top3        { color: var(--accent); border-color: rgba(0,200,232,.4); background: rgba(0,200,232,.08); }
 [data-theme="blade-runner"] .rank-num.gold     { color: var(--accent); }
@@ -575,6 +583,8 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 [data-theme="amelie"] .movie-card:hover,
 [data-theme="amelie"] .movie-card:focus-visible { border-color: var(--accent); }
 [data-theme="amelie"] .score-high              { color: var(--green); }
+[data-theme="amelie"] .score-mid               { color: var(--gold); }
+[data-theme="amelie"] .score-low               { color: var(--accent); }
 [data-theme="amelie"] .badge-mn                { color: var(--green); border-color: rgba(90,160,64,.5); background: rgba(90,160,64,.1); }
 [data-theme="amelie"] .badge-top3              { color: var(--gold); border-color: rgba(212,160,32,.4); background: rgba(212,160,32,.08); }
 [data-theme="amelie"] .rank-num.gold           { color: var(--accent); }
@@ -587,6 +597,8 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 [data-theme="godfather"] .nav-link:hover       { color: var(--gold); }
 [data-theme="godfather"] .nav-link.active      { color: var(--gold); background: rgba(192,152,40,.1); }
 [data-theme="godfather"] .score-high           { color: var(--gold); }
+[data-theme="godfather"] .score-mid            { color: var(--orange); }
+[data-theme="godfather"] .score-low            { color: var(--accent); }
 [data-theme="godfather"] .badge-mn             { color: var(--green); border-color: rgba(72,120,64,.5); background: rgba(72,120,64,.1); }
 [data-theme="godfather"] .badge-top3           { color: var(--gold); border-color: rgba(192,152,40,.4); background: rgba(192,152,40,.08); }
 [data-theme="godfather"] .rank-num.gold        { color: var(--gold); }
@@ -600,6 +612,8 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 [data-theme="grand-budapest"] .nav-link:hover  { color: var(--accent); }
 [data-theme="grand-budapest"] .nav-link.active { color: var(--accent); background: rgba(232,104,136,.12); }
 [data-theme="grand-budapest"] .score-high      { color: var(--gold); }
+[data-theme="grand-budapest"] .score-mid       { color: var(--accent); }
+[data-theme="grand-budapest"] .score-low       { color: #C03060; }
 [data-theme="grand-budapest"] .badge-mn        { color: var(--green); border-color: rgba(120,176,88,.5); background: rgba(120,176,88,.1); }
 [data-theme="grand-budapest"] .badge-top3      { color: var(--accent); border-color: rgba(232,104,136,.4); background: rgba(232,104,136,.08); }
 [data-theme="grand-budapest"] .rank-num.gold   { color: var(--accent); }
