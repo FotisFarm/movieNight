@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { api } from '../api';
 import MovieCard from './MovieCard';
 import MovieModal from './MovieModal';
@@ -16,10 +16,36 @@ function fmt(v) {
   return v.toFixed(2).replace('.', ',');
 }
 
+function buildRankMap(allMovies) {
+  const rated   = allMovies.filter(m => m.voterCount >= 2);
+  const ratedMn = rated.filter(m => m.mn);
+  function tiebreak(a, b) {
+    if (b.voterCount !== a.voterCount) return b.voterCount - a.voterCount;
+    if ((b.boost ?? 0) !== (a.boost ?? 0)) return (b.boost ?? 0) - (a.boost ?? 0);
+    return (parseInt(a.year) || 9999) - (parseInt(b.year) || 9999);
+  }
+  const byFair  = (a, b) => (b.fairBoosted  - a.fairBoosted)  || tiebreak(a, b);
+  const byGroup = (a, b) => (b.boostedScore - a.boostedScore) || tiebreak(a, b);
+  const toMap   = arr => { const m = {}; arr.forEach((x, i) => { m[x.id] = i + 1; }); return m; };
+  return {
+    fair:    toMap([...rated].sort(byFair)),
+    group:   toMap([...rated].sort(byGroup)),
+    mnFair:  toMap([...ratedMn].sort(byFair)),
+    mnGroup: toMap([...ratedMn].sort(byGroup)),
+  };
+}
+
 export default function DirectorYearModal({ type, value, scoreKey = 'fairBoosted', mnOnly = false, voter = null, onClose }) {
-  const [films, setFilms]   = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [movieId, setMovieId] = useState(null);
+  const [films, setFilms]       = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [movieId, setMovieId]   = useState(null);
+  const [allMovies, setAllMovies] = useState([]);
+
+  useEffect(() => {
+    api.getMovies({}).then(setAllMovies);
+  }, []);
+
+  const rankMap = useMemo(() => buildRankMap(allMovies), [allMovies]);
 
   useEffect(() => {
     const param =
@@ -39,6 +65,7 @@ export default function DirectorYearModal({ type, value, scoreKey = 'fairBoosted
 
   function handleSaved(updated) {
     setFilms(fs => fs.map(f => f.id === updated.id ? updated : f));
+    setAllMovies(ms => ms.map(m => m.id === updated.id ? updated : m));
   }
   function handleDeleted(id) {
     setFilms(fs => fs.filter(f => f.id !== id));
@@ -85,6 +112,8 @@ export default function DirectorYearModal({ type, value, scoreKey = 'fairBoosted
                   movie={f}
                   listView
                   scoreMode={scoreKey === 'boostedScore' ? 'group' : 'fair'}
+                  rank_global={scoreKey === 'boostedScore' ? (rankMap.group[f.id] ?? null) : (rankMap.fair[f.id] ?? null)}
+                  mn_rank={scoreKey === 'boostedScore' ? (rankMap.mnGroup[f.id] ?? null) : (rankMap.mnFair[f.id] ?? null)}
                   onClick={() => setMovieId(f.id)}
                 />
               ))}
