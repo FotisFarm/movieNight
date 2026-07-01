@@ -11,7 +11,7 @@
 /* ── Global stats ── */
 .global-nums {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(6, 1fr);
   gap: 12px;
   margin-bottom: 20px;
 }
@@ -48,7 +48,7 @@
 
 .global-highlights {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
   gap: 12px;
 }
 
@@ -216,6 +216,11 @@
 .stats-dist-bar.score-mid  { background: var(--gold);  opacity: .7; }
 .stats-dist-bar.score-low  { background: var(--red);   opacity: .7; }
 .stats-dist-tick { font-size: 9px; color: var(--text3); }
+
+@media (max-width: 640px) {
+  .global-nums       { grid-template-columns: repeat(2, 1fr); }
+  .global-highlights { grid-template-columns: repeat(2, 1fr); }
+}
 
 
 /* ── Everyone's Top 10 ── */
