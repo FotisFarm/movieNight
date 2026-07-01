@@ -291,7 +291,7 @@ export default function Stats({ voter }) {
             </div>
           )}
           {bestDecade && (
-            <div className="global-highlight" onClick={() => setDyTarget({ type: 'decade', value: String(bestDecade.dec) })}>
+            <div className="global-highlight" onClick={() => setDyTarget({ type: 'decade', value: bestDecade.dec })}>
               <div className="global-hl-label">Top decade</div>
               <div className="global-hl-title">{bestDecade.dec}s</div>
               <div className="global-hl-meta">{bestDecade.count} films rated</div>
