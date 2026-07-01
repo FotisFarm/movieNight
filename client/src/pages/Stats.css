@@ -47,6 +47,12 @@
 .global-val.score-mid  { color: var(--gold); }
 .global-val.score-low  { color: var(--red); }
 
+.global-num-click {
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.global-num-click:hover { border-color: var(--accent); }
+
 .global-highlights {
   display: grid;
   grid-template-columns: repeat(5, 1fr);

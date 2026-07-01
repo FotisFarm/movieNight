@@ -170,6 +170,7 @@ export default function Stats({ voter }) {
   const [modalId, setModalId] = useState(null);
   const [selectedVoter, setSelectedVoter] = useState(null);
   const [dyTarget, setDyTarget] = useState(null); // { type, value } for director/decade modal
+  const [filmList, setFilmList] = useState(null); // { label, films } for number-tile modal
   const { toast, Toast }      = useToast();
 
   const sensors = useSensors(
@@ -203,6 +204,18 @@ export default function Stats({ voter }) {
   const stats       = useMemo(() => computeStats(movies),       [movies]);
   const globalStats = useMemo(() => computeGlobalStats(movies), [movies]);
 
+  function byFair(arr) {
+    return [...arr].sort((a, b) => {
+      if ((b.fairBoosted ?? -1) !== (a.fairBoosted ?? -1)) return (b.fairBoosted ?? -1) - (a.fairBoosted ?? -1);
+      if (b.voterCount !== a.voterCount) return b.voterCount - a.voterCount;
+      return (parseInt(a.year) || 9999) - (parseInt(b.year) || 9999);
+    });
+  }
+
+  function openList(label, filter) {
+    setFilmList({ label, films: byFair(movies.filter(filter)) });
+  }
+
   if (loading) return <div className="spinner" style={{ margin: '60px auto' }} />;
 
   const { total, rated, scored, allFive, mn, meanScore, bestFilm, worstFilm, mostContro, bestDirector, bestDecade } = globalStats;
@@ -215,23 +228,23 @@ export default function Stats({ voter }) {
       <section className="stats-section">
         <h2 className="stats-heading">Group Overview</h2>
         <div className="global-nums">
-          <div className="global-num">
+          <div className="global-num global-num-click" onClick={() => openList('All films', () => true)}>
             <span className="global-val">{total}</span>
             <span className="global-lbl">Total films</span>
           </div>
-          <div className="global-num">
+          <div className="global-num global-num-click" onClick={() => openList('Rated', m => (m.voterCount ?? 0) >= 1)}>
             <span className="global-val">{rated}</span>
             <span className="global-lbl">Rated</span>
           </div>
-          <div className="global-num">
+          <div className="global-num global-num-click" onClick={() => openList('Scored (≥2 voters)', m => (m.voterCount ?? 0) >= 2 && m.fairBoosted != null)}>
             <span className="global-val">{scored}</span>
             <span className="global-lbl">Scored (≥2 voters)</span>
           </div>
-          <div className="global-num">
+          <div className="global-num global-num-click" onClick={() => openList('Seen by all 5', m => m.voterCount === 5)}>
             <span className="global-val">{allFive}</span>
             <span className="global-lbl">Seen by all 5</span>
           </div>
-          <div className="global-num">
+          <div className="global-num global-num-click" onClick={() => openList('Movie Nights', m => m.mn)}>
             <span className="global-val">{mn}</span>
             <span className="global-lbl">Movie Nights</span>
           </div>
@@ -470,6 +483,33 @@ export default function Stats({ voter }) {
           voter={selectedVoter}
           onClose={() => setDyTarget(null)}
         />
+      )}
+
+      {filmList && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setFilmList(null)}>
+          <div className="modal dy-modal">
+            <div className="modal-header">
+              <div className="modal-header-text">
+                <div className="modal-title">{filmList.label}</div>
+                <div className="modal-sub">{filmList.films.length} film{filmList.films.length !== 1 ? 's' : ''} · Fair score</div>
+              </div>
+              <button className="modal-close" onClick={() => setFilmList(null)}>✕</button>
+            </div>
+            <div className="dy-body">
+              <div className="films-list">
+                {filmList.films.map(f => (
+                  <MovieCard
+                    key={f.id}
+                    movie={f}
+                    listView
+                    scoreMode="fair"
+                    onClick={() => { setFilmList(null); setModalId(f.id); }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {modalId && (
