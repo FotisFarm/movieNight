@@ -84,6 +84,57 @@ function computeStats(movies) {
 
 function avg(arr) { return arr.reduce((a, b) => a + b, 0) / arr.length; }
 
+function computeGlobalStats(movies) {
+  const scored = movies.filter(m => (m.voterCount ?? 0) >= 2 && m.fairBoosted != null);
+  const mn     = movies.filter(m => m.mn);
+
+  const meanScore = scored.length ? avg(scored.map(m => m.fairBoosted)) : null;
+
+  const bestFilm   = scored.reduce((b, m) => (!b || m.fairBoosted > b.fairBoosted) ? m : b, null);
+  const worstFilm  = scored.reduce((w, m) => (!w || m.fairBoosted < w.fairBoosted) ? m : w, null);
+  const mostContro = scored
+    .filter(m => m.stdDev != null)
+    .reduce((c, m) => (!c || m.stdDev > c.stdDev) ? m : c, null);
+
+  const dirMap = {};
+  for (const m of scored) {
+    if (!m.director) continue;
+    if (!dirMap[m.director]) dirMap[m.director] = [];
+    dirMap[m.director].push(m.fairBoosted);
+  }
+  const bestDirector = Object.entries(dirMap)
+    .filter(([, s]) => s.length >= 2)
+    .map(([name, s]) => ({ name, count: s.length, mean: avg(s) }))
+    .sort((a, b) => b.mean - a.mean)[0] ?? null;
+
+  const decMap = {};
+  for (const m of scored) {
+    const yr = parseInt(m.year);
+    if (!yr) continue;
+    const dec = Math.floor(yr / 10) * 10;
+    if (!decMap[dec]) decMap[dec] = [];
+    decMap[dec].push(m.fairBoosted);
+  }
+  const bestDecade = Object.entries(decMap)
+    .filter(([, s]) => s.length >= 2)
+    .map(([dec, s]) => ({ dec: parseInt(dec), count: s.length, mean: avg(s) }))
+    .sort((a, b) => b.mean - a.mean)[0] ?? null;
+
+  return {
+    total: movies.length,
+    rated: movies.filter(m => (m.voterCount ?? 0) >= 1).length,
+    scored: scored.length,
+    allFive: movies.filter(m => m.voterCount === 5).length,
+    mn: mn.length,
+    meanScore,
+    bestFilm,
+    worstFilm,
+    mostContro,
+    bestDirector,
+    bestDecade,
+  };
+}
+
 function Top10StaticRow({ m, voter, onOpen }) {
   return (
     <div className="top10-row" onClick={() => onOpen(m.id)}>
@@ -144,13 +195,90 @@ export default function Stats({ voter }) {
     toast('Saved!');
   }
 
-  const stats = useMemo(() => computeStats(movies), [movies]);
+  const stats       = useMemo(() => computeStats(movies),       [movies]);
+  const globalStats = useMemo(() => computeGlobalStats(movies), [movies]);
 
   if (loading) return <div className="spinner" style={{ margin: '60px auto' }} />;
+
+  const { total, rated, scored, allFive, mn, meanScore, bestFilm, worstFilm, mostContro, bestDirector, bestDecade } = globalStats;
 
   return (
     <div className="stats-page">
       <Toast />
+
+      {/* ── Global Stats ── */}
+      <section className="stats-section">
+        <h2 className="stats-heading">Group Overview</h2>
+        <div className="global-nums">
+          <div className="global-num">
+            <span className="global-val">{total}</span>
+            <span className="global-lbl">Total films</span>
+          </div>
+          <div className="global-num">
+            <span className="global-val">{rated}</span>
+            <span className="global-lbl">Rated</span>
+          </div>
+          <div className="global-num">
+            <span className="global-val">{scored}</span>
+            <span className="global-lbl">Scored (≥2 voters)</span>
+          </div>
+          <div className="global-num">
+            <span className="global-val">{allFive}</span>
+            <span className="global-lbl">Seen by all 5</span>
+          </div>
+          <div className="global-num">
+            <span className="global-val">{mn}</span>
+            <span className="global-lbl">Movie Nights</span>
+          </div>
+          <div className="global-num">
+            <span className={`global-val ${scoreClass(meanScore)}`}>{fmt(meanScore)}</span>
+            <span className="global-lbl">Mean fair score</span>
+          </div>
+        </div>
+
+        <div className="global-highlights">
+          {bestFilm && (
+            <div className="global-highlight" onClick={() => setModalId(bestFilm.id)}>
+              <div className="global-hl-label">Highest rated</div>
+              <div className="global-hl-title">{bestFilm.title}</div>
+              <div className="global-hl-meta">{bestFilm.director} · {bestFilm.year}</div>
+              <div className={`global-hl-score ${scoreClass(bestFilm.fairBoosted)}`}>{fmt(bestFilm.fairBoosted)}</div>
+            </div>
+          )}
+          {worstFilm && (
+            <div className="global-highlight" onClick={() => setModalId(worstFilm.id)}>
+              <div className="global-hl-label">Lowest rated</div>
+              <div className="global-hl-title">{worstFilm.title}</div>
+              <div className="global-hl-meta">{worstFilm.director} · {worstFilm.year}</div>
+              <div className={`global-hl-score ${scoreClass(worstFilm.fairBoosted)}`}>{fmt(worstFilm.fairBoosted)}</div>
+            </div>
+          )}
+          {mostContro && (
+            <div className="global-highlight" onClick={() => setModalId(mostContro.id)}>
+              <div className="global-hl-label">Most controversial</div>
+              <div className="global-hl-title">{mostContro.title}</div>
+              <div className="global-hl-meta">{mostContro.director} · {mostContro.year}</div>
+              <div className="global-hl-score score-mid">σ {mostContro.stdDev?.toFixed(2)}</div>
+            </div>
+          )}
+          {bestDirector && (
+            <div className="global-highlight">
+              <div className="global-hl-label">Top director</div>
+              <div className="global-hl-title">{bestDirector.name}</div>
+              <div className="global-hl-meta">{bestDirector.count} films rated</div>
+              <div className={`global-hl-score ${scoreClass(bestDirector.mean)}`}>{fmt(bestDirector.mean)}</div>
+            </div>
+          )}
+          {bestDecade && (
+            <div className="global-highlight">
+              <div className="global-hl-label">Top decade</div>
+              <div className="global-hl-title">{bestDecade.dec}s</div>
+              <div className="global-hl-meta">{bestDecade.count} films rated</div>
+              <div className={`global-hl-score ${scoreClass(bestDecade.mean)}`}>{fmt(bestDecade.mean)}</div>
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* ── Voter Overview ── */}
       <section className="stats-section">

@@ -20,6 +20,13 @@ function fmt(v) {
   return v.toFixed(2).replace('.', ',') + '/10';
 }
 
+function scoreClass(v) {
+  if (v == null) return '';
+  if (v >= 7.5) return 'score-high';
+  if (v >= 5)   return 'score-mid';
+  return 'score-low';
+}
+
 function loadManualOrder() {
   try { return JSON.parse(localStorage.getItem('wl-tied-order') || '{}'); } catch { return {}; }
 }
@@ -247,7 +254,7 @@ export default function Watchlist({ voter }) {
                   </div>
                   <div className="wl-movie-meta">{m.director} · {m.year || '?'}</div>
                   {m.fairScore != null && (
-                    <div className="wl-score">Fair avg: <strong>{fmt(m.fairScore)}</strong></div>
+                    <div className="wl-score">Fair avg: <strong className={scoreClass(m.fairScore)}>{fmt(m.fairScore)}</strong></div>
                   )}
                 </div>
 

@@ -8,6 +8,101 @@
   border-bottom: 1px solid var(--border);
 }
 
+/* ── Global stats ── */
+.global-nums {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.global-num {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.global-val {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.global-lbl {
+  font-size: 10px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  text-align: center;
+}
+
+.global-val.score-high { color: var(--green); }
+.global-val.score-mid  { color: var(--gold); }
+.global-val.score-low  { color: var(--red); }
+
+.global-highlights {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.global-highlight {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+
+.global-highlight:not([onclick]):not([role="button"]) { cursor: default; }
+
+.global-highlight:hover { border-color: var(--accent); }
+
+.global-hl-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.global-hl-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.global-hl-meta {
+  font-size: 11px;
+  color: var(--text3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.global-hl-score {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.global-hl-score.score-high { color: var(--green); }
+.global-hl-score.score-mid  { color: var(--gold); }
+.global-hl-score.score-low  { color: var(--red); }
+
 /* ── Voter Cards ── */
 .stats-voter-cards {
   display: grid;
