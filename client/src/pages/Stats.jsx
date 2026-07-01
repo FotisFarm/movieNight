@@ -205,6 +205,25 @@ export default function Stats({ voter }) {
   const stats       = useMemo(() => computeStats(movies),       [movies]);
   const globalStats = useMemo(() => computeGlobalStats(movies), [movies]);
 
+  const rankMap = useMemo(() => {
+    const rated   = movies.filter(m => m.voterCount >= 2);
+    const ratedMn = rated.filter(m => m.mn);
+    function tiebreak(a, b) {
+      if (b.voterCount !== a.voterCount) return b.voterCount - a.voterCount;
+      if ((b.boost ?? 0) !== (a.boost ?? 0)) return (b.boost ?? 0) - (a.boost ?? 0);
+      return (parseInt(a.year) || 9999) - (parseInt(b.year) || 9999);
+    }
+    const byFairSort  = (a, b) => (b.fairBoosted  - a.fairBoosted)  || tiebreak(a, b);
+    const byGroupSort = (a, b) => (b.boostedScore - a.boostedScore) || tiebreak(a, b);
+    const toMap = arr => { const m = {}; arr.forEach((x, i) => { m[x.id] = i + 1; }); return m; };
+    return {
+      fair:    toMap([...rated].sort(byFairSort)),
+      group:   toMap([...rated].sort(byGroupSort)),
+      mnFair:  toMap([...ratedMn].sort(byFairSort)),
+      mnGroup: toMap([...ratedMn].sort(byGroupSort)),
+    };
+  }, [movies]);
+
   function byFair(arr) {
     return [...arr].sort((a, b) => {
       if ((b.fairBoosted ?? -1) !== (a.fairBoosted ?? -1)) return (b.fairBoosted ?? -1) - (a.fairBoosted ?? -1);
@@ -501,7 +520,11 @@ export default function Stats({ voter }) {
                 {filmList.films.map(f => (
                   <MovieCard
                     key={f.id}
-                    movie={f}
+                    movie={{
+                      ...f,
+                      rank_global: rankMap.fair[f.id]   ?? null,
+                      mn_rank:     rankMap.mnFair[f.id] ?? null,
+                    }}
                     listView
                     scoreMode="fair"
                     onClick={() => { setFilmList(null); setModalId(f.id); }}

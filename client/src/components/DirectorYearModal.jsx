@@ -109,11 +109,13 @@ export default function DirectorYearModal({ type, value, scoreKey = 'fairBoosted
               {films.map(f => (
                 <MovieCard
                   key={f.id}
-                  movie={f}
+                  movie={{
+                    ...f,
+                    rank_global: scoreKey === 'boostedScore' ? (rankMap.group[f.id]   ?? null) : (rankMap.fair[f.id]    ?? null),
+                    mn_rank:     scoreKey === 'boostedScore' ? (rankMap.mnGroup[f.id] ?? null) : (rankMap.mnFair[f.id]  ?? null),
+                  }}
                   listView
                   scoreMode={scoreKey === 'boostedScore' ? 'group' : 'fair'}
-                  rank_global={scoreKey === 'boostedScore' ? (rankMap.group[f.id] ?? null) : (rankMap.fair[f.id] ?? null)}
-                  mn_rank={scoreKey === 'boostedScore' ? (rankMap.mnGroup[f.id] ?? null) : (rankMap.mnFair[f.id] ?? null)}
                   onClick={() => setMovieId(f.id)}
                 />
               ))}
