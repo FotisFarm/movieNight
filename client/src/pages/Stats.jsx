@@ -90,8 +90,13 @@ function computeGlobalStats(movies) {
 
   const meanScore = scored.length ? avg(scored.map(m => m.fairBoosted)) : null;
 
-  const bestFilm   = scored.reduce((b, m) => (!b || m.fairBoosted > b.fairBoosted) ? m : b, null);
-  const worstFilm  = scored.reduce((w, m) => (!w || m.fairBoosted < w.fairBoosted) ? m : w, null);
+  const fairRanked = [...scored].sort((a, b) => {
+    if (b.fairBoosted !== a.fairBoosted) return b.fairBoosted - a.fairBoosted;
+    if (b.voterCount  !== a.voterCount)  return b.voterCount  - a.voterCount;
+    return (parseInt(a.year) || 9999) - (parseInt(b.year) || 9999);
+  });
+  const bestFilm   = fairRanked[0] ?? null;
+  const worstFilm  = fairRanked[fairRanked.length - 1] ?? null;
   const mostContro = scored
     .filter(m => m.stdDev != null)
     .reduce((c, m) => (!c || m.stdDev > c.stdDev) ? m : c, null);
