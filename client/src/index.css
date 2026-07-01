@@ -508,7 +508,6 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 [data-theme="matrix"] .rank-num.gold           { color: #00FF40; }
 [data-theme="matrix"] .rank-num.silver         { color: #00B030; }
 [data-theme="matrix"] .rank-num.bronze         { color: #007820; }
-[data-theme="matrix"] .rank-score              { color: var(--accent); }
 [data-theme="matrix"] .rank-mn                 { color: var(--accent); border-color: rgba(0,200,50,.4); background: rgba(0,200,50,.08); }
 
 /* ── Vertigo ── */
@@ -525,7 +524,6 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 [data-theme="vertigo"] .rank-num.gold          { color: var(--accent); }
 [data-theme="vertigo"] .rank-num.silver        { color: var(--blue); }
 [data-theme="vertigo"] .rank-num.bronze        { color: var(--green); }
-[data-theme="vertigo"] .rank-score             { color: var(--accent); }
 [data-theme="vertigo"] .rank-mn                { color: var(--green); border-color: rgba(58,154,90,.4); background: rgba(58,154,90,.08); }
 
 /* ── A Clockwork Orange ── */
@@ -539,7 +537,6 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 [data-theme="clockwork"] .rank-num.gold        { color: var(--accent); }
 [data-theme="clockwork"] .rank-num.silver      { color: #888; }
 [data-theme="clockwork"] .rank-num.bronze      { color: #aaa; }
-[data-theme="clockwork"] .rank-score           { color: var(--accent); }
 [data-theme="clockwork"] .rank-mn              { color: var(--green); border-color: rgba(42,122,42,.5); background: rgba(42,122,42,.08); }
 
 /* ── Taxi Driver ── */
@@ -556,7 +553,6 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 [data-theme="taxi-driver"] .rank-num.gold      { color: var(--gold); }
 [data-theme="taxi-driver"] .rank-num.silver    { color: #B0B090; }
 [data-theme="taxi-driver"] .rank-num.bronze    { color: var(--red); }
-[data-theme="taxi-driver"] .rank-score         { color: var(--gold); }
 [data-theme="taxi-driver"] .rank-mn            { color: var(--green); border-color: rgba(106,154,64,.4); background: rgba(106,154,64,.08); }
 
 /* ── Blade Runner ── */
@@ -573,7 +569,6 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 [data-theme="blade-runner"] .rank-num.gold     { color: var(--accent); }
 [data-theme="blade-runner"] .rank-num.silver   { color: #0090B0; }
 [data-theme="blade-runner"] .rank-num.bronze   { color: var(--gold); }
-[data-theme="blade-runner"] .rank-score        { color: var(--accent); }
 [data-theme="blade-runner"] .rank-mn           { color: var(--green); border-color: rgba(0,184,144,.4); background: rgba(0,184,144,.08); }
 
 /* ── Amélie ── */
@@ -604,7 +599,6 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 [data-theme="godfather"] .rank-num.gold        { color: var(--gold); }
 [data-theme="godfather"] .rank-num.silver      { color: #A08060; }
 [data-theme="godfather"] .rank-num.bronze      { color: #705040; }
-[data-theme="godfather"] .rank-score           { color: var(--gold); }
 [data-theme="godfather"] .rank-mn              { color: var(--green); border-color: rgba(72,120,64,.4); background: rgba(72,120,64,.08); }
 
 /* ── The Grand Budapest Hotel ── */
@@ -619,7 +613,6 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 [data-theme="grand-budapest"] .rank-num.gold   { color: var(--accent); }
 [data-theme="grand-budapest"] .rank-num.silver { color: var(--gold); }
 [data-theme="grand-budapest"] .rank-num.bronze { color: var(--blue); }
-[data-theme="grand-budapest"] .rank-score      { color: var(--accent); }
 [data-theme="grand-budapest"] .rank-mn         { color: var(--green); border-color: rgba(120,176,88,.4); background: rgba(120,176,88,.08); }
 
 /* ── Light-theme overrides (Blanc, Clockwork Orange) ── */

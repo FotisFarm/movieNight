@@ -103,6 +103,42 @@
 .global-hl-score.score-mid  { color: var(--gold); }
 .global-hl-score.score-low  { color: var(--red); }
 
+.global-hl-boost {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+  align-items: center;
+}
+
+.global-hl-base {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.global-hl-plus {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold);
+}
+
+.global-hl-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.global-hl-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--surface3);
+  border-radius: 10px;
+  padding: 2px 7px;
+  font-size: 11px;
+  color: var(--text2);
+}
+
 /* ── Voter Cards ── */
 .stats-voter-cards {
   display: grid;

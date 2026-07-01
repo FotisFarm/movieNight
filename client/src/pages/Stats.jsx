@@ -248,6 +248,22 @@ export default function Stats({ voter }) {
               <div className="global-hl-title">{bestFilm.title}</div>
               <div className="global-hl-meta">{bestFilm.director} · {bestFilm.year}</div>
               <div className={`global-hl-score ${scoreClass(bestFilm.fairBoosted)}`}>{fmt(bestFilm.fairBoosted)}</div>
+              {bestFilm.boost > 0 && (
+                <div className="global-hl-boost">
+                  <span className="global-hl-base">{fmt(bestFilm.fairScore)} base</span>
+                  <span className="global-hl-plus">+{bestFilm.boost.toFixed(1)} top 10</span>
+                </div>
+              )}
+              {bestFilm.top3 && Object.entries(bestFilm.top3).filter(([, r]) => r != null).length > 0 && (
+                <div className="global-hl-picks">
+                  {VOTERS.filter(v => bestFilm.top3?.[v] != null).map(v => (
+                    <span key={v} className="global-hl-pick">
+                      <RankIcon rank={bestFilm.top3[v]} />
+                      <span>{v.slice(0, 3)}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {worstFilm && (
