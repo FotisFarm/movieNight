@@ -7,6 +7,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { api } from '../api';
+import MovieCard from '../components/MovieCard';
 import MovieModal from '../components/MovieModal';
 import DirectorYearModal from '../components/DirectorYearModal';
 import RankIcon from '../components/RankIcon';
