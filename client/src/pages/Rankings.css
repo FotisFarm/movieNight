@@ -6,7 +6,16 @@
 
 .ranking-controls {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.btn-rank-active {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
 }
 
 .ranking-row-group {

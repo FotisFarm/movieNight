@@ -133,7 +133,7 @@ export default function Rankings() {
         {PANEL_TYPES.map(({ key, label }) => (
           <button
             key={key}
-            className={`btn btn-sm ${visibleTypes.includes(key) ? 'btn-primary' : 'btn-ghost'}`}
+            className={`btn btn-sm ${visibleTypes.includes(key) ? 'btn-rank-active' : 'btn-ghost'}`}
             onClick={() => togglePanelType(key)}
           >
             {label}
