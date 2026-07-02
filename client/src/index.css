@@ -613,7 +613,10 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 [data-theme="itmfl"] .nav-link:hover          { color: #5AC73D; }
 [data-theme="itmfl"] .nav-link.active         { color: var(--accent); background: rgba(216,28,35,.12); }
 [data-theme="itmfl"] .movie-card:hover,
-[data-theme="itmfl"] .movie-card:focus-visible { border-color: #5AC73D; }
+[data-theme="itmfl"] .movie-card:focus-visible { border-color: #5AC73D; box-shadow: 0 0 14px rgba(90,199,61,.18); }
+[data-theme="itmfl"] .btn-primary              { background: #5AC73D; color: #0A1A06; }
+[data-theme="itmfl"] .btn-primary:hover:not(:disabled) { background: #45A82E; }
+[data-theme="itmfl"] .view-btn.active          { color: #5AC73D; }
 [data-theme="itmfl"] .score-high              { color: #0B6E4F; }
 [data-theme="itmfl"] .score-mid               { color: #B8860B; }
 [data-theme="itmfl"] .score-low               { color: #C83040; }
