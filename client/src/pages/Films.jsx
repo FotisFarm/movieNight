@@ -34,6 +34,7 @@ export default function Films() {
   const [showAdd, setShowAdd]         = useState(false);
   const [viewMode, setViewMode]       = useState('list');
   const [scoreMode, setScoreMode]     = useState('fair');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { toast, Toast }              = useToast();
 
   const [search, setSearch]               = useState(DEFAULTS.search);
@@ -53,6 +54,12 @@ export default function Films() {
   const searchTimer = useRef(null);
 
   const filtersActive = search || filterMn || filterRated || filterWl || filterVoters.length || filterDirector || filterYearMin || filterYearMax || filterMinVoters || filterMaxVoters;
+
+  const activeFilterCount = [
+    filterMn, filterWl, filterVoters.length > 0,
+    !!filterDirector, !!filterYearMin, !!filterYearMax,
+    !!filterMinVoters, !!filterMaxVoters, !!filterRated,
+  ].filter(Boolean).length;
 
   const setters = { search: setSearch, sortBy: setSortBy, sortVoter: setSortVoter, filterMn: setFilterMn, filterRated: setFilterRated, filterWl: setFilterWl, filterVoters: setFilterVoters, filterDirector: setFilterDirector, filterYearMin: setFilterYearMin, filterYearMax: setFilterYearMax, filterMinVoters: setFilterMinVoters, filterMaxVoters: setFilterMaxVoters };
   function resetFilters() {
@@ -190,6 +197,13 @@ export default function Films() {
     <div>
       {/* Toolbar */}
       <div className="films-toolbar">
+        <button
+          className={`btn btn-ghost filters-toggle-btn${activeFilterCount > 0 ? ' filters-toggle-active' : ''}`}
+          onClick={() => setSidebarOpen(o => !o)}
+        >
+          Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+        </button>
+
         <div className="search-box">
           <span className="search-icon">🔍</span>
           <input
@@ -224,13 +238,15 @@ export default function Films() {
         <button className="btn btn-primary" onClick={() => setShowAdd(true)}>+ Add Film</button>
       </div>
 
-      {/* Filters */}
-      <div className="films-filters">
-        {/* Row 1: sort + quick toggles */}
-        <div className="filter-row">
-          <label className="filter-item">
-            Sort
-            <select className="select select-sm" value={sortBy} onChange={e => {
+      {/* Two-column layout: sidebar + content */}
+      <div className="films-layout">
+
+        <aside className={`films-sidebar${sidebarOpen ? ' films-sidebar--open' : ''}`}>
+
+          {/* Sort */}
+          <div className="filter-group">
+            <span className="filter-group-label">Sort</span>
+            <select className="select select-sm filter-group-control" value={sortBy} onChange={e => {
               setSortBy(e.target.value);
               if (e.target.value === 'score-desc' || e.target.value === 'score-asc') setScoreMode('fair');
               if (e.target.value === 'group-desc' || e.target.value === 'group-asc') setScoreMode('group');
@@ -249,33 +265,35 @@ export default function Films() {
               <option value="added-desc">Recently Added</option>
               <option value="added-asc">First Added</option>
             </select>
-          </label>
+            {(sortBy === 'voter-desc' || sortBy === 'voter-asc') && (
+              <>
+                <span className="filter-group-label" style={{ marginTop: 8 }}>By voter</span>
+                <select className="select select-sm filter-group-control" value={sortVoter} onChange={e => setSortVoter(e.target.value)}>
+                  {VOTERS.map(v => <option key={v}>{v}</option>)}
+                </select>
+              </>
+            )}
+          </div>
 
-          {(sortBy === 'voter-desc' || sortBy === 'voter-asc') && (
-            <label className="filter-item">
-              by
-              <select className="select select-sm" value={sortVoter} onChange={e => setSortVoter(e.target.value)}>
-                {VOTERS.map(v => <option key={v}>{v}</option>)}
-              </select>
+          <div className="filter-divider" />
+
+          {/* Quick toggles */}
+          <div className="filter-group">
+            <label className="filter-check filter-check-mn">
+              <input type="checkbox" checked={filterMn} onChange={e => setFilterMn(e.target.checked)} />
+              Movie Night
             </label>
-          )}
+            <label className="filter-check" style={{ marginTop: 6 }}>
+              <input type="checkbox" checked={filterWl} onChange={e => setFilterWl(e.target.checked)} />
+              Watchlist
+            </label>
+          </div>
 
-          <div className="filter-sep" />
+          <div className="filter-divider" />
 
-          <label className="filter-check filter-check-mn">
-            <input type="checkbox" checked={filterMn} onChange={e => setFilterMn(e.target.checked)} />
-            Movie Night
-          </label>
-          <label className="filter-check">
-            <input type="checkbox" checked={filterWl} onChange={e => setFilterWl(e.target.checked)} />
-            Watchlist
-          </label>
-        </div>
-
-        {/* Row 2: detailed filters */}
-        <div className="filter-row">
-          <div className="filter-item filter-voters-item">
-            By voter
+          {/* By voter */}
+          <div className="filter-group">
+            <span className="filter-group-label">By voter</span>
             <div className="filter-voters">
               {VOTERS.map(v => (
                 <button
@@ -291,105 +309,121 @@ export default function Films() {
             </div>
           </div>
 
-          <div className="filter-sep" />
+          <div className="filter-divider" />
 
-          <label className="filter-item">
-            Director
-            <select className="select select-sm" value={filterDirector} onChange={e => setFilterDirector(e.target.value)}>
+          {/* Director */}
+          <div className="filter-group">
+            <label className="filter-group-label" htmlFor="filter-director">Director</label>
+            <select id="filter-director" className="select select-sm filter-group-control"
+              value={filterDirector} onChange={e => setFilterDirector(e.target.value)}>
               <option value="">All</option>
               {directors.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
-          </label>
+          </div>
 
-          <label className="filter-item">
-            Year
-            <input className="input input-sm" style={{ width: 62 }} placeholder="From"
-              value={filterYearMin} onChange={e => setFilterYearMin(e.target.value)} />
-            <span style={{ color: 'var(--text3)' }}>–</span>
-            <input className="input input-sm" style={{ width: 62 }} placeholder="To"
-              value={filterYearMax} onChange={e => setFilterYearMax(e.target.value)} />
-          </label>
+          {/* Year */}
+          <div className="filter-group">
+            <span className="filter-group-label">Year</span>
+            <div className="filter-range-row">
+              <input className="input input-sm" placeholder="From"
+                value={filterYearMin} onChange={e => setFilterYearMin(e.target.value)} />
+              <span className="filter-range-sep">–</span>
+              <input className="input input-sm" placeholder="To"
+                value={filterYearMax} onChange={e => setFilterYearMax(e.target.value)} />
+            </div>
+          </div>
 
-          <label className="filter-item">
-            Voters
-            <select className="select select-sm" value={filterMinVoters} onChange={e => setFilterMinVoters(e.target.value)}>
-              <option value="">Min</option>
-              <option value="1">≥ 1</option>
-              <option value="2">≥ 2</option>
-              <option value="3">≥ 3</option>
-              <option value="4">≥ 4</option>
-              <option value="5">≥ 5</option>
-            </select>
-            <span style={{ color: 'var(--text3)' }}>–</span>
-            <select className="select select-sm" value={filterMaxVoters} onChange={e => setFilterMaxVoters(e.target.value)}>
-              <option value="">Max</option>
-              <option value="0">0</option>
-              <option value="1">≤ 1</option>
-              <option value="2">≤ 2</option>
-              <option value="3">≤ 3</option>
-              <option value="4">≤ 4</option>
-              <option value="5">≤ 5</option>
-            </select>
-          </label>
+          {/* Voters */}
+          <div className="filter-group">
+            <span className="filter-group-label">Voters</span>
+            <div className="filter-range-row">
+              <select className="select select-sm" value={filterMinVoters} onChange={e => setFilterMinVoters(e.target.value)}>
+                <option value="">Min</option>
+                <option value="1">≥ 1</option>
+                <option value="2">≥ 2</option>
+                <option value="3">≥ 3</option>
+                <option value="4">≥ 4</option>
+                <option value="5">≥ 5</option>
+              </select>
+              <span className="filter-range-sep">–</span>
+              <select className="select select-sm" value={filterMaxVoters} onChange={e => setFilterMaxVoters(e.target.value)}>
+                <option value="">Max</option>
+                <option value="0">0</option>
+                <option value="1">≤ 1</option>
+                <option value="2">≤ 2</option>
+                <option value="3">≤ 3</option>
+                <option value="4">≤ 4</option>
+                <option value="5">≤ 5</option>
+              </select>
+            </div>
+          </div>
 
-          <label className="filter-item">
-            Voted
-            <select className="select select-sm" value={filterRated} onChange={e => setFilterRated(e.target.value)}>
+          {/* Voted */}
+          <div className="filter-group">
+            <label className="filter-group-label" htmlFor="filter-voted">Voted</label>
+            <select id="filter-voted" className="select select-sm filter-group-control"
+              value={filterRated} onChange={e => setFilterRated(e.target.value)}>
               <option value="">Any</option>
               <option value="voted">Voted</option>
               <option value="unvoted">Unvoted</option>
             </select>
-          </label>
-
-          <div className="filter-sep" />
-
-          <button
-            className={`btn btn-sm${filtersActive ? ' btn-ghost filter-reset-active' : ' btn-ghost'}`}
-            onClick={resetFilters}
-            disabled={!filtersActive}
-          >
-            Reset
-          </button>
-
-          <span className="filter-count">{searchFiltered.length} / {movies.length} films</span>
-        </div>
-      </div>
-
-      {/* Film list / grid */}
-      {loading ? (
-        <div className="spinner" />
-      ) : sorted.length === 0 ? (
-        <div className="empty">
-          <div className="empty-icon">🎬</div>
-          <div className="empty-title">No films found</div>
-          <div>Try adjusting your filters</div>
-        </div>
-      ) : (
-        <>
-          <div className={viewMode === 'grid' ? 'films-grid' : 'films-list'}>
-              {visible.map((m) => (
-                <MovieCard
-                  key={m.id}
-                  movie={{
-                    ...m,
-                    rank_global: (scoreMode === 'group' ? rankMap.group   : rankMap.fair  )[m.id] ?? null,
-                    mn_rank:     (scoreMode === 'group' ? rankMap.mnGroup : rankMap.mnFair)[m.id] ?? null,
-                  }}
-                  onClick={() => setSelectedId(m.id)}
-                  listView={viewMode === 'list'}
-                  scoreMode={scoreMode}
-                />
-              ))}
           </div>
-          {hasMore && (
-            <div style={{ textAlign: 'center', marginTop: 24 }}>
-              <button className="btn btn-ghost" onClick={() => setPage(p => p + 1)}>
-                Load more ({sorted.length - visible.length} remaining)
-              </button>
+
+          <div className="filter-divider" />
+
+          {/* Footer */}
+          <div className="filter-footer">
+            <button
+              className={`btn btn-sm${filtersActive ? ' btn-ghost filter-reset-active' : ' btn-ghost'}`}
+              onClick={resetFilters}
+              disabled={!filtersActive}
+            >
+              Reset
+            </button>
+            <span className="filter-count">{searchFiltered.length} / {movies.length}</span>
+          </div>
+
+        </aside>
+
+        {/* Main content */}
+        <div className="films-main">
+          {loading ? (
+            <div className="spinner" />
+          ) : sorted.length === 0 ? (
+            <div className="empty">
+              <div className="empty-icon">🎬</div>
+              <div className="empty-title">No films found</div>
+              <div>Try adjusting your filters</div>
             </div>
+          ) : (
+            <>
+              <div className={viewMode === 'grid' ? 'films-grid' : 'films-list'}>
+                {visible.map((m) => (
+                  <MovieCard
+                    key={m.id}
+                    movie={{
+                      ...m,
+                      rank_global: (scoreMode === 'group' ? rankMap.group   : rankMap.fair  )[m.id] ?? null,
+                      mn_rank:     (scoreMode === 'group' ? rankMap.mnGroup : rankMap.mnFair)[m.id] ?? null,
+                    }}
+                    onClick={() => setSelectedId(m.id)}
+                    listView={viewMode === 'list'}
+                    scoreMode={scoreMode}
+                  />
+                ))}
+              </div>
+              {hasMore && (
+                <div style={{ textAlign: 'center', marginTop: 24 }}>
+                  <button className="btn btn-ghost" onClick={() => setPage(p => p + 1)}>
+                    Load more ({sorted.length - visible.length} remaining)
+                  </button>
+                </div>
+              )}
+            </>
           )}
-        </>
-      )}
+        </div>
+
+      </div>
 
       {selectedId && (
         <MovieModal
