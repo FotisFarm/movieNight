@@ -150,7 +150,7 @@ export default function Films() {
     : movies;
 
   const scoreSortActive = sortBy === 'score-desc' || sortBy === 'score-asc' || sortBy === 'group-desc' || sortBy === 'group-asc' || sortBy === 'controversial';
-  const sortBase = scoreSortActive ? searchFiltered.filter(m => m.voterCount >= 2) : searchFiltered;
+  const sortBase = scoreSortActive && filterRated !== 'unvoted' ? searchFiltered.filter(m => m.voterCount >= 2) : searchFiltered;
 
   const sorted = [...sortBase].sort((a, b) => {
     switch (sortBy) {
