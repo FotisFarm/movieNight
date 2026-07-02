@@ -72,6 +72,9 @@
   border-radius: var(--radius);
   padding: 10px 14px;
   margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .filter-row {
@@ -79,6 +82,7 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  row-gap: 8px;
 }
 
 .filter-item {
@@ -184,4 +188,7 @@
   .filter-sep { display: none; }
   .search-box { min-width: 0; flex-basis: 100%; max-width: 100%; }
   .films-toolbar { row-gap: 8px; }
+  .filter-row { gap: 8px; row-gap: 10px; }
+  .filter-voters-item { flex-basis: 100%; }
+  .filter-count { margin-left: 0; }
 }

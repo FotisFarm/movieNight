@@ -226,6 +226,7 @@ export default function Films() {
 
       {/* Filters */}
       <div className="films-filters">
+        {/* Row 1: sort + quick toggles */}
         <div className="filter-row">
           <label className="filter-item">
             Sort
@@ -265,22 +266,15 @@ export default function Films() {
             <input type="checkbox" checked={filterMn} onChange={e => setFilterMn(e.target.checked)} />
             Movie Night
           </label>
-          <label className="filter-item">
-            Voted
-            <select className="select select-sm" value={filterRated} onChange={e => setFilterRated(e.target.value)}>
-              <option value="">Any</option>
-              <option value="voted">Voted</option>
-              <option value="unvoted">Unvoted</option>
-            </select>
-          </label>
           <label className="filter-check">
             <input type="checkbox" checked={filterWl} onChange={e => setFilterWl(e.target.checked)} />
             Watchlist
           </label>
+        </div>
 
-          <div className="filter-sep" />
-
-          <div className="filter-item">
+        {/* Row 2: detailed filters */}
+        <div className="filter-row">
+          <div className="filter-item filter-voters-item">
             By voter
             <div className="filter-voters">
               {VOTERS.map(v => (
@@ -296,6 +290,8 @@ export default function Films() {
               ))}
             </div>
           </div>
+
+          <div className="filter-sep" />
 
           <label className="filter-item">
             Director
@@ -333,6 +329,15 @@ export default function Films() {
               <option value="3">≤ 3</option>
               <option value="4">≤ 4</option>
               <option value="5">≤ 5</option>
+            </select>
+          </label>
+
+          <label className="filter-item">
+            Voted
+            <select className="select select-sm" value={filterRated} onChange={e => setFilterRated(e.target.value)}>
+              <option value="">Any</option>
+              <option value="voted">Voted</option>
+              <option value="unvoted">Unvoted</option>
             </select>
           </label>
 
