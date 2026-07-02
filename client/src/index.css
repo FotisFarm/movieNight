@@ -380,6 +380,31 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 .badge-top3    { background: #e8c54715; color: var(--gold);   border: 1px solid #e8c54730; font-size: 11px; }
 .badge-imdb    { background: #F5C518; color: #000000; border: 1px solid #d4aa00; font-weight: 700; text-decoration: none; }
 
+/* ── IMDb pill (shared across all pages) ── */
+.badge-imdb-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.badge-imdb-pill:hover { opacity: .8; }
+.imdb-logo {
+  background: #F5C518;
+  color: #000;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  padding: 1px 3px;
+  border-radius: 2px;
+  line-height: 1.4;
+}
+.imdb-rating {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+}
+
 /* ── Score colours ── */
 .score-high   { color: var(--green); }
 .score-mid    { color: var(--gold); }

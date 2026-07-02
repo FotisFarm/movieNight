@@ -58,6 +58,17 @@ export default function RankingSection({ title, rows, onMovieClick, onDirectorCl
                     {row.count !== undefined && <div className="rank-sub">{row.count} film{row.count !== 1 ? 's' : ''}</div>}
                     {row.voters?.length > 0 && <VoterPills voters={row.voters} top3={row.top3} />}
                   </td>
+                  {row.imdb_rating != null && (
+                    <td className="rank-imdb">
+                      {row.imdb_id ? (
+                        <a href={`https://www.imdb.com/title/${row.imdb_id}/`} className="badge-imdb-pill" target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
+                          <span className="imdb-logo">IMDb</span><span className="imdb-rating">{Number.isInteger(row.imdb_rating) ? row.imdb_rating : row.imdb_rating.toFixed(1)}</span>
+                        </a>
+                      ) : (
+                        <span className="badge-imdb-pill"><span className="imdb-logo">IMDb</span><span className="imdb-rating">{Number.isInteger(row.imdb_rating) ? row.imdb_rating : row.imdb_rating.toFixed(1)}</span></span>
+                      )}
+                    </td>
+                  )}
                   <td className={`rank-score ${scoreClass(val)}`}>{fmt(val)}</td>
                 </tr>
               );

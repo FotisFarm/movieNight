@@ -31,24 +31,24 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
   const cardClass = `movie-card${mn ? ' mn' : ''}${listView ? ' list-view' : ''}`;
   const keyProps = { role: 'button', tabIndex: 0, onKeyDown: e => e.key === 'Enter' && onClick() };
 
-  const imdbLabel = imdb_rating != null
-    ? (Number.isInteger(imdb_rating) ? imdb_rating : imdb_rating.toFixed(1))
-    : null;
-
-  const ImdbInline = imdbLabel && (
+  const ImdbBadge = imdb_rating != null && (
     imdb_id ? (
       <a
         href={`https://www.imdb.com/title/${imdb_id}/`}
-        className="card-imdb-inline"
+        className="badge-imdb-pill"
         target="_blank"
         rel="noopener noreferrer"
         onClick={e => e.stopPropagation()}
         title="View on IMDb"
       >
-        <span className="card-imdb-logo">IMDb</span>{imdbLabel}
+        <span className="imdb-logo">IMDb</span>
+        <span className="imdb-rating">{Number.isInteger(imdb_rating) ? imdb_rating : imdb_rating.toFixed(1)}</span>
       </a>
     ) : (
-      <span className="card-imdb-inline"><span className="card-imdb-logo">IMDb</span>{imdbLabel}</span>
+      <span className="badge-imdb-pill">
+        <span className="imdb-logo">IMDb</span>
+        <span className="imdb-rating">{Number.isInteger(imdb_rating) ? imdb_rating : imdb_rating.toFixed(1)}</span>
+      </span>
     )
   );
 
@@ -62,10 +62,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
         </div>
 
         <div className="card-info">
-          <div className="card-title-row">
-            <h3 className="card-title">{title}</h3>
-            {ImdbInline}
-          </div>
+          <h3 className="card-title">{title}</h3>
           <p className="card-meta">
             <span className="card-director">{director}</span>
             {year ? <> · <span className="card-year">{year}</span></> : null}
@@ -76,6 +73,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
           {mn          && <span className="badge badge-mn">MN{mn_rank ? ` #${mn_rank}` : ''}</span>}
           {watchlist   && <span className="badge badge-wl">WL</span>}
           {rank_global && <span className="badge badge-ranked">#{rank_global}</span>}
+          {ImdbBadge}
         </div>
 
         <div className="card-ratings">
@@ -94,10 +92,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
       </div>
 
       <div className="card-body">
-        <div className="card-title-row">
-          <h3 className="card-title">{title}</h3>
-          {ImdbInline}
-        </div>
+        <h3 className="card-title">{title}</h3>
         <p className="card-meta">
           <span className="card-director">{director}</span>
           {year ? <> · <span className="card-year">{year}</span></> : null}
@@ -107,6 +102,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
           {mn          && <span className="badge badge-mn">MN{mn_rank ? ` #${mn_rank}` : ''}</span>}
           {watchlist   && <span className="badge badge-wl">WL</span>}
           {rank_global && <span className="badge badge-ranked">#{rank_global}</span>}
+          {ImdbBadge}
         </div>
 
         <div className="card-ratings">

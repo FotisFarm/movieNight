@@ -276,6 +276,15 @@ export default function Recommendations() {
                       <div className="rec-badges">
                         {f.mn        && <span className="badge badge-mn">MN</span>}
                         {f.watchlist && <span className="badge badge-wl">WL</span>}
+                        {f.imdb_rating != null && (
+                          f.imdb_id ? (
+                            <a href={`https://www.imdb.com/title/${f.imdb_id}/`} className="badge-imdb-pill" target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} title="View on IMDb">
+                              <span className="imdb-logo">IMDb</span><span className="imdb-rating">{Number.isInteger(f.imdb_rating) ? f.imdb_rating : f.imdb_rating.toFixed(1)}</span>
+                            </a>
+                          ) : (
+                            <span className="badge-imdb-pill"><span className="imdb-logo">IMDb</span><span className="imdb-rating">{Number.isInteger(f.imdb_rating) ? f.imdb_rating : f.imdb_rating.toFixed(1)}</span></span>
+                          )
+                        )}
                       </div>
                     </div>
                     <span className="rec-meta">{f.director}{f.year ? ` · ${f.year}` : ''}</span>

@@ -194,17 +194,14 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
               <div className="info-cell">
                 <div className="info-val">
                   {movie.imdb_id ? (
-                    <a
-                      href={`https://www.imdb.com/title/${movie.imdb_id}/`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ textDecoration: 'none', fontWeight: 700 }}
-                    >
-                      {Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}
+                    <a href={`https://www.imdb.com/title/${movie.imdb_id}/`} className="badge-imdb-pill" target="_blank" rel="noopener noreferrer" style={{ fontSize: 14 }}>
+                      <span className="imdb-logo" style={{ fontSize: 11 }}>IMDb</span>
+                      <span className="imdb-rating" style={{ fontSize: 14 }}>{Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}</span>
                     </a>
                   ) : (
-                    <span style={{ fontWeight: 700 }}>
-                      {Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}
+                    <span className="badge-imdb-pill" style={{ fontSize: 14 }}>
+                      <span className="imdb-logo" style={{ fontSize: 11 }}>IMDb</span>
+                      <span className="imdb-rating" style={{ fontSize: 14 }}>{Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}</span>
                     </span>
                   )}
                 </div>
