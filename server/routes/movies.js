@@ -68,7 +68,7 @@ function enrichMovie(movie) {
 
 // GET /api/movies
 router.get('/', (req, res) => {
-  const { search, director, year, yearMin, yearMax, voter, voters, mn, watchlist, rated, minVoters } = req.query;
+  const { search, director, year, yearMin, yearMax, voter, voters, mn, watchlist, rated, minVoters, maxVoters } = req.query;
 
   let query = 'SELECT * FROM movies WHERE 1=1';
   const params = [];
@@ -88,13 +88,19 @@ router.get('/', (req, res) => {
       query += ' AND EXISTS (SELECT 1 FROM ratings WHERE movie_id = movies.id AND voter = ?)';
       params.push(v);
     }
-  } else if (rated === '1') {
+  } else if (rated === 'voted' || rated === '1') {
     query += ' AND EXISTS (SELECT 1 FROM ratings WHERE movie_id = movies.id)';
+  } else if (rated === 'unvoted') {
+    query += ' AND NOT EXISTS (SELECT 1 FROM ratings WHERE movie_id = movies.id)';
   }
 
   if (minVoters) {
     query += ' AND (SELECT COUNT(*) FROM ratings WHERE movie_id = movies.id) >= ?';
     params.push(parseInt(minVoters));
+  }
+  if (maxVoters !== undefined && maxVoters !== '') {
+    query += ' AND (SELECT COUNT(*) FROM ratings WHERE movie_id = movies.id) <= ?';
+    params.push(parseInt(maxVoters));
   }
 
   query += ' ORDER BY title COLLATE NOCASE ASC';

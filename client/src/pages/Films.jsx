@@ -15,13 +15,14 @@ const DEFAULTS = {
   sortBy: 'alpha',
   sortVoter: 'Φώτης',
   filterMn: false,
-  filterRated: false,
+  filterRated: '',
   filterWl: false,
   filterVoters: [],
   filterDirector: '',
   filterYearMin: '',
   filterYearMax: '',
   filterMinVoters: '',
+  filterMaxVoters: '',
 };
 
 export default function Films() {
@@ -46,13 +47,14 @@ export default function Films() {
   const [filterYearMin, setFilterYearMin]         = useState(DEFAULTS.filterYearMin);
   const [filterYearMax, setFilterYearMax]         = useState(DEFAULTS.filterYearMax);
   const [filterMinVoters, setFilterMinVoters]     = useState(DEFAULTS.filterMinVoters);
+  const [filterMaxVoters, setFilterMaxVoters]     = useState(DEFAULTS.filterMaxVoters);
   const [directors, setDirectors]                 = useState([]);
 
   const searchTimer = useRef(null);
 
-  const filtersActive = search || filterMn || filterRated || filterWl || filterVoters.length || filterDirector || filterYearMin || filterYearMax || filterMinVoters;
+  const filtersActive = search || filterMn || filterRated || filterWl || filterVoters.length || filterDirector || filterYearMin || filterYearMax || filterMinVoters || filterMaxVoters;
 
-  const setters = { search: setSearch, sortBy: setSortBy, sortVoter: setSortVoter, filterMn: setFilterMn, filterRated: setFilterRated, filterWl: setFilterWl, filterVoters: setFilterVoters, filterDirector: setFilterDirector, filterYearMin: setFilterYearMin, filterYearMax: setFilterYearMax, filterMinVoters: setFilterMinVoters };
+  const setters = { search: setSearch, sortBy: setSortBy, sortVoter: setSortVoter, filterMn: setFilterMn, filterRated: setFilterRated, filterWl: setFilterWl, filterVoters: setFilterVoters, filterDirector: setFilterDirector, filterYearMin: setFilterYearMin, filterYearMax: setFilterYearMax, filterMinVoters: setFilterMinVoters, filterMaxVoters: setFilterMaxVoters };
   function resetFilters() {
     Object.entries(DEFAULTS).forEach(([k, v]) => setters[k](v));
   }
@@ -89,15 +91,16 @@ export default function Films() {
       fetchMovies({
         mn:         filterMn        ? '1' : undefined,
         watchlist:  filterWl        ? '1' : undefined,
-        rated:      filterRated     ? '1' : undefined,
+        rated:      filterRated     || undefined,
         voters:     filterVoters.length ? filterVoters.join(',') : undefined,
         director:   filterDirector  || undefined,
         yearMin:    filterYearMin   || undefined,
         yearMax:    filterYearMax   || undefined,
         minVoters:  filterMinVoters || undefined,
+        maxVoters:  filterMaxVoters || undefined,
       });
     }, 250);
-  }, [search, filterMn, filterWl, filterRated, filterVoters, filterDirector, filterYearMin, filterYearMax, filterMinVoters, fetchMovies]);
+  }, [search, filterMn, filterWl, filterRated, filterVoters, filterDirector, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, fetchMovies]);
 
   const rankMap = useMemo(() => {
     const rated   = allMovies.filter(m => m.voterCount >= 2);
@@ -262,9 +265,13 @@ export default function Films() {
             <input type="checkbox" checked={filterMn} onChange={e => setFilterMn(e.target.checked)} />
             Movie Night
           </label>
-          <label className="filter-check">
-            <input type="checkbox" checked={filterRated} onChange={e => setFilterRated(e.target.checked)} />
-            Rated only
+          <label className="filter-item">
+            Voted
+            <select className="select select-sm" value={filterRated} onChange={e => setFilterRated(e.target.value)}>
+              <option value="">Any</option>
+              <option value="voted">Voted</option>
+              <option value="unvoted">Unvoted</option>
+            </select>
           </label>
           <label className="filter-check">
             <input type="checkbox" checked={filterWl} onChange={e => setFilterWl(e.target.checked)} />
@@ -274,7 +281,7 @@ export default function Films() {
           <div className="filter-sep" />
 
           <div className="filter-item">
-            Voted
+            By voter
             <div className="filter-voters">
               {VOTERS.map(v => (
                 <button
@@ -310,12 +317,22 @@ export default function Films() {
           <label className="filter-item">
             Voters
             <select className="select select-sm" value={filterMinVoters} onChange={e => setFilterMinVoters(e.target.value)}>
-              <option value="">Any</option>
+              <option value="">Min</option>
               <option value="1">≥ 1</option>
               <option value="2">≥ 2</option>
               <option value="3">≥ 3</option>
               <option value="4">≥ 4</option>
-              <option value="5">All 5</option>
+              <option value="5">≥ 5</option>
+            </select>
+            <span style={{ color: 'var(--text3)' }}>–</span>
+            <select className="select select-sm" value={filterMaxVoters} onChange={e => setFilterMaxVoters(e.target.value)}>
+              <option value="">Max</option>
+              <option value="0">0</option>
+              <option value="1">≤ 1</option>
+              <option value="2">≤ 2</option>
+              <option value="3">≤ 3</option>
+              <option value="4">≤ 4</option>
+              <option value="5">≤ 5</option>
             </select>
           </label>
 
