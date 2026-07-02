@@ -21,6 +21,7 @@ const DEFAULTS = {
   filterDirector: '',
   filterYearMin: '',
   filterYearMax: '',
+  filterMinVoters: '',
 };
 
 export default function Films() {
@@ -42,15 +43,16 @@ export default function Films() {
   const [filterWl, setFilterWl]           = useState(DEFAULTS.filterWl);
   const [filterVoters, setFilterVoters]       = useState(DEFAULTS.filterVoters);
   const [filterDirector, setFilterDirector]   = useState(DEFAULTS.filterDirector);
-  const [filterYearMin, setFilterYearMin]     = useState(DEFAULTS.filterYearMin);
-  const [filterYearMax, setFilterYearMax]     = useState(DEFAULTS.filterYearMax);
-  const [directors, setDirectors]             = useState([]);
+  const [filterYearMin, setFilterYearMin]         = useState(DEFAULTS.filterYearMin);
+  const [filterYearMax, setFilterYearMax]         = useState(DEFAULTS.filterYearMax);
+  const [filterMinVoters, setFilterMinVoters]     = useState(DEFAULTS.filterMinVoters);
+  const [directors, setDirectors]                 = useState([]);
 
   const searchTimer = useRef(null);
 
-  const filtersActive = search || filterMn || filterRated || filterWl || filterVoters.length || filterDirector || filterYearMin || filterYearMax;
+  const filtersActive = search || filterMn || filterRated || filterWl || filterVoters.length || filterDirector || filterYearMin || filterYearMax || filterMinVoters;
 
-  const setters = { search: setSearch, sortBy: setSortBy, sortVoter: setSortVoter, filterMn: setFilterMn, filterRated: setFilterRated, filterWl: setFilterWl, filterVoters: setFilterVoters, filterDirector: setFilterDirector, filterYearMin: setFilterYearMin, filterYearMax: setFilterYearMax };
+  const setters = { search: setSearch, sortBy: setSortBy, sortVoter: setSortVoter, filterMn: setFilterMn, filterRated: setFilterRated, filterWl: setFilterWl, filterVoters: setFilterVoters, filterDirector: setFilterDirector, filterYearMin: setFilterYearMin, filterYearMax: setFilterYearMax, filterMinVoters: setFilterMinVoters };
   function resetFilters() {
     Object.entries(DEFAULTS).forEach(([k, v]) => setters[k](v));
   }
@@ -85,16 +87,17 @@ export default function Films() {
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
       fetchMovies({
-        mn:        filterMn       ? '1' : undefined,
-        watchlist: filterWl       ? '1' : undefined,
-        rated:     filterRated    ? '1' : undefined,
-        voters:    filterVoters.length ? filterVoters.join(',') : undefined,
-        director:  filterDirector || undefined,
-        yearMin:   filterYearMin  || undefined,
-        yearMax:   filterYearMax  || undefined,
+        mn:         filterMn        ? '1' : undefined,
+        watchlist:  filterWl        ? '1' : undefined,
+        rated:      filterRated     ? '1' : undefined,
+        voters:     filterVoters.length ? filterVoters.join(',') : undefined,
+        director:   filterDirector  || undefined,
+        yearMin:    filterYearMin   || undefined,
+        yearMax:    filterYearMax   || undefined,
+        minVoters:  filterMinVoters || undefined,
       });
     }, 250);
-  }, [search, filterMn, filterWl, filterRated, filterVoters, filterDirector, filterYearMin, filterYearMax, fetchMovies]);
+  }, [search, filterMn, filterWl, filterRated, filterVoters, filterDirector, filterYearMin, filterYearMax, filterMinVoters, fetchMovies]);
 
   const rankMap = useMemo(() => {
     const rated   = allMovies.filter(m => m.voterCount >= 2);
@@ -302,6 +305,18 @@ export default function Films() {
             <span style={{ color: 'var(--text3)' }}>–</span>
             <input className="input input-sm" style={{ width: 62 }} placeholder="To"
               value={filterYearMax} onChange={e => setFilterYearMax(e.target.value)} />
+          </label>
+
+          <label className="filter-item">
+            Voters
+            <select className="select select-sm" value={filterMinVoters} onChange={e => setFilterMinVoters(e.target.value)}>
+              <option value="">Any</option>
+              <option value="1">≥ 1</option>
+              <option value="2">≥ 2</option>
+              <option value="3">≥ 3</option>
+              <option value="4">≥ 4</option>
+              <option value="5">All 5</option>
+            </select>
           </label>
 
           <div className="filter-sep" />
