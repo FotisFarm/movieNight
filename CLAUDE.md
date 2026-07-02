@@ -228,9 +228,11 @@ ssh user@server "docker run --rm -v movienight_sqlite_data:/data alpine cat /dat
 ```
 
 ## Deploy (production)
-`.github/workflows/deploy.yml` triggers automatically on every push to `main`:
+`.github/workflows/deploy.yml` triggers on push to `main` **only when at least one commit message contains `[deploy]`**.
 - SSHes into the server, runs `git pull` in `~/movieNight`
 - Runs `docker compose down` then `docker compose up --build -d`
+
+**Commit convention**: always prefix the commit message with `[deploy]` when you want changes pushed to the production server (e.g. `[deploy] Fix cookie flag`). Commits without `[deploy]` are pushed to GitHub but not deployed. When Claude makes changes that should go live, the final commit must include `[deploy]`.
 
 Reuses the same GitHub secrets: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`. No additional setup needed.
 
