@@ -81,11 +81,13 @@ router.get('/', (req, res) => {
   if (mn === '1')        { query += ' AND mn = 1'; }
   if (watchlist === '1') { query += ' AND watchlist = 1'; }
 
-  // Multi-voter AND filter: film must be rated by every listed voter
   const voterList = (voters ? voters.split(',') : voter ? [voter] : []).map(v => v.trim()).filter(Boolean);
   if (voterList.length) {
+    const exists = rated === 'unvoted'
+      ? 'AND NOT EXISTS (SELECT 1 FROM ratings WHERE movie_id = movies.id AND voter = ?)'
+      : 'AND EXISTS (SELECT 1 FROM ratings WHERE movie_id = movies.id AND voter = ?)';
     for (const v of voterList) {
-      query += ' AND EXISTS (SELECT 1 FROM ratings WHERE movie_id = movies.id AND voter = ?)';
+      query += ` ${exists}`;
       params.push(v);
     }
   } else if (rated === 'voted' || rated === '1') {
