@@ -15,7 +15,7 @@ const DEFAULTS = {
   sortBy: 'alpha',
   sortVoter: 'Φώτης',
   filterMn: false,
-  filterRated: '',
+  filterRated: 'voted',
   filterWl: false,
   filterVoters: [],
   filterDirector: '',
@@ -291,6 +291,17 @@ export default function Films() {
 
           <div className="filter-divider" />
 
+          {/* Voted */}
+          <div className="filter-group">
+            <label className="filter-group-label" htmlFor="filter-voted">Voted</label>
+            <select id="filter-voted" className="select select-sm filter-group-control"
+              value={filterRated} onChange={e => setFilterRated(e.target.value)}>
+              <option value="">Any</option>
+              <option value="voted">Voted</option>
+              <option value="unvoted">Unvoted</option>
+            </select>
+          </div>
+
           {/* By voter */}
           <div className="filter-group">
             <span className="filter-group-label">By voter</span>
@@ -356,17 +367,6 @@ export default function Films() {
                 <option value="5">≤ 5</option>
               </select>
             </div>
-          </div>
-
-          {/* Voted */}
-          <div className="filter-group">
-            <label className="filter-group-label" htmlFor="filter-voted">Voted</label>
-            <select id="filter-voted" className="select select-sm filter-group-control"
-              value={filterRated} onChange={e => setFilterRated(e.target.value)}>
-              <option value="">Any</option>
-              <option value="voted">Voted</option>
-              <option value="unvoted">Unvoted</option>
-            </select>
           </div>
 
           <div className="filter-divider" />
