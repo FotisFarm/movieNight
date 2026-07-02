@@ -31,6 +31,27 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
   const cardClass = `movie-card${mn ? ' mn' : ''}${listView ? ' list-view' : ''}`;
   const keyProps = { role: 'button', tabIndex: 0, onKeyDown: e => e.key === 'Enter' && onClick() };
 
+  const imdbLabel = imdb_rating != null
+    ? (Number.isInteger(imdb_rating) ? imdb_rating : imdb_rating.toFixed(1))
+    : null;
+
+  const ImdbInline = imdbLabel && (
+    imdb_id ? (
+      <a
+        href={`https://www.imdb.com/title/${imdb_id}/`}
+        className="card-imdb-inline"
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={e => e.stopPropagation()}
+        title="View on IMDb"
+      >
+        ★ {imdbLabel}
+      </a>
+    ) : (
+      <span className="card-imdb-inline">★ {imdbLabel}</span>
+    )
+  );
+
   if (listView) {
     return (
       <article className={cardClass} onClick={onClick} {...keyProps}>
@@ -41,7 +62,10 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
         </div>
 
         <div className="card-info">
-          <h3 className="card-title">{title}</h3>
+          <div className="card-title-row">
+            <h3 className="card-title">{title}</h3>
+            {ImdbInline}
+          </div>
           <p className="card-meta">
             <span className="card-director">{director}</span>
             {year ? <> · <span className="card-year">{year}</span></> : null}
@@ -52,24 +76,6 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
           {mn          && <span className="badge badge-mn">MN{mn_rank ? ` #${mn_rank}` : ''}</span>}
           {watchlist   && <span className="badge badge-wl">WL</span>}
           {rank_global && <span className="badge badge-ranked">#{rank_global}</span>}
-          {imdb_rating != null && (
-            imdb_id ? (
-              <a
-                href={`https://www.imdb.com/title/${imdb_id}/`}
-                className="badge badge-imdb"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                title="View on IMDb"
-              >
-                IMDb {Number.isInteger(imdb_rating) ? imdb_rating : imdb_rating.toFixed(1)}
-              </a>
-            ) : (
-              <span className="badge badge-imdb">
-                IMDb {Number.isInteger(imdb_rating) ? imdb_rating : imdb_rating.toFixed(1)}
-              </span>
-            )
-          )}
         </div>
 
         <div className="card-ratings">
@@ -88,7 +94,10 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
       </div>
 
       <div className="card-body">
-        <h3 className="card-title">{title}</h3>
+        <div className="card-title-row">
+          <h3 className="card-title">{title}</h3>
+          {ImdbInline}
+        </div>
         <p className="card-meta">
           <span className="card-director">{director}</span>
           {year ? <> · <span className="card-year">{year}</span></> : null}
@@ -98,24 +107,6 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
           {mn          && <span className="badge badge-mn">MN{mn_rank ? ` #${mn_rank}` : ''}</span>}
           {watchlist   && <span className="badge badge-wl">WL</span>}
           {rank_global && <span className="badge badge-ranked">#{rank_global}</span>}
-          {imdb_rating != null && (
-            imdb_id ? (
-              <a
-                href={`https://www.imdb.com/title/${imdb_id}/`}
-                className="badge badge-imdb"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                title="View on IMDb"
-              >
-                IMDb {Number.isInteger(imdb_rating) ? imdb_rating : imdb_rating.toFixed(1)}
-              </a>
-            ) : (
-              <span className="badge badge-imdb">
-                IMDb {Number.isInteger(imdb_rating) ? imdb_rating : imdb_rating.toFixed(1)}
-              </span>
-            )
-          )}
         </div>
 
         <div className="card-ratings">

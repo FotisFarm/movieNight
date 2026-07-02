@@ -184,6 +184,12 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
               </div>
               <div className="info-lbl">Token Bonus</div>
             </div>
+            {movie.rank_global != null && (
+              <div className="info-cell">
+                <div className="info-val score-high">#{movie.rank_global}</div>
+                <div className="info-lbl">Global Rank</div>
+              </div>
+            )}
             {movie.imdb_rating != null && (
               <div className="info-cell">
                 <div className="info-val">
@@ -194,10 +200,12 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
                       rel="noopener noreferrer"
                       style={{ color: '#F5C518', textDecoration: 'none', fontWeight: 700 }}
                     >
-                      {Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}
+                      ★ {Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}
                     </a>
                   ) : (
-                    <span>{Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}</span>
+                    <span style={{ color: '#F5C518', fontWeight: 700 }}>
+                      ★ {Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}
+                    </span>
                   )}
                 </div>
                 <div className="info-lbl">IMDb</div>

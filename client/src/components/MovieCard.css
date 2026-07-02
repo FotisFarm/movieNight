@@ -63,6 +63,25 @@
 
 .card-tokens { font-size: 12px; color: var(--text3); }
 
+.card-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.card-imdb-inline {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: #F5C518;
+  text-decoration: none;
+  white-space: nowrap;
+  letter-spacing: .01em;
+}
+
+a.card-imdb-inline:hover { text-decoration: underline; }
+
 .card-badges {
   display: flex;
   gap: 5px;
