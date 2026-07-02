@@ -1,19 +1,9 @@
+import { useState } from 'react';
 import RankIcon from './RankIcon';
+import { fmtScore10 as fmt, scoreClass } from '../utils';
 import './RankingSection.css';
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
-
-function fmt(v) {
-  if (v == null) return '–';
-  return v.toFixed(2).replace('.', ',') + '/10';
-}
-
-function scoreClass(v) {
-  if (v == null) return 'score-none';
-  if (v >= 7.5) return 'score-high';
-  if (v >= 5)   return 'score-mid';
-  return 'score-low';
-}
 
 function VoterPills({ voters, top3 }) {
   if (!voters?.length) return null;
@@ -32,25 +22,28 @@ function VoterPills({ voters, top3 }) {
   );
 }
 
-export default function RankingSection({ title, rows, onMovieClick, onDirectorClick, onYearClick, scoreKey = 'fairBoosted', rowScoreKey = 'fairBoosted', mn = false }) {
+export default function RankingSection({ title, rows, onMovieClick, onDirectorClick, onYearClick, onDecadeClick, scoreKey = 'fairBoosted', rowScoreKey = 'fairBoosted', mn = false }) {
+  const [expanded, setExpanded] = useState(false);
   return (
     <div className="rank-section">
       <div className="rank-header">{title}</div>
       {!rows?.length ? (
         <div className="rank-empty">No data yet</div>
       ) : (
+        <>
         <table className="rank-table">
           <tbody>
-            {rows.map((row, i) => {
+            {(expanded ? rows : rows.slice(0, 10)).map((row, i) => {
               const val = row[scoreKey] ?? row.avg ?? null;
-              const isClickable = row.id || row.director || row.year;
+              const isClickable = row.id || row.director || row.year || row.decade;
               function handleClick() {
                 if (row.id)            onMovieClick?.(row.id);
                 else if (row.director) onDirectorClick?.(row.director, rowScoreKey, mn);
                 else if (row.year)     onYearClick?.(String(row.year), rowScoreKey, mn);
+                else if (row.decade)   onDecadeClick?.(row.decade, rowScoreKey, mn);
               }
               return (
-                <tr key={row.id ?? row.director ?? row.year ?? i}
+                <tr key={row.id ?? row.director ?? row.year ?? row.decade ?? i}
                     className={isClickable ? 'clickable' : ''}
                     onClick={handleClick}>
                   <td className={`rank-num ${i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : ''}`}>
@@ -58,7 +51,7 @@ export default function RankingSection({ title, rows, onMovieClick, onDirectorCl
                   </td>
                   <td>
                     <div className="rank-name">
-                      {row.title ?? row.director ?? row.year}
+                      {row.title ?? row.director ?? (row.year ? `${row.year}` : null) ?? (row.decade ? `${row.decade}s` : null)}
                       {row.mn && <span className="rank-mn">MN</span>}
                     </div>
                     {row.title && <div className="rank-sub">{row.director} · {row.year}</div>}
@@ -71,6 +64,15 @@ export default function RankingSection({ title, rows, onMovieClick, onDirectorCl
             })}
           </tbody>
         </table>
+        {rows.length > 10 && (
+          <button
+            className="btn btn-ghost btn-sm rank-show-more"
+            onClick={() => setExpanded(e => !e)}
+          >
+            {expanded ? 'Show less' : `Show more (${rows.length - 10})`}
+          </button>
+        )}
+        </>
       )}
     </div>
   );

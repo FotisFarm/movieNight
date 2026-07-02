@@ -1,24 +1,12 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
+import { VOTERS, GROUP_SIZE } from '../constants';
+import { fmtScore10 as fmt, scoreClass } from '../utils';
 import './MovieModal.css';
 
-const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
-const GROUP_SIZE = 5;
 const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
 const rankBonus = r => (r >= 1 && r <= 10 ? (11 - r) / 10 : 0);
 const rankLabel = r => `${MEDALS[r] ? MEDALS[r] + ' ' : ''}#${r}`;
-
-function fmt(v) {
-  if (v == null) return '–';
-  return v.toFixed(2).replace('.', ',') + '/10';
-}
-
-function scoreClass(v) {
-  if (v == null) return 'score-none';
-  if (v >= 7.5) return 'score-high';
-  if (v >= 5)   return 'score-mid';
-  return 'score-low';
-}
 
 function voterCountClass(n) {
   if (n === 5)      return 'score-high';
@@ -50,12 +38,24 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
   const [editTitle,    setEditTitle]    = useState('');
   const [editDirector, setEditDirector] = useState('');
   const [editYear,     setEditYear]     = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [saveError,     setSaveError]     = useState('');
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === 'Escape') onClose();
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   useEffect(() => {
     api.getTop10Counts().then(setTop10Counts).catch(() => {});
   }, [movieId]);
 
   useEffect(() => {
+    setConfirmDelete(false);
+    setSaveError('');
     if (!movieId) return;
     setLoading(true);
     api.getMovie(movieId).then(m => {
@@ -112,14 +112,17 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
       onSaved(updated);
       onClose();
     } catch (e) {
-      alert(e.message);
+      setSaveError(e.message);
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete() {
-    if (!confirm(`Delete "${movie?.title}"?`)) return;
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
     await api.deleteMovie(movieId);
     onDeleted(movieId);
     onClose();
@@ -181,6 +184,25 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
               </div>
               <div className="info-lbl">Token Bonus</div>
             </div>
+            {movie.imdb_rating != null && (
+              <div className="info-cell">
+                <div className="info-val">
+                  {movie.imdb_id ? (
+                    <a
+                      href={`https://www.imdb.com/title/${movie.imdb_id}/`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: '#F5C518', textDecoration: 'none', fontWeight: 700 }}
+                    >
+                      {Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}
+                    </a>
+                  ) : (
+                    <span>{Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}</span>
+                  )}
+                </div>
+                <div className="info-lbl">IMDb</div>
+              </div>
+            )}
           </div>
 
           {/* Ratings */}
@@ -292,10 +314,21 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
         </div>
 
         <div className="modal-footer">
-          <button className="btn btn-danger btn-sm" style={{ marginRight: 'auto' }} onClick={handleDelete}>
-            Delete
-          </button>
+          {confirmDelete ? (
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginRight: 'auto' }}>
+              <span style={{ fontSize: 12, color: 'var(--red)' }}>Delete "{movie?.title}"?</span>
+              <button className="btn btn-danger btn-sm" onClick={handleDelete}>Yes, delete</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setConfirmDelete(false)}>Cancel</button>
+            </div>
+          ) : (
+            <button className="btn btn-danger btn-sm" style={{ marginRight: 'auto' }} onClick={handleDelete}>
+              Delete
+            </button>
+          )}
           <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          {saveError && (
+            <span style={{ fontSize: 12, color: 'var(--red)', marginRight: 8 }}>{saveError}</span>
+          )}
           <button className="btn btn-gold" onClick={handleSave} disabled={saving}>
             {saving ? 'Saving…' : 'Save'}
           </button>

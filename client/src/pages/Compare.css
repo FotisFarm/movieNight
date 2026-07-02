@@ -137,12 +137,58 @@
 /* belt-and-braces: never let the page itself scroll sideways */
 .compare-page { overflow-x: hidden; }
 .cmp-details {
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  overflow: hidden;
 }
-.cmp-details summary { cursor: pointer; font-size: 13px; font-weight: 600; padding: 8px 0; color: var(--text); }
-.cmp-details-scroll[open] { max-height: 460px; overflow-y: auto; }
-.cmp-details-scroll[open] summary { position: sticky; top: 0; background: var(--surface); z-index: 1; }
+
+.cmp-details summary {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  background: var(--surface2);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.cmp-details summary::-webkit-details-marker { display: none; }
+.cmp-details summary::marker { display: none; }
+
+.cmp-details summary::before {
+  content: '▸';
+  font-size: 10px;
+  transition: transform 0.15s;
+  color: var(--text3);
+}
+
+.cmp-details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.cmp-details[open] summary {
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+.cmp-details .cmp-mini-row {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.cmp-details .cmp-mini-head {
+  padding-top: 8px;
+}
+
+.cmp-details-scroll {
+  max-height: 320px;
+  overflow-y: auto;
+}
 .cmp-mini-row {
   display: flex; align-items: center; gap: 8px; padding: 5px 4px; cursor: pointer; border-radius: var(--radius);
 }

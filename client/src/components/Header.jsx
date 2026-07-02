@@ -4,7 +4,9 @@ import { useTheme } from '../ThemeContext';
 import './Header.css';
 
 const THEMES = [
-  { id: 'current',        label: 'Current'                  },
+  { id: 'cold-press',     label: 'Cold Press'               },
+  { id: 'signal',         label: 'Signal'                   },
+  { id: 'blanc',          label: 'Blanc'                    },
   { id: 'matrix',         label: 'The Matrix'               },
   { id: 'vertigo',        label: 'Vertigo'                  },
   { id: 'clockwork',      label: 'A Clockwork Orange'       },

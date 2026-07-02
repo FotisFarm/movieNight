@@ -1,19 +1,7 @@
 import RankIcon from './RankIcon';
+import { VOTERS } from '../constants';
+import { fmtScore10 as fmt, scoreClass } from '../utils';
 import './MovieCard.css';
-
-const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
-
-function scoreClass(v) {
-  if (v === null || v === undefined) return 'score-none';
-  if (v >= 7.5) return 'score-high';
-  if (v >= 5)   return 'score-mid';
-  return 'score-low';
-}
-
-function fmt(v) {
-  if (v == null) return '–';
-  return v.toFixed(2).replace('.', ',') + '/10';
-}
 
 function VoterPills({ ratings, top3 }) {
   return VOTERS.map(v => {
@@ -33,7 +21,7 @@ function VoterPills({ ratings, top3 }) {
 }
 
 export default function MovieCard({ movie, onClick, listView = false, scoreMode = 'fair' }) {
-  const { title, director, year, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount } = movie;
+  const { title, director, year, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id } = movie;
 
   const hasScore = voterCount >= 2;
   const displayScore = hasScore
@@ -64,6 +52,24 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
           {mn          && <span className="badge badge-mn">MN{mn_rank ? ` #${mn_rank}` : ''}</span>}
           {watchlist   && <span className="badge badge-wl">WL</span>}
           {rank_global && <span className="badge badge-ranked">#{rank_global}</span>}
+          {imdb_rating != null && (
+            imdb_id ? (
+              <a
+                href={`https://www.imdb.com/title/${imdb_id}/`}
+                className="badge badge-imdb"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                title="View on IMDb"
+              >
+                IMDb {Number.isInteger(imdb_rating) ? imdb_rating : imdb_rating.toFixed(1)}
+              </a>
+            ) : (
+              <span className="badge badge-imdb">
+                IMDb {Number.isInteger(imdb_rating) ? imdb_rating : imdb_rating.toFixed(1)}
+              </span>
+            )
+          )}
         </div>
 
         <div className="card-ratings">
@@ -92,6 +98,24 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
           {mn          && <span className="badge badge-mn">MN{mn_rank ? ` #${mn_rank}` : ''}</span>}
           {watchlist   && <span className="badge badge-wl">WL</span>}
           {rank_global && <span className="badge badge-ranked">#{rank_global}</span>}
+          {imdb_rating != null && (
+            imdb_id ? (
+              <a
+                href={`https://www.imdb.com/title/${imdb_id}/`}
+                className="badge badge-imdb"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                title="View on IMDb"
+              >
+                IMDb {Number.isInteger(imdb_rating) ? imdb_rating : imdb_rating.toFixed(1)}
+              </a>
+            ) : (
+              <span className="badge badge-imdb">
+                IMDb {Number.isInteger(imdb_rating) ? imdb_rating : imdb_rating.toFixed(1)}
+              </span>
+            )
+          )}
         </div>
 
         <div className="card-ratings">

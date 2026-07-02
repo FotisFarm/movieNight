@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api';
-
-const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
+import { VOTERS } from '../constants';
 
 export default function AddMovieModal({ onClose, onAdded }) {
   const [title, setTitle]         = useState('');
@@ -13,6 +12,7 @@ export default function AddMovieModal({ onClose, onAdded }) {
   const [enabled, setEnabled]     = useState({});
   const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState('');
+  const [createdMovieId, setCreatedMovieId] = useState(null);
 
   function toggleVoter(v) {
     setEnabled(e => ({ ...e, [v]: !e[v] }));
@@ -27,9 +27,17 @@ export default function AddMovieModal({ onClose, onAdded }) {
     setError('');
     const ratingPayload = {};
     VOTERS.forEach(v => { ratingPayload[v] = enabled[v] ? ratings[v] ?? 5 : null; });
+    const hasRatings = Object.values(ratingPayload).some(v => v !== null);
     try {
-      const movie = await api.createMovie({ title: title.trim(), director: director.trim(), year: year.trim(), mn, watchlist });
-      if (Object.values(ratingPayload).some(v => v !== null)) {
+      // Use existing createdMovieId if retrying after a failed updateMovie
+      let movie;
+      if (createdMovieId) {
+        movie = { id: createdMovieId }; // just need the id for retry
+      } else {
+        movie = await api.createMovie({ title: title.trim(), director: director.trim(), year: year.trim(), mn, watchlist });
+        setCreatedMovieId(movie.id);
+      }
+      if (hasRatings) {
         const updated = await api.updateMovie(movie.id, { ratings: ratingPayload });
         onAdded(updated);
       } else {
@@ -37,7 +45,11 @@ export default function AddMovieModal({ onClose, onAdded }) {
       }
       onClose();
     } catch (e) {
-      setError(e.message);
+      if (createdMovieId) {
+        setError('Ratings could not be saved. Click "Add Film" to retry, or close to save without ratings.');
+      } else {
+        setError(e.message);
+      }
     } finally {
       setSaving(false);
     }
@@ -102,6 +114,17 @@ export default function AddMovieModal({ onClose, onAdded }) {
         </div>
 
         <div className="modal-footer">
+          {createdMovieId && (
+            <button className="btn btn-ghost btn-sm" style={{ marginRight: 'auto' }}
+              onClick={async () => {
+                const movie = await api.getMovie(createdMovieId).catch(() => ({ id: createdMovieId }));
+                onAdded(movie);
+                onClose();
+              }}
+            >
+              Close (film saved without ratings)
+            </button>
+          )}
           <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
           <button className="btn btn-gold" onClick={handleAdd} disabled={saving}>
             {saving ? 'Adding…' : 'Add Film'}

@@ -1,14 +1,15 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import MovieCard from '../components/MovieCard';
 import MovieModal from '../components/MovieModal';
 import AddMovieModal from '../components/AddMovieModal';
 import { useToast } from '../hooks/useToast.jsx';
+import { VOTERS } from '../constants';
+import { useRankMap } from '../hooks/useRankMap';
 import './Films.css';
 
 const PAGE_SIZE = 60;
-
-const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
 
 const DEFAULTS = {
   search: '',
@@ -26,6 +27,8 @@ const DEFAULTS = {
 };
 
 export default function Films() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [movies, setMovies]           = useState([]);
   const [allMovies, setAllMovies]     = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -37,19 +40,36 @@ export default function Films() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { toast, Toast }              = useToast();
 
-  const [search, setSearch]               = useState(DEFAULTS.search);
-  const [sortBy, setSortBy]               = useState(DEFAULTS.sortBy);
-  const [sortVoter, setSortVoter]         = useState(DEFAULTS.sortVoter);
-  const [filterMn, setFilterMn]           = useState(DEFAULTS.filterMn);
-  const [filterRated, setFilterRated]     = useState(DEFAULTS.filterRated);
-  const [filterWl, setFilterWl]           = useState(DEFAULTS.filterWl);
-  const [filterVoters, setFilterVoters]       = useState(DEFAULTS.filterVoters);
-  const [filterDirector, setFilterDirector]   = useState(DEFAULTS.filterDirector);
-  const [filterYearMin, setFilterYearMin]         = useState(DEFAULTS.filterYearMin);
-  const [filterYearMax, setFilterYearMax]         = useState(DEFAULTS.filterYearMax);
-  const [filterMinVoters, setFilterMinVoters]     = useState(DEFAULTS.filterMinVoters);
-  const [filterMaxVoters, setFilterMaxVoters]     = useState(DEFAULTS.filterMaxVoters);
+  const [search, setSearch]           = useState(() => searchParams.get('q') || DEFAULTS.search);
+  const [sortBy, setSortBy]           = useState(() => searchParams.get('sort') || DEFAULTS.sortBy);
+  const [sortVoter, setSortVoter]     = useState(() => searchParams.get('sortVoter') || DEFAULTS.sortVoter);
+  const [filterMn, setFilterMn]       = useState(() => searchParams.get('mn') === '1');
+  const [filterRated, setFilterRated] = useState(() => searchParams.get('rated') || DEFAULTS.filterRated);
+  const [filterWl, setFilterWl]       = useState(() => searchParams.get('wl') === '1');
+  const [filterVoters, setFilterVoters] = useState(() => searchParams.get('voters') ? searchParams.get('voters').split(',') : DEFAULTS.filterVoters);
+  const [filterDirector, setFilterDirector] = useState(() => searchParams.get('director') || DEFAULTS.filterDirector);
+  const [filterYearMin, setFilterYearMin]   = useState(() => searchParams.get('yearMin') || DEFAULTS.filterYearMin);
+  const [filterYearMax, setFilterYearMax]   = useState(() => searchParams.get('yearMax') || DEFAULTS.filterYearMax);
+  const [filterMinVoters, setFilterMinVoters] = useState(() => searchParams.get('minVoters') || DEFAULTS.filterMinVoters);
+  const [filterMaxVoters, setFilterMaxVoters] = useState(() => searchParams.get('maxVoters') || DEFAULTS.filterMaxVoters);
   const [directors, setDirectors]                 = useState([]);
+
+  useEffect(() => {
+    const p = {};
+    if (search)                               p.q = search;
+    if (sortBy !== DEFAULTS.sortBy)           p.sort = sortBy;
+    if (sortVoter !== DEFAULTS.sortVoter)     p.sortVoter = sortVoter;
+    if (filterMn)                             p.mn = '1';
+    if (filterRated)                          p.rated = filterRated;
+    if (filterWl)                             p.wl = '1';
+    if (filterVoters.length)                  p.voters = filterVoters.join(',');
+    if (filterDirector)                       p.director = filterDirector;
+    if (filterYearMin)                        p.yearMin = filterYearMin;
+    if (filterYearMax)                        p.yearMax = filterYearMax;
+    if (filterMinVoters)                      p.minVoters = filterMinVoters;
+    if (filterMaxVoters)                      p.maxVoters = filterMaxVoters;
+    setSearchParams(p, { replace: true });
+  }, [search, sortBy, sortVoter, filterMn, filterRated, filterWl, filterVoters, filterDirector, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters]);
 
   const searchTimer = useRef(null);
 
@@ -109,24 +129,7 @@ export default function Films() {
     }, 250);
   }, [search, filterMn, filterWl, filterRated, filterVoters, filterDirector, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, fetchMovies]);
 
-  const rankMap = useMemo(() => {
-    const rated   = allMovies.filter(m => m.voterCount >= 2);
-    const ratedMn = rated.filter(m => m.mn);
-    function tiebreak(a, b) {
-      if (b.voterCount !== a.voterCount) return b.voterCount - a.voterCount;
-      if ((b.boost ?? 0) !== (a.boost ?? 0)) return (b.boost ?? 0) - (a.boost ?? 0);
-      return (parseInt(a.year) || 9999) - (parseInt(b.year) || 9999);
-    }
-    const byFair  = (a, b) => (b.fairBoosted  - a.fairBoosted)  || tiebreak(a, b);
-    const byGroup = (a, b) => (b.boostedScore - a.boostedScore) || tiebreak(a, b);
-    const toMap   = arr => { const m = {}; arr.forEach((x, i) => { m[x.id] = i + 1; }); return m; };
-    return {
-      fair:    toMap([...rated].sort(byFair)),
-      group:   toMap([...rated].sort(byGroup)),
-      mnFair:  toMap([...ratedMn].sort(byFair)),
-      mnGroup: toMap([...ratedMn].sort(byGroup)),
-    };
-  }, [allMovies]);
+  const rankMap = useRankMap(allMovies);
 
   function tiebreakScore(a, b) {
     if (b.voterCount !== a.voterCount) return b.voterCount - a.voterCount;
@@ -246,11 +249,7 @@ export default function Films() {
           {/* Sort */}
           <div className="filter-group">
             <span className="filter-group-label">Sort</span>
-            <select className="select select-sm filter-group-control" value={sortBy} onChange={e => {
-              setSortBy(e.target.value);
-              if (e.target.value === 'score-desc' || e.target.value === 'score-asc') setScoreMode('fair');
-              if (e.target.value === 'group-desc' || e.target.value === 'group-asc') setScoreMode('group');
-            }}>
+            <select className="select select-sm filter-group-control" value={sortBy} onChange={e => setSortBy(e.target.value)}>
               <option value="alpha">A → Z</option>
               <option value="alpha-dir">By Director</option>
               <option value="year-desc">Newest</option>

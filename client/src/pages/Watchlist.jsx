@@ -11,21 +11,9 @@ import { CSS } from '@dnd-kit/utilities';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
 import { useToast } from '../hooks/useToast.jsx';
+import { VOTERS } from '../constants';
+import { fmtScore10 as fmt, scoreClass } from '../utils';
 import './Watchlist.css';
-
-const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
-
-function fmt(v) {
-  if (v == null) return null;
-  return v.toFixed(2).replace('.', ',') + '/10';
-}
-
-function scoreClass(v) {
-  if (v == null) return '';
-  if (v >= 7.5) return 'score-high';
-  if (v >= 5)   return 'score-mid';
-  return 'score-low';
-}
 
 function loadManualOrder() {
   try { return JSON.parse(localStorage.getItem('wl-tied-order') || '{}'); } catch { return {}; }
@@ -159,6 +147,17 @@ export default function Watchlist({ voter }) {
     setMovies(ms => ms.map(m => m.id === updated.id ? { ...updated, watchlistVotes: m.watchlistVotes } : m));
   }
 
+  async function markAsWatched(m) {
+    try {
+      await api.updateMovie(m.id, { watchlist: false, mn: true });
+      setMovies(ms => ms.filter(x => x.id !== m.id));
+      setSelectedId(m.id);
+      toast('Marked as watched! Don\'t forget to rate it.');
+    } catch (e) {
+      toast('Could not update film.');
+    }
+  }
+
   async function removeFromWatchlist(id) {
     await api.updateMovie(id, { watchlist: false });
     setMovies(ms => ms.filter(m => m.id !== id));
@@ -279,8 +278,10 @@ export default function Watchlist({ voter }) {
                 <div className="wl-card-actions">
                   {!isAdmin && (
                     <button
-                      className={`wl-vote-btn ${hasVoted ? 'wl-vote-on' : ''} ${!hasVoted && myVoteCount >= 3 ? 'wl-vote-disabled' : ''}`}
+                      className={`wl-vote-btn ${hasVoted ? 'wl-vote-on' : ''}`}
                       onClick={() => toggleVote(m)}
+                      disabled={!hasVoted && myVoteCount >= 3}
+                      title={!hasVoted && myVoteCount >= 3 ? 'You have used all 3 votes' : undefined}
                     >
                       {hasVoted ? '★ Voted' : '☆ Vote'}
                     </button>
@@ -292,6 +293,7 @@ export default function Watchlist({ voter }) {
                   >
                     {m.cinobo === 'Yes' ? '✓ Cinobo' : '✗ Cinobo'}
                   </button>
+                  <button className="btn btn-primary btn-sm" onClick={() => markAsWatched(m)}>✓ Watched</button>
                   <button className="btn btn-ghost btn-sm" onClick={() => setSelectedId(m.id)}>Rate</button>
                   <button
                     className="btn btn-ghost btn-sm"

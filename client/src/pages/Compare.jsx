@@ -2,24 +2,9 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
 import RankIcon from '../components/RankIcon';
+import { VOTERS } from '../constants';
+import { fmt, scoreClass, fmtScore } from '../utils';
 import './Compare.css';
-
-const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
-
-function scoreClass(v) {
-  if (v == null) return 'score-none';
-  if (v >= 7.5) return 'score-high';
-  if (v >= 5)   return 'score-mid';
-  return 'score-low';
-}
-function fmt(v, d = 2) {
-  if (v == null) return '–';
-  return v.toFixed(d).replace('.', ',');
-}
-function fmtScore(v) {
-  if (v == null) return '–';
-  return Number.isInteger(v) ? String(v) : v.toFixed(1);
-}
 
 // Inline searchable movie picker (substring on title/director)
 function MoviePicker({ movies, value, onChange, placeholder }) {
@@ -144,6 +129,20 @@ export default function Compare() {
     const disagreements = [...shared].sort((a, b) =>
       Math.abs(b.ratings[vA] - b.ratings[vB]) - Math.abs(a.ratings[vA] - a.ratings[vB]));
     const n = shared.length;
+    // Pearson correlation on shared films
+    let pearson = null;
+    if (n >= 2) {
+      const xs = shared.map(m => m.ratings[vA]);
+      const ys = shared.map(m => m.ratings[vB]);
+      const meanX = xs.reduce((a, b) => a + b, 0) / n;
+      const meanY = ys.reduce((a, b) => a + b, 0) / n;
+      const num = xs.reduce((acc, x, i) => acc + (x - meanX) * (ys[i] - meanY), 0);
+      const den = Math.sqrt(
+        xs.reduce((acc, x) => acc + (x - meanX) ** 2, 0) *
+        ys.reduce((acc, y) => acc + (y - meanY) ** 2, 0)
+      );
+      pearson = den > 0 ? Math.round((num / den) * 100) / 100 : null;
+    }
     // each voter's overall average across all their ratings
     const mean = v => {
       const arr = movies.filter(m => m.ratings?.[v] != null).map(m => m.ratings[v]);
@@ -164,6 +163,7 @@ export default function Compare() {
       onlyA, onlyB, top3Both, top3A, top3B, disagreements,
       soloAvgA, soloAvgB,
       soloAvgDiff: (soloAvgA != null && soloAvgB != null) ? Math.abs(soloAvgA - soloAvgB) : null,
+      pearson,
     };
   }, [movies, vA, vB]);
 
@@ -301,6 +301,13 @@ export default function Compare() {
                     <span className="cmp-stat-lbl">avg rating difference</span>
                     <span className="cmp-stat-sub">{vA} {fmt(voterCmp.avgA, 1)} · {vB} {fmt(voterCmp.avgB, 1)}</span>
                   </div>
+                  {voterCmp.pearson != null && (
+                    <div className="cmp-stat cmp-stat-avg">
+                      <span className="cmp-stat-val">{fmt(voterCmp.pearson, 2)}</span>
+                      <span className="cmp-stat-lbl">Pearson r</span>
+                      <span className="cmp-stat-sub">taste correlation (–1 to +1)</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="cmp-detail-stack">

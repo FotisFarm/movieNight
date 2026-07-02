@@ -2,21 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
 import { useToast } from '../hooks/useToast.jsx';
+import { VOTERS } from '../constants';
+import { fmt, scoreClass } from '../utils';
 import './Recommendations.css';
-
-const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
-
-function scoreClass(v) {
-  if (v == null) return 'score-none';
-  if (v >= 7.5) return 'score-high';
-  if (v >= 5)   return 'score-mid';
-  return 'score-low';
-}
-
-function fmt(v) {
-  if (v == null) return '–';
-  return v.toFixed(2).replace('.', ',');
-}
 
 function VoterPills({ ratings }) {
   return (

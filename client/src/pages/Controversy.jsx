@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
 import { useToast } from '../hooks/useToast.jsx';
+import { VOTERS } from '../constants';
+import { fmt, scoreClass } from '../utils';
 import './Controversy.css';
-
-const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
 
 function stdDevClass(v) {
   if (v == null) return 'score-none';
@@ -13,24 +13,13 @@ function stdDevClass(v) {
   return 'score-low';
 }
 
-function scoreClass(v) {
-  if (v == null) return 'score-none';
-  if (v >= 7.5) return 'score-high';
-  if (v >= 5)   return 'score-mid';
-  return 'score-low';
-}
-
-function fmt(v) {
-  if (v == null) return '–';
-  return v.toFixed(2).replace('.', ',');
-}
-
 export default function Controversy() {
   const [allFilms, setAllFilms] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [modalId, setModalId]   = useState(null);
   const [filterMn, setFilterMn] = useState(false);
   const [minVoters, setMinVoters] = useState(2);
+  const [search, setSearch] = useState('');
   const { toast, Toast }        = useToast();
 
   useEffect(() => {
@@ -51,6 +40,10 @@ export default function Controversy() {
     .filter(f => {
       if (filterMn && !f.mn) return false;
       if (f.voterCount < minVoters) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        return f.title.toLowerCase().includes(q) || f.director?.toLowerCase().includes(q);
+      }
       return true;
     })
     .sort((a, b) => b.stdDev - a.stdDev);
@@ -61,6 +54,18 @@ export default function Controversy() {
 
       <div className="films-filters">
         <div className="filter-row">
+          <div className="search-box" style={{ flex: 1, maxWidth: 280 }}>
+            <span className="search-icon">🔍</span>
+            <input
+              className="input search-input"
+              placeholder="Search films, directors…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            {search && (
+              <button className="search-clear" onClick={() => setSearch('')}>✕</button>
+            )}
+          </div>
           <label className="filter-check filter-check-mn">
             <input type="checkbox" checked={filterMn} onChange={e => setFilterMn(e.target.checked)} />
             Movie Night
