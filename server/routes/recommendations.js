@@ -20,6 +20,7 @@ router.get('/', (req, res) => {
   const allMovies  = db.prepare('SELECT * FROM movies').all();
   const allRatings = db.prepare('SELECT movie_id, voter, score FROM ratings').all();
   const allTop3    = db.prepare('SELECT movie_id, voter, rank FROM top3').all();
+  const movieById  = new Map(allMovies.map(m => [m.id, m]));
 
   // Index ratings and top3 by movie_id
   const ratingsByMovie = {};
@@ -59,7 +60,7 @@ router.get('/', (req, res) => {
     }
   }
   for (const t of allTop3) {
-    const m = allMovies.find(x => x.id === t.movie_id);
+    const m = movieById.get(t.movie_id);
     if (m?.director) top10WeightByDirector[m.director] = (top10WeightByDirector[m.director] || 0) + rankBonus(t.rank);
   }
 

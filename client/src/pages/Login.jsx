@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api';
-
-const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
+import { VOTERS } from '../constants';
 
 export default function Login({ onLogin }) {
   const [selected, setSelected] = useState(null);

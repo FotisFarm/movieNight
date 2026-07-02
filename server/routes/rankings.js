@@ -61,7 +61,7 @@ router.get('/', (req, res) => {
   const all = getAllEnriched(false);
   const mn  = all.filter(m => m.mn);
 
-  const top = (arr, key, n = 10) =>
+  const top = (arr, key, n = 25) =>
     [...arr].sort((a, b) =>
       b[key] - a[key]                                               // primary: score desc
       || b.n - a.n                                                  // tiebreak 1: more voters wins
@@ -72,7 +72,10 @@ router.get('/', (req, res) => {
   const topByField = (arr, groupKey, scoreKey, { minCount = 1 } = {}) => {
     const map = {};
     for (const m of arr) {
-      const k = groupKey === 'year' ? (m.year || '').substring(0, 4) : m[groupKey];
+      const k = groupKey === 'decade'
+        ? (parseInt(m.year) ? String(Math.floor(parseInt(m.year) / 10) * 10) : null)
+        : groupKey === 'year' ? (m.year || '').substring(0, 4)
+        : m[groupKey];
       if (!k) continue;
       if (!map[k]) map[k] = { sum: 0, count: 0 };
       map[k].sum += m[scoreKey];
@@ -82,7 +85,7 @@ router.get('/', (req, res) => {
       .map(([k, v]) => ({ [groupKey]: k, avg: Math.round((v.sum / v.count) * 100) / 100, count: v.count }))
       .filter(e => e.count >= minCount)
       .sort((a, b) => b.avg - a.avg || b.count - a.count)
-      .slice(0, 10);
+      .slice(0, 25);
   };
 
   const gate = { minCount: minDirFilms };
@@ -105,6 +108,12 @@ router.get('/', (req, res) => {
     groupMn:       top(mn,  'boostedScore'),
     groupDirsMn:   topByField(mn,  'director', 'boostedScore', gate),
     groupYearsMn:  topByField(mn,  'year', 'boostedScore', gate),
+
+    // Decade panels
+    fairDecadesAll:  topByField(all, 'decade', 'fairBoosted', gate),
+    fairDecadesMn:   topByField(mn,  'decade', 'fairBoosted', gate),
+    groupDecadesAll: topByField(all, 'decade', 'boostedScore', gate),
+    groupDecadesMn:  topByField(mn,  'decade', 'boostedScore', gate),
   });
 });
 
