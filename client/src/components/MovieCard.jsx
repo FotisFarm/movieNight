@@ -73,12 +73,13 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
           {mn          && <span className="badge badge-mn">MN{mn_rank ? ` #${mn_rank}` : ''}</span>}
           {watchlist   && <span className="badge badge-wl">WL</span>}
           {rank_global && <span className="badge badge-ranked">#{rank_global}</span>}
-          {ImdbBadge}
         </div>
 
         <div className="card-ratings">
           <VoterPills ratings={ratings} top3={top3} />
         </div>
+
+        {ImdbBadge}
       </article>
     );
   }
@@ -102,12 +103,13 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
           {mn          && <span className="badge badge-mn">MN{mn_rank ? ` #${mn_rank}` : ''}</span>}
           {watchlist   && <span className="badge badge-wl">WL</span>}
           {rank_global && <span className="badge badge-ranked">#{rank_global}</span>}
-          {ImdbBadge}
         </div>
 
         <div className="card-ratings">
           <VoterPills ratings={ratings} top3={top3} />
         </div>
+
+        {ImdbBadge}
       </div>
     </article>
   );

@@ -42,6 +42,8 @@ function getAllEnriched(mnOnly = false) {
       year: m.year,
       mn: m.mn === 1,
       tokens: m.tokens,
+      imdb_id: m.imdb_id ?? null,
+      imdb_rating: m.imdb_rating ?? null,
       n,
       top3_count: m.top3_count || 0,
       boost,
