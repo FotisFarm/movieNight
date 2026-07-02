@@ -198,13 +198,13 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
                       href={`https://www.imdb.com/title/${movie.imdb_id}/`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: '#F5C518', textDecoration: 'none', fontWeight: 700 }}
+                      style={{ textDecoration: 'none', fontWeight: 700 }}
                     >
-                      ★ {Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}
+                      {Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}
                     </a>
                   ) : (
-                    <span style={{ color: '#F5C518', fontWeight: 700 }}>
-                      ★ {Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}
+                    <span style={{ fontWeight: 700 }}>
+                      {Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}
                     </span>
                   )}
                 </div>

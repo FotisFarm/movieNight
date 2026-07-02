@@ -137,6 +137,8 @@ router.get('/', (req, res) => {
       year: m.year,
       mn: m.mn === 1,
       watchlist: m.watchlist === 1,
+      imdb_id: m.imdb_id ?? null,
+      imdb_rating: m.imdb_rating ?? null,
       voterCount,
       ratings: ratingsMap,
       actualScore: actualScore !== null ? Math.round(actualScore * 100) / 100 : null,

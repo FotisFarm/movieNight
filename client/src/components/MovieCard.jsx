@@ -45,10 +45,10 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
         onClick={e => e.stopPropagation()}
         title="View on IMDb"
       >
-        ★ {imdbLabel}
+        <span className="card-imdb-logo">IMDb</span>{imdbLabel}
       </a>
     ) : (
-      <span className="card-imdb-inline">★ {imdbLabel}</span>
+      <span className="card-imdb-inline"><span className="card-imdb-logo">IMDb</span>{imdbLabel}</span>
     )
   );
 
