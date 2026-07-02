@@ -67,7 +67,7 @@
   display: flex;
   align-items: baseline;
   gap: 8px;
-  justify-content: space-between;
+  flex-wrap: wrap;
 }
 
 .card-imdb-inline {
