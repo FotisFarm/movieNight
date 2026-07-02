@@ -4,7 +4,7 @@ const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
   const [theme, setThemeState] = useState(
-    () => localStorage.getItem('mn-theme') || 'cold-press'
+    () => localStorage.getItem('mn-theme') || 'original'
   );
 
   function setTheme(t) {
@@ -13,7 +13,7 @@ export function ThemeProvider({ children }) {
   }
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.theme = theme === 'original' ? '' : theme;
   }, [theme]);
 
   return (

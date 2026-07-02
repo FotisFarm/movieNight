@@ -4,9 +4,7 @@ import { useTheme } from '../ThemeContext';
 import './Header.css';
 
 const THEMES = [
-  { id: 'cold-press',     label: 'Cold Press'               },
-  { id: 'signal',         label: 'Signal'                   },
-  { id: 'blanc',          label: 'Blanc'                    },
+  { id: 'original',       label: 'Original'                 },
   { id: 'matrix',         label: 'The Matrix'               },
   { id: 'vertigo',        label: 'Vertigo'                  },
   { id: 'clockwork',      label: 'A Clockwork Orange'       },
@@ -35,7 +33,7 @@ function ThemeDropdown({ up = false }) {
     return () => document.removeEventListener('mousedown', onDown);
   }, []);
 
-  const activeLabel = THEMES.find(t => t.id === theme)?.label ?? 'Theme';
+  const activeLabel = THEMES.find(t => t.id === theme)?.label ?? 'Original';
 
   return (
     <div className={`theme-dropdown${up ? ' theme-dropdown-up' : ''}`} ref={ref}>
