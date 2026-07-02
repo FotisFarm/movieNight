@@ -238,8 +238,8 @@
   --surface:  #160A0C;
   --surface2: #200E12;
   --surface3: #2C1218;
-  --accent:   #C4193A;
-  --accent2:  #9A1230;
+  --accent:   #D81C23;
+  --accent2:  #AD161B;
   --text:     #F2E0C8;
   --text2:    #A88068;
   --text3:    #664840;
@@ -609,9 +609,9 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 [data-theme="amelie"] .rank-mn                 { color: var(--green); border-color: rgba(90,160,64,.4); background: rgba(90,160,64,.08); }
 
 /* ── In the Mood for Love ── */
-[data-theme="itmfl"] .logo                    { color: var(--accent); }
-[data-theme="itmfl"] .nav-link:hover          { color: var(--accent); }
-[data-theme="itmfl"] .nav-link.active         { color: var(--accent); background: rgba(196,25,58,.12); }
+[data-theme="itmfl"] .logo                    { color: #5AC73D; }
+[data-theme="itmfl"] .nav-link:hover          { color: #5AC73D; }
+[data-theme="itmfl"] .nav-link.active         { color: var(--accent); background: rgba(216,28,35,.12); }
 [data-theme="itmfl"] .movie-card:hover,
 [data-theme="itmfl"] .movie-card:focus-visible { border-color: var(--accent); }
 [data-theme="itmfl"] .score-high              { color: #0B6E4F; }
