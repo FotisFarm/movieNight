@@ -54,12 +54,30 @@ const ROWS = [
   },
 ];
 
+const PANEL_TYPES = [
+  { key: 'films',    label: '🏆 Films' },
+  { key: 'directors', label: '🎭 Directors' },
+  { key: 'years',    label: '📅 Years' },
+  { key: 'decades',  label: '📆 Decades' },
+];
+
+function panelType(panelKey) {
+  if (panelKey.includes('Dirs'))    return 'directors';
+  if (panelKey.includes('Decades')) return 'decades';
+  if (panelKey.includes('Years'))   return 'years';
+  return 'films';
+}
+
 export default function Rankings() {
   const [data, setData]               = useState(null);
   const [loading, setLoading]         = useState(true);
   const [selectedId, setSelectedId]   = useState(null);
   const [selectedLabel, setSelectedLabel] = useState(null);
   const [minDirFilms, setMinDirFilms] = useState(() => parseInt(localStorage.getItem('mn_minDirFilms')) || 2);
+  const [visibleTypes, setVisibleTypes] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('mn_rankPanels')) || ['films']; }
+    catch { return ['films']; }
+  });
   const { toast, Toast }              = useToast();
   const location                      = useLocation();
 
@@ -74,6 +92,15 @@ export default function Rankings() {
   function changeMinDirFilms(n) {
     setMinDirFilms(n);
     localStorage.setItem('mn_minDirFilms', n);
+  }
+
+  function togglePanelType(type) {
+    setVisibleTypes(prev => {
+      const next = prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type];
+      const result = next.length ? next : ['films'];
+      localStorage.setItem('mn_rankPanels', JSON.stringify(result));
+      return result;
+    });
   }
 
   function handleSaved() {
@@ -101,6 +128,17 @@ export default function Rankings() {
             ))}
           </select>
         </label>
+        <div className="filter-sep" />
+        <span style={{ fontSize: 12, color: 'var(--text3)', marginRight: 4 }}>Show</span>
+        {PANEL_TYPES.map(({ key, label }) => (
+          <button
+            key={key}
+            className={`btn btn-sm ${visibleTypes.includes(key) ? 'btn-primary' : 'btn-ghost'}`}
+            onClick={() => togglePanelType(key)}
+          >
+            {label}
+          </button>
+        ))}
       </div>
       {ROWS.map(row => (
         <div key={row.label} className="ranking-row-group">
@@ -109,7 +147,7 @@ export default function Rankings() {
             <p className="ranking-row-desc">{row.description}</p>
           </div>
           <div className="ranking-row-panels">
-            {row.panels.map(panel => (
+            {row.panels.filter(panel => visibleTypes.includes(panelType(panel.key))).map(panel => (
               <RankingSection
                 key={panel.key}
                 title={panel.title}
