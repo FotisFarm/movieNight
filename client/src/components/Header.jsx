@@ -13,6 +13,7 @@ const THEMES = [
   { id: 'amelie',         label: 'Amélie'                   },
   { id: 'godfather',      label: 'The Godfather'            },
   { id: 'grand-budapest', label: 'The Grand Budapest Hotel' },
+  { id: 'itmfl',          label: 'In the Mood for Love'     },
 ];
 
 function navClass({ isActive }) {

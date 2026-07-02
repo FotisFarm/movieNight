@@ -231,6 +231,27 @@
   --blue:     #6878D0;
 }
 
+/* ── Theme: In the Mood for Love (Wong Kar-wai, 2000) ── */
+/* Crimson cheongsam · amber incandescence · narrow dark corridors */
+[data-theme="itmfl"] {
+  --bg:       #0A0508;
+  --surface:  #160A0C;
+  --surface2: #200E12;
+  --surface3: #2C1218;
+  --accent:   #C82848;
+  --accent2:  #A01E38;
+  --text:     #F2E0C8;
+  --text2:    #A88068;
+  --text3:    #664840;
+  --border:   #301218;
+  --green:    #4A8860;
+  --gold:     #D49020;
+  --gold2:    #AC7018;
+  --red:      #D04040;
+  --orange:   #C07030;
+  --blue:     #2A4880;
+}
+
 /* ── Theme: The Godfather ── */
 [data-theme="godfather"] {
   --bg:       #080504;
@@ -586,6 +607,22 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 [data-theme="amelie"] .rank-num.silver         { color: var(--green); }
 [data-theme="amelie"] .rank-num.bronze         { color: var(--gold); }
 [data-theme="amelie"] .rank-mn                 { color: var(--green); border-color: rgba(90,160,64,.4); background: rgba(90,160,64,.08); }
+
+/* ── In the Mood for Love ── */
+[data-theme="itmfl"] .logo                    { color: var(--accent); }
+[data-theme="itmfl"] .nav-link:hover          { color: var(--gold); }
+[data-theme="itmfl"] .nav-link.active         { color: var(--accent); background: rgba(200,40,72,.12); }
+[data-theme="itmfl"] .movie-card:hover,
+[data-theme="itmfl"] .movie-card:focus-visible { border-color: var(--accent); }
+[data-theme="itmfl"] .score-high              { color: var(--gold); }
+[data-theme="itmfl"] .score-mid               { color: var(--orange); }
+[data-theme="itmfl"] .score-low               { color: var(--accent); }
+[data-theme="itmfl"] .badge-mn                { color: var(--green); border-color: rgba(74,136,96,.5); background: rgba(74,136,96,.1); }
+[data-theme="itmfl"] .badge-top3              { color: var(--gold); border-color: rgba(212,144,32,.4); background: rgba(212,144,32,.08); }
+[data-theme="itmfl"] .rank-num.gold           { color: var(--gold); }
+[data-theme="itmfl"] .rank-num.silver         { color: var(--accent); }
+[data-theme="itmfl"] .rank-num.bronze         { color: var(--orange); }
+[data-theme="itmfl"] .rank-mn                 { color: var(--green); border-color: rgba(74,136,96,.4); background: rgba(74,136,96,.08); }
 
 /* ── The Godfather ── */
 [data-theme="godfather"] .logo                 { color: var(--gold); }
