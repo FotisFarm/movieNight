@@ -238,8 +238,8 @@
   --surface:  #160A0C;
   --surface2: #200E12;
   --surface3: #2C1218;
-  --accent:   #D81C23;
-  --accent2:  #AD161B;
+  --accent:   #5AC73D;
+  --accent2:  #45A82E;
   --text:     #F2E0C8;
   --text2:    #A88068;
   --text3:    #664840;
@@ -609,18 +609,15 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 [data-theme="amelie"] .rank-mn                 { color: var(--green); border-color: rgba(90,160,64,.4); background: rgba(90,160,64,.08); }
 
 /* ── In the Mood for Love ── */
-[data-theme="itmfl"] .logo                    { color: #5AC73D; }
-[data-theme="itmfl"] .nav-link:hover          { color: #5AC73D; }
-[data-theme="itmfl"] .nav-link.active         { color: var(--accent); background: rgba(216,28,35,.12); }
+[data-theme="itmfl"] .nav-link.active         { color: var(--accent); background: rgba(90,199,61,.1); }
 [data-theme="itmfl"] .movie-card:hover,
-[data-theme="itmfl"] .movie-card:focus-visible { border-color: #5AC73D; box-shadow: 0 0 14px rgba(90,199,61,.18); }
-[data-theme="itmfl"] .btn-primary              { background: #5AC73D; color: #0A1A06; }
-[data-theme="itmfl"] .btn-primary:hover:not(:disabled) { background: #45A82E; }
-[data-theme="itmfl"] .view-btn.active          { color: #5AC73D; }
+[data-theme="itmfl"] .movie-card:focus-visible { border-color: var(--accent); box-shadow: 0 0 14px rgba(90,199,61,.18); }
+[data-theme="itmfl"] .btn-primary              { background: #D81C23; color: #fff; }
+[data-theme="itmfl"] .btn-primary:hover:not(:disabled) { background: #AD161B; }
 [data-theme="itmfl"] .score-high              { color: #0B6E4F; }
 [data-theme="itmfl"] .score-mid               { color: #B8860B; }
 [data-theme="itmfl"] .score-low               { color: #C83040; }
-[data-theme="itmfl"] .badge-ranked            { color: var(--accent); background: rgba(216,28,35,.12); border-color: rgba(216,28,35,.4); }
+[data-theme="itmfl"] .badge-ranked            { color: #D81C23; background: rgba(216,28,35,.12); border-color: rgba(216,28,35,.4); }
 [data-theme="itmfl"] .badge-mn                { color: var(--green); border-color: rgba(74,136,96,.5); background: rgba(74,136,96,.1); }
 [data-theme="itmfl"] .badge-top3              { color: var(--gold); border-color: rgba(212,144,32,.4); background: rgba(212,144,32,.08); }
 [data-theme="itmfl"] .rank-num.gold           { color: #0B6E4F; }

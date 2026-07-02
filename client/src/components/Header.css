@@ -237,7 +237,7 @@
 }
 
 /* ── In the Mood for Love header ── */
-[data-theme="itmfl"] .nav-link:hover { color: #5AC73D; background: rgba(90,199,61,.08); }
+[data-theme="itmfl"] .nav-link:hover { color: var(--accent); background: rgba(90,199,61,.08); }
 
 /* ── Blanc header ── */
 [data-theme="blanc"] .header {
