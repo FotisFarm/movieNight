@@ -15,7 +15,7 @@ const DEFAULTS = {
   sortBy: 'alpha',
   sortVoter: 'Φώτης',
   filterMn: false,
-  filterRated: 'voted',
+  filterRated: '',
   filterWl: false,
   filterVoters: [],
   filterDirector: '',
