@@ -304,7 +304,7 @@ export default function Watchlist({ voter }) {
                   >
                     {m.cinobo === 'Yes' ? '✓ Cinobo' : '✗ Cinobo'}
                   </button>
-                  <button className="btn btn-primary btn-sm" onClick={() => markAsWatched(m)}>✓ Mark as MN</button>
+                  <button className="btn btn-ghost btn-sm wl-mn-btn" onClick={() => markAsWatched(m)}>✓ Mark as MN</button>
                   <button
                     className="btn btn-ghost btn-sm"
                     style={{ color: 'var(--text3)' }}

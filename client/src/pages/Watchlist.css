@@ -243,6 +243,8 @@
   transition: all .15s;
 }
 .wl-vote-btn:hover:not(.wl-vote-disabled) { border-color: var(--green); color: var(--green); }
+
+.wl-mn-btn { background: var(--surface3); color: var(--text); }
 .wl-vote-on { background: #52c47a20; border-color: #52c47a60; color: var(--green); }
 .wl-vote-disabled { opacity: .35; cursor: default; }
 

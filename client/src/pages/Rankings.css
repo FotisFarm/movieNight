@@ -13,9 +13,9 @@
 }
 
 .btn-rank-active {
-  background: transparent;
-  color: var(--accent);
-  border: 1px solid var(--accent);
+  background: var(--surface3);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .ranking-row-group {
