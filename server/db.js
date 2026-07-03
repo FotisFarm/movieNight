@@ -56,6 +56,15 @@ db.exec(`
 try { db.exec("ALTER TABLE ratings ADD COLUMN comment TEXT NOT NULL DEFAULT ''"); } catch (_) {}
 try { db.exec("ALTER TABLE movies ADD COLUMN imdb_id TEXT DEFAULT NULL"); } catch (_) {}
 try { db.exec("ALTER TABLE movies ADD COLUMN imdb_rating REAL DEFAULT NULL"); } catch (_) {}
+try { db.exec("ALTER TABLE ratings ADD COLUMN rated_at TEXT DEFAULT NULL"); } catch (_) {}
+try { db.exec(`CREATE TABLE IF NOT EXISTS events (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  movie_id INTEGER REFERENCES movies(id) ON DELETE SET NULL,
+  voter    TEXT,
+  action   TEXT NOT NULL,
+  detail   TEXT,
+  ts       TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+)`); } catch (_) {}
 
 // Widen top3 rank constraint 1–3 → 1–10 (SQLite can't ALTER a CHECK, so rebuild). Idempotent.
 try {

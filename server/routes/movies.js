@@ -4,6 +4,8 @@ const { rankBonus } = require('../scoring');
 
 const router = express.Router();
 
+const logEvent = db.prepare('INSERT INTO events (movie_id, voter, action, detail) VALUES (?, ?, ?, ?)');
+
 const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
 const GROUP_SIZE = 5;
 
@@ -203,12 +205,14 @@ router.post('/:id/watchlist-vote', (req, res) => {
   const exists = db.prepare('SELECT 1 FROM watchlist_votes WHERE movie_id=? AND voter=?').get(id, voter);
   if (exists) {
     db.prepare('DELETE FROM watchlist_votes WHERE movie_id=? AND voter=?').run(id, voter);
+    logEvent.run(id, voter, 'wl_remove', null);
   } else {
     if (sessionVoter !== 'mnAdmin') {
       const count = db.prepare('SELECT COUNT(*) as c FROM watchlist_votes WHERE voter=?').get(voter).c;
       if (count >= 3) return res.status(400).json({ error: 'vote_limit' });
     }
     db.prepare('INSERT INTO watchlist_votes (movie_id, voter) VALUES (?,?)').run(id, voter);
+    logEvent.run(id, voter, 'wl_add', null);
   }
   res.json({ ok: true });
 });
@@ -294,12 +298,17 @@ router.patch('/:id', (req, res) => {
     const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');
     db.prepare(`UPDATE movies SET ${setClause} WHERE id = ?`)
       .run(...Object.values(updates), id);
+    if (mn !== undefined && updates.mn !== movie.mn) {
+      logEvent.run(id, null, updates.mn === 1 ? 'mn_on' : 'mn_off', null);
+    }
   }
 
   if (ratings) {
     const upsertRating = db.prepare(`
-      INSERT INTO ratings (movie_id, voter, score) VALUES (?, ?, ?)
-      ON CONFLICT(movie_id, voter) DO UPDATE SET score = excluded.score
+      INSERT INTO ratings (movie_id, voter, score, rated_at)
+      VALUES (?, ?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+      ON CONFLICT(movie_id, voter) DO UPDATE
+      SET score = excluded.score, rated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
     `);
     const deleteRating = db.prepare('DELETE FROM ratings WHERE movie_id = ? AND voter = ?');
 
@@ -309,8 +318,10 @@ router.patch('/:id', (req, res) => {
         const score = ratings[voter];
         if (score === null || score === '') {
           deleteRating.run(id, voter);
+          logEvent.run(id, voter, 'unrate', null);
         } else {
           upsertRating.run(id, voter, parseFloat(score));
+          logEvent.run(id, voter, 'rate', parseFloat(score).toString());
         }
       }
     }
@@ -342,8 +353,10 @@ router.patch('/:id', (req, res) => {
         const rankNum = parseInt(top3[voter]);
         if (!rankNum) {
           deleteTop3.run(id, voter);
+          logEvent.run(id, voter, 'top10_clear', null);
         } else if (rankNum >= 1 && rankNum <= 10) {
           upsertTop3.run(id, voter, rankNum);
+          logEvent.run(id, voter, 'top10', rankNum.toString());
         }
         touched.add(voter);
       }

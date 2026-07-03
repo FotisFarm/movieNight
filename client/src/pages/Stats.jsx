@@ -154,14 +154,39 @@ function Top10SortableRow({ m, voter, onOpen }) {
   );
 }
 
+function actionLabel(e) {
+  /** Return a human-readable description of an activity event. */
+  switch (e.action) {
+    case 'rate':        return `rated ${e.title} · ${e.detail}`;
+    case 'unrate':      return `removed rating for ${e.title}`;
+    case 'mn_on':       return `${e.title} added to Movie Night`;
+    case 'mn_off':      return `${e.title} removed from Movie Night`;
+    case 'top10':       return `added ${e.title} to Top 10 at #${e.detail}`;
+    case 'top10_clear': return `removed ${e.title} from Top 10`;
+    case 'wl_add':      return `voted for ${e.title} on Watchlist`;
+    case 'wl_remove':   return `removed Watchlist vote for ${e.title}`;
+    default:            return e.action;
+  }
+}
+
+function timeAgo(ts) {
+  /** Format a UTC ISO timestamp as a human-readable relative time string. */
+  const diff = (Date.now() - new Date(ts).getTime()) / 1000;
+  if (diff < 60)    return 'just now';
+  if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
 export default function Stats({ voter }) {
-  const [movies, setMovies]   = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [modalId, setModalId] = useState(null);
+  const [movies, setMovies]     = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [activity, setActivity] = useState([]);
+  const [modalId, setModalId]   = useState(null);
   const [selectedVoter, setSelectedVoter] = useState(null);
   const [dyTarget, setDyTarget] = useState(null); // { type, value } for director/decade modal
   const [filmList, setFilmList] = useState(null); // { label, films } for number-tile modal
-  const { toast, Toast }      = useToast();
+  const { toast, Toast }        = useToast();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -170,6 +195,10 @@ export default function Stats({ voter }) {
 
   useEffect(() => {
     api.getMovies({}).then(setMovies).finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    api.getActivity({ limit: 40 }).then(setActivity).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -206,6 +235,17 @@ export default function Stats({ voter }) {
 
   const stats       = useMemo(() => computeStats(movies),       [movies]);
   const globalStats = useMemo(() => computeGlobalStats(movies), [movies]);
+
+  // Map of voter → ts of their most recent 'rate' event in the activity list
+  const lastActiveMap = useMemo(() => {
+    const map = {};
+    for (const e of activity) {
+      if (e.action === 'rate' && e.voter && !map[e.voter]) {
+        map[e.voter] = e.ts;
+      }
+    }
+    return map;
+  }, [activity]);
 
   const rankMap = useRankMap(movies);
 
@@ -358,6 +398,12 @@ export default function Stats({ voter }) {
                   <span className="stats-fav-val">{s.favDecade}s</span>
                 </div>
               )}
+              {lastActiveMap[s.voter] && (
+                <div className="stats-fav">
+                  <span className="stats-fav-lbl">Last active</span>
+                  <span className="stats-fav-val">{timeAgo(lastActiveMap[s.voter])}</span>
+                </div>
+              )}
 
               {/* Score distribution */}
               <div className="stats-dist">
@@ -419,6 +465,38 @@ export default function Stats({ voter }) {
             );
           })}
         </div>
+      </section>
+
+      {/* ── Recent Activity ── */}
+      <section className="stats-section">
+        <h2 className="stats-heading">Recent Activity</h2>
+        {activity.length === 0 ? (
+          <div className="activity-empty">No activity recorded yet.</div>
+        ) : (
+          <>
+            <div className="activity-list">
+              {activity.map(e => (
+                <div
+                  key={e.id}
+                  className={`activity-row${e.movie_id ? ' activity-clickable' : ''}`}
+                  onClick={() => e.movie_id && setModalId(e.movie_id)}
+                >
+                  {e.voter && <span className="activity-voter">{e.voter}</span>}
+                  <span className="activity-action">{actionLabel(e)}</span>
+                  <span className="activity-time">{timeAgo(e.ts)}</span>
+                </div>
+              ))}
+            </div>
+            {activity.length >= 40 && (
+              <button
+                className="activity-load-more"
+                onClick={() => api.getActivity({ limit: activity.length + 40 }).then(setActivity).catch(() => {})}
+              >
+                Load more
+              </button>
+            )}
+          </>
+        )}
       </section>
 
       {/* ── Voter breakdown modal ── */}
