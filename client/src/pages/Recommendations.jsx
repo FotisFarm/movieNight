@@ -2,14 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
 import { useToast } from '../hooks/useToast.jsx';
-import { VOTERS } from '../constants';
+import { useAppConfig } from '../AppConfigContext';
 import { fmt, scoreClass } from '../utils';
 import './Recommendations.css';
 
-function VoterPills({ ratings }) {
+function VoterPills({ ratings, voters }) {
   return (
     <div className="rec-voter-pills">
-      {VOTERS.map(v => {
+      {voters.map(v => {
         const score = ratings?.[v];
         const rated = score != null;
         return (
@@ -31,6 +31,7 @@ const DEFAULTS = { search: '', filterMn: false, filterWl: false, filterVoter: ''
 const DEFAULT_WEIGHTS = { dw: 0.45, ew: 0.45, tw: 0.10 };
 
 export default function Recommendations() {
+  const { voters } = useAppConfig();
   const [allFilms, setAllFilms] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [modalId, setModalId]   = useState(null);
@@ -155,7 +156,7 @@ export default function Recommendations() {
             Voter
             <select className="select select-sm" value={filterVoter} onChange={e => setFilterVoter(e.target.value)}>
               <option value="">All</option>
-              {VOTERS.map(v => <option key={v}>{v}</option>)}
+              {voters.map(v => <option key={v}>{v}</option>)}
             </select>
           </label>
 
@@ -236,7 +237,7 @@ export default function Recommendations() {
         <div className="recs-unvoted">
           <span className="recs-bias-label">Unvoted by</span>
           <div className="recs-unvoted-pills">
-            {VOTERS.map(v => (
+            {voters.map(v => (
               <button
                 key={v}
                 className={`voter-pill-toggle${unvotedBy.has(v) ? ' active' : ''}`}
@@ -295,7 +296,7 @@ export default function Recommendations() {
                 </div>
 
                 <div className="rec-bottom">
-                  <VoterPills ratings={f.ratings} />
+                  <VoterPills ratings={f.ratings} voters={voters} />
                   <div className="rec-detail">
                     {f.actualScore != null && (
                       <span className="rec-actual">

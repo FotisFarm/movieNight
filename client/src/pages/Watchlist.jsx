@@ -11,7 +11,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
 import { useToast } from '../hooks/useToast.jsx';
-import { VOTERS } from '../constants';
+import { useAppConfig } from '../AppConfigContext';
 import { fmtScore10 as fmt, scoreClass } from '../utils';
 import './Watchlist.css';
 
@@ -34,6 +34,7 @@ function sortWithManual(a, b, manualOrder) {
 }
 
 function RankingRow({ m, index, draggable, onOpen }) {
+  const { voters } = useAppConfig();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: m.id, disabled: !draggable });
 
@@ -61,7 +62,7 @@ function RankingRow({ m, index, draggable, onOpen }) {
         <span className="wl-ranking-meta">{m.director} · {m.year || '?'}</span>
       </div>
       <div className="wl-ranking-voters">
-        {VOTERS.map(v => m.watchlistVotes.includes(v) && (
+        {voters.map(v => m.watchlistVotes.includes(v) && (
           <span key={v} className="wl-vote-pill">{v}</span>
         ))}
       </div>
@@ -70,6 +71,7 @@ function RankingRow({ m, index, draggable, onOpen }) {
 }
 
 export default function Watchlist({ voter }) {
+  const { voters } = useAppConfig();
   const isAdmin = voter === 'mnAdmin';
   const [movies, setMovies]         = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -270,7 +272,7 @@ export default function Watchlist({ voter }) {
 
                 {isAdmin && (
                   <div className="wl-admin-ribbon">
-                    {VOTERS.map(v => {
+                    {voters.map(v => {
                       const voted = m.watchlistVotes?.includes(v);
                       return (
                         <button

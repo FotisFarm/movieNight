@@ -10,7 +10,7 @@ import './Rankings.css';
 const ROWS = [
   {
     label: 'Group Score — All Films',
-    description: 'Score calculated as if all 5 members always vote (sum ÷ 5), plus a Top 10 token bonus: 🥇+1.0 down to #10 +0.1, capped at 10. Films not yet seen by the whole group are penalised — a deliberate measure of collective buy-in.',
+    description: 'Score calculated as if the whole group always votes (sum ÷ group size), plus a Top 10 token bonus: 🥇+1.0 down to #10 +0.1, capped at 10. Films not yet seen by the whole group are penalised — a deliberate measure of collective buy-in.',
     rowScoreKey: 'boostedScore', mnOnly: false,
     panels: [
       { title: '🏆 Top 10 Films',  key: 'groupAll',      scoreKey: 'boostedScore', clickable: true },

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
-import { VOTERS, GROUP_SIZE } from '../constants';
 import { useAppConfig } from '../AppConfigContext';
 import { fmtScore10 as fmt, scoreClass } from '../utils';
 import './MovieModal.css';
@@ -9,9 +8,9 @@ const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
 const rankBonus = r => (r >= 1 && r <= 10 ? (11 - r) / 10 : 0);
 const rankLabel = r => `${MEDALS[r] ? MEDALS[r] + ' ' : ''}#${r}`;
 
-function voterCountClass(n) {
-  if (n === 5)      return 'score-high';
-  if (n >= 2)       return 'score-orange';
+function voterCountClass(n, groupSize) {
+  if (n === groupSize) return 'score-high';
+  if (n >= 2)          return 'score-orange';
   return 'score-low';
 }
 
@@ -23,7 +22,7 @@ function rankClass(r) {
 }
 
 export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankData }) {
-  const { voters: configVoters } = useAppConfig();
+  const { voters: configVoters, groupSize } = useAppConfig();
   const currentVoter = sessionStorage.getItem('voter');
   const isAdmin = currentVoter === 'mnAdmin';
   const isGhost = !configVoters.includes(currentVoter) && currentVoter !== 'mnAdmin' && !!currentVoter;
@@ -186,7 +185,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
               <div className="info-lbl">Score</div>
             </div>
             <div className="info-cell">
-              <div className={`info-val ${voterCountClass(voterCount)}`}>{voterCount}/{GROUP_SIZE}</div>
+              <div className={`info-val ${voterCountClass(voterCount, groupSize)}`}>{voterCount}/{groupSize}</div>
               <div className="info-lbl">Voters</div>
             </div>
             <div className="info-cell">

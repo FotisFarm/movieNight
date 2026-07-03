@@ -74,7 +74,7 @@ function computeStats(movies, voters) {
 
 function avg(arr) { return arr.reduce((a, b) => a + b, 0) / arr.length; }
 
-function computeGlobalStats(movies) {
+function computeGlobalStats(movies, groupSize) {
   const scored = movies.filter(m => (m.voterCount ?? 0) >= 2 && m.fairBoosted != null);
   const mn     = movies.filter(m => m.mn);
 
@@ -119,7 +119,7 @@ function computeGlobalStats(movies) {
     total: movies.length,
     rated: movies.filter(m => (m.voterCount ?? 0) >= 1).length,
     scored: scored.length,
-    allFive: movies.filter(m => m.voterCount === 5).length,
+    allFive: movies.filter(m => m.voterCount === groupSize).length,
     mn: mn.length,
     meanScore,
     bestFilm,
@@ -155,7 +155,7 @@ function Top10SortableRow({ m, voter, onOpen }) {
 }
 
 export default function Stats({ voter }) {
-  const { voters } = useAppConfig();
+  const { voters, groupSize } = useAppConfig();
   const [movies, setMovies]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalId, setModalId] = useState(null);
@@ -206,7 +206,7 @@ export default function Stats({ voter }) {
   }
 
   const stats       = useMemo(() => computeStats(movies, voters), [movies, voters]);
-  const globalStats = useMemo(() => computeGlobalStats(movies), [movies]);
+  const globalStats = useMemo(() => computeGlobalStats(movies, groupSize), [movies, groupSize]);
 
   const rankMap = useRankMap(movies);
 
@@ -246,9 +246,9 @@ export default function Stats({ voter }) {
             <span className="global-val">{scored}</span>
             <span className="global-lbl">Scored (≥2 voters)</span>
           </div>
-          <div className="global-num global-num-click" onClick={() => openList('Seen by all 5', m => m.voterCount === 5)}>
+          <div className="global-num global-num-click" onClick={() => openList(`Seen by all ${groupSize}`, m => m.voterCount === groupSize)}>
             <span className="global-val">{allFive}</span>
-            <span className="global-lbl">Seen by all 5</span>
+            <span className="global-lbl">Seen by all {groupSize}</span>
           </div>
           <div className="global-num global-num-click" onClick={() => openList('Movie Nights', m => m.mn)}>
             <span className="global-val">{mn}</span>

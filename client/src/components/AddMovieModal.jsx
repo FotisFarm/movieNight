@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { api } from '../api';
-import { VOTERS } from '../constants';
+import { useAppConfig } from '../AppConfigContext';
 
 export default function AddMovieModal({ onClose, onAdded }) {
+  const { voters } = useAppConfig();
   const [title, setTitle]         = useState('');
   const [director, setDirector]   = useState('');
   const [year, setYear]           = useState('');
@@ -26,7 +27,7 @@ export default function AddMovieModal({ onClose, onAdded }) {
     setSaving(true);
     setError('');
     const ratingPayload = {};
-    VOTERS.forEach(v => { ratingPayload[v] = enabled[v] ? ratings[v] ?? 5 : null; });
+    voters.forEach(v => { ratingPayload[v] = enabled[v] ? ratings[v] ?? 5 : null; });
     const hasRatings = Object.values(ratingPayload).some(v => v !== null);
     try {
       // Use existing createdMovieId if retrying after a failed updateMovie
@@ -86,7 +87,7 @@ export default function AddMovieModal({ onClose, onAdded }) {
 
           <div className="section-label" style={{ marginTop: 20 }}>Initial Ratings (optional)</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
-            {VOTERS.map(v => (
+            {voters.map(v => (
               <div key={v} style={{ display: 'grid', gridTemplateColumns: '90px 1fr 40px 32px', gap: '0 10px', alignItems: 'center' }}>
                 <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>{v}</span>
                 <input

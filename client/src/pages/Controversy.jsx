@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
 import { useToast } from '../hooks/useToast.jsx';
-import { VOTERS } from '../constants';
+import { useAppConfig } from '../AppConfigContext';
 import { fmt, scoreClass } from '../utils';
 import './Controversy.css';
 
@@ -14,6 +14,7 @@ function stdDevClass(v) {
 }
 
 export default function Controversy() {
+  const { voters } = useAppConfig();
   const [allFilms, setAllFilms] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [modalId, setModalId]   = useState(null);
@@ -108,7 +109,7 @@ export default function Controversy() {
                   <span className="controversy-std-lbl">std dev</span>
                 </div>
                 <div className="controversy-scores">
-                  {VOTERS.map(v => {
+                  {voters.map(v => {
                     const score = f.ratings?.[v];
                     if (score == null) return (
                       <span key={v} className="controversy-pill controversy-pill-empty">

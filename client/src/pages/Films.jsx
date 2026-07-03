@@ -5,7 +5,6 @@ import MovieCard from '../components/MovieCard';
 import MovieModal from '../components/MovieModal';
 import AddMovieModal from '../components/AddMovieModal';
 import { useToast } from '../hooks/useToast.jsx';
-import { VOTERS } from '../constants';
 import { useRankMap } from '../hooks/useRankMap';
 import { useAppConfig } from '../AppConfigContext';
 import './Films.css';
@@ -28,7 +27,7 @@ const DEFAULTS = {
 };
 
 export default function Films() {
-  const { minVoters } = useAppConfig();
+  const { voters, minVoters } = useAppConfig();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [movies, setMovies]           = useState([]);
@@ -270,7 +269,7 @@ export default function Films() {
               <>
                 <span className="filter-group-label" style={{ marginTop: 8 }}>By voter</span>
                 <select className="select select-sm filter-group-control" value={sortVoter} onChange={e => setSortVoter(e.target.value)}>
-                  {VOTERS.map(v => <option key={v}>{v}</option>)}
+                  {voters.map(v => <option key={v}>{v}</option>)}
                 </select>
               </>
             )}
@@ -307,7 +306,7 @@ export default function Films() {
           <div className="filter-group">
             <span className="filter-group-label">By voter</span>
             <div className="filter-voters">
-              {VOTERS.map(v => (
+              {voters.map(v => (
                 <button
                   key={v}
                   type="button"

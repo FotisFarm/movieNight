@@ -1,11 +1,10 @@
 import RankIcon from './RankIcon';
-import { VOTERS } from '../constants';
 import { fmtScore10 as fmt, scoreClass } from '../utils';
 import { useAppConfig } from '../AppConfigContext';
 import './MovieCard.css';
 
-function VoterPills({ ratings, top3 }) {
-  return VOTERS.map(v => {
+function VoterPills({ ratings, top3, voters }) {
+  return voters.map(v => {
     const score = ratings?.[v];
     if (score == null) return null;
     const rank = top3?.[v];
@@ -22,7 +21,7 @@ function VoterPills({ ratings, top3 }) {
 }
 
 export default function MovieCard({ movie, onClick, listView = false, scoreMode = 'fair' }) {
-  const { minVoters } = useAppConfig();
+  const { voters, minVoters } = useAppConfig();
   const { title, director, year, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id } = movie;
 
   const hasScore = voterCount >= minVoters;
@@ -78,7 +77,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
         </div>
 
         <div className="card-ratings">
-          <VoterPills ratings={ratings} top3={top3} />
+          <VoterPills ratings={ratings} top3={top3} voters={voters} />
         </div>
 
         {ImdbBadge}
@@ -108,7 +107,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
         </div>
 
         <div className="card-ratings">
-          <VoterPills ratings={ratings} top3={top3} />
+          <VoterPills ratings={ratings} top3={top3} voters={voters} />
         </div>
 
         {ImdbBadge}

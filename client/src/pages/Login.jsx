@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { api } from '../api';
-import { VOTERS } from '../constants';
+import { useAppConfig } from '../AppConfigContext';
 
 export default function Login({ onLogin }) {
+  const { voters } = useAppConfig();
   const [selected, setSelected] = useState(null);
   const [password, setPassword] = useState('');
   const [error, setError]       = useState('');
@@ -38,7 +39,7 @@ export default function Login({ onLogin }) {
         {!selected ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              {VOTERS.map(v => (
+              {voters.map(v => (
                 <button
                   key={v}
                   className="btn btn-ghost"
@@ -57,7 +58,7 @@ export default function Login({ onLogin }) {
               >
                 Admin
               </button>
-              {ghostVisible && (
+              {ghostVisible && !voters.includes('Σάκιας') && (
                 <button
                   className="btn btn-ghost"
                   style={{ width: '100%', justifyContent: 'center', fontSize: 12, color: 'var(--text3)', opacity: 0.6 }}
