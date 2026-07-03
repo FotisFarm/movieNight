@@ -12,14 +12,14 @@ import MovieModal from '../components/MovieModal';
 import DirectorYearModal from '../components/DirectorYearModal';
 import RankIcon from '../components/RankIcon';
 import { useToast } from '../hooks/useToast.jsx';
-import { VOTERS } from '../constants';
+import { useAppConfig } from '../AppConfigContext';
 import { fmt, scoreClass } from '../utils';
 import { useRankMap } from '../hooks/useRankMap';
 import './Stats.css';
 
 // Compute per-voter stats from all movies
-function computeStats(movies) {
-  return VOTERS.map(voter => {
+function computeStats(movies, voters) {
+  return voters.map(voter => {
     const myFilms = movies.filter(m => m.ratings?.[voter] != null);
     const scores  = myFilms.map(m => m.ratings[voter]);
     const mean    = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
@@ -155,6 +155,7 @@ function Top10SortableRow({ m, voter, onOpen }) {
 }
 
 export default function Stats({ voter }) {
+  const { voters } = useAppConfig();
   const [movies, setMovies]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalId, setModalId] = useState(null);
@@ -204,7 +205,7 @@ export default function Stats({ voter }) {
     toast('Saved!');
   }
 
-  const stats       = useMemo(() => computeStats(movies),       [movies]);
+  const stats       = useMemo(() => computeStats(movies, voters), [movies, voters]);
   const globalStats = useMemo(() => computeGlobalStats(movies), [movies]);
 
   const rankMap = useRankMap(movies);
@@ -274,7 +275,7 @@ export default function Stats({ voter }) {
               )}
               {bestFilm.top3 && Object.entries(bestFilm.top3).filter(([, r]) => r != null).length > 0 && (
                 <div className="global-hl-picks">
-                  {VOTERS.filter(v => bestFilm.top3?.[v] != null).map(v => (
+                  {voters.filter(v => bestFilm.top3?.[v] != null).map(v => (
                     <span key={v} className="global-hl-pick">
                       <RankIcon rank={bestFilm.top3[v]} />
                       <span>{v.slice(0, 3)}</span>

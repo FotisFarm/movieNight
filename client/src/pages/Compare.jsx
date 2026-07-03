@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
 import RankIcon from '../components/RankIcon';
-import { VOTERS } from '../constants';
+import { useAppConfig } from '../AppConfigContext';
 import { fmt, scoreClass, fmtScore } from '../utils';
 import './Compare.css';
 
@@ -69,6 +69,7 @@ const AGG = [
 ];
 
 export default function Compare() {
+  const { voters: VOTERS } = useAppConfig();
   const [movies, setMovies]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [mode, setMode]       = useState('movies'); // 'movies' | 'voters'
@@ -77,9 +78,16 @@ export default function Compare() {
   // movie mode (store ids, resolve from movies so edits stay fresh)
   const [aId, setAId] = useState(null);
   const [bId, setBId] = useState(null);
-  // voter mode
-  const [vA, setVA] = useState(VOTERS[0]);
-  const [vB, setVB] = useState(VOTERS[1]);
+  // voter mode — sync with voters from config (handles sakias env with 1 voter)
+  const [vA, setVA] = useState('');
+  const [vB, setVB] = useState('');
+
+  useEffect(() => {
+    if (VOTERS.length > 0) {
+      setVA(v => VOTERS.includes(v) ? v : VOTERS[0]);
+      setVB(v => VOTERS.includes(v) ? v : VOTERS[Math.min(1, VOTERS.length - 1)]);
+    }
+  }, [VOTERS]);
 
   useEffect(() => {
     api.getMovies({}).then(setMovies).finally(() => setLoading(false));
