@@ -10,6 +10,7 @@ services:
       - DATA_DIR=/app/data
       - MN_PASSWORD=${MN_PASSWORD:-changeme}
       - SESSION_SECRET=${SESSION_SECRET:-change-this-secret}
+      - GUEST_PASSWORD=${GUEST_PASSWORD:-}
     restart: unless-stopped
 
 volumes:
