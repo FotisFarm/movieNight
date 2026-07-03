@@ -24,6 +24,7 @@ function rankClass(r) {
 export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankData }) {
   const currentVoter = sessionStorage.getItem('voter');
   const isAdmin = currentVoter === 'mnAdmin';
+  const isGhost = !VOTERS.includes(currentVoter) && currentVoter !== 'mnAdmin' && !!currentVoter;
   const [movie, setMovie]     = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
@@ -66,6 +67,10 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
         c[v] = m.comments?.[v] ?? '';
         t[v] = m.top3?.[v] ?? null;
       });
+      if (isGhost) {
+        r[currentVoter] = m.ratings?.[currentVoter] ?? null;
+        c[currentVoter] = m.comments?.[currentVoter] ?? '';
+      }
       setRatings(r);
       setComments(c);
       setTop3(t);
@@ -97,6 +102,10 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
       if (ratings[v] != null) commentPayload[v] = comments[v];
       top3Payload[v] = top3[v] ?? null;
     });
+    if (isGhost) {
+      ratingPayload[currentVoter] = ratings[currentVoter] ?? null;
+      if (ratings[currentVoter] != null) commentPayload[currentVoter] = comments[currentVoter] ?? '';
+    }
 
     try {
       const updated = await api.updateMovie(movieId, {
@@ -272,6 +281,57 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
               );
             })}
           </div>
+
+          {isGhost && (() => {
+            const v = currentVoter;
+            const val = ratings[v];
+            const isOn = val != null;
+            return (
+              <>
+                <div style={{ borderTop: '1px solid var(--border)', margin: '8px 0 4px', opacity: 0.4 }} />
+                <div className={`rating-row${isOn ? '' : ' rating-off'}`}>
+                  <div className="rating-header">
+                    <span className="rating-voter">{v}</span>
+                    <div className="rating-controls">
+                      {isOn && (
+                        <input
+                          type="number"
+                          key={`${v}-${val ?? 'null'}`}
+                          className={`rating-number-input ${scoreClass(val)}`}
+                          min={0} max={10} step={0.5}
+                          defaultValue={val}
+                          onBlur={e => setScore(v, e.target.value)}
+                        />
+                      )}
+                      <button
+                        className="btn btn-sm btn-ghost rating-toggle"
+                        onClick={() => toggleVoter(v)}
+                        title={isOn ? 'Remove rating' : 'Add rating'}
+                      >{isOn ? '✕' : '+'}</button>
+                    </div>
+                  </div>
+                  {isOn && (
+                    <>
+                      <div className="score-bar">
+                        <div className="score-bar-fill" style={{
+                          width: `${(val / 10) * 100}%`,
+                          background: val >= 7.5 ? 'var(--green)' : val >= 5 ? 'var(--gold)' : 'var(--red)'
+                        }} />
+                      </div>
+                      <input
+                        type="text"
+                        className="rating-comment"
+                        placeholder="Add a note…"
+                        maxLength={300}
+                        value={comments[v] || ''}
+                        onChange={e => setComments(c => ({ ...c, [v]: e.target.value }))}
+                      />
+                    </>
+                  )}
+                </div>
+              </>
+            );
+          })()}
 
           {/* Top 10 */}
           <div className="modal-section-label section-label" style={{ marginTop: 20 }}>Top 10 Picks</div>
