@@ -13,5 +13,23 @@ services:
       - GUEST_PASSWORD=${GUEST_PASSWORD:-}
     restart: unless-stopped
 
+  sakias:
+    build: .
+    ports:
+      - "${SAKIAS_PORT:-3001}:3000"
+    volumes:
+      - sqlite_data:/app/main-data:ro
+      - sakias_data:/app/data
+    environment:
+      - NODE_ENV=production
+      - DATA_DIR=/app/data
+      - MN_PASSWORD=${MN_PASSWORD:-changeme}
+      - SESSION_SECRET=${SESSION_SECRET:-change-this-secret}
+      - GUEST_PASSWORD=${GUEST_PASSWORD:-}
+      - VOTERS=Σάκιας
+      - GROUP_SIZE=1
+    restart: unless-stopped
+
 volumes:
   sqlite_data:
+  sakias_data:

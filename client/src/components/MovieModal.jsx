@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
 import { VOTERS, GROUP_SIZE } from '../constants';
+import { useAppConfig } from '../AppConfigContext';
 import { fmtScore10 as fmt, scoreClass } from '../utils';
 import './MovieModal.css';
 
@@ -22,9 +23,10 @@ function rankClass(r) {
 }
 
 export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankData }) {
+  const { voters: configVoters } = useAppConfig();
   const currentVoter = sessionStorage.getItem('voter');
   const isAdmin = currentVoter === 'mnAdmin';
-  const isGhost = !VOTERS.includes(currentVoter) && currentVoter !== 'mnAdmin' && !!currentVoter;
+  const isGhost = !configVoters.includes(currentVoter) && currentVoter !== 'mnAdmin' && !!currentVoter;
   const [movie, setMovie]     = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
@@ -62,7 +64,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
     api.getMovie(movieId).then(m => {
       setMovie(m);
       const r = {}, c = {}, t = {};
-      VOTERS.forEach(v => {
+      configVoters.forEach(v => {
         r[v] = m.ratings?.[v] ?? null;
         c[v] = m.comments?.[v] ?? '';
         t[v] = m.top3?.[v] ?? null;
@@ -97,7 +99,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   async function handleSave() {
     setSaving(true);
     const ratingPayload = {}, commentPayload = {}, top3Payload = {};
-    VOTERS.forEach(v => {
+    configVoters.forEach(v => {
       ratingPayload[v] = ratings[v];
       if (ratings[v] != null) commentPayload[v] = comments[v];
       top3Payload[v] = top3[v] ?? null;
@@ -228,7 +230,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
           {/* Ratings */}
           <div className="modal-section-label section-label">Ratings</div>
           <div className="ratings-grid">
-            {VOTERS.map(v => {
+            {configVoters.map(v => {
               const val = ratings[v];
               const isOn = val != null;
               const canEdit = isAdmin || v === currentVoter;
@@ -336,7 +338,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
           {/* Top 10 */}
           <div className="modal-section-label section-label" style={{ marginTop: 20 }}>Top 10 Picks</div>
           <div className="top3-grid">
-            {VOTERS.map(v => {
+            {configVoters.map(v => {
               const canEdit = isAdmin || v === currentVoter;
               const current = top3[v] ?? null;
               // Append/remove only — reordering happens via drag-and-drop on the Stats page.

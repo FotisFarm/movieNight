@@ -1,6 +1,7 @@
 import RankIcon from './RankIcon';
 import { VOTERS } from '../constants';
 import { fmtScore10 as fmt, scoreClass } from '../utils';
+import { useAppConfig } from '../AppConfigContext';
 import './MovieCard.css';
 
 function VoterPills({ ratings, top3 }) {
@@ -21,9 +22,10 @@ function VoterPills({ ratings, top3 }) {
 }
 
 export default function MovieCard({ movie, onClick, listView = false, scoreMode = 'fair' }) {
+  const { minVoters } = useAppConfig();
   const { title, director, year, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id } = movie;
 
-  const hasScore = voterCount >= 2;
+  const hasScore = voterCount >= minVoters;
   const displayScore = hasScore
     ? (scoreMode === 'group' ? (movie.boostedScore ?? null) : (fairBoosted ?? null))
     : null;

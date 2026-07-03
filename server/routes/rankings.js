@@ -4,7 +4,7 @@ const { rankBonus } = require('../scoring');
 
 const router = express.Router();
 
-const GROUP_SIZE = 5;
+const { GROUP_SIZE, MIN_VOTERS } = require('../config');
 
 function getAllEnriched(mnOnly = false) {
   let movies = db.prepare(
@@ -15,7 +15,7 @@ function getAllEnriched(mnOnly = false) {
       (SELECT GROUP_CONCAT(r.voter, '|')                 FROM ratings r WHERE r.movie_id = m.id) as voter_names,
       (SELECT GROUP_CONCAT(t.voter || ':' || t.rank, '|') FROM top3 t  WHERE t.movie_id = m.id) as top3_entries
      FROM movies m
-     WHERE voter_count > 1 ${mnOnly ? 'AND m.mn = 1' : ''}
+     WHERE voter_count >= ${MIN_VOTERS} ${mnOnly ? 'AND m.mn = 1' : ''}
     `
   ).all();
 

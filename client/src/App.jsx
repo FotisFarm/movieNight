@@ -11,6 +11,7 @@ import Compare from './pages/Compare';
 import Login from './pages/Login';
 import { api } from './api';
 import { ThemeProvider } from './ThemeContext';
+import { AppConfigProvider } from './AppConfigContext';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -39,7 +40,9 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <AppInner />
+        <AppConfigProvider>
+          <AppInner />
+        </AppConfigProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

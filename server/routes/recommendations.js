@@ -3,8 +3,7 @@ const db = require('../db');
 const { rankBonus } = require('../scoring');
 
 const router = express.Router();
-const GROUP_SIZE = 5;
-const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
+const { GROUP_SIZE } = require('../config');
 
 router.get('/', (req, res) => {
   // Parse and normalise bias weights from query params (default 0.45 / 0.45 / 0.1)

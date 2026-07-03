@@ -22,6 +22,11 @@ seed();
 
 app.use('/api/auth', require('./routes/auth'));
 
+app.get('/api/config', (_req, res) => {
+  const { VOTERS, GROUP_SIZE, MIN_VOTERS } = require('./config');
+  res.json({ voters: VOTERS, groupSize: GROUP_SIZE, minVoters: MIN_VOTERS });
+});
+
 function requireAuth(req, res, next) {
   if (req.session.voter) return next();
   res.status(401).json({ error: 'Unauthorized' });

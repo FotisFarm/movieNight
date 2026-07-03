@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
+const { VOTERS } = require('../config');
 const VALID_USERS = [...VOTERS, 'mnAdmin'];
 const PASSWORD = process.env.MN_PASSWORD || 'changeme';
 const GHOST_VOTER = 'Σάκιας';

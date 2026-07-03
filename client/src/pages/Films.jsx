@@ -7,6 +7,7 @@ import AddMovieModal from '../components/AddMovieModal';
 import { useToast } from '../hooks/useToast.jsx';
 import { VOTERS } from '../constants';
 import { useRankMap } from '../hooks/useRankMap';
+import { useAppConfig } from '../AppConfigContext';
 import './Films.css';
 
 const PAGE_SIZE = 60;
@@ -27,6 +28,7 @@ const DEFAULTS = {
 };
 
 export default function Films() {
+  const { minVoters } = useAppConfig();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [movies, setMovies]           = useState([]);
@@ -153,7 +155,7 @@ export default function Films() {
     : movies;
 
   const scoreSortActive = sortBy === 'score-desc' || sortBy === 'score-asc' || sortBy === 'group-desc' || sortBy === 'group-asc' || sortBy === 'controversial';
-  const sortBase = scoreSortActive && filterRated !== 'unvoted' ? searchFiltered.filter(m => m.voterCount >= 2) : searchFiltered;
+  const sortBase = scoreSortActive && filterRated !== 'unvoted' ? searchFiltered.filter(m => m.voterCount >= minVoters) : searchFiltered;
 
   const sorted = [...sortBase].sort((a, b) => {
     switch (sortBy) {

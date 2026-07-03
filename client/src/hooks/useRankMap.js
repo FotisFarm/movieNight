@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
+import { useAppConfig } from '../AppConfigContext';
 
 export function useRankMap(allMovies) {
+  const { minVoters } = useAppConfig();
   return useMemo(() => {
-    const rated   = allMovies.filter(m => m.voterCount >= 2);
+    const rated   = allMovies.filter(m => m.voterCount >= minVoters);
     const ratedMn = rated.filter(m => m.mn);
 
     function tiebreak(a, b) {
@@ -23,5 +25,5 @@ export function useRankMap(allMovies) {
       mnFair:  toMap([...ratedMn].sort(byFair)),
       mnGroup: toMap([...ratedMn].sort(byGroup)),
     };
-  }, [allMovies]);
+  }, [allMovies, minVoters]);
 }

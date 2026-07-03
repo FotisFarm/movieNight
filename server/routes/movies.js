@@ -4,8 +4,7 @@ const { rankBonus } = require('../scoring');
 
 const router = express.Router();
 
-const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
-const GROUP_SIZE = 5;
+const { VOTERS, GROUP_SIZE } = require('../config');
 
 function enrichMovie(movie) {
   const ratings = db
