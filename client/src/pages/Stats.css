@@ -259,26 +259,3 @@
 .top10-hint { font-size: 10px; color: var(--text3); font-weight: 400; margin-left: 8px; }
 .top10-handle { flex-shrink: 0; cursor: grab; color: var(--text3); font-size: 13px; touch-action: none; }
 .top10-handle:active { cursor: grabbing; }
-
-/* ── Recent Activity ── */
-.activity-empty { font-size: 13px; color: var(--text3); }
-.activity-list {
-  max-height: 400px; overflow-y: auto;
-  border: 1px solid var(--border); border-radius: var(--radius-lg);
-}
-.activity-row {
-  display: flex; align-items: baseline; gap: 8px;
-  padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px;
-}
-.activity-row:last-child { border-bottom: none; }
-.activity-clickable { cursor: pointer; }
-.activity-clickable:hover { background: var(--surface2); }
-.activity-voter { color: var(--accent); font-weight: 600; flex-shrink: 0; }
-.activity-action { flex: 1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.activity-time { font-size: 11px; color: var(--text3); flex-shrink: 0; margin-left: auto; }
-.activity-load-more {
-  margin-top: 10px; padding: 6px 16px;
-  background: var(--surface2); border: 1px solid var(--border);
-  border-radius: var(--radius); font-size: 13px; color: var(--text); cursor: pointer;
-}
-.activity-load-more:hover { background: var(--surface3); }
