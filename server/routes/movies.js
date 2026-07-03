@@ -29,11 +29,11 @@ function enrichMovie(movie) {
   const top3Map = {};
   for (const t of top3) top3Map[t.voter] = t.rank;
 
-  const scores = Object.values(ratingsMap);
+  const scores = VOTERS.map(v => ratingsMap[v]).filter(s => s != null);
   const n = scores.length;
   let score = null, fairScore = null, boostedScore = null, fairBoosted = null;
 
-  const boost = Object.values(top3Map).reduce((acc, rank) => acc + rankBonus(rank), 0);
+  const boost = VOTERS.map(v => top3Map[v]).filter(r => r != null).reduce((acc, rank) => acc + rankBonus(rank), 0);
 
   let stdDev = null;
   if (n > 0) {
@@ -111,11 +111,11 @@ function enrichMoviesBatch(movies) {
     const top3 = top3Map[movie.id] || {};
     const watchlistVotes = wlMap[movie.id] || [];
 
-    const scores = Object.values(ratings);
+    const scores = VOTERS.map(v => ratings[v]).filter(s => s != null);
     const n = scores.length;
     let score = null, fairScore = null, boostedScore = null, fairBoosted = null;
 
-    const boost = Object.values(top3).reduce((acc, rank) => acc + rankBonus(rank), 0);
+    const boost = VOTERS.map(v => top3[v]).filter(r => r != null).reduce((acc, rank) => acc + rankBonus(rank), 0);
 
     let stdDev = null;
     if (n > 0) {
@@ -303,7 +303,8 @@ router.patch('/:id', (req, res) => {
     `);
     const deleteRating = db.prepare('DELETE FROM ratings WHERE movie_id = ? AND voter = ?');
 
-    for (const voter of VOTERS) {
+    const votersToRate = VOTERS.includes(sessionVoter) ? VOTERS : [sessionVoter];
+    for (const voter of votersToRate) {
       if (voter in ratings) {
         if (!isAdmin && voter !== sessionVoter) continue;
         const score = ratings[voter];
@@ -320,7 +321,8 @@ router.patch('/:id', (req, res) => {
     const updateComment = db.prepare(
       'UPDATE ratings SET comment = ? WHERE movie_id = ? AND voter = ?'
     );
-    for (const voter of VOTERS) {
+    const votersToComment = VOTERS.includes(sessionVoter) ? VOTERS : [sessionVoter];
+    for (const voter of votersToComment) {
       if (voter in comments) {
         if (!isAdmin && voter !== sessionVoter) continue;
         updateComment.run(comments[voter] || '', id, voter);
