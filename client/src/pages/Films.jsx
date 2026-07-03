@@ -430,6 +430,12 @@ export default function Films() {
           onClose={() => setSelectedId(null)}
           onSaved={handleSaved}
           onDeleted={handleDeleted}
+          rankData={{
+            fair:    rankMap.fair[selectedId]    ?? null,
+            group:   rankMap.group[selectedId]   ?? null,
+            mnFair:  rankMap.mnFair[selectedId]  ?? null,
+            mnGroup: rankMap.mnGroup[selectedId] ?? null,
+          }}
         />
       )}
       {showAdd && (

@@ -527,6 +527,12 @@ export default function Stats({ voter }) {
           onClose={() => setModalId(null)}
           onSaved={handleSaved}
           onDeleted={id => setMovies(ms => ms.filter(m => m.id !== id))}
+          rankData={{
+            fair:    rankMap.fair[modalId]    ?? null,
+            group:   rankMap.group[modalId]   ?? null,
+            mnFair:  rankMap.mnFair[modalId]  ?? null,
+            mnGroup: rankMap.mnGroup[modalId] ?? null,
+          }}
         />
       )}
     </div>

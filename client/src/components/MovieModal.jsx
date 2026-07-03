@@ -21,7 +21,7 @@ function rankClass(r) {
   return 'score-high';
 }
 
-export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
+export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankData }) {
   const currentVoter = sessionStorage.getItem('voter');
   const isAdmin = currentVoter === 'mnAdmin';
   const [movie, setMovie]     = useState(null);
@@ -184,10 +184,16 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
               </div>
               <div className="info-lbl">Token Bonus</div>
             </div>
-            {movie.rank_global != null && (
+            {rankData?.fair != null && (
               <div className="info-cell">
-                <div className="info-val score-high">#{movie.rank_global}</div>
-                <div className="info-lbl">Global Rank</div>
+                <div className={`info-val ${rankClass(rankData.fair)}`}>#{rankData.fair}</div>
+                <div className="info-lbl">Fair Rank</div>
+              </div>
+            )}
+            {rankData?.group != null && (
+              <div className="info-cell">
+                <div className={`info-val ${rankClass(rankData.group)}`}>#{rankData.group}</div>
+                <div className="info-lbl">Group Rank</div>
               </div>
             )}
             {movie.imdb_rating != null && (
@@ -308,14 +314,6 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted }) {
             </button>
           </div>
 
-          {movie.rank_global && (
-            <div style={{ marginTop: 20 }}>
-              <div className="section-label">Global Rank</div>
-              <div className={rankClass(movie.rank_global)} style={{ fontSize: 28, fontWeight: 700, marginTop: 6 }}>
-                #{movie.rank_global}
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="modal-footer">
