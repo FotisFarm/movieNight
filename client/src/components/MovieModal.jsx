@@ -241,7 +241,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                       {isOn && (
                         <input
                           type="number"
-                          key={`${v}-${val ?? 'null'}`}
+                          key={`${movieId}-${v}-${isOn}`}
                           className={`rating-number-input ${scoreClass(val)}`}
                           min={0} max={10} step={0.5}
                           defaultValue={val}
@@ -297,7 +297,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                       {isOn && (
                         <input
                           type="number"
-                          key={`${v}-${val ?? 'null'}`}
+                          key={`${movieId}-${v}-${isOn}`}
                           className={`rating-number-input ${scoreClass(val)}`}
                           min={0} max={10} step={0.5}
                           defaultValue={val}

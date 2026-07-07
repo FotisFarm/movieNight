@@ -302,7 +302,7 @@ router.patch('/:id', (req, res) => {
     `);
     const deleteRating = db.prepare('DELETE FROM ratings WHERE movie_id = ? AND voter = ?');
 
-    const votersToRate = VOTERS.includes(sessionVoter) ? VOTERS : [sessionVoter];
+    const votersToRate = (isAdmin || VOTERS.includes(sessionVoter)) ? VOTERS : [sessionVoter];
     for (const voter of votersToRate) {
       if (voter in ratings) {
         if (!isAdmin && voter !== sessionVoter) continue;
@@ -320,7 +320,7 @@ router.patch('/:id', (req, res) => {
     const updateComment = db.prepare(
       'UPDATE ratings SET comment = ? WHERE movie_id = ? AND voter = ?'
     );
-    const votersToComment = VOTERS.includes(sessionVoter) ? VOTERS : [sessionVoter];
+    const votersToComment = (isAdmin || VOTERS.includes(sessionVoter)) ? VOTERS : [sessionVoter];
     for (const voter of votersToComment) {
       if (voter in comments) {
         if (!isAdmin && voter !== sessionVoter) continue;
