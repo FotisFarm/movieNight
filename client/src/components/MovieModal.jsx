@@ -245,7 +245,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                           className={`rating-number-input ${scoreClass(val)}`}
                           min={0} max={10} step={0.5}
                           defaultValue={val}
-                          onBlur={e => canEdit && setScore(v, e.target.value)}
+                          onChange={e => canEdit && setScore(v, e.target.value)}
                           readOnly={!canEdit}
                         />
                       )}
@@ -301,7 +301,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                           className={`rating-number-input ${scoreClass(val)}`}
                           min={0} max={10} step={0.5}
                           defaultValue={val}
-                          onBlur={e => setScore(v, e.target.value)}
+                          onChange={e => setScore(v, e.target.value)}
                         />
                       )}
                       <button
