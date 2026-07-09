@@ -249,6 +249,25 @@ router.put('/top10', (req, res) => {
   res.json({ ok: true });
 });
 
+// POST /api/movies/watchlist/reset  — admin only. Must be before /:id.
+// mode 'votes' clears every watchlist vote; mode 'all' also empties the watchlist itself.
+router.post('/watchlist/reset', (req, res) => {
+  if (req.session.voter !== 'mnAdmin') return res.status(403).json({ error: 'Admin only' });
+  const mode = req.body?.mode;
+  if (mode !== 'votes' && mode !== 'all') return res.status(400).json({ error: 'mode must be "votes" or "all"' });
+
+  const tx = db.transaction(() => {
+    const votes = db.prepare('DELETE FROM watchlist_votes').run().changes;
+    let cleared = 0;
+    if (mode === 'all') {
+      cleared = db.prepare('UPDATE movies SET watchlist = 0 WHERE watchlist = 1').run().changes;
+    }
+    return { votesCleared: votes, filmsCleared: cleared };
+  });
+
+  res.json(tx());
+});
+
 // GET /api/movies/imdb-search?title=&year=  — resolve an exact OMDb match or return candidates.
 // Must be before /:id.
 router.get('/imdb-search', async (req, res) => {
@@ -339,6 +358,11 @@ router.patch('/:id', async (req, res) => {
     const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');
     db.prepare(`UPDATE movies SET ${setClause} WHERE id = ?`)
       .run(...Object.values(updates), id);
+  }
+
+  // Leaving the watchlist discards the film's votes — a film re-added later starts fresh.
+  if (watchlist !== undefined && !watchlist && movie.watchlist) {
+    db.prepare('DELETE FROM watchlist_votes WHERE movie_id = ?').run(id);
   }
 
   if (ratings) {

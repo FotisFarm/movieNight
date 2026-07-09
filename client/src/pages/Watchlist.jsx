@@ -78,6 +78,9 @@ export default function Watchlist({ voter }) {
   const [selectedId, setSelectedId] = useState(null);
   const [manualOrder, setManualOrder] = useState(loadManualOrder);
   const [activeId, setActiveId]     = useState(null);
+  const [confirmRemoveId, setConfirmRemoveId] = useState(null);
+  const [resetOpen, setResetOpen]   = useState(false);
+  const [resetting, setResetting]   = useState(false);
   const { toast, Toast }            = useToast();
 
   const sensors = useSensors(
@@ -161,9 +164,32 @@ export default function Watchlist({ voter }) {
   }
 
   async function removeFromWatchlist(id) {
+    setConfirmRemoveId(null);
     await api.updateMovie(id, { watchlist: false });
     setMovies(ms => ms.filter(m => m.id !== id));
-    toast('Removed from watchlist');
+    toast('Removed from watchlist — its votes were cleared');
+  }
+
+  // 'votes' keeps the films and clears every vote; 'all' also empties the watchlist.
+  async function resetWatchlist(mode) {
+    setResetting(true);
+    try {
+      const { votesCleared, filmsCleared } = await api.resetWatchlist(mode);
+      if (mode === 'all') {
+        setMovies([]);
+        toast(`Watchlist emptied — ${filmsCleared} film(s), ${votesCleared} vote(s) cleared`);
+      } else {
+        setMovies(ms => ms.map(m => ({ ...m, watchlistVotes: [] })));
+        toast(`${votesCleared} vote(s) cleared`);
+      }
+      saveManualOrder({});
+      setManualOrder({});
+      setResetOpen(false);
+    } catch (e) {
+      toast(e.message || 'Reset failed');
+    } finally {
+      setResetting(false);
+    }
   }
 
   function handleSaved(updated) {
@@ -193,7 +219,50 @@ export default function Watchlist({ voter }) {
         {!isAdmin && (
           <p className="wl-desc">You have used <strong>{myVoteCount}</strong> of 3 votes.</p>
         )}
+        {isAdmin && sortedMovies.length > 0 && (
+          <button className="btn btn-ghost btn-sm" onClick={() => setResetOpen(true)}>
+            Reset Watchlist
+          </button>
+        )}
       </div>
+
+      {resetOpen && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setResetOpen(false)}>
+          <div className="modal" style={{ maxWidth: 460 }}>
+            <div className="modal-header">
+              <div className="modal-header-text">
+                <div className="modal-title">Reset Watchlist</div>
+                <div className="modal-sub">This cannot be undone.</div>
+              </div>
+              <button className="modal-close" onClick={() => setResetOpen(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <button className="btn btn-danger" disabled={resetting} onClick={() => resetWatchlist('votes')}>
+                    Clear all votes
+                  </button>
+                  <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 6 }}>
+                    Keeps all {sortedMovies.length} films on the watchlist. Everyone starts voting fresh.
+                  </div>
+                </div>
+                <div>
+                  <button className="btn btn-danger" disabled={resetting} onClick={() => resetWatchlist('all')}>
+                    Clear watchlist and votes
+                  </button>
+                  <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 6 }}>
+                    Removes all {sortedMovies.length} films from the watchlist and clears every vote.
+                    The films themselves are not deleted.
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-ghost" onClick={() => setResetOpen(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {ranked.length > 0 && (
         <div className="wl-ranking">
@@ -307,13 +376,22 @@ export default function Watchlist({ voter }) {
                     {m.cinobo === 'Yes' ? '✓ Cinobo' : '✗ Cinobo'}
                   </button>
                   <button className="btn btn-ghost btn-sm wl-mn-btn" onClick={() => markAsWatched(m)}>✓ Mark as MN</button>
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    style={{ color: 'var(--text3)' }}
-                    onClick={() => removeFromWatchlist(m.id)}
-                  >
-                    Remove
-                  </button>
+                  {confirmRemoveId === m.id ? (
+                    <>
+                      <button className="btn btn-danger btn-sm" onClick={() => removeFromWatchlist(m.id)}>
+                        {(m.watchlistVotes?.length ?? 0) > 0 ? `Remove + clear ${m.watchlistVotes.length} vote(s)?` : 'Remove?'}
+                      </button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setConfirmRemoveId(null)}>Cancel</button>
+                    </>
+                  ) : (
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ color: 'var(--text3)' }}
+                      onClick={() => setConfirmRemoveId(m.id)}
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
               </div>
             );

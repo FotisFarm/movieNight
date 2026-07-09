@@ -40,6 +40,7 @@ export const api = {
     return request(`/recommendations${qs ? `?${qs}` : ''}`);
   },
   toggleWatchlistVote: (id, targetVoter) => request(`/movies/${id}/watchlist-vote`, { method: 'POST', body: targetVoter ? { targetVoter } : undefined }),
+  resetWatchlist: (mode) => request('/movies/watchlist/reset', { method: 'POST', body: { mode } }),
   login: (voter, password) => request('/auth/login', { method: 'POST', body: { voter, password } }),
   logout: () => request('/auth/logout', { method: 'POST' }),
   me: () => request('/auth/me'),
