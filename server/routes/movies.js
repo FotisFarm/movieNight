@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { rankBonus } = require('../scoring');
+const { lookupImdb } = require('../omdb');
 
 const router = express.Router();
 
@@ -256,7 +257,7 @@ router.get('/:id', (req, res) => {
 });
 
 // POST /api/movies
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { director = '', title, year = '', mn = false, watchlist = false } = req.body;
   if (!title?.trim()) return res.status(400).json({ error: 'title is required' });
 
@@ -264,6 +265,15 @@ router.post('/', (req, res) => {
     INSERT INTO movies (director, title, year, mn, watchlist)
     VALUES (?, ?, ?, ?, ?)
   `).run(director.trim(), title.trim(), year.trim(), mn ? 1 : 0, watchlist ? 1 : 0);
+
+  // Best-effort IMDb enrichment — a failed/absent lookup must never block the add
+  try {
+    const imdb = await lookupImdb(title.trim(), year.trim());
+    if (imdb?.imdbId) {
+      db.prepare('UPDATE movies SET imdb_id = ?, imdb_rating = ? WHERE id = ?')
+        .run(imdb.imdbId, imdb.imdbRating ?? null, lastInsertRowid);
+    }
+  } catch (_) { /* film is still added even if OMDb is unavailable */ }
 
   res.status(201).json(enrichMovie(
     db.prepare('SELECT * FROM movies WHERE id = ?').get(lastInsertRowid)
