@@ -64,7 +64,7 @@ MovieNights/
 │   ├── index.js              # Express entry point, seeds DB, mounts routes
 │   ├── db.js                 # SQLite setup, schema creation, migrations
 │   ├── seed.js               # One-time seeding from data/seed.json
-│   ├── omdb.js               # OMDb API helper (lookupImdb) — used by scripts only
+│   ├── omdb.js               # OMDb helpers: lookupImdb, searchImdb (fuzzy), getImdbById, extractImdbId
 │   ├── data/
 │   │   ├── seed.json         # 834 films (has UTF-8 BOM — stripped in seed.js); directors stored as full names
 │   │   └── movies.db         # SQLite file (gitignored, persisted via volume)
@@ -90,7 +90,8 @@ top3    (id, movie_id → movies, voter TEXT, rank INT CHECK(rank>=1 AND rank<=1
 watchlist_votes (id, movie_id → movies, voter TEXT,  UNIQUE(movie_id, voter))
 ```
 Seeding is idempotent — skips if `COUNT(*) > 0` in movies.
-`imdb_id` / `imdb_rating` columns exist in DB but are not exposed in the UI (IMDb feature paused).
+`imdb_id` / `imdb_rating` are populated from OMDb on add and shown in the UI — see [IMDb integration](#imdb-integration).
+`watchlist_votes` rows are deleted when a film leaves the watchlist (and cascade on film delete).
 
 ## Auth
 Per-voter session auth. Login page shows the 5 voter names as buttons; all share the same password (`MN_PASSWORD` from `.env`).
@@ -199,6 +200,46 @@ predictedScore = confidence * actualFairBoosted + (1 - confidence) * prior
 - **Stats page** (`/stats`): fetches all 834 films once, computes everything client-side via `useMemo`. Per-voter cards show rated count, mean score, top-10 pick count, fav director/decade, score distribution bar chart; clicking a card opens a drill-down modal (top/bottom films, director/decade breakdown). An "Everyone's Top 10" section lists each voter's ranked picks. (Voter head-to-head moved to the `/compare` page.)
 - **Watchlist voting**: `watchlist_votes` table tracks per-voter votes. `enrichMovie()` adds `watchlistVotes: string[]` to every movie. `POST /api/movies/:id/watchlist-vote` toggles the session voter's vote (insert or delete). Watchlist page shows a "Most Wanted" ranking panel (films with ≥1 vote, sorted by vote count desc, tiebreak: voterCount desc) above the card grid. Vote button on each card reflects the logged-in voter's vote status. The `voter` prop is passed from `App.jsx` (sourced from session via `api.me()`).
 - **`/api/movies/:id/watchlist-vote`** must be declared before `/:id` in Express (same rule as `/directors`).
+- **Removing a film from the watchlist wipes its votes** — handled server-side in `PATCH /:id` (when `watchlist` goes truthy → falsy), so it covers every path: the Remove button, "Mark as MN", and the `MovieModal` watchlist toggle. Re-adding a film starts with zero votes. Deleting a film cascades its votes via the FK.
+- **`POST /api/movies/watchlist/reset`** — **admin only** (`req.session.voter === 'mnAdmin'`, else 403), declared before `/:id`, runs in a transaction. Body `{ mode }`:
+  - `'votes'` — deletes all `watchlist_votes`; films stay on the watchlist
+  - `'all'` — also sets `watchlist = 0` on every flagged film (films are **never** deleted)
+
+  Returns `{ votesCleared, filmsCleared }`. Any other `mode` → 400. UI: "Reset Watchlist" button in the `Watchlist.jsx` header (admin only) opens a confirm modal offering both options. The per-card **Remove** button uses an inline confirm that names the vote count it will clear. Reset also clears the `wl-tied-order` localStorage manual tie-break ordering, which would otherwise be stale.
+
+## IMDb integration
+`OMDB_API_KEY` (from root `.env`) drives all OMDb calls. It **must be passed into the container** — `docker-compose.yml` forwards it to both services. Unset key → every helper degrades to `null`/`[]` and the app works without IMDb data.
+
+### `server/omdb.js`
+| Function | OMDb param | Returns |
+|---|---|---|
+| `lookupImdb(title, year)` | `?t=` | `{ imdbId, imdbRating }` — single best guess |
+| `searchImdb(query, year)` | `?s=` | up to 8 ranked candidates `{ imdbId, title, year, poster }` |
+| `getImdbById(id)` | `?i=` | `{ imdbId, title, year, director, imdbRating }` |
+| `extractImdbId(input)` | — | pulls `tt\d{6,}` out of a URL/fragment/bare id, else `''` |
+
+**OMDb's `?s=` matches whole words only — no prefix, no fuzziness.** A typo inside a word (`Parasitte`, `Inceptoin`) returns *zero* results, so client-side ranking alone cannot help. `searchImdb` therefore uses three tiers:
+1. `title + year`
+2. `title` alone (a typo + strict year is doubly restrictive)
+3. **token-drop**: search each word (≥4 chars, no stop-words, longest first) on its own — one correctly-spelled word finds the film (`"Shawshank Redemtion"` → `Shawshank`)
+
+Tier 3 also fires when tiers 1–2 return only *weak* matches (best score > `WIDEN_ABOVE = 0.15`), because OMDb happily returns a documentary short for the real film (`Inglorious Basterds`).
+
+All candidates are then scored by **length-normalised Levenshtein distance to the typed title + a year-proximity penalty** (lower = better), sorted, and anything above `MAX_SCORE = 0.40` is dropped as noise (keeps `zzqwx nonsense` returning "no match" instead of *Nonsense (1936)*).
+
+**Known limit**: single-word typos are unrecoverable — `The Godfater` → nothing; `Parasit` confidently returns the real-but-different *Parasit (2015)*. The mismatch warning and paste-a-link fallback are the backstop.
+
+### Routes (all before `/:id`)
+- `GET /api/movies/imdb-search?title=&year=` → `{ status: 'exact', match }` | `{ status: 'candidates', candidates }` | `{ status: 'none' }`. Exactness = normalised title equality **and** year equality.
+- `GET /api/movies/imdb-detail?imdbId=` → full detail, or 404. Accepts a full URL (runs `extractImdbId`).
+- `POST /api/movies` accepts an optional `imdb_id`; if present it enriches by id (authoritative — the user picked it), else falls back to `lookupImdb(title, year)`. Best-effort: a failed lookup never blocks the add.
+- `PATCH /api/movies/:id` — sending `imdb_id` re-fetches the rating and writes both columns; sending `''`/garbage clears both. Omitting `imdb_id` leaves IMDb data untouched (no needless re-fetch on ordinary saves). The raw string is always run through `extractImdbId`, so a pasted URL never reaches the DB.
+
+### UI
+- **`AddMovieModal`**: on Add, resolves the title against OMDb first. Exact → creates directly. No exact match → candidate pick-list (posters) + a **paste IMDb link/ID** field + "add anyway". Picking autofills title/year/director from OMDb. A bad id shows an error and attaches nothing.
+- **`MovieModal`**: the **IMDb tile is always rendered** (a `＋` when unset). Clicking the yellow badge opens imdb.com (`stopPropagation`); clicking anywhere else on the tile toggles the IMDb editor, which sits directly under the info-grid. The editor has an id field (accepts a pasted link), a **Search** button (candidate list), a clear ✕, and a **"View on IMDb ↗"** link.
+- **Mismatch warning**: when the entered id's canonical title/year differ from the film's, a gold banner shows *"IMDb says X — your entry is Y"* plus a **Use IMDb's values** button. It **warns, never blocks** — Greek/alternate titles legitimately differ. Comparison ignores case/whitespace.
+- `extractImdbId` is duplicated in `client/src/utils.js` (client-side convenience) and `server/omdb.js` (the authority — the API never trusts the client).
 
 ## DB backup (production)
 App runs in Docker on remote server. DB is in named volume `movienight_sqlite_data`.
@@ -235,6 +276,10 @@ ssh user@server "docker run --rm -v movienight_sqlite_data:/data alpine cat /dat
 **Commit convention**: always prefix the commit message with `[deploy]` when you want changes pushed to the production server (e.g. `[deploy] Fix cookie flag`). Commits without `[deploy]` are pushed to GitHub but not deployed. When Claude makes changes that should go live, the final commit must include `[deploy]`.
 
 Reuses the same GitHub secrets: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`. No additional setup needed.
+
+**Server env**: `docker-compose.yml` reads `${OMDB_API_KEY}` (and `MN_PASSWORD`, `SESSION_SECRET`, `GUEST_PASSWORD`) from the `.env` next to it in `~/movieNight` on the server. That `.env` is gitignored, so new vars must be added there by hand — a missing `OMDB_API_KEY` silently disables all IMDb lookups rather than erroring.
+
+**Sessions are in-memory** (`express-session`, no store), so every deploy restarts the container and **logs everyone out**. Expect to re-login after a `[deploy]`.
 
 **Note**: the server uses Docker Compose V2 (`docker compose`, plugin-based). The legacy `docker-compose` v1 is also installed but has a `ContainerConfig` bug with newer Docker Engine — always use `docker compose` (no hyphen) in scripts.
 
