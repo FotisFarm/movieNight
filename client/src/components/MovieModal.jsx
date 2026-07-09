@@ -282,6 +282,94 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
             </div>
           </div>
 
+          {/* IMDb editor — opened by ✎ edit mode or by clicking the IMDb tile above */}
+          {(editing || imdbOpen) && (
+            <>
+              <div className="modal-section-label section-label" style={{ marginTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>IMDb</span>
+                {extractImdbId(editImdbId) && (
+                  <a
+                    href={`https://www.imdb.com/title/${extractImdbId(editImdbId)}/`}
+                    target="_blank" rel="noopener noreferrer"
+                    style={{ fontSize: 11, fontWeight: 400, textTransform: 'none' }}
+                  >
+                    View on IMDb ↗
+                  </a>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <input
+                  className="input"
+                  placeholder="Paste IMDb link or ID (tt6751668)"
+                  value={editImdbId}
+                  onChange={e => setEditImdbId(e.target.value)}
+                  onBlur={e => { const id = extractImdbId(e.target.value); if (id) setEditImdbId(id); }}
+                  style={{ flex: 1 }}
+                />
+                <button className="btn btn-ghost btn-sm" onClick={searchImdb} disabled={imdbBusy || !editTitle.trim()}>
+                  {imdbBusy ? '…' : 'Search'}
+                </button>
+                {editImdbId.trim() && (
+                  <button className="btn btn-ghost btn-sm" onClick={() => { setEditImdbId(''); setImdbCandidates(null); }} title="Clear IMDb id">✕</button>
+                )}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 4 }}>
+                Paste a full imdb.com link or just the id. Save re-fetches the rating; clearing removes it.
+              </div>
+
+              {(() => {
+                const mm = imdbMismatch(imdbDetail, editTitle, editYear);
+                if (!mm) return null;
+                return (
+                  <div style={{ marginTop: 8, padding: '8px 10px', border: '1px solid var(--gold)', borderRadius: 'var(--radius)', background: 'rgba(255,193,7,.08)' }}>
+                    <div style={{ fontSize: 12, color: 'var(--text)' }}>
+                      ⚠ IMDb says <strong>{imdbDetail.title}{imdbDetail.year ? ` (${yr(imdbDetail.year)})` : ''}</strong>
+                      {' '}— your entry is <strong>{editTitle}{editYear ? ` (${yr(editYear)})` : ''}</strong>.
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2 }}>
+                      Fine if you use an alternate title — otherwise this id may be the wrong film.
+                    </div>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ marginTop: 8 }}
+                      onClick={() => {
+                        setEditTitle(imdbDetail.title);
+                        if (imdbDetail.year) setEditYear(yr(imdbDetail.year));
+                        if (imdbDetail.director) setEditDirector(imdbDetail.director);
+                      }}
+                    >
+                      Use IMDb's values
+                    </button>
+                  </div>
+                );
+              })()}
+
+              {imdbCandidates !== null && (
+                imdbCandidates.length ? (
+                  <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', marginTop: 8, overflow: 'hidden' }}>
+                    {imdbCandidates.map(c => (
+                      <div
+                        key={c.imdbId}
+                        role="button" tabIndex={0}
+                        onClick={() => { setEditImdbId(c.imdbId); setImdbCandidates(null); }}
+                        onKeyDown={e => e.key === 'Enter' && (setEditImdbId(c.imdbId), setImdbCandidates(null))}
+                        style={{ display: 'flex', gap: 10, padding: '8px 12px', cursor: 'pointer', alignItems: 'center', borderBottom: '1px solid var(--border)' }}
+                      >
+                        {c.poster && <img src={c.poster} alt="" style={{ width: 32, height: 48, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />}
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600 }}>{c.title}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text2)' }}>{c.year} · {c.imdbId}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 8 }}>No IMDb matches found.</div>
+                )
+              )}
+            </>
+          )}
+
           {/* Ratings */}
           <div className="modal-section-label section-label">Ratings</div>
           <div className="ratings-grid">
@@ -430,94 +518,6 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
               👁 Watchlist
             </button>
           </div>
-
-          {/* IMDb link — opened by the ✎ edit mode or by clicking the IMDb tile */}
-          {(editing || imdbOpen) && (
-            <>
-              <div className="modal-section-label section-label" style={{ marginTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>IMDb</span>
-                {extractImdbId(editImdbId) && (
-                  <a
-                    href={`https://www.imdb.com/title/${extractImdbId(editImdbId)}/`}
-                    target="_blank" rel="noopener noreferrer"
-                    style={{ fontSize: 11, fontWeight: 400, textTransform: 'none' }}
-                  >
-                    View on IMDb ↗
-                  </a>
-                )}
-              </div>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <input
-                  className="input"
-                  placeholder="Paste IMDb link or ID (tt6751668)"
-                  value={editImdbId}
-                  onChange={e => setEditImdbId(e.target.value)}
-                  onBlur={e => { const id = extractImdbId(e.target.value); if (id) setEditImdbId(id); }}
-                  style={{ flex: 1 }}
-                />
-                <button className="btn btn-ghost btn-sm" onClick={searchImdb} disabled={imdbBusy || !editTitle.trim()}>
-                  {imdbBusy ? '…' : 'Search'}
-                </button>
-                {editImdbId.trim() && (
-                  <button className="btn btn-ghost btn-sm" onClick={() => { setEditImdbId(''); setImdbCandidates(null); }} title="Clear IMDb id">✕</button>
-                )}
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 4 }}>
-                Paste a full imdb.com link or just the id. Save re-fetches the rating; clearing removes it.
-              </div>
-
-              {(() => {
-                const mm = imdbMismatch(imdbDetail, editTitle, editYear);
-                if (!mm) return null;
-                return (
-                  <div style={{ marginTop: 8, padding: '8px 10px', border: '1px solid var(--gold)', borderRadius: 'var(--radius)', background: 'rgba(255,193,7,.08)' }}>
-                    <div style={{ fontSize: 12, color: 'var(--text)' }}>
-                      ⚠ IMDb says <strong>{imdbDetail.title}{imdbDetail.year ? ` (${yr(imdbDetail.year)})` : ''}</strong>
-                      {' '}— your entry is <strong>{editTitle}{editYear ? ` (${yr(editYear)})` : ''}</strong>.
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2 }}>
-                      Fine if you use an alternate title — otherwise this id may be the wrong film.
-                    </div>
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      style={{ marginTop: 8 }}
-                      onClick={() => {
-                        setEditTitle(imdbDetail.title);
-                        if (imdbDetail.year) setEditYear(yr(imdbDetail.year));
-                        if (imdbDetail.director) setEditDirector(imdbDetail.director);
-                      }}
-                    >
-                      Use IMDb's values
-                    </button>
-                  </div>
-                );
-              })()}
-
-              {imdbCandidates !== null && (
-                imdbCandidates.length ? (
-                  <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', marginTop: 8, overflow: 'hidden' }}>
-                    {imdbCandidates.map(c => (
-                      <div
-                        key={c.imdbId}
-                        role="button" tabIndex={0}
-                        onClick={() => { setEditImdbId(c.imdbId); setImdbCandidates(null); }}
-                        onKeyDown={e => e.key === 'Enter' && (setEditImdbId(c.imdbId), setImdbCandidates(null))}
-                        style={{ display: 'flex', gap: 10, padding: '8px 12px', cursor: 'pointer', alignItems: 'center', borderBottom: '1px solid var(--border)' }}
-                      >
-                        {c.poster && <img src={c.poster} alt="" style={{ width: 32, height: 48, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />}
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600 }}>{c.title}</div>
-                          <div style={{ fontSize: 11, color: 'var(--text2)' }}>{c.year} · {c.imdbId}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 8 }}>No IMDb matches found.</div>
-                )
-              )}
-            </>
-          )}
 
         </div>
 
