@@ -14,6 +14,19 @@ function voterCountClass(n, groupSize) {
   return 'score-low';
 }
 
+const normTitle = s => (s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+const yr = s => String(s || '').slice(0, 4);
+
+// A film's own title/year may legitimately differ from IMDb's (Greek/alternate titles),
+// so a mismatch is only ever surfaced as a warning — never blocks saving.
+function imdbMismatch(detail, title, year) {
+  if (!detail) return null;
+  const titleDiffers = normTitle(detail.title) !== normTitle(title);
+  const yearDiffers  = yr(detail.year) !== yr(year);
+  if (!titleDiffers && !yearDiffers) return null;
+  return { titleDiffers, yearDiffers };
+}
+
 function rankClass(r) {
   if (!r || r > 100) return 'score-low';
   if (r > 50)        return 'score-orange';
@@ -43,6 +56,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   const [editImdbId,   setEditImdbId]   = useState('');
   const [imdbCandidates, setImdbCandidates] = useState(null); // null = not searched
   const [imdbBusy,     setImdbBusy]     = useState(false);
+  const [imdbDetail,   setImdbDetail]   = useState(null); // OMDb detail for the current id
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saveError,     setSaveError]     = useState('');
 
@@ -85,9 +99,21 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
       setEditYear(m.year || '');
       setEditImdbId(m.imdb_id || '');
       setImdbCandidates(null);
+      setImdbDetail(null);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [movieId]);
+
+  // Fetch the IMDb entry behind the current id so we can flag title/year mismatches.
+  useEffect(() => {
+    const id = editImdbId.trim();
+    if (!editing || !/^tt\d+$/i.test(id)) { setImdbDetail(null); return; }
+    let cancelled = false;
+    api.imdbDetail(id)
+      .then(d => { if (!cancelled) setImdbDetail(d); })
+      .catch(() => { if (!cancelled) setImdbDetail(null); });
+    return () => { cancelled = true; };
+  }, [editImdbId, editing]);
 
   function toggleVoter(voter) {
     setRatings(r => ({ ...r, [voter]: r[voter] == null ? 5 : null }));
@@ -420,6 +446,33 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
               <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 4 }}>
                 Save re-fetches the rating from IMDb. Clearing removes it.
               </div>
+
+              {(() => {
+                const mm = imdbMismatch(imdbDetail, editTitle, editYear);
+                if (!mm) return null;
+                return (
+                  <div style={{ marginTop: 8, padding: '8px 10px', border: '1px solid var(--gold)', borderRadius: 'var(--radius)', background: 'rgba(255,193,7,.08)' }}>
+                    <div style={{ fontSize: 12, color: 'var(--text)' }}>
+                      ⚠ IMDb says <strong>{imdbDetail.title}{imdbDetail.year ? ` (${yr(imdbDetail.year)})` : ''}</strong>
+                      {' '}— your entry is <strong>{editTitle}{editYear ? ` (${yr(editYear)})` : ''}</strong>.
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2 }}>
+                      Fine if you use an alternate title — otherwise this id may be the wrong film.
+                    </div>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ marginTop: 8 }}
+                      onClick={() => {
+                        setEditTitle(imdbDetail.title);
+                        if (imdbDetail.year) setEditYear(yr(imdbDetail.year));
+                        if (imdbDetail.director) setEditDirector(imdbDetail.director);
+                      }}
+                    >
+                      Use IMDb's values
+                    </button>
+                  </div>
+                );
+              })()}
 
               {imdbCandidates !== null && (
                 imdbCandidates.length ? (

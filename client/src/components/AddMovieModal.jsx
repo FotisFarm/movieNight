@@ -17,6 +17,7 @@ export default function AddMovieModal({ onClose, onAdded }) {
   // IMDb match gating: null = not searched; else { status: 'candidates'|'none', candidates? }
   const [suggest, setSuggest]     = useState(null);
   const [resolvedImdbId, setResolvedImdbId] = useState(null);
+  const [resolvedDetail, setResolvedDetail] = useState(null);
   const [skipImdb, setSkipImdb]   = useState(false);
   const [manualImdbId, setManualImdbId] = useState('');
 
@@ -29,6 +30,7 @@ export default function AddMovieModal({ onClose, onAdded }) {
   function onTitleChange(value) {
     setTitle(value);
     setResolvedImdbId(null);
+    setResolvedDetail(null);
     setSkipImdb(false);
     setSuggest(null);
     setManualImdbId('');
@@ -93,16 +95,19 @@ export default function AddMovieModal({ onClose, onAdded }) {
   // Pick a candidate: autofill canonical fields + attach its imdb id.
   async function onPick(c) {
     setSaving(true);
+    setError('');
     try {
       const d = await api.imdbDetail(c.imdbId);
       setTitle(d.title);
       setYear(String(d.year || '').slice(0, 4));
       if (d.director) setDirector(d.director);
-    } catch {
-      /* keep typed fields if detail fetch fails */
-    } finally {
+      setResolvedDetail(d);
       setResolvedImdbId(c.imdbId);
       setSuggest(null);
+    } catch {
+      // A bad/unknown id must not silently attach — tell the user and keep their fields.
+      setError(`No IMDb entry found for “${c.imdbId}”.`);
+    } finally {
       setSaving(false);
     }
   }
@@ -144,7 +149,9 @@ export default function AddMovieModal({ onClose, onAdded }) {
 
           {resolvedImdbId && (
             <div style={{ marginTop: 10, fontSize: 12, color: 'var(--green)' }}>
-              ✓ Matched on IMDb — rating will be attached.
+              ✓ Matched on IMDb{resolvedDetail
+                ? `: ${resolvedDetail.title}${resolvedDetail.year ? ` (${String(resolvedDetail.year).slice(0, 4)})` : ''}${resolvedDetail.imdbRating != null ? ` · ${resolvedDetail.imdbRating}` : ''}`
+                : ''} — rating will be attached.
             </div>
           )}
 
