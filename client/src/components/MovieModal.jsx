@@ -264,16 +264,31 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
               className="info-cell"
               role="button" tabIndex={0}
               style={{ cursor: 'pointer' }}
-              title={movie.imdb_id ? 'Edit IMDb link' : 'Add IMDb link'}
+              title={movie.imdb_id ? 'Click the badge to open IMDb · click here to edit the link' : 'Add IMDb link'}
               onClick={() => setImdbOpen(o => !o)}
               onKeyDown={e => e.key === 'Enter' && setImdbOpen(o => !o)}
             >
               <div className="info-val">
                 {movie.imdb_rating != null ? (
-                  <span className="badge-imdb-pill" style={{ fontSize: 14 }}>
-                    <span className="imdb-logo" style={{ fontSize: 11 }}>IMDb</span>
-                    <span className="imdb-rating" style={{ fontSize: 14 }}>{Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}</span>
-                  </span>
+                  // The pill links out to IMDb; clicking anywhere else in the tile opens the editor.
+                  movie.imdb_id ? (
+                    <a
+                      href={`https://www.imdb.com/title/${movie.imdb_id}/`}
+                      className="badge-imdb-pill"
+                      target="_blank" rel="noopener noreferrer"
+                      style={{ fontSize: 14 }}
+                      title="Open on IMDb"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <span className="imdb-logo" style={{ fontSize: 11 }}>IMDb</span>
+                      <span className="imdb-rating" style={{ fontSize: 14 }}>{Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}</span>
+                    </a>
+                  ) : (
+                    <span className="badge-imdb-pill" style={{ fontSize: 14 }}>
+                      <span className="imdb-logo" style={{ fontSize: 11 }}>IMDb</span>
+                      <span className="imdb-rating" style={{ fontSize: 14 }}>{Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}</span>
+                    </span>
+                  )
                 ) : (
                   <span className="score-none">＋</span>
                 )}
