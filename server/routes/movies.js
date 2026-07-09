@@ -1,7 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { rankBonus } = require('../scoring');
-const { lookupImdb, searchImdb, getImdbById } = require('../omdb');
+const { lookupImdb, searchImdb, getImdbById, extractImdbId } = require('../omdb');
 
 const router = express.Router();
 
@@ -323,13 +323,14 @@ router.patch('/:id', async (req, res) => {
   if (cinobo !== undefined)   updates.cinobo = cinobo;
   // Setting/changing the IMDb id re-fetches the rating; clearing it wipes both.
   if (imdb_id !== undefined) {
-    const trimmed = (imdb_id || '').trim();
-    if (!trimmed) {
+    // The client may paste a full IMDb URL — store the extracted id, never the raw string.
+    const cleanId = extractImdbId(imdb_id);
+    if (!cleanId) {
       updates.imdb_id = null;
       updates.imdb_rating = null;
     } else {
-      updates.imdb_id = trimmed;
-      const detail = await getImdbById(trimmed);
+      updates.imdb_id = cleanId;
+      const detail = await getImdbById(cleanId);
       updates.imdb_rating = detail?.imdbRating ?? null;
     }
   }

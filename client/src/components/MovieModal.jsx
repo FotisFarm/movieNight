@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
 import { useAppConfig } from '../AppConfigContext';
-import { fmtScore10 as fmt, scoreClass } from '../utils';
+import { fmtScore10 as fmt, scoreClass, extractImdbId } from '../utils';
 import './MovieModal.css';
 
 const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
@@ -57,6 +57,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   const [imdbCandidates, setImdbCandidates] = useState(null); // null = not searched
   const [imdbBusy,     setImdbBusy]     = useState(false);
   const [imdbDetail,   setImdbDetail]   = useState(null); // OMDb detail for the current id
+  const [imdbOpen,     setImdbOpen]     = useState(false); // IMDb editor shown (via tile click)
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saveError,     setSaveError]     = useState('');
 
@@ -100,20 +101,21 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
       setEditImdbId(m.imdb_id || '');
       setImdbCandidates(null);
       setImdbDetail(null);
+      setImdbOpen(false);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [movieId]);
 
   // Fetch the IMDb entry behind the current id so we can flag title/year mismatches.
   useEffect(() => {
-    const id = editImdbId.trim();
-    if (!editing || !/^tt\d+$/i.test(id)) { setImdbDetail(null); return; }
+    const id = extractImdbId(editImdbId);
+    if ((!editing && !imdbOpen) || !id) { setImdbDetail(null); return; }
     let cancelled = false;
     api.imdbDetail(id)
       .then(d => { if (!cancelled) setImdbDetail(d); })
       .catch(() => { if (!cancelled) setImdbDetail(null); });
     return () => { cancelled = true; };
-  }, [editImdbId, editing]);
+  }, [editImdbId, editing, imdbOpen]);
 
   function toggleVoter(voter) {
     setRatings(r => ({ ...r, [voter]: r[voter] == null ? 5 : null }));
@@ -164,7 +166,9 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
       top3: top3Payload,
     };
     // Only send imdb_id when it actually changed — avoids a needless OMDb re-fetch on every save.
-    if (editImdbId.trim() !== (movie.imdb_id || '')) payload.imdb_id = editImdbId.trim();
+    // Compare the extracted id so pasting a URL for the same film is not treated as a change.
+    const cleanId = extractImdbId(editImdbId);
+    if (cleanId !== (movie.imdb_id || '')) payload.imdb_id = cleanId;
 
     try {
       const updated = await api.updateMovie(movieId, payload);
@@ -255,24 +259,27 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                 <div className="info-lbl">Group Rank</div>
               </div>
             )}
-            {movie.imdb_rating != null && (
-              <div className="info-cell">
-                <div className="info-val">
-                  {movie.imdb_id ? (
-                    <a href={`https://www.imdb.com/title/${movie.imdb_id}/`} className="badge-imdb-pill" target="_blank" rel="noopener noreferrer" style={{ fontSize: 14 }}>
-                      <span className="imdb-logo" style={{ fontSize: 11 }}>IMDb</span>
-                      <span className="imdb-rating" style={{ fontSize: 14 }}>{Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}</span>
-                    </a>
-                  ) : (
-                    <span className="badge-imdb-pill" style={{ fontSize: 14 }}>
-                      <span className="imdb-logo" style={{ fontSize: 11 }}>IMDb</span>
-                      <span className="imdb-rating" style={{ fontSize: 14 }}>{Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}</span>
-                    </span>
-                  )}
-                </div>
-                <div className="info-lbl">IMDb</div>
+            {/* Clicking the tile opens the IMDb id editor below. */}
+            <div
+              className="info-cell"
+              role="button" tabIndex={0}
+              style={{ cursor: 'pointer' }}
+              title={movie.imdb_id ? 'Edit IMDb link' : 'Add IMDb link'}
+              onClick={() => setImdbOpen(o => !o)}
+              onKeyDown={e => e.key === 'Enter' && setImdbOpen(o => !o)}
+            >
+              <div className="info-val">
+                {movie.imdb_rating != null ? (
+                  <span className="badge-imdb-pill" style={{ fontSize: 14 }}>
+                    <span className="imdb-logo" style={{ fontSize: 11 }}>IMDb</span>
+                    <span className="imdb-rating" style={{ fontSize: 14 }}>{Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}</span>
+                  </span>
+                ) : (
+                  <span className="score-none">＋</span>
+                )}
               </div>
-            )}
+              <div className="info-lbl">IMDb</div>
+            </div>
           </div>
 
           {/* Ratings */}
@@ -424,16 +431,28 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
             </button>
           </div>
 
-          {/* IMDb link (edit mode only) */}
-          {editing && (
+          {/* IMDb link — opened by the ✎ edit mode or by clicking the IMDb tile */}
+          {(editing || imdbOpen) && (
             <>
-              <div className="modal-section-label section-label" style={{ marginTop: 20 }}>IMDb</div>
+              <div className="modal-section-label section-label" style={{ marginTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>IMDb</span>
+                {extractImdbId(editImdbId) && (
+                  <a
+                    href={`https://www.imdb.com/title/${extractImdbId(editImdbId)}/`}
+                    target="_blank" rel="noopener noreferrer"
+                    style={{ fontSize: 11, fontWeight: 400, textTransform: 'none' }}
+                  >
+                    View on IMDb ↗
+                  </a>
+                )}
+              </div>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <input
                   className="input"
-                  placeholder="IMDb ID (e.g. tt6751668)"
+                  placeholder="Paste IMDb link or ID (tt6751668)"
                   value={editImdbId}
                   onChange={e => setEditImdbId(e.target.value)}
+                  onBlur={e => { const id = extractImdbId(e.target.value); if (id) setEditImdbId(id); }}
                   style={{ flex: 1 }}
                 />
                 <button className="btn btn-ghost btn-sm" onClick={searchImdb} disabled={imdbBusy || !editTitle.trim()}>
@@ -444,7 +463,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                 )}
               </div>
               <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 4 }}>
-                Save re-fetches the rating from IMDb. Clearing removes it.
+                Paste a full imdb.com link or just the id. Save re-fetches the rating; clearing removes it.
               </div>
 
               {(() => {

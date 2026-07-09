@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api';
+import { extractImdbId } from '../utils';
 import { useAppConfig } from '../AppConfigContext';
 
 export default function AddMovieModal({ onClose, onAdded }) {
@@ -194,15 +195,15 @@ export default function AddMovieModal({ onClose, onAdded }) {
             <div style={{ marginTop: 12, display: 'flex', gap: 6, alignItems: 'center' }}>
               <input
                 className="input"
-                placeholder="…or paste IMDb ID (tt…)"
+                placeholder="…or paste IMDb link or ID"
                 value={manualImdbId}
                 onChange={e => setManualImdbId(e.target.value)}
                 style={{ flex: 1 }}
               />
               <button
                 className="btn btn-ghost btn-sm"
-                onClick={() => onPick({ imdbId: manualImdbId.trim() })}
-                disabled={saving || !manualImdbId.trim()}
+                onClick={() => onPick({ imdbId: extractImdbId(manualImdbId) })}
+                disabled={saving || !extractImdbId(manualImdbId)}
               >
                 Use ID
               </button>
