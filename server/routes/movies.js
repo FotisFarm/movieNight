@@ -1,7 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { rankBonus } = require('../scoring');
-const { lookupImdb } = require('../omdb');
+const { lookupImdb, searchImdb, getImdbById } = require('../omdb');
 
 const router = express.Router();
 
@@ -249,6 +249,29 @@ router.put('/top10', (req, res) => {
   res.json({ ok: true });
 });
 
+// GET /api/movies/imdb-search?title=&year=  — resolve an exact OMDb match or return candidates.
+// Must be before /:id.
+router.get('/imdb-search', async (req, res) => {
+  const title = (req.query.title || '').trim();
+  const year = (req.query.year || '').trim();
+  if (!title) return res.json({ status: 'none', candidates: [] });
+
+  const candidates = await searchImdb(title, year);
+  const norm = s => (s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const exact = candidates.find(c => norm(c.title) === norm(title) && (!year || String(c.year) === String(year)));
+  if (exact) return res.json({ status: 'exact', match: exact });
+  if (candidates.length) return res.json({ status: 'candidates', candidates });
+  return res.json({ status: 'none', candidates: [] });
+});
+
+// GET /api/movies/imdb-detail?imdbId=  — full OMDb details for a chosen candidate. Must be before /:id.
+router.get('/imdb-detail', async (req, res) => {
+  const imdbId = (req.query.imdbId || '').trim();
+  const detail = await getImdbById(imdbId);
+  if (!detail) return res.status(404).json({ error: 'Not found' });
+  res.json(detail);
+});
+
 // GET /api/movies/:id
 router.get('/:id', (req, res) => {
   const movie = db.prepare('SELECT * FROM movies WHERE id = ?').get(req.params.id);
@@ -258,7 +281,7 @@ router.get('/:id', (req, res) => {
 
 // POST /api/movies
 router.post('/', async (req, res) => {
-  const { director = '', title, year = '', mn = false, watchlist = false } = req.body;
+  const { director = '', title, year = '', mn = false, watchlist = false, imdb_id } = req.body;
   if (!title?.trim()) return res.status(400).json({ error: 'title is required' });
 
   const { lastInsertRowid } = db.prepare(`
@@ -266,9 +289,10 @@ router.post('/', async (req, res) => {
     VALUES (?, ?, ?, ?, ?)
   `).run(director.trim(), title.trim(), year.trim(), mn ? 1 : 0, watchlist ? 1 : 0);
 
-  // Best-effort IMDb enrichment — a failed/absent lookup must never block the add
+  // Best-effort IMDb enrichment — a failed/absent lookup must never block the add.
+  // A client-supplied imdb_id (user picked a suggestion) is authoritative; otherwise fall back to title lookup.
   try {
-    const imdb = await lookupImdb(title.trim(), year.trim());
+    const imdb = imdb_id ? await getImdbById(imdb_id) : await lookupImdb(title.trim(), year.trim());
     if (imdb?.imdbId) {
       db.prepare('UPDATE movies SET imdb_id = ?, imdb_rating = ? WHERE id = ?')
         .run(imdb.imdbId, imdb.imdbRating ?? null, lastInsertRowid);

@@ -27,6 +27,8 @@ export const api = {
   updateMovie: (id, data) => request(`/movies/${id}`, { method: 'PATCH', body: data }),
   deleteMovie: (id) => request(`/movies/${id}`, { method: 'DELETE' }),
   getDirectors: () => request('/movies/directors'),
+  imdbSearch: (title, year) => request(`/movies/imdb-search?title=${encodeURIComponent(title)}&year=${encodeURIComponent(year || '')}`),
+  imdbDetail: (imdbId) => request(`/movies/imdb-detail?imdbId=${encodeURIComponent(imdbId)}`),
   reorderTop10: (order, voter) => request('/movies/top10', { method: 'PUT', body: voter ? { order, voter } : { order } }),
   getTop10Counts: () => request('/movies/top10-counts'),
   getRankings: (params = {}) => {
