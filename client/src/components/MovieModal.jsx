@@ -40,6 +40,9 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   const [editTitle,    setEditTitle]    = useState('');
   const [editDirector, setEditDirector] = useState('');
   const [editYear,     setEditYear]     = useState('');
+  const [editImdbId,   setEditImdbId]   = useState('');
+  const [imdbCandidates, setImdbCandidates] = useState(null); // null = not searched
+  const [imdbBusy,     setImdbBusy]     = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saveError,     setSaveError]     = useState('');
 
@@ -80,6 +83,8 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
       setEditTitle(m.title || '');
       setEditDirector(m.director || '');
       setEditYear(m.year || '');
+      setEditImdbId(m.imdb_id || '');
+      setImdbCandidates(null);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [movieId]);
@@ -95,6 +100,20 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   }
 
 
+  // Search OMDb for the current title/year and offer candidates to fix the IMDb id.
+  async function searchImdb() {
+    setImdbBusy(true);
+    try {
+      const r = await api.imdbSearch(editTitle.trim(), editYear.trim());
+      const list = r.status === 'exact' ? [r.match] : (r.candidates || []);
+      setImdbCandidates(list);
+    } catch {
+      setImdbCandidates([]);
+    } finally {
+      setImdbBusy(false);
+    }
+  }
+
   async function handleSave() {
     setSaving(true);
     const ratingPayload = {}, commentPayload = {}, top3Payload = {};
@@ -108,17 +127,21 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
       if (ratings[currentVoter] != null) commentPayload[currentVoter] = comments[currentVoter] ?? '';
     }
 
+    const payload = {
+      title: editTitle.trim(),
+      director: editDirector.trim(),
+      year: editYear.trim(),
+      mn,
+      watchlist,
+      ratings: ratingPayload,
+      comments: commentPayload,
+      top3: top3Payload,
+    };
+    // Only send imdb_id when it actually changed — avoids a needless OMDb re-fetch on every save.
+    if (editImdbId.trim() !== (movie.imdb_id || '')) payload.imdb_id = editImdbId.trim();
+
     try {
-      const updated = await api.updateMovie(movieId, {
-        title: editTitle.trim(),
-        director: editDirector.trim(),
-        year: editYear.trim(),
-        mn,
-        watchlist,
-        ratings: ratingPayload,
-        comments: commentPayload,
-        top3: top3Payload,
-      });
+      const updated = await api.updateMovie(movieId, payload);
       onSaved(updated);
       onClose();
     } catch (e) {
@@ -374,6 +397,55 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
               👁 Watchlist
             </button>
           </div>
+
+          {/* IMDb link (edit mode only) */}
+          {editing && (
+            <>
+              <div className="modal-section-label section-label" style={{ marginTop: 20 }}>IMDb</div>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <input
+                  className="input"
+                  placeholder="IMDb ID (e.g. tt6751668)"
+                  value={editImdbId}
+                  onChange={e => setEditImdbId(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <button className="btn btn-ghost btn-sm" onClick={searchImdb} disabled={imdbBusy || !editTitle.trim()}>
+                  {imdbBusy ? '…' : 'Search'}
+                </button>
+                {editImdbId.trim() && (
+                  <button className="btn btn-ghost btn-sm" onClick={() => { setEditImdbId(''); setImdbCandidates(null); }} title="Clear IMDb id">✕</button>
+                )}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 4 }}>
+                Save re-fetches the rating from IMDb. Clearing removes it.
+              </div>
+
+              {imdbCandidates !== null && (
+                imdbCandidates.length ? (
+                  <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', marginTop: 8, overflow: 'hidden' }}>
+                    {imdbCandidates.map(c => (
+                      <div
+                        key={c.imdbId}
+                        role="button" tabIndex={0}
+                        onClick={() => { setEditImdbId(c.imdbId); setImdbCandidates(null); }}
+                        onKeyDown={e => e.key === 'Enter' && (setEditImdbId(c.imdbId), setImdbCandidates(null))}
+                        style={{ display: 'flex', gap: 10, padding: '8px 12px', cursor: 'pointer', alignItems: 'center', borderBottom: '1px solid var(--border)' }}
+                      >
+                        {c.poster && <img src={c.poster} alt="" style={{ width: 32, height: 48, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />}
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600 }}>{c.title}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text2)' }}>{c.year} · {c.imdbId}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 8 }}>No IMDb matches found.</div>
+                )
+              )}
+            </>
+          )}
 
         </div>
 

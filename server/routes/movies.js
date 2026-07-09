@@ -305,7 +305,7 @@ router.post('/', async (req, res) => {
 });
 
 // PATCH /api/movies/:id
-router.patch('/:id', (req, res) => {
+router.patch('/:id', async (req, res) => {
   const id = parseInt(req.params.id);
   const movie = db.prepare('SELECT * FROM movies WHERE id = ?').get(id);
   if (!movie) return res.status(404).json({ error: 'Not found' });
@@ -321,7 +321,18 @@ router.patch('/:id', (req, res) => {
   if (mn !== undefined)       updates.mn = mn ? 1 : 0;
   if (watchlist !== undefined) updates.watchlist = watchlist ? 1 : 0;
   if (cinobo !== undefined)   updates.cinobo = cinobo;
-  if (imdb_id !== undefined)  updates.imdb_id = imdb_id;
+  // Setting/changing the IMDb id re-fetches the rating; clearing it wipes both.
+  if (imdb_id !== undefined) {
+    const trimmed = (imdb_id || '').trim();
+    if (!trimmed) {
+      updates.imdb_id = null;
+      updates.imdb_rating = null;
+    } else {
+      updates.imdb_id = trimmed;
+      const detail = await getImdbById(trimmed);
+      updates.imdb_rating = detail?.imdbRating ?? null;
+    }
+  }
 
   if (Object.keys(updates).length > 0) {
     const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');

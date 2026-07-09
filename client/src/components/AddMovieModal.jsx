@@ -18,6 +18,7 @@ export default function AddMovieModal({ onClose, onAdded }) {
   const [suggest, setSuggest]     = useState(null);
   const [resolvedImdbId, setResolvedImdbId] = useState(null);
   const [skipImdb, setSkipImdb]   = useState(false);
+  const [manualImdbId, setManualImdbId] = useState('');
 
   function toggleVoter(v) {
     setEnabled(e => ({ ...e, [v]: !e[v] }));
@@ -30,6 +31,7 @@ export default function AddMovieModal({ onClose, onAdded }) {
     setResolvedImdbId(null);
     setSkipImdb(false);
     setSuggest(null);
+    setManualImdbId('');
   }
 
   // Actually create the film (+ optional ratings). imdbIdArg wins over resolved state.
@@ -177,6 +179,25 @@ export default function AddMovieModal({ onClose, onAdded }) {
               <div style={{ fontSize: 13, color: 'var(--text2)' }}>No IMDb match found for “{title.trim()}”.</div>
               <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={addAnyway} disabled={saving}>
                 Add anyway (no IMDb data)
+              </button>
+            </div>
+          )}
+
+          {suggest && (
+            <div style={{ marginTop: 12, display: 'flex', gap: 6, alignItems: 'center' }}>
+              <input
+                className="input"
+                placeholder="…or paste IMDb ID (tt…)"
+                value={manualImdbId}
+                onChange={e => setManualImdbId(e.target.value)}
+                style={{ flex: 1 }}
+              />
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => onPick({ imdbId: manualImdbId.trim() })}
+                disabled={saving || !manualImdbId.trim()}
+              >
+                Use ID
               </button>
             </div>
           )}
