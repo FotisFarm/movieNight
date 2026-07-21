@@ -31,7 +31,7 @@ One row per film with the app's computed scores already calculated — never re-
   fair_boosted  = min(10, fair_score + boost)          -- the app's default "Fair score" (NULL if < 2 voters)
   boosted_score = min(10, score_sum/${GROUP_SIZE} + boost) -- the app's "Group score" (NULL if < 2 voters)
   std_dev       = population standard deviation of scores (NULL if < 2 voters), higher = more controversial
-Films need at least 2 voters for an aggregate score to be meaningful.
+By DEFAULT include ALL films, regardless of how many voters rated them — do NOT add a \`voter_count >= 2\` filter unless the user explicitly asks for reliable/most-rated results. Films with fewer than 2 voters simply have NULL for fair_boosted/boosted_score/std_dev; still list them (show the score as unknown/null). Only apply a voter_count minimum when the user actually asks for it.
 
 ## How to answer
 - Query the data before answering; base every number on real query results, not guesses.
