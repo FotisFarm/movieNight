@@ -67,7 +67,7 @@ MovieNights/
 │   ├── seed.js               # One-time seeding from data/seed.json
 │   ├── omdb.js               # OMDb helpers: lookupImdb, searchImdb (fuzzy), getImdbById, extractImdbId
 │   ├── db-readonly.js        # Read-only SQLite connection + movie_scores view + runReadOnlySql (chatbot)
-│   ├── llm.js                # Anthropic chatbot: text-to-SQL tool runner (claude-haiku-4-5)
+│   ├── llm.js                # Anthropic chatbot: text-to-SQL tool runner (claude-sonnet-5)
 │   ├── data/
 │   │   ├── seed.json         # 834 films (has UTF-8 BOM — stripped in seed.js); directors stored as full names
 │   │   └── movies.db         # SQLite file (gitignored, persisted via volume)
@@ -248,7 +248,7 @@ All candidates are then scored by **length-normalised Levenshtein distance to th
 ## Chatbot — "HAL 9000" (natural-language Q&A)
 `/chat` page lets any logged-in voter ask free-form questions about the data ("which director do we rate highest?", "what should I watch from the watchlist?"). **Read-only** — it can query the DB but never mutate it. The chatbot is branded as **HAL 9000**; the entry point is a red HAL-eye SVG (`HalLink` in `Header.jsx`) placed **left of the theme selector** in `header-right` (and in the mobile footer) — it is **not** a nav-bar page link.
 
-- **Model**: `claude-haiku-4-5` via the Anthropic SDK **tool runner** (`server/llm.js`), persona = HAL 9000.
+- **Model**: `claude-sonnet-5` via the Anthropic SDK **tool runner** (`server/llm.js`), persona = HAL 9000. Thinking is disabled to keep chat responses snappy.
 - **Cards**: when an answer lists films/directors/years/decades, HAL appends a fenced ` ```cards ` block holding a JSON array (`{ type, id?, value?, title, meta, score, scoreLabel }`). `Chat.jsx` parses that block out of the reply (`parseReply`) and renders a **column of cards** styled like the Stats-page highlight tiles (`hal-card*` classes). Every card is clickable (`cardTarget`): `movie` cards carry `movies.id` → open `MovieModal`; `director`/`year`/`decade` cards carry `value` → open `DirectorYearModal` (the same group view the Rankings page uses). Value types mirror Rankings: director = name, year = `String`, decade = number (start year). Requires `ANTHROPIC_API_KEY` in the root `.env` (loaded by dotenv). If the key is unset, `/api/chat` returns a graceful "chat unavailable" reply instead of erroring — the rest of the app is unaffected.
 - **How it reaches data**: one tool, `run_sql`, backed by a **separate read-only connection** (`new Database(DB_PATH, { readonly: true })` in `server/db-readonly.js`). SQLite rejects every write at the engine level, so the read-only guarantee doesn't depend on the prompt. `runReadOnlySql` additionally rejects anything not starting with `SELECT`/`WITH`, relies on better-sqlite3's single-statement `.prepare()`, and caps results at 200 rows.
 - **`movie_scores` TEMP VIEW** (created on the read-only connection) exposes the derived scores that otherwise live only in JS (`enrichMovie`): `voter_count`, `fair_score`, `boost`, `fair_boosted`, `boosted_score`, `std_dev`. It reuses `rankBonus` from `server/scoring.js` as a registered SQL function (`rank_bonus`) — no formula duplication. The system prompt documents the base tables + this view + voter names + `GROUP_SIZE`, so the model queries correct numbers directly.

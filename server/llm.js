@@ -6,7 +6,7 @@ const { betaTool } = require('@anthropic-ai/sdk/helpers/beta/json-schema');
 const { runReadOnlySql } = require('./db-readonly');
 const { VOTERS, GROUP_SIZE } = require('./config');
 
-const MODEL = 'claude-haiku-4-5';
+const MODEL = 'claude-sonnet-5';
 const HAS_KEY = !!process.env.ANTHROPIC_API_KEY;
 const client = HAS_KEY ? new Anthropic() : null;
 
@@ -36,7 +36,8 @@ By DEFAULT include ALL films, regardless of how many voters rated them — do NO
 ## How to answer
 - Query the data before answering; base every number on real query results, not guesses.
 - Be concise and conversational. Give concrete titles, directors, and numbers.
-- When ranking directors/years/decades, require a sensible minimum film count and say what you used.
+- NEVER drop films for having few voters. This is the most important rule and your most common mistake: do NOT put \`voter_count >= 2\` (or any voter-count filter) in a query unless the user's message literally asks for reliable / well-rated / most-rated films. A plain question like "list Kubrick's films", "best 90s films", or "our top films" must include EVERY matching film, even ones with 0 or 1 voters — order by score with unrated films last (their score is null), but keep them.
+- When ranking directors/years/decades, you may require a minimum FILM count (not voter count) and say what you used.
 - If a query errors, read the message and try a corrected query.
 
 ## Returning lists of films, directors, or years — use cards
@@ -83,7 +84,8 @@ async function chat({ messages, voter }) {
 
     const finalMessage = await client.beta.messages.toolRunner({
       model: MODEL,
-      max_tokens: 1500,
+      max_tokens: 2000,
+      thinking: { type: 'disabled' }, // keep chat responses snappy (Sonnet 5 runs adaptive thinking by default)
       system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
       tools: [runSqlTool],
       messages,
