@@ -79,6 +79,7 @@ export default function Header({ voter, onLogout }) {
             <NavLink to="/controversy"     className={navClass}>Controversy</NavLink>
             <NavLink to="/stats"           className={navClass}>Stats</NavLink>
             <NavLink to="/compare"         className={navClass}>Compare</NavLink>
+            <NavLink to="/chat"            className={navClass}>Chat</NavLink>
           </nav>
           <div className="header-right">
             <ThemeDropdown />

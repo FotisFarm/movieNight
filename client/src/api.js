@@ -41,6 +41,7 @@ export const api = {
   },
   toggleWatchlistVote: (id, targetVoter) => request(`/movies/${id}/watchlist-vote`, { method: 'POST', body: targetVoter ? { targetVoter } : undefined }),
   resetWatchlist: (mode) => request('/movies/watchlist/reset', { method: 'POST', body: { mode } }),
+  askChat: (messages) => request('/chat', { method: 'POST', body: { messages } }),
   login: (voter, password) => request('/auth/login', { method: 'POST', body: { voter, password } }),
   logout: () => request('/auth/logout', { method: 'POST' }),
   me: () => request('/auth/me'),

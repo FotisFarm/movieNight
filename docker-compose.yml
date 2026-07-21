@@ -12,6 +12,7 @@ services:
       - SESSION_SECRET=${SESSION_SECRET:-change-this-secret}
       - GUEST_PASSWORD=${GUEST_PASSWORD:-}
       - OMDB_API_KEY=${OMDB_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
     restart: unless-stopped
 
   sakias:
@@ -28,6 +29,7 @@ services:
       - SESSION_SECRET=${SESSION_SECRET:-change-this-secret}
       - GUEST_PASSWORD=${GUEST_PASSWORD:-}
       - OMDB_API_KEY=${OMDB_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - VOTERS=Μητσέας,Παντελής,Στέλιας,Φώτης,Λεόντιος,Σάκιας
       - GROUP_SIZE=6
     restart: unless-stopped

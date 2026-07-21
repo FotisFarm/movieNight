@@ -35,6 +35,7 @@ function requireAuth(req, res, next) {
 app.use('/api/movies', requireAuth, require('./routes/movies'));
 app.use('/api/rankings', requireAuth, require('./routes/rankings'));
 app.use('/api/recommendations', requireAuth, require('./routes/recommendations'));
+app.use('/api/chat', requireAuth, require('./routes/chat'));
 
 if (IS_PROD) {
   const clientDist = path.join(__dirname, 'public');

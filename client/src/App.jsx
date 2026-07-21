@@ -8,6 +8,7 @@ import Recommendations from './pages/Recommendations';
 import Controversy from './pages/Controversy';
 import Stats from './pages/Stats';
 import Compare from './pages/Compare';
+import Chat from './pages/Chat';
 import Login from './pages/Login';
 import { api } from './api';
 import { ThemeProvider } from './ThemeContext';
@@ -75,6 +76,7 @@ function AppInner() {
           <Route path="/controversy" element={<Controversy />} />
           <Route path="/stats" element={<Stats voter={voter} />} />
           <Route path="/compare" element={<Compare />} />
+          <Route path="/chat" element={<Chat voter={voter} />} />
         </Routes>
       </main>
     </div>

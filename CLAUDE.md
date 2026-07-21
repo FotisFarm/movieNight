@@ -59,19 +59,23 @@ MovieNights/
 │           ├── Watchlist.jsx / .css
 │           ├── Recommendations.jsx / .css  # "Picks" page — ranked unrated/partially-rated films
 │           ├── Controversy.jsx / .css   # Films ranked by score std deviation
-│           └── Stats.jsx / .css         # Per-voter overview + head-to-head comparison
+│           ├── Stats.jsx / .css         # Per-voter overview + head-to-head comparison
+│           └── Chat.jsx / .css          # Natural-language chatbot over the DB (read-only)
 ├── server/
 │   ├── index.js              # Express entry point, seeds DB, mounts routes
 │   ├── db.js                 # SQLite setup, schema creation, migrations
 │   ├── seed.js               # One-time seeding from data/seed.json
 │   ├── omdb.js               # OMDb helpers: lookupImdb, searchImdb (fuzzy), getImdbById, extractImdbId
+│   ├── db-readonly.js        # Read-only SQLite connection + movie_scores view + runReadOnlySql (chatbot)
+│   ├── llm.js                # Anthropic chatbot: text-to-SQL tool runner (claude-haiku-4-5)
 │   ├── data/
 │   │   ├── seed.json         # 834 films (has UTF-8 BOM — stripped in seed.js); directors stored as full names
 │   │   └── movies.db         # SQLite file (gitignored, persisted via volume)
 │   ├── routes/
 │   │   ├── movies.js         # CRUD + enrichMovie (scores, ratings, comments)
 │   │   ├── rankings.js       # 12 ranking panels across 4 row groups
-│   │   └── recommendations.js  # GET /api/recommendations — Bayesian ranked picks
+│   │   ├── recommendations.js  # GET /api/recommendations — Bayesian ranked picks
+│   │   └── chat.js           # POST /api/chat — natural-language chatbot (read-only)
 │   └── scripts/              # One-off DB maintenance scripts (IMDb enrichment etc.)
 ├── .github/
 │   └── workflows/
@@ -241,6 +245,15 @@ All candidates are then scored by **length-normalised Levenshtein distance to th
 - **Mismatch warning**: when the entered id's canonical title/year differ from the film's, a gold banner shows *"IMDb says X — your entry is Y"* plus a **Use IMDb's values** button. It **warns, never blocks** — Greek/alternate titles legitimately differ. Comparison ignores case/whitespace.
 - `extractImdbId` is duplicated in `client/src/utils.js` (client-side convenience) and `server/omdb.js` (the authority — the API never trusts the client).
 
+## Chatbot (natural-language Q&A)
+`/chat` page lets any logged-in voter ask free-form questions about the data ("which director do we rate highest?", "what should I watch from the watchlist?"). **Read-only** — it can query the DB but never mutate it.
+
+- **Model**: `claude-haiku-4-5` via the Anthropic SDK **tool runner** (`server/llm.js`). Requires `ANTHROPIC_API_KEY` in the root `.env` (loaded by dotenv). If the key is unset, `/api/chat` returns a graceful "chat unavailable" reply instead of erroring — the rest of the app is unaffected.
+- **How it reaches data**: one tool, `run_sql`, backed by a **separate read-only connection** (`new Database(DB_PATH, { readonly: true })` in `server/db-readonly.js`). SQLite rejects every write at the engine level, so the read-only guarantee doesn't depend on the prompt. `runReadOnlySql` additionally rejects anything not starting with `SELECT`/`WITH`, relies on better-sqlite3's single-statement `.prepare()`, and caps results at 200 rows.
+- **`movie_scores` TEMP VIEW** (created on the read-only connection) exposes the derived scores that otherwise live only in JS (`enrichMovie`): `voter_count`, `fair_score`, `boost`, `fair_boosted`, `boosted_score`, `std_dev`. It reuses `rankBonus` from `server/scoring.js` as a registered SQL function (`rank_bonus`) — no formula duplication. The system prompt documents the base tables + this view + voter names + `GROUP_SIZE`, so the model queries correct numbers directly.
+- **Flow**: `POST /api/chat { messages: [{role, content}] }` → `server/routes/chat.js` (behind `requireAuth`, passes `req.session.voter` so "what should I watch" is personalised) → `llm.chat()` → `{ reply }`. Errors are returned as a reply bubble, not a 5xx. Client keeps text-only history in `Chat.jsx` state and re-posts it each turn (stateless server); the tool loop's `tool_use`/`tool_result` blocks never leave the server. System prompt is `cache_control: ephemeral` for prompt-cache reuse across turns.
+- **Env**: `ANTHROPIC_API_KEY` is forwarded to both services in `docker-compose.yml` and must be added by hand to the production server's `.env` (gitignored) — a missing key silently disables the chatbot, same pattern as `OMDB_API_KEY`.
+
 ## DB backup (production)
 App runs in Docker on remote server. DB is in named volume `movienight_sqlite_data`.
 
@@ -277,7 +290,7 @@ ssh user@server "docker run --rm -v movienight_sqlite_data:/data alpine cat /dat
 
 Reuses the same GitHub secrets: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`. No additional setup needed.
 
-**Server env**: `docker-compose.yml` reads `${OMDB_API_KEY}` (and `MN_PASSWORD`, `SESSION_SECRET`, `GUEST_PASSWORD`) from the `.env` next to it in `~/movieNight` on the server. That `.env` is gitignored, so new vars must be added there by hand — a missing `OMDB_API_KEY` silently disables all IMDb lookups rather than erroring.
+**Server env**: `docker-compose.yml` reads `${OMDB_API_KEY}`, `${ANTHROPIC_API_KEY}` (and `MN_PASSWORD`, `SESSION_SECRET`, `GUEST_PASSWORD`) from the `.env` next to it in `~/movieNight` on the server. That `.env` is gitignored, so new vars must be added there by hand — a missing `OMDB_API_KEY` silently disables all IMDb lookups, and a missing `ANTHROPIC_API_KEY` silently disables the chatbot, rather than erroring.
 
 **Sessions are in-memory** (`express-session`, no store), so every deploy restarts the container and **logs everyone out**. Expect to re-login after a `[deploy]`.
 
