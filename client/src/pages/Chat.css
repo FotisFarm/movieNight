@@ -91,8 +91,81 @@
   justify-content: flex-start;
 }
 
-.chat-bubble {
+.chat-msg-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   max-width: 80%;
+}
+
+.chat-msg-user .chat-msg-inner { align-items: flex-end; }
+
+/* Cards (styled like the Stats page highlight tiles) */
+.hal-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.hal-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.hal-card-click {
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.hal-card-click:hover { border-color: var(--accent); }
+
+.hal-card-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.hal-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.hal-card-meta {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.hal-card-score {
+  font-size: 17px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.hal-card-score-lbl {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hal-card-score.score-high { color: var(--green); }
+.hal-card-score.score-mid  { color: var(--gold); }
+.hal-card-score.score-low  { color: var(--red); }
+.hal-card-score.score-none { color: var(--text3); }
+
+.chat-bubble {
+  width: fit-content;
+  max-width: 100%;
   padding: 10px 14px;
   border-radius: var(--radius-lg);
   font-size: 14px;
