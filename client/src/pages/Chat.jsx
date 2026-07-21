@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { api } from '../api';
 import { fmt, scoreClass } from '../utils';
 import MovieModal from '../components/MovieModal';
+import DirectorYearModal from '../components/DirectorYearModal';
 import './Chat.css';
 
 const EXAMPLES = [
@@ -23,17 +24,38 @@ function parseReply(raw) {
   return { text: raw.replace(m[0], '').trim(), cards };
 }
 
-function HalCards({ cards, onOpenMovie }) {
+// Map a card to what clicking it opens: a single film (MovieModal) or a
+// director/year/decade group (DirectorYearModal). null = not clickable.
+// Value types mirror the Rankings page: director = name, year = String,
+// decade = number (start year).
+function cardTarget(c) {
+  if (c.type === 'movie') return c.id != null ? { kind: 'movie', id: c.id } : null;
+  if (c.type === 'director') {
+    const value = c.value ?? c.title;
+    return value ? { kind: 'dy', type: 'director', value: String(value) } : null;
+  }
+  if (c.type === 'year') {
+    const value = c.value ?? c.title;
+    return value != null ? { kind: 'dy', type: 'year', value: String(value) } : null;
+  }
+  if (c.type === 'decade') {
+    const value = parseInt(c.value ?? c.title, 10);
+    return Number.isNaN(value) ? null : { kind: 'dy', type: 'decade', value };
+  }
+  return null;
+}
+
+function HalCards({ cards, onOpen }) {
   return (
     <div className="hal-cards">
       {cards.map((c, i) => {
-        const clickable = c.type === 'movie' && c.id != null;
+        const target = cardTarget(c);
         return (
           <div
             key={i}
-            className={`hal-card${clickable ? ' hal-card-click' : ''}`}
-            onClick={clickable ? () => onOpenMovie(c.id) : undefined}
-            role={clickable ? 'button' : undefined}
+            className={`hal-card${target ? ' hal-card-click' : ''}`}
+            onClick={target ? () => onOpen(target) : undefined}
+            role={target ? 'button' : undefined}
           >
             <div className="hal-card-label">{c.type}</div>
             <div className="hal-card-title">{c.title}</div>
@@ -55,7 +77,7 @@ export default function Chat({ voter }) {
   const [messages, setMessages] = useState([]); // { role, text, cards? }
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
-  const [modalId, setModalId] = useState(null);
+  const [modal, setModal] = useState(null); // { kind: 'movie', id } | { kind: 'dy', type, value }
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -117,7 +139,7 @@ export default function Chat({ voter }) {
             <div key={i} className={`chat-msg chat-msg-${m.role}`}>
               <div className="chat-msg-inner">
                 {m.text && <div className="chat-bubble">{m.text}</div>}
-                {m.cards && <HalCards cards={m.cards} onOpenMovie={setModalId} />}
+                {m.cards && <HalCards cards={m.cards} onOpen={setModal} />}
               </div>
             </div>
           ))
@@ -148,8 +170,11 @@ export default function Chat({ voter }) {
         </button>
       </div>
 
-      {modalId != null && (
-        <MovieModal movieId={modalId} onClose={() => setModalId(null)} onSaved={() => setModalId(null)} />
+      {modal?.kind === 'movie' && (
+        <MovieModal movieId={modal.id} onClose={() => setModal(null)} onSaved={() => setModal(null)} />
+      )}
+      {modal?.kind === 'dy' && (
+        <DirectorYearModal type={modal.type} value={modal.value} onClose={() => setModal(null)} />
       )}
     </div>
   );
