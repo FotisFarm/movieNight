@@ -68,7 +68,7 @@ const runSqlTool = betaTool({
     required: ['sql'],
     additionalProperties: false,
   },
-  run: async ({ sql }) => JSON.stringify(runReadOnlySql(sql)),
+  run: async ({ sql }) => JSON.stringify(await runReadOnlySql(sql)),
 });
 
 // messages: [{ role: 'user' | 'assistant', content: string }, ...]

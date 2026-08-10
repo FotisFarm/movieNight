@@ -13,8 +13,8 @@ function parseRating(s) {
   return isNaN(v) ? null : Math.min(10, Math.max(0, v));
 }
 
-function seed() {
-  const count = db.prepare('SELECT COUNT(*) as n FROM movies').get().n;
+async function seed() {
+  const { n: count } = await db.get('SELECT COUNT(*) as n FROM movies');
   if (count > 0) {
     console.log(`DB already seeded (${count} movies). Skipping.`);
     return;
@@ -29,44 +29,36 @@ function seed() {
   const raw = fs.readFileSync(seedFile, 'utf8').replace(/^﻿/, '');
   const rows = JSON.parse(raw);
 
-  const insertMovie = db.prepare(`
-    INSERT INTO movies (director, title, year, rank_global, mn, watchlist, tokens, token_pts)
-    VALUES (@director, @title, @year, @rank_global, @mn, @watchlist, @tokens, @token_pts)
-  `);
-  const insertRating = db.prepare(`
-    INSERT OR IGNORE INTO ratings (movie_id, voter, score) VALUES (?, ?, ?)
-  `);
-  const insertTop3 = db.prepare(`
-    INSERT OR IGNORE INTO top3 (movie_id, voter, rank) VALUES (?, ?, ?)
-  `);
-
-  const seedAll = db.transaction(() => {
+  await db.transaction(async (tx) => {
     for (const row of rows) {
       const rank = parseInt(row.rank) || null;
-      const { lastInsertRowid: movieId } = insertMovie.run({
-        director: row.director || '',
-        title: row.movie || '',
-        year: row.year || '',
-        rank_global: rank,
-        mn: row.mn === 'Y' ? 1 : 0,
-        watchlist: row.watchlist === 'Y' ? 1 : 0,
-        tokens: row.tokens || '',
-        token_pts: parseInt(row.tokenPts) || 0,
-      });
+      const { lastInsertRowid: movieId } = await tx.run(
+        `INSERT INTO movies (director, title, year, rank_global, mn, watchlist, tokens, token_pts)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        row.director || '',
+        row.movie || '',
+        row.year || '',
+        rank,
+        row.mn === 'Y' ? 1 : 0,
+        row.watchlist === 'Y' ? 1 : 0,
+        row.tokens || '',
+        parseInt(row.tokenPts) || 0,
+      );
 
       for (const voter of VOTERS) {
         const score = parseRating(row.ratings?.[voter]);
-        if (score !== null) insertRating.run(movieId, voter, score);
+        if (score !== null) {
+          await tx.run('INSERT OR IGNORE INTO ratings (movie_id, voter, score) VALUES (?, ?, ?)', movieId, voter, score);
+        }
 
         const top3rank = parseInt(row.top3?.[voter]);
         if (top3rank >= 1 && top3rank <= 10) {
-          insertTop3.run(movieId, voter, top3rank);
+          await tx.run('INSERT OR IGNORE INTO top3 (movie_id, voter, rank) VALUES (?, ?, ?)', movieId, voter, top3rank);
         }
       }
     }
   });
 
-  seedAll();
   console.log(`Seeded ${rows.length} movies.`);
 }
 

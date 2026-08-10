@@ -20,7 +20,8 @@ COPY server/ ./
 # Copy built React app → Express will serve it as static files
 COPY --from=frontend /build/client/dist ./public
 
-# SQLite data lives on a mounted volume; create the directory
+# Local-file DB fallback dir, used only when TURSO_DATABASE_URL is unset
+# (e.g. plain `docker run`/local docker-compose). Production points at Turso.
 RUN mkdir -p /app/data
 
 ENV NODE_ENV=production

@@ -7,16 +7,10 @@ const router = express.Router();
 
 const { VOTERS, GROUP_SIZE } = require('../config');
 
-function enrichMovie(movie) {
-  const ratings = db
-    .prepare('SELECT voter, score, comment FROM ratings WHERE movie_id = ?')
-    .all(movie.id);
-  const top3 = db
-    .prepare('SELECT voter, rank FROM top3 WHERE movie_id = ?')
-    .all(movie.id);
-  const watchlistVotes = db
-    .prepare('SELECT voter FROM watchlist_votes WHERE movie_id = ?')
-    .all(movie.id)
+async function enrichMovie(movie) {
+  const ratings = await db.all('SELECT voter, score, comment FROM ratings WHERE movie_id = ?', movie.id);
+  const top3 = await db.all('SELECT voter, rank FROM top3 WHERE movie_id = ?', movie.id);
+  const watchlistVotes = (await db.all('SELECT voter FROM watchlist_votes WHERE movie_id = ?', movie.id))
     .map(r => r.voter);
 
   const ratingsMap = {};
@@ -66,22 +60,22 @@ function enrichMovie(movie) {
   };
 }
 
-function enrichMoviesBatch(movies) {
+async function enrichMoviesBatch(movies) {
   if (!movies.length) return [];
   const ids = movies.map(m => m.id);
   const placeholders = ids.map(() => '?').join(',');
 
-  const ratingsRows = db.prepare(
-    `SELECT movie_id, voter, score, comment FROM ratings WHERE movie_id IN (${placeholders})`
-  ).all(...ids);
+  const ratingsRows = await db.all(
+    `SELECT movie_id, voter, score, comment FROM ratings WHERE movie_id IN (${placeholders})`, ...ids
+  );
 
-  const top3Rows = db.prepare(
-    `SELECT movie_id, voter, rank FROM top3 WHERE movie_id IN (${placeholders})`
-  ).all(...ids);
+  const top3Rows = await db.all(
+    `SELECT movie_id, voter, rank FROM top3 WHERE movie_id IN (${placeholders})`, ...ids
+  );
 
-  const wlRows = db.prepare(
-    `SELECT movie_id, voter FROM watchlist_votes WHERE movie_id IN (${placeholders})`
-  ).all(...ids);
+  const wlRows = await db.all(
+    `SELECT movie_id, voter FROM watchlist_votes WHERE movie_id IN (${placeholders})`, ...ids
+  );
 
   // Build lookup maps
   const ratingsMap = {};
@@ -150,7 +144,7 @@ function enrichMoviesBatch(movies) {
 }
 
 // GET /api/movies
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const { search, director, year, yearMin, yearMax, voter, voters, mn, watchlist, rated, minVoters, maxVoters } = req.query;
 
   let query = 'SELECT * FROM movies WHERE 1=1';
@@ -191,39 +185,37 @@ router.get('/', (req, res) => {
 
   query += ' ORDER BY title COLLATE NOCASE ASC';
 
-  const movies = db.prepare(query).all(...params);
-  res.json(enrichMoviesBatch(movies));
+  const movies = await db.all(query, ...params);
+  res.json(await enrichMoviesBatch(movies));
 });
 
 // POST /api/movies/:id/watchlist-vote  — must be before /:id
-router.post('/:id/watchlist-vote', (req, res) => {
+router.post('/:id/watchlist-vote', async (req, res) => {
   const id = Number(req.params.id);
   const sessionVoter = req.session.voter;
   const voter = (sessionVoter === 'mnAdmin' && req.body.targetVoter) ? req.body.targetVoter : sessionVoter;
-  const exists = db.prepare('SELECT 1 FROM watchlist_votes WHERE movie_id=? AND voter=?').get(id, voter);
+  const exists = await db.get('SELECT 1 FROM watchlist_votes WHERE movie_id=? AND voter=?', id, voter);
   if (exists) {
-    db.prepare('DELETE FROM watchlist_votes WHERE movie_id=? AND voter=?').run(id, voter);
+    await db.run('DELETE FROM watchlist_votes WHERE movie_id=? AND voter=?', id, voter);
   } else {
     if (sessionVoter !== 'mnAdmin') {
-      const count = db.prepare('SELECT COUNT(*) as c FROM watchlist_votes WHERE voter=?').get(voter).c;
+      const { c: count } = await db.get('SELECT COUNT(*) as c FROM watchlist_votes WHERE voter=?', voter);
       if (count >= 3) return res.status(400).json({ error: 'vote_limit' });
     }
-    db.prepare('INSERT INTO watchlist_votes (movie_id, voter) VALUES (?,?)').run(id, voter);
+    await db.run('INSERT INTO watchlist_votes (movie_id, voter) VALUES (?,?)', id, voter);
   }
   res.json({ ok: true });
 });
 
 // GET /api/movies/directors  — must be before /:id
-router.get('/directors', (_req, res) => {
-  const rows = db
-    .prepare("SELECT DISTINCT director FROM movies WHERE director != '' ORDER BY director COLLATE NOCASE")
-    .all();
+router.get('/directors', async (_req, res) => {
+  const rows = await db.all("SELECT DISTINCT director FROM movies WHERE director != '' ORDER BY director COLLATE NOCASE");
   res.json(rows.map(r => r.director));
 });
 
 // GET /api/movies/top10-counts  — { voter: number of top picks }. Must be before /:id.
-router.get('/top10-counts', (_req, res) => {
-  const rows = db.prepare('SELECT voter, COUNT(*) AS n FROM top3 GROUP BY voter').all();
+router.get('/top10-counts', async (_req, res) => {
+  const rows = await db.all('SELECT voter, COUNT(*) AS n FROM top3 GROUP BY voter');
   const counts = {};
   for (const v of VOTERS) counts[v] = 0;
   for (const r of rows) counts[r.voter] = r.n;
@@ -232,7 +224,7 @@ router.get('/top10-counts', (_req, res) => {
 
 // PUT /api/movies/top10  — rewrite the session voter's own top picks (ranks 1..N) in order.
 // Must be before /:id. Permission is implicit: it only ever touches req.session.voter's rows.
-router.put('/top10', (req, res) => {
+router.put('/top10', async (req, res) => {
   const sessionVoter = req.session.voter;
   const isAdmin = sessionVoter === 'mnAdmin';
   // Admins may target any voter; everyone else can only rewrite their own.
@@ -240,32 +232,32 @@ router.put('/top10', (req, res) => {
   const order = Array.isArray(req.body.order) ? req.body.order : null;
   if (!order || !VOTERS.includes(voter)) return res.status(400).json({ error: 'Bad request' });
   const ids = order.map(Number).filter(Boolean).slice(0, 10);
-  const tx = db.transaction(() => {
-    db.prepare('DELETE FROM top3 WHERE voter = ?').run(voter);
-    const ins = db.prepare('INSERT INTO top3 (movie_id, voter, rank) VALUES (?, ?, ?)');
-    ids.forEach((mid, i) => ins.run(mid, voter, i + 1));
+  await db.transaction(async (tx) => {
+    await tx.run('DELETE FROM top3 WHERE voter = ?', voter);
+    for (let i = 0; i < ids.length; i++) {
+      await tx.run('INSERT INTO top3 (movie_id, voter, rank) VALUES (?, ?, ?)', ids[i], voter, i + 1);
+    }
   });
-  tx();
   res.json({ ok: true });
 });
 
 // POST /api/movies/watchlist/reset  — admin only. Must be before /:id.
 // mode 'votes' clears every watchlist vote; mode 'all' also empties the watchlist itself.
-router.post('/watchlist/reset', (req, res) => {
+router.post('/watchlist/reset', async (req, res) => {
   if (req.session.voter !== 'mnAdmin') return res.status(403).json({ error: 'Admin only' });
   const mode = req.body?.mode;
   if (mode !== 'votes' && mode !== 'all') return res.status(400).json({ error: 'mode must be "votes" or "all"' });
 
-  const tx = db.transaction(() => {
-    const votes = db.prepare('DELETE FROM watchlist_votes').run().changes;
+  const result = await db.transaction(async (tx) => {
+    const { changes: votes } = await tx.run('DELETE FROM watchlist_votes');
     let cleared = 0;
     if (mode === 'all') {
-      cleared = db.prepare('UPDATE movies SET watchlist = 0 WHERE watchlist = 1').run().changes;
+      ({ changes: cleared } = await tx.run('UPDATE movies SET watchlist = 0 WHERE watchlist = 1'));
     }
     return { votesCleared: votes, filmsCleared: cleared };
   });
 
-  res.json(tx());
+  res.json(result);
 });
 
 // GET /api/movies/imdb-search?title=&year=  — resolve an exact OMDb match or return candidates.
@@ -292,10 +284,10 @@ router.get('/imdb-detail', async (req, res) => {
 });
 
 // GET /api/movies/:id
-router.get('/:id', (req, res) => {
-  const movie = db.prepare('SELECT * FROM movies WHERE id = ?').get(req.params.id);
+router.get('/:id', async (req, res) => {
+  const movie = await db.get('SELECT * FROM movies WHERE id = ?', req.params.id);
   if (!movie) return res.status(404).json({ error: 'Not found' });
-  res.json(enrichMovie(movie));
+  res.json(await enrichMovie(movie));
 });
 
 // POST /api/movies
@@ -303,30 +295,30 @@ router.post('/', async (req, res) => {
   const { director = '', title, year = '', mn = false, watchlist = false, imdb_id } = req.body;
   if (!title?.trim()) return res.status(400).json({ error: 'title is required' });
 
-  const { lastInsertRowid } = db.prepare(`
+  const { lastInsertRowid } = await db.run(`
     INSERT INTO movies (director, title, year, mn, watchlist)
     VALUES (?, ?, ?, ?, ?)
-  `).run(director.trim(), title.trim(), year.trim(), mn ? 1 : 0, watchlist ? 1 : 0);
+  `, director.trim(), title.trim(), year.trim(), mn ? 1 : 0, watchlist ? 1 : 0);
 
   // Best-effort IMDb enrichment — a failed/absent lookup must never block the add.
   // A client-supplied imdb_id (user picked a suggestion) is authoritative; otherwise fall back to title lookup.
   try {
     const imdb = imdb_id ? await getImdbById(imdb_id) : await lookupImdb(title.trim(), year.trim());
     if (imdb?.imdbId) {
-      db.prepare('UPDATE movies SET imdb_id = ?, imdb_rating = ? WHERE id = ?')
-        .run(imdb.imdbId, imdb.imdbRating ?? null, lastInsertRowid);
+      await db.run('UPDATE movies SET imdb_id = ?, imdb_rating = ? WHERE id = ?',
+        imdb.imdbId, imdb.imdbRating ?? null, lastInsertRowid);
     }
   } catch (_) { /* film is still added even if OMDb is unavailable */ }
 
-  res.status(201).json(enrichMovie(
-    db.prepare('SELECT * FROM movies WHERE id = ?').get(lastInsertRowid)
+  res.status(201).json(await enrichMovie(
+    await db.get('SELECT * FROM movies WHERE id = ?', lastInsertRowid)
   ));
 });
 
 // PATCH /api/movies/:id
 router.patch('/:id', async (req, res) => {
   const id = parseInt(req.params.id);
-  const movie = db.prepare('SELECT * FROM movies WHERE id = ?').get(id);
+  const movie = await db.get('SELECT * FROM movies WHERE id = ?', id);
   if (!movie) return res.status(404).json({ error: 'Not found' });
 
   const { director, title, year, mn, watchlist, cinobo, imdb_id, ratings, comments, top3 } = req.body;
@@ -356,55 +348,43 @@ router.patch('/:id', async (req, res) => {
 
   if (Object.keys(updates).length > 0) {
     const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');
-    db.prepare(`UPDATE movies SET ${setClause} WHERE id = ?`)
-      .run(...Object.values(updates), id);
+    await db.run(`UPDATE movies SET ${setClause} WHERE id = ?`, ...Object.values(updates), id);
   }
 
   // Leaving the watchlist discards the film's votes — a film re-added later starts fresh.
   if (watchlist !== undefined && !watchlist && movie.watchlist) {
-    db.prepare('DELETE FROM watchlist_votes WHERE movie_id = ?').run(id);
+    await db.run('DELETE FROM watchlist_votes WHERE movie_id = ?', id);
   }
 
   if (ratings) {
-    const upsertRating = db.prepare(`
-      INSERT INTO ratings (movie_id, voter, score) VALUES (?, ?, ?)
-      ON CONFLICT(movie_id, voter) DO UPDATE SET score = excluded.score
-    `);
-    const deleteRating = db.prepare('DELETE FROM ratings WHERE movie_id = ? AND voter = ?');
-
     const votersToRate = (isAdmin || VOTERS.includes(sessionVoter)) ? VOTERS : [sessionVoter];
     for (const voter of votersToRate) {
       if (voter in ratings) {
         if (!isAdmin && voter !== sessionVoter) continue;
         const score = ratings[voter];
         if (score === null || score === '') {
-          deleteRating.run(id, voter);
+          await db.run('DELETE FROM ratings WHERE movie_id = ? AND voter = ?', id, voter);
         } else {
-          upsertRating.run(id, voter, parseFloat(score));
+          await db.run(`
+            INSERT INTO ratings (movie_id, voter, score) VALUES (?, ?, ?)
+            ON CONFLICT(movie_id, voter) DO UPDATE SET score = excluded.score
+          `, id, voter, parseFloat(score));
         }
       }
     }
   }
 
   if (comments) {
-    const updateComment = db.prepare(
-      'UPDATE ratings SET comment = ? WHERE movie_id = ? AND voter = ?'
-    );
     const votersToComment = (isAdmin || VOTERS.includes(sessionVoter)) ? VOTERS : [sessionVoter];
     for (const voter of votersToComment) {
       if (voter in comments) {
         if (!isAdmin && voter !== sessionVoter) continue;
-        updateComment.run(comments[voter] || '', id, voter);
+        await db.run('UPDATE ratings SET comment = ? WHERE movie_id = ? AND voter = ?', comments[voter] || '', id, voter);
       }
     }
   }
 
   if (top3) {
-    const upsertTop3 = db.prepare(`
-      INSERT INTO top3 (movie_id, voter, rank) VALUES (?, ?, ?)
-      ON CONFLICT(movie_id, voter) DO UPDATE SET rank = excluded.rank
-    `);
-    const deleteTop3 = db.prepare('DELETE FROM top3 WHERE movie_id = ? AND voter = ?');
     const touched = new Set();
 
     for (const voter of VOTERS) {
@@ -412,29 +392,34 @@ router.patch('/:id', async (req, res) => {
         if (!isAdmin && voter !== sessionVoter) continue;
         const rankNum = parseInt(top3[voter]);
         if (!rankNum) {
-          deleteTop3.run(id, voter);
+          await db.run('DELETE FROM top3 WHERE movie_id = ? AND voter = ?', id, voter);
         } else if (rankNum >= 1 && rankNum <= 10) {
-          upsertTop3.run(id, voter, rankNum);
+          await db.run(`
+            INSERT INTO top3 (movie_id, voter, rank) VALUES (?, ?, ?)
+            ON CONFLICT(movie_id, voter) DO UPDATE SET rank = excluded.rank
+          `, id, voter, rankNum);
         }
         touched.add(voter);
       }
     }
 
     // Re-normalise each touched voter's picks to contiguous ranks 1..N — closes the gap a removal leaves.
-    const renumber = db.transaction(v => {
-      const rows = db.prepare('SELECT id FROM top3 WHERE voter = ? ORDER BY rank, id').all(v);
-      const upd = db.prepare('UPDATE top3 SET rank = ? WHERE id = ?');
-      rows.forEach((r, i) => upd.run(i + 1, r.id));
-    });
-    for (const v of touched) renumber(v);
+    for (const v of touched) {
+      await db.transaction(async (tx) => {
+        const rows = await tx.all('SELECT id FROM top3 WHERE voter = ? ORDER BY rank, id', v);
+        for (let i = 0; i < rows.length; i++) {
+          await tx.run('UPDATE top3 SET rank = ? WHERE id = ?', i + 1, rows[i].id);
+        }
+      });
+    }
   }
 
-  res.json(enrichMovie(db.prepare('SELECT * FROM movies WHERE id = ?').get(id)));
+  res.json(await enrichMovie(await db.get('SELECT * FROM movies WHERE id = ?', id)));
 });
 
 // DELETE /api/movies/:id
-router.delete('/:id', (req, res) => {
-  const result = db.prepare('DELETE FROM movies WHERE id = ?').run(req.params.id);
+router.delete('/:id', async (req, res) => {
+  const result = await db.run('DELETE FROM movies WHERE id = ?', req.params.id);
   if (result.changes === 0) return res.status(404).json({ error: 'Not found' });
   res.status(204).end();
 });

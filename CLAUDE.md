@@ -6,9 +6,9 @@ A full-stack web app that replaces a Google Sheets spreadsheet used by a group o
 ## Stack
 - **Frontend**: React 18 + Vite, React Router v6, no UI library
 - **Backend**: Node.js + Express
-- **Database**: SQLite via `better-sqlite3` (WAL mode, foreign keys ON)
+- **Database**: SQLite dialect via `@libsql/client` (Turso in production, a local file in dev — see [Database / persistence](#database--persistence-turso))
 - **Containerisation**: Docker (single `Dockerfile`, client build + server runtime); `docker-compose.yml` is for **local** use only
-- **Hosting**: Render (Web Service built from `Dockerfile`), migrated from a self-managed SSH/Docker Compose host on 2026-08-10. Requires a Render **Persistent Disk** mounted at `/app/data` (matches `DATA_DIR`) — without it, every deploy wipes the DB back to the 834-film seed. Render auto-deploys from GitHub on push; the old SSH-based `.github/workflows/deploy.yml` is deprecated (`workflow_dispatch` only, no longer runs on push).
+- **Hosting**: Render (Web Service built from `Dockerfile`), migrated from a self-managed SSH/Docker Compose host on 2026-08-10. No Render Persistent Disk needed — the DB lives in Turso, not on Render's filesystem. Render auto-deploys from GitHub on push; the old SSH-based `.github/workflows/deploy.yml` is deprecated (`workflow_dispatch` only, no longer runs on push).
 
 ## Running
 
@@ -64,14 +64,14 @@ MovieNights/
 │           └── Chat.jsx / .css          # Natural-language chatbot over the DB (read-only)
 ├── server/
 │   ├── index.js              # Express entry point, seeds DB, mounts routes
-│   ├── db.js                 # SQLite setup, schema creation, migrations
+│   ├── db.js                 # libSQL client (Turso/local file), async get/all/run/transaction helpers, schema+migrations
 │   ├── seed.js               # One-time seeding from data/seed.json
 │   ├── omdb.js               # OMDb helpers: lookupImdb, searchImdb (fuzzy), getImdbById, extractImdbId
-│   ├── db-readonly.js        # Read-only SQLite connection + movie_scores view + runReadOnlySql (chatbot)
+│   ├── db-readonly.js        # Second libSQL client (ideally a read-only Turso token) + runReadOnlySql (chatbot)
 │   ├── llm.js                # Anthropic chatbot: text-to-SQL tool runner (claude-sonnet-5)
 │   ├── data/
 │   │   ├── seed.json         # 834 films (has UTF-8 BOM — stripped in seed.js); directors stored as full names
-│   │   └── movies.db         # SQLite file (gitignored, persisted via volume)
+│   │   └── movies.db         # local-file DB fallback (gitignored) — only used when TURSO_DATABASE_URL is unset
 │   ├── routes/
 │   │   ├── movies.js         # CRUD + enrichMovie (scores, ratings, comments)
 │   │   ├── rankings.js       # 12 ranking panels across 4 row groups
@@ -97,6 +97,16 @@ watchlist_votes (id, movie_id → movies, voter TEXT,  UNIQUE(movie_id, voter))
 Seeding is idempotent — skips if `COUNT(*) > 0` in movies.
 `imdb_id` / `imdb_rating` are populated from OMDb on add and shown in the UI — see [IMDb integration](#imdb-integration).
 `watchlist_votes` rows are deleted when a film leaves the watchlist (and cascade on film delete).
+
+## Database / persistence (Turso)
+Migrated from `better-sqlite3` (local file + Docker volume) to **Turso** (`@libsql/client`, same SQLite dialect) on 2026-08-10, because Render's Free/Starter tiers have no persistent disk — the container filesystem resets on every restart, not just deploys. Turso is a remote, network-hosted SQLite-compatible DB, so writes actually survive restarts.
+- **`server/db.js`**: creates a libSQL client pointed at `TURSO_DATABASE_URL`/`TURSO_AUTH_TOKEN` when set, else falls back to a local file (`DATA_DIR/movies.db`) — local dev needs no Turso account. Exports async `get`/`all`/`run`/`transaction` helpers that mirror the old `db.prepare(sql).get/all/run()` shape (`db.prepare(sql).get(...params)` → `await db.get(sql, ...params)`), plus `init()` (schema + migrations), which `server/index.js` awaits before `app.listen()`.
+- **Every route handler and DB call is now async** — libSQL is a network client, there is no synchronous path. `db.transaction(async tx => { ... })` replaces the old `db.transaction(fn)()` pattern; `tx` exposes the same get/all/run shape.
+- **`movie_scores` is now a permanent `VIEW`** (created in `db.js`'s `init()`, dropped and recreated on every boot so a changed `GROUP_SIZE` isn't baked in stale), not a `TEMP VIEW` on the read-only connection — a remote libSQL connection isn't guaranteed to reuse the same session between separate `.execute()` calls, so a session-scoped TEMP VIEW isn't safe there.
+- **`rank_bonus` is inlined SQL arithmetic** (`(11 - rank) / 10.0`) instead of a registered JS callback (`db.function('rank_bonus', rankBonus)`) — a remote engine can't invoke a callback into the Node process per row.
+- **`server/db-readonly.js`** (chatbot) uses a second libSQL client, ideally authenticated with a Turso database-scoped **read-only token** (`TURSO_READONLY_AUTH_TOKEN`, minted via `turso db tokens create --read-only`) for an engine-enforced read-only guarantee — falls back to the main `TURSO_AUTH_TOKEN` if unset, in which case `runReadOnlySql`'s `SELECT`/`WITH`-prefix guard is the only defense.
+- **`server/scripts/*.js`** (one-off IMDb enrichment / maintenance scripts) still call the old `db.prepare(...)` API and were **not** updated in this migration — they'll throw `db.prepare is not a function` until rewritten to the new async `get`/`all`/`run` helpers.
+- **Setup required** (not done from here — needs an actual Turso account): create a database, get its `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` (+ optional read-only token), set them as Render env vars, and import the current DB content — Turso's CLI supports creating a database directly from an existing SQLite file (verify exact current syntax against Turso's docs, e.g. something like `turso db create <name> --from-file <path>`). Once real rows exist, `seed.js`'s idempotent skip (`COUNT(*) > 0`) prevents the 834-film seed from ever overwriting them.
 
 ## Auth
 Per-voter session auth. Login page shows the 5 voter names as buttons; all share the same password (`MN_PASSWORD` from `.env`).
@@ -251,27 +261,27 @@ All candidates are then scored by **length-normalised Levenshtein distance to th
 
 - **Model**: `claude-sonnet-5` via the Anthropic SDK **tool runner** (`server/llm.js`), persona = HAL 9000. Thinking is disabled to keep chat responses snappy.
 - **Cards**: when an answer lists films/directors/years/decades, HAL appends a fenced ` ```cards ` block holding a JSON array (`{ type, id?, value?, title, meta, score, scoreLabel }`). `Chat.jsx` parses that block out of the reply (`parseReply`) and renders a **column of cards** styled like the Stats-page highlight tiles (`hal-card*` classes). Every card is clickable (`cardTarget`): `movie` cards carry `movies.id` → open `MovieModal`; `director`/`year`/`decade` cards carry `value` → open `DirectorYearModal` (the same group view the Rankings page uses). Value types mirror Rankings: director = name, year = `String`, decade = number (start year). Requires `ANTHROPIC_API_KEY` in the root `.env` (loaded by dotenv). If the key is unset, `/api/chat` returns a graceful "chat unavailable" reply instead of erroring — the rest of the app is unaffected.
-- **How it reaches data**: one tool, `run_sql`, backed by a **separate read-only connection** (`new Database(DB_PATH, { readonly: true })` in `server/db-readonly.js`). SQLite rejects every write at the engine level, so the read-only guarantee doesn't depend on the prompt. `runReadOnlySql` additionally rejects anything not starting with `SELECT`/`WITH`, relies on better-sqlite3's single-statement `.prepare()`, and caps results at 200 rows.
-- **`movie_scores` TEMP VIEW** (created on the read-only connection) exposes the derived scores that otherwise live only in JS (`enrichMovie`): `voter_count`, `fair_score`, `boost`, `fair_boosted`, `boosted_score`, `std_dev`. It reuses `rankBonus` from `server/scoring.js` as a registered SQL function (`rank_bonus`) — no formula duplication. The system prompt documents the base tables + this view + voter names + `GROUP_SIZE`, so the model queries correct numbers directly.
+- **How it reaches data**: one tool, `run_sql`, backed by a **separate libSQL client** (`server/db-readonly.js`), ideally authenticated with a Turso read-only token so the engine itself rejects writes — see [Database / persistence](#database--persistence-turso). `runReadOnlySql` additionally rejects anything not starting with `SELECT`/`WITH`, relies on `client.execute()` rejecting multi-statement strings, and caps results at 200 rows.
+- **`movie_scores`** (a permanent `VIEW` in the main schema, shared by both connections — see [Database / persistence](#database--persistence-turso)) exposes the derived scores that otherwise live only in JS (`enrichMovie`): `voter_count`, `fair_score`, `boost`, `fair_boosted`, `boosted_score`, `std_dev`. `boost` uses the same `(11 - rank) / 10.0` formula as `server/scoring.js`'s `rankBonus`, inlined as SQL — no formula duplication. The system prompt documents the base tables + this view + voter names + `GROUP_SIZE`, so the model queries correct numbers directly.
 - **Defaults to all films**: the system prompt forbids any `voter_count` filter unless the user explicitly asks for reliable / most-rated results. Sparsely-rated films (whose `fair_boosted`/`boosted_score`/`std_dev` are `NULL`) still appear in listings, ranked last. The scores view leaves those rows in with null scores rather than filtering them.
 - **Flow**: `POST /api/chat { messages: [{role, content}] }` → `server/routes/chat.js` (behind `requireAuth`, passes `req.session.voter` so "what should I watch" is personalised) → `llm.chat()` → `{ reply }`. Errors are returned as a reply bubble, not a 5xx. Client keeps text-only history in `Chat.jsx` state and re-posts it each turn (stateless server); the tool loop's `tool_use`/`tool_result` blocks never leave the server. System prompt is `cache_control: ephemeral` for prompt-cache reuse across turns.
 - **Env**: `ANTHROPIC_API_KEY` is forwarded to both services in `docker-compose.yml` and must be added by hand to the production server's `.env` (gitignored) — a missing key silently disables the chatbot, same pattern as `OMDB_API_KEY`.
 
 ## Hosting: Render (current, since 2026-08-10)
 Migrated off a self-managed SSH/Docker Compose host to a Render Web Service built directly from the repo's `Dockerfile`. Key differences from the old setup:
-- Render's filesystem is **ephemeral** — a **Persistent Disk** must be attached and mounted at `/app/data` (matching `DATA_DIR`), or every deploy/restart wipes the DB back to the 834-film seed. Persistent Disks require a paid Render instance plan (not Free).
-- Env vars (`MN_PASSWORD`, `SESSION_SECRET`, `GUEST_PASSWORD`, `OMDB_API_KEY`, `ANTHROPIC_API_KEY`, `NODE_ENV=production`) are set in the Render dashboard's Environment tab, not a server-side `.env`. Don't set `PORT` — Render injects its own and `server/index.js` already reads `process.env.PORT`.
+- Render's filesystem is **ephemeral** — but this no longer matters, because the DB lives in **Turso**, not on Render's disk (see [Database / persistence](#database--persistence-turso)). No Persistent Disk, no paid instance plan required for storage.
+- Env vars (`TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `TURSO_READONLY_AUTH_TOKEN`, `MN_PASSWORD`, `SESSION_SECRET`, `GUEST_PASSWORD`, `OMDB_API_KEY`, `ANTHROPIC_API_KEY`, `NODE_ENV=production`) are set in the Render dashboard's Environment tab, not a server-side `.env`. Don't set `PORT` — Render injects its own and `server/index.js` already reads `process.env.PORT`.
 - `docker-compose.yml` is **local-dev only** now; Render doesn't use Compose. The `sakias` 6-voter variant that used to run as a second Compose service was dropped in the migration (not recreated on Render).
-- Sessions are still in-memory (`express-session`, no store), so every Render deploy/restart still **logs everyone out** — same caveat as before, plus Render's Free-tier idle spin-down (if used) would cause this more often than a redeploy alone would.
+- Sessions are still in-memory (`express-session`, no store), so every Render deploy/restart still **logs everyone out** — same caveat as before, plus Render's Free-tier idle spin-down (if used) would cause this more often than a redeploy alone would. Turso persistence fixes *data* loss on restart; it doesn't change this session behavior.
 
 ### Deploy
 Render auto-deploys from GitHub on push (or via a manual deploy from the dashboard) — this is configured in Render, not in this repo. The old `[deploy]`-in-commit-message convention and `.github/workflows/deploy.yml` (SSH into the old host) are **deprecated**: the workflow no longer triggers on push (`workflow_dispatch` only) since there's no SSH target anymore. Whether pushing to `main` deploys to Render depends on that service's auto-deploy setting in the Render dashboard.
 
 ### DB backup — currently disabled, needs redesign
-The old `.github/workflows/db-backup.yml` (daily SSH pull from the Docker volume → `backups` branch) has no valid target on Render and was disabled (schedule removed, `workflow_dispatch` only) rather than fixed. **There is currently no automated backup running.** A Render-compatible replacement (e.g. an authenticated HTTPS route on the app that streams the DB file, polled by a GitHub Action) still needs to be built.
+The old `.github/workflows/db-backup.yml` (daily SSH pull from the Docker volume → `backups` branch) has no valid target on Render/Turso and was disabled (schedule removed, `workflow_dispatch` only) rather than fixed. **There is currently no automated backup running.** Turso itself may offer point-in-time recovery/branching on paid plans — worth checking before rebuilding a GitHub Actions-based backup.
 
-### Restoring a DB onto the Render disk
-Render's persistent disk starts empty on first attach — getting an existing `movies.db` onto it requires Render's Shell/SSH into the running instance (dashboard → Shell tab), there's no `scp`-to-Docker-volume equivalent. The most recent pre-migration snapshot is still recoverable from the `backups` branch (`git fetch origin backups`, or from `main`'s history at commit `6956940` for the 2026-08-08 snapshot) if needed.
+### Getting the current DB into Turso
+Since the DB now lives in Turso rather than on a Render disk, there's no "SSH into the instance and copy a file" step anymore — the data has to be imported into Turso directly (e.g. from an existing SQLite file) before the app's first boot against it; see [Database / persistence](#database--persistence-turso). The most recent pre-migration snapshot is still recoverable from the `backups` branch (`git fetch origin backups`), or from `main`'s history at commit `6956940` for the 2026-08-08 snapshot, if you need a starting file to import from.
 
 ## Color scheme (score thresholds)
 - ≥ 7.5 → green (`score-high`)

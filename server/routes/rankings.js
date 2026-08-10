@@ -6,8 +6,8 @@ const router = express.Router();
 
 const { GROUP_SIZE, MIN_VOTERS } = require('../config');
 
-function getAllEnriched(mnOnly = false) {
-  let movies = db.prepare(
+async function getAllEnriched(mnOnly = false) {
+  let movies = await db.all(
     `SELECT m.*,
       (SELECT COUNT(*)                                    FROM ratings r WHERE r.movie_id = m.id) as voter_count,
       (SELECT SUM(r.score)                               FROM ratings r WHERE r.movie_id = m.id) as score_sum,
@@ -17,7 +17,7 @@ function getAllEnriched(mnOnly = false) {
      FROM movies m
      WHERE voter_count >= ${MIN_VOTERS} ${mnOnly ? 'AND m.mn = 1' : ''}
     `
-  ).all();
+  );
 
   return movies.map(m => {
     const n = m.voter_count;
@@ -58,9 +58,9 @@ function getAllEnriched(mnOnly = false) {
 }
 
 // GET /api/rankings
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const minDirFilms = Math.max(1, parseInt(req.query.minDirFilms) || 2);
-  const all = getAllEnriched(false);
+  const all = await getAllEnriched(false);
   const mn  = all.filter(m => m.mn);
 
   const top = (arr, key, n = 25) =>

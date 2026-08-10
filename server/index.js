@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const session = require('express-session');
+const db = require('./db');
 const { seed } = require('./seed');
 
 const app = express();
@@ -17,8 +18,6 @@ app.use(session({
   saveUninitialized: false,
   cookie: { httpOnly: true, secure: false, maxAge: 7 * 24 * 60 * 60 * 1000 },
 }));
-
-seed();
 
 app.use('/api/auth', require('./routes/auth'));
 
@@ -45,6 +44,15 @@ if (IS_PROD) {
   );
 }
 
-app.listen(PORT, () =>
-  console.log(`Movie Nights running on http://localhost:${PORT}`)
-);
+// DB schema/migrations and seeding are both async (libSQL is a network
+// client) — must finish before the server starts accepting requests.
+(async () => {
+  await db.init();
+  await seed();
+  app.listen(PORT, () =>
+    console.log(`Movie Nights running on http://localhost:${PORT}`)
+  );
+})().catch((err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+});

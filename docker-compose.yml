@@ -4,10 +4,15 @@ services:
     ports:
       - "${PORT:-3000}:3000"
     volumes:
+      # Local-file fallback only — used when TURSO_DATABASE_URL is unset.
+      # Production (Render) points at Turso instead; no volume needed there.
       - sqlite_data:/app/data
     environment:
       - NODE_ENV=production
       - DATA_DIR=/app/data
+      - TURSO_DATABASE_URL=${TURSO_DATABASE_URL:-}
+      - TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN:-}
+      - TURSO_READONLY_AUTH_TOKEN=${TURSO_READONLY_AUTH_TOKEN:-}
       - MN_PASSWORD=${MN_PASSWORD:-changeme}
       - SESSION_SECRET=${SESSION_SECRET:-change-this-secret}
       - GUEST_PASSWORD=${GUEST_PASSWORD:-}

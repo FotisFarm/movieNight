@@ -5,7 +5,7 @@ const { rankBonus } = require('../scoring');
 const router = express.Router();
 const { GROUP_SIZE } = require('../config');
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   // Parse and normalise bias weights from query params (default 0.45 / 0.45 / 0.1)
   let dw = Math.max(0, parseFloat(req.query.dw) || 0.45);
   let ew = Math.max(0, parseFloat(req.query.ew) || 0.45);
@@ -16,9 +16,9 @@ router.get('/', (req, res) => {
   const maxVoters = Math.min(4, Math.max(0, isNaN(_mv) ? 2 : _mv));
   const minDirFilms = Math.max(1, parseInt(req.query.minDirFilms) || 2);
 
-  const allMovies  = db.prepare('SELECT * FROM movies').all();
-  const allRatings = db.prepare('SELECT movie_id, voter, score FROM ratings').all();
-  const allTop3    = db.prepare('SELECT movie_id, voter, rank FROM top3').all();
+  const allMovies  = await db.all('SELECT * FROM movies');
+  const allRatings = await db.all('SELECT movie_id, voter, score FROM ratings');
+  const allTop3    = await db.all('SELECT movie_id, voter, rank FROM top3');
   const movieById  = new Map(allMovies.map(m => [m.id, m]));
 
   // Index ratings and top3 by movie_id
