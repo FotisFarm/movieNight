@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { rankBonus } = require('../scoring');
+const ah = require('../asyncHandler');
 
 const router = express.Router();
 
@@ -58,7 +59,7 @@ async function getAllEnriched(mnOnly = false) {
 }
 
 // GET /api/rankings
-router.get('/', async (req, res) => {
+router.get('/', ah(async (req, res) => {
   const minDirFilms = Math.max(1, parseInt(req.query.minDirFilms) || 2);
   const all = await getAllEnriched(false);
   const mn  = all.filter(m => m.mn);
@@ -117,6 +118,6 @@ router.get('/', async (req, res) => {
     groupDecadesAll: topByField(all, 'decade', 'boostedScore', gate),
     groupDecadesMn:  topByField(mn,  'decade', 'boostedScore', gate),
   });
-});
+}));
 
 module.exports = router;

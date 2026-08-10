@@ -1,11 +1,12 @@
 const express = require('express');
 const db = require('../db');
 const { rankBonus } = require('../scoring');
+const ah = require('../asyncHandler');
 
 const router = express.Router();
 const { GROUP_SIZE } = require('../config');
 
-router.get('/', async (req, res) => {
+router.get('/', ah(async (req, res) => {
   // Parse and normalise bias weights from query params (default 0.45 / 0.45 / 0.1)
   let dw = Math.max(0, parseFloat(req.query.dw) || 0.45);
   let ew = Math.max(0, parseFloat(req.query.ew) || 0.45);
@@ -158,6 +159,6 @@ router.get('/', async (req, res) => {
   });
 
   res.json(results.slice(0, 200));
-});
+}));
 
 module.exports = router;

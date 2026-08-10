@@ -1,4 +1,4 @@
-require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env'), quiet: true });
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -43,6 +43,22 @@ if (IS_PROD) {
     res.sendFile(path.join(clientDist, 'index.html'))
   );
 }
+
+// Express 4 does not catch rejected promises from async route handlers on
+// its own — every async route is wrapped with server/asyncHandler.js so
+// errors land here as a normal 500 instead of crashing the process. This is
+// the final backstop for anything that still slips through.
+app.use((err, _req, res, _next) => {
+  console.error(err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+// Last-resort safety net: log and keep running rather than let Node's
+// default fatal-crash behavior for an unhandled rejection take the whole
+// server down over one bad request.
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled rejection:', err);
+});
 
 // DB schema/migrations and seeding are both async (libSQL is a network
 // client) — must finish before the server starts accepting requests.

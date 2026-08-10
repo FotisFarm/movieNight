@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { rankBonus } = require('../scoring');
 const { lookupImdb, searchImdb, getImdbById, extractImdbId } = require('../omdb');
+const ah = require('../asyncHandler');
 
 const router = express.Router();
 
@@ -144,7 +145,7 @@ async function enrichMoviesBatch(movies) {
 }
 
 // GET /api/movies
-router.get('/', async (req, res) => {
+router.get('/', ah(async (req, res) => {
   const { search, director, year, yearMin, yearMax, voter, voters, mn, watchlist, rated, minVoters, maxVoters } = req.query;
 
   let query = 'SELECT * FROM movies WHERE 1=1';
@@ -187,10 +188,10 @@ router.get('/', async (req, res) => {
 
   const movies = await db.all(query, ...params);
   res.json(await enrichMoviesBatch(movies));
-});
+}));
 
 // POST /api/movies/:id/watchlist-vote  — must be before /:id
-router.post('/:id/watchlist-vote', async (req, res) => {
+router.post('/:id/watchlist-vote', ah(async (req, res) => {
   const id = Number(req.params.id);
   const sessionVoter = req.session.voter;
   const voter = (sessionVoter === 'mnAdmin' && req.body.targetVoter) ? req.body.targetVoter : sessionVoter;
@@ -205,26 +206,26 @@ router.post('/:id/watchlist-vote', async (req, res) => {
     await db.run('INSERT INTO watchlist_votes (movie_id, voter) VALUES (?,?)', id, voter);
   }
   res.json({ ok: true });
-});
+}));
 
 // GET /api/movies/directors  — must be before /:id
-router.get('/directors', async (_req, res) => {
+router.get('/directors', ah(async (_req, res) => {
   const rows = await db.all("SELECT DISTINCT director FROM movies WHERE director != '' ORDER BY director COLLATE NOCASE");
   res.json(rows.map(r => r.director));
-});
+}));
 
 // GET /api/movies/top10-counts  — { voter: number of top picks }. Must be before /:id.
-router.get('/top10-counts', async (_req, res) => {
+router.get('/top10-counts', ah(async (_req, res) => {
   const rows = await db.all('SELECT voter, COUNT(*) AS n FROM top3 GROUP BY voter');
   const counts = {};
   for (const v of VOTERS) counts[v] = 0;
   for (const r of rows) counts[r.voter] = r.n;
   res.json(counts);
-});
+}));
 
 // PUT /api/movies/top10  — rewrite the session voter's own top picks (ranks 1..N) in order.
 // Must be before /:id. Permission is implicit: it only ever touches req.session.voter's rows.
-router.put('/top10', async (req, res) => {
+router.put('/top10', ah(async (req, res) => {
   const sessionVoter = req.session.voter;
   const isAdmin = sessionVoter === 'mnAdmin';
   // Admins may target any voter; everyone else can only rewrite their own.
@@ -239,11 +240,11 @@ router.put('/top10', async (req, res) => {
     }
   });
   res.json({ ok: true });
-});
+}));
 
 // POST /api/movies/watchlist/reset  — admin only. Must be before /:id.
 // mode 'votes' clears every watchlist vote; mode 'all' also empties the watchlist itself.
-router.post('/watchlist/reset', async (req, res) => {
+router.post('/watchlist/reset', ah(async (req, res) => {
   if (req.session.voter !== 'mnAdmin') return res.status(403).json({ error: 'Admin only' });
   const mode = req.body?.mode;
   if (mode !== 'votes' && mode !== 'all') return res.status(400).json({ error: 'mode must be "votes" or "all"' });
@@ -258,11 +259,11 @@ router.post('/watchlist/reset', async (req, res) => {
   });
 
   res.json(result);
-});
+}));
 
 // GET /api/movies/imdb-search?title=&year=  — resolve an exact OMDb match or return candidates.
 // Must be before /:id.
-router.get('/imdb-search', async (req, res) => {
+router.get('/imdb-search', ah(async (req, res) => {
   const title = (req.query.title || '').trim();
   const year = (req.query.year || '').trim();
   if (!title) return res.json({ status: 'none', candidates: [] });
@@ -273,25 +274,25 @@ router.get('/imdb-search', async (req, res) => {
   if (exact) return res.json({ status: 'exact', match: exact });
   if (candidates.length) return res.json({ status: 'candidates', candidates });
   return res.json({ status: 'none', candidates: [] });
-});
+}));
 
 // GET /api/movies/imdb-detail?imdbId=  — full OMDb details for a chosen candidate. Must be before /:id.
-router.get('/imdb-detail', async (req, res) => {
+router.get('/imdb-detail', ah(async (req, res) => {
   const imdbId = (req.query.imdbId || '').trim();
   const detail = await getImdbById(imdbId);
   if (!detail) return res.status(404).json({ error: 'Not found' });
   res.json(detail);
-});
+}));
 
 // GET /api/movies/:id
-router.get('/:id', async (req, res) => {
+router.get('/:id', ah(async (req, res) => {
   const movie = await db.get('SELECT * FROM movies WHERE id = ?', req.params.id);
   if (!movie) return res.status(404).json({ error: 'Not found' });
   res.json(await enrichMovie(movie));
-});
+}));
 
 // POST /api/movies
-router.post('/', async (req, res) => {
+router.post('/', ah(async (req, res) => {
   const { director = '', title, year = '', mn = false, watchlist = false, imdb_id } = req.body;
   if (!title?.trim()) return res.status(400).json({ error: 'title is required' });
 
@@ -313,10 +314,10 @@ router.post('/', async (req, res) => {
   res.status(201).json(await enrichMovie(
     await db.get('SELECT * FROM movies WHERE id = ?', lastInsertRowid)
   ));
-});
+}));
 
 // PATCH /api/movies/:id
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', ah(async (req, res) => {
   const id = parseInt(req.params.id);
   const movie = await db.get('SELECT * FROM movies WHERE id = ?', id);
   if (!movie) return res.status(404).json({ error: 'Not found' });
@@ -415,13 +416,13 @@ router.patch('/:id', async (req, res) => {
   }
 
   res.json(await enrichMovie(await db.get('SELECT * FROM movies WHERE id = ?', id)));
-});
+}));
 
 // DELETE /api/movies/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', ah(async (req, res) => {
   const result = await db.run('DELETE FROM movies WHERE id = ?', req.params.id);
   if (result.changes === 0) return res.status(404).json({ error: 'Not found' });
   res.status(204).end();
-});
+}));
 
 module.exports = router;
