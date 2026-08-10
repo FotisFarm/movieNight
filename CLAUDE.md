@@ -130,6 +130,7 @@ GROUP_SIZE = 5
 | `boost` | Σ rank bonuses | `rankBonus(r) = (11 − r)/10` per voter who placed film in their Top 10 |
 
 - **Top 10 bonus**: linear rank-weighted — `rankBonus(rank) = (11 − rank) / 10`, i.e. #1 = +1.0, #2 = +0.9 … #10 = +0.1. Defined once in `server/scoring.js` (and mirrored in `MovieModal.jsx` for the live preview). Max boost = 5 × 1.0 = +5.0. Both `boostedScore` and `fairBoosted` are capped at 10. Icons: 🥇🥈🥉 for ranks 1–3, a number badge (`RankIcon`) for 4–10.
+- **Top 10 overflow**: `PATCH /api/movies/:id` giving a voter a new pick while they already have 10 auto-evicts their lowest-priority *other* pick (the film just touched always survives) rather than erroring — handled in the per-voter renumber step in `routes/movies.js`.
 - **Card default ("Fair")**: `fairBoosted` — divides by actual voters, includes Top 10 bonus
 - **Card "Group" toggle**: `boostedScore` — divides by GROUP_SIZE=5, includes Top 10 bonus (penalises films not seen by all)
 - **Minimum voters for score**: 2+ voters required — solo-rated films show voter pills but no aggregate score
