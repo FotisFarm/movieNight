@@ -1,8 +1,10 @@
+# DEPRECATED: hosting moved to Render — there's no SSH host or Docker volume
+# to pull from anymore, so this would fail every night. Schedule disabled;
+# left as workflow_dispatch only until a Render-compatible backup mechanism
+# (e.g. an authenticated HTTPS route on the app) replaces it.
 name: DB Backup
 
 on:
-  schedule:
-    - cron: '0 2 * * *'   # daily at 02:00 UTC
   workflow_dispatch:        # allow manual trigger from GitHub UI
 
 jobs:

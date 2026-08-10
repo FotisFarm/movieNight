@@ -7,7 +7,8 @@ A full-stack web app that replaces a Google Sheets spreadsheet used by a group o
 - **Frontend**: React 18 + Vite, React Router v6, no UI library
 - **Backend**: Node.js + Express
 - **Database**: SQLite via `better-sqlite3` (WAL mode, foreign keys ON)
-- **Containerisation**: Docker + docker-compose with a named volume for DB persistence
+- **Containerisation**: Docker (single `Dockerfile`, client build + server runtime); `docker-compose.yml` is for **local** use only
+- **Hosting**: Render (Web Service built from `Dockerfile`), migrated from a self-managed SSH/Docker Compose host on 2026-08-10. Requires a Render **Persistent Disk** mounted at `/app/data` (matches `DATA_DIR`) — without it, every deploy wipes the DB back to the 834-film seed. Render auto-deploys from GitHub on push; the old SSH-based `.github/workflows/deploy.yml` is deprecated (`workflow_dispatch` only, no longer runs on push).
 
 ## Running
 
@@ -256,47 +257,21 @@ All candidates are then scored by **length-normalised Levenshtein distance to th
 - **Flow**: `POST /api/chat { messages: [{role, content}] }` → `server/routes/chat.js` (behind `requireAuth`, passes `req.session.voter` so "what should I watch" is personalised) → `llm.chat()` → `{ reply }`. Errors are returned as a reply bubble, not a 5xx. Client keeps text-only history in `Chat.jsx` state and re-posts it each turn (stateless server); the tool loop's `tool_use`/`tool_result` blocks never leave the server. System prompt is `cache_control: ephemeral` for prompt-cache reuse across turns.
 - **Env**: `ANTHROPIC_API_KEY` is forwarded to both services in `docker-compose.yml` and must be added by hand to the production server's `.env` (gitignored) — a missing key silently disables the chatbot, same pattern as `OMDB_API_KEY`.
 
-## DB backup (production)
-App runs in Docker on remote server. DB is in named volume `movienight_sqlite_data`.
+## Hosting: Render (current, since 2026-08-10)
+Migrated off a self-managed SSH/Docker Compose host to a Render Web Service built directly from the repo's `Dockerfile`. Key differences from the old setup:
+- Render's filesystem is **ephemeral** — a **Persistent Disk** must be attached and mounted at `/app/data` (matching `DATA_DIR`), or every deploy/restart wipes the DB back to the 834-film seed. Persistent Disks require a paid Render instance plan (not Free).
+- Env vars (`MN_PASSWORD`, `SESSION_SECRET`, `GUEST_PASSWORD`, `OMDB_API_KEY`, `ANTHROPIC_API_KEY`, `NODE_ENV=production`) are set in the Render dashboard's Environment tab, not a server-side `.env`. Don't set `PORT` — Render injects its own and `server/index.js` already reads `process.env.PORT`.
+- `docker-compose.yml` is **local-dev only** now; Render doesn't use Compose. The `sakias` 6-voter variant that used to run as a second Compose service was dropped in the migration (not recreated on Render).
+- Sessions are still in-memory (`express-session`, no store), so every Render deploy/restart still **logs everyone out** — same caveat as before, plus Render's Free-tier idle spin-down (if used) would cause this more often than a redeploy alone would.
 
-### Automated GitHub Actions backup
-`.github/workflows/db-backup.yml` runs daily at 02:00 UTC (also triggerable manually via Actions UI):
-- SSHes into the server, pulls the DB from the Docker volume
-- Commits it as `movies_YYYY-MM-DD.db` to the `backups` branch
-- Deletes snapshots older than 7 days — rolling 7-day window always available on GitHub
+### Deploy
+Render auto-deploys from GitHub on push (or via a manual deploy from the dashboard) — this is configured in Render, not in this repo. The old `[deploy]`-in-commit-message convention and `.github/workflows/deploy.yml` (SSH into the old host) are **deprecated**: the workflow no longer triggers on push (`workflow_dispatch` only) since there's no SSH target anymore. Whether pushing to `main` deploys to Render depends on that service's auto-deploy setting in the Render dashboard.
 
-Required GitHub secrets: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`.
+### DB backup — currently disabled, needs redesign
+The old `.github/workflows/db-backup.yml` (daily SSH pull from the Docker volume → `backups` branch) has no valid target on Render and was disabled (schedule removed, `workflow_dispatch` only) rather than fixed. **There is currently no automated backup running.** A Render-compatible replacement (e.g. an authenticated HTTPS route on the app that streams the DB file, polled by a GitHub Action) still needs to be built.
 
-### Restore from backup
-```bash
-# Download a specific snapshot locally
-git fetch origin backups
-git checkout origin/backups -- movies_2026-06-16.db
-
-# Restore into the Docker volume (run on server)
-scp movies_2026-06-16.db user@server:/tmp/
-ssh user@server "docker run --rm -v movienight_sqlite_data:/data -v /tmp:/src alpine cp /src/movies_2026-06-16.db /data/movies.db"
-```
-
-### Manual pull
-```bash
-ssh user@server "docker run --rm -v movienight_sqlite_data:/data alpine cat /data/movies.db" > movies_local.db
-```
-
-## Deploy (production)
-`.github/workflows/deploy.yml` triggers on push to `main` **only when at least one commit message contains `[deploy]`**.
-- SSHes into the server, runs `git pull` in `~/movieNight`
-- Runs `docker compose down` then `docker compose up --build -d`
-
-**Commit convention**: always prefix the commit message with `[deploy]` when you want changes pushed to the production server (e.g. `[deploy] Fix cookie flag`). Commits without `[deploy]` are pushed to GitHub but not deployed. When Claude makes changes that should go live, the final commit must include `[deploy]`.
-
-Reuses the same GitHub secrets: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`. No additional setup needed.
-
-**Server env**: `docker-compose.yml` reads `${OMDB_API_KEY}`, `${ANTHROPIC_API_KEY}` (and `MN_PASSWORD`, `SESSION_SECRET`, `GUEST_PASSWORD`) from the `.env` next to it in `~/movieNight` on the server. That `.env` is gitignored, so new vars must be added there by hand — a missing `OMDB_API_KEY` silently disables all IMDb lookups, and a missing `ANTHROPIC_API_KEY` silently disables the chatbot, rather than erroring.
-
-**Sessions are in-memory** (`express-session`, no store), so every deploy restarts the container and **logs everyone out**. Expect to re-login after a `[deploy]`.
-
-**Note**: the server uses Docker Compose V2 (`docker compose`, plugin-based). The legacy `docker-compose` v1 is also installed but has a `ContainerConfig` bug with newer Docker Engine — always use `docker compose` (no hyphen) in scripts.
+### Restoring a DB onto the Render disk
+Render's persistent disk starts empty on first attach — getting an existing `movies.db` onto it requires Render's Shell/SSH into the running instance (dashboard → Shell tab), there's no `scp`-to-Docker-volume equivalent. The most recent pre-migration snapshot is still recoverable from the `backups` branch (`git fetch origin backups`, or from `main`'s history at commit `6956940` for the 2026-08-08 snapshot) if needed.
 
 ## Color scheme (score thresholds)
 - ≥ 7.5 → green (`score-high`)

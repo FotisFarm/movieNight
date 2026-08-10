@@ -1,8 +1,10 @@
+# DEPRECATED: hosting moved to Render, which auto-deploys from GitHub on
+# its own (or via a deploy hook) — this SSH-into-the-old-server workflow no
+# longer has a valid target. Push-triggering is disabled; left as
+# workflow_dispatch only in case the old host is ever needed again.
 name: Deploy
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
