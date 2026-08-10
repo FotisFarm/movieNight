@@ -405,9 +405,23 @@ router.patch('/:id', ah(async (req, res) => {
     }
 
     // Re-normalise each touched voter's picks to contiguous ranks 1..N — closes the gap a removal leaves.
+    // If a voter now has more than 10 picks (this movie pushed them over), evict their lowest-priority
+    // *other* pick(s) rather than letting the rank CHECK constraint fail — the film just touched always survives.
     for (const v of touched) {
       await db.transaction(async (tx) => {
-        const rows = await tx.all('SELECT id FROM top3 WHERE voter = ? ORDER BY rank, id', v);
+        let rows = await tx.all('SELECT id, movie_id, rank FROM top3 WHERE voter = ? ORDER BY rank, id', v);
+        if (rows.length > 10) {
+          const touchedIdx = rows.findIndex(r => r.movie_id === id);
+          const touchedRow = touchedIdx >= 0 ? rows[touchedIdx] : null;
+          const others = touchedRow ? rows.filter((_, i) => i !== touchedIdx) : rows;
+          const keepCount = touchedRow ? 9 : 10;
+          const evicted = others.slice(keepCount);
+          for (const e of evicted) {
+            await tx.run('DELETE FROM top3 WHERE id = ?', e.id);
+          }
+          rows = touchedRow ? [touchedRow, ...others.slice(0, keepCount)] : others.slice(0, keepCount);
+          rows.sort((a, b) => a.rank - b.rank || a.id - b.id);
+        }
         for (let i = 0; i < rows.length; i++) {
           await tx.run('UPDATE top3 SET rank = ? WHERE id = ?', i + 1, rows[i].id);
         }
