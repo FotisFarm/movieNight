@@ -7,8 +7,8 @@ A full-stack web app that replaces a Google Sheets spreadsheet used by a group o
 - **Frontend**: React 18 + Vite, React Router v6, no UI library
 - **Backend**: Node.js + Express
 - **Database**: SQLite dialect via `@libsql/client` (Turso in production, a local file in dev — see [Database / persistence](#database--persistence-turso))
-- **Containerisation**: Docker (single `Dockerfile`, client build + server runtime); `docker-compose.yml` is for **local** use only
-- **Hosting**: Render (Web Service built from `Dockerfile`), migrated from a self-managed SSH/Docker Compose host on 2026-08-10. No Render Persistent Disk needed — the DB lives in Turso, not on Render's filesystem. Render auto-deploys from GitHub on push; the old SSH-based `.github/workflows/deploy.yml` is deprecated (`workflow_dispatch` only, no longer runs on push).
+- **Containerisation**: Docker (single `Dockerfile`, client build + server runtime); `docker-compose.yml` runs the Oracle prod box and local use
+- **Hosting**: see [Environments](#environments-prod--dev) — **prod** is an Oracle Cloud VM (Milan), **dev** is Render (Frankfurt). Both are stateless; all data lives in Turso.
 
 ## Running
 
@@ -270,20 +270,33 @@ All candidates are then scored by **length-normalised Levenshtein distance to th
 - **Flow**: `POST /api/chat { messages: [{role, content}] }` → `server/routes/chat.js` (behind `requireAuth`, passes `req.session.voter` so "what should I watch" is personalised) → `llm.chat()` → `{ reply }`. Errors are returned as a reply bubble, not a 5xx. Client keeps text-only history in `Chat.jsx` state and re-posts it each turn (stateless server); the tool loop's `tool_use`/`tool_result` blocks never leave the server. System prompt is `cache_control: ephemeral` for prompt-cache reuse across turns.
 - **Env**: `ANTHROPIC_API_KEY` is forwarded to both services in `docker-compose.yml` and must be added by hand to the production server's `.env` (gitignored) — a missing key silently disables the chatbot, same pattern as `OMDB_API_KEY`.
 
-## Hosting: Render (current, since 2026-08-10)
-Migrated off a self-managed SSH/Docker Compose host to a Render Web Service built directly from the repo's `Dockerfile`. Key differences from the old setup:
-- Render's filesystem is **ephemeral** — but this no longer matters, because the DB lives in **Turso**, not on Render's disk (see [Database / persistence](#database--persistence-turso)). No Persistent Disk, no paid instance plan required for storage.
-- Env vars (`TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `TURSO_READONLY_AUTH_TOKEN`, `MN_PASSWORD`, `SESSION_SECRET`, `GUEST_PASSWORD`, `OMDB_API_KEY`, `ANTHROPIC_API_KEY`, `NODE_ENV=production`) are set in the Render dashboard's Environment tab, not a server-side `.env`. Don't set `PORT` — Render injects its own and `server/index.js` already reads `process.env.PORT`.
-- `docker-compose.yml` is **local-dev only** now; Render doesn't use Compose. The `sakias` 6-voter variant that used to run as a second Compose service was dropped in the migration (not recreated on Render).
-- Sessions are still in-memory (`express-session`, no store), so every Render deploy/restart still **logs everyone out** — same caveat as before, plus Render's Free-tier idle spin-down (if used) would cause this more often than a redeploy alone would. Turso persistence fixes *data* loss on restart; it doesn't change this session behavior.
+## Environments (prod / dev)
+Two environments, each on its own branch and its own Turso database. Roles were swapped on 2026-08-12: Oracle became prod (faster, no idle spin-down), Render became dev.
 
-### Deploy
-Render **auto-deploys from GitHub on push to `main`** (`autoDeploy: yes`, trigger: commit) — configured in Render, not in this repo. The old `[deploy]`-in-commit-message convention and `.github/workflows/deploy.yml` (SSH into the retired host) are **gone**: the workflow was deleted in the Render migration.
+| | **PROD** | **DEV** |
+|---|---|---|
+| Host | Oracle Cloud VM, Milan (`130.110.13.27`) | Render Web Service, Frankfurt |
+| URL | `http://130.110.13.27:3000` — **no TLS** | `https://movienight-prod.onrender.com` |
+| Branch | `main` | `dev` |
+| Turso DB | `movies` | `movies-dev` |
+| Deploy | **manual**: `git pull && docker compose up -d --build` | auto-deploys on push to `dev` |
+| Runs via | `docker-compose.yml` + root `.env` | Dockerfile + Render dashboard env vars |
 
-**Skipping a deploy**: put `[skip render]` (or `[skip deploy]` / `[skip cd]`) in the commit message. This matters because **sessions are in-memory** — every deploy logs all five voters out, so commits that don't change runtime behaviour (docs, the nightly `seed.json` refresh) should carry the skip marker.
+**Workflow**: work on `dev` → Render deploys it automatically → verify → merge `dev` → `main` → pull on the Oracle box. The merge is the gate; prod only ever runs code that already ran on dev. (Before this split, both hosts ran `main` and every push went straight to production — that's how the crash bug in `af30411` reached prod for ~45 minutes.)
+
+**Isolation is enforced by tokens, not convention.** Both databases live in the same Turso group (`movie-nights`) but have separate database-scoped tokens; the prod token gets a 401 against dev and vice versa. Verified by inserting a probe row into dev and confirming prod never saw it.
+
+**Caveats**
+- ⚠️ **Prod has no HTTPS.** Passwords and session cookies cross the internet in clear text. Fixing this needs a hostname (a free DuckDNS subdomain works) plus Caddy for automatic Let's Encrypt certs.
+- Prod's OCI ingress rule is open to `0.0.0.0/0` on all ports — narrow it to 22 + 3000.
+- Sessions are in-memory (`express-session`, no store), so any restart on either host **logs everyone out**. A Turso-backed session store would fix it.
+- `GUEST_PASSWORD` (the Σάκιας guest login) exists in the Oracle `.env` but not on Render, so guest login works on prod only.
+- Don't set `PORT` on Render — it injects its own, and `server/index.js` already reads `process.env.PORT`.
+- Render's `[skip render]` marker (also `[skip deploy]` / `[skip cd]`) suppresses a deploy for a given commit. The nightly `seed.json` refresh uses it. Now that Render tracks `dev` and the bot commits to `main`, it no longer has anything to suppress there — but it's kept for when `main` is merged into `dev`.
+- The Oregon Render service (`movienight-ghpk`) is **suspended**, not deleted, and holds a revoked token.
 
 ## DB backup & seed refresh
-`.github/workflows/db-backup.yml` runs daily at 02:00 UTC (also `workflow_dispatch`-able) and is driven by `server/scripts/backup-and-seed.js`. It reads production Turso over the network — **no SSH, no host dependency** — and produces two artifacts:
+`.github/workflows/db-backup.yml` runs daily at 02:00 UTC (also `workflow_dispatch`-able) and is driven by `server/scripts/backup-and-seed.js`. It reads the **prod** Turso database (`movies`) over the network — **no SSH, no host dependency** — and produces two artifacts:
 
 | Artifact | Destination | Purpose |
 |---|---|---|
