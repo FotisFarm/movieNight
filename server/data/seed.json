@@ -1167,11 +1167,11 @@
     "tokenPts": 0,
     "imdb_id": "tt0063611",
     "imdb_rating": 8,
-    "ratings": {},
+    "ratings": {
+      "Παντελής": "9.1"
+    },
     "top3": {},
-    "watchlistVotes": [
-      "Φώτης"
-    ]
+    "watchlistVotes": []
   },
   {
     "director": "Ingmar Bergman",
@@ -2490,7 +2490,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Blow Out",
     "year": "1981",
     "rank": null,
@@ -2505,7 +2505,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Body Double",
     "year": "1984",
     "rank": null,
@@ -2520,7 +2520,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Carlito's Way",
     "year": "1993",
     "rank": 94,
@@ -2538,7 +2538,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Carrie",
     "year": "1976",
     "rank": null,
@@ -2553,7 +2553,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Casualties of War",
     "year": "1989",
     "rank": null,
@@ -2568,7 +2568,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Dionysus in '69",
     "year": "1970",
     "rank": null,
@@ -2583,7 +2583,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Domino",
     "year": "2019",
     "rank": null,
@@ -2598,7 +2598,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Dressed to Kill",
     "year": "1980",
     "rank": null,
@@ -2613,7 +2613,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Femme Fatale",
     "year": "2002",
     "rank": null,
@@ -2628,7 +2628,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Get to Know Your Rabbit",
     "year": "1972",
     "rank": null,
@@ -2643,7 +2643,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Greetings",
     "year": "1968",
     "rank": null,
@@ -2658,7 +2658,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Hi, Mom!",
     "year": "1970",
     "rank": null,
@@ -2673,7 +2673,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Home Movies",
     "year": "1979",
     "rank": null,
@@ -2688,7 +2688,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Mission Impossible",
     "year": "1996",
     "rank": null,
@@ -2705,7 +2705,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Mission to Mars",
     "year": "2000",
     "rank": null,
@@ -2720,8 +2720,8 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
-    "movie": "Murder a la Mod",
+    "director": "Brian De Palma",
+    "movie": "Murder à la Mod",
     "year": "1968",
     "rank": null,
     "mn": "",
@@ -2735,7 +2735,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Obsession",
     "year": "1976",
     "rank": null,
@@ -2750,7 +2750,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Passion",
     "year": "2012",
     "rank": null,
@@ -2765,7 +2765,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Phantom of the Paradise",
     "year": "1974",
     "rank": null,
@@ -2780,7 +2780,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Raising Cain",
     "year": "1992",
     "rank": null,
@@ -2795,7 +2795,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Redacted",
     "year": "2007",
     "rank": null,
@@ -2810,7 +2810,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Scarface",
     "year": "1983",
     "rank": 44,
@@ -2822,14 +2822,14 @@
     "imdb_rating": 8.3,
     "ratings": {
       "Μητσέας": "8",
-      "Παντελής": "9.3",
+      "Παντελής": "9",
       "Φώτης": "8"
     },
     "top3": {},
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Sisters",
     "year": "1972",
     "rank": null,
@@ -2844,7 +2844,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Snake Eyes",
     "year": "1998",
     "rank": null,
@@ -2859,7 +2859,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "The Black Dahlia",
     "year": "2006",
     "rank": null,
@@ -2874,7 +2874,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "The Bonfire of the Vanities",
     "year": "1990",
     "rank": null,
@@ -2889,7 +2889,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "The Fury",
     "year": "1978",
     "rank": null,
@@ -2904,7 +2904,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "The Untouchables",
     "year": "1987",
     "rank": 45,
@@ -2923,7 +2923,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "The Wedding Party",
     "year": "1969",
     "rank": null,
@@ -2938,7 +2938,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "De Palma",
+    "director": "Brian De Palma",
     "movie": "Wise Guys",
     "year": "1986",
     "rank": null,
@@ -2986,15 +2986,15 @@
   },
   {
     "director": "Clint Eastwood",
-    "movie": "Million dollar baby",
-    "year": "2004",
+    "movie": "Million Dollar Baby",
+    "year": "2005",
     "rank": 120,
     "mn": "",
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0405159",
+    "imdb_rating": 8.1,
     "ratings": {
       "Μητσέας": "4",
       "Φώτης": "7"
@@ -3645,7 +3645,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "Milos Forman",
+    "director": "Miloš Forman",
     "movie": "Audition",
     "year": "1964",
     "rank": null,
@@ -3660,7 +3660,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "Milos Forman",
+    "director": "Miloš Forman",
     "movie": "Black Peter",
     "year": "1964",
     "rank": null,
@@ -3690,7 +3690,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "Milos Forman",
+    "director": "Miloš Forman",
     "movie": "Hair",
     "year": "1979",
     "rank": null,
@@ -3705,7 +3705,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "Milos Forman",
+    "director": "Miloš Forman",
     "movie": "Loves of a Blonde",
     "year": "1965",
     "rank": null,
@@ -3720,7 +3720,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "Milos Forman",
+    "director": "Miloš Forman",
     "movie": "Man on the Moon",
     "year": "1999",
     "rank": null,
@@ -3753,7 +3753,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "Milos Forman",
+    "director": "Miloš Forman",
     "movie": "Ragtime",
     "year": "1981",
     "rank": null,
@@ -3768,7 +3768,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "Milos Forman",
+    "director": "Miloš Forman",
     "movie": "Taking off",
     "year": "1971",
     "rank": null,
@@ -3783,7 +3783,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "Milos Forman",
+    "director": "Miloš Forman",
     "movie": "The Firemen's Ball",
     "year": "1967",
     "rank": null,
@@ -3813,7 +3813,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "Milos Forman",
+    "director": "Miloš Forman",
     "movie": "Valmont",
     "year": "1989",
     "rank": null,
@@ -3884,8 +3884,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0058701",
+    "imdb_rating": 7.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -3899,8 +3899,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0055572",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -3914,8 +3914,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0058898",
+    "imdb_rating": 7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -3929,8 +3929,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0057869",
+    "imdb_rating": 7.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -3947,6 +3947,7 @@
     "imdb_id": null,
     "imdb_rating": null,
     "ratings": {
+      "Παντελής": "8.5",
       "Φώτης": "7"
     },
     "top3": {},
@@ -3978,8 +3979,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0089066",
+    "imdb_rating": 5.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -3993,8 +3994,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0079854",
+    "imdb_rating": 6.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4008,8 +4009,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt1438535",
+    "imdb_rating": 5.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4023,8 +4024,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0086153",
+    "imdb_rating": 6.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4038,8 +4039,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0116334",
+    "imdb_rating": 6.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4053,8 +4054,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0101307",
+    "imdb_rating": 6.9,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4068,8 +4069,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt2400275",
+    "imdb_rating": 5.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4083,8 +4084,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0089366",
+    "imdb_rating": 6.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4113,8 +4114,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0181912",
+    "imdb_rating": 6.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4143,8 +4144,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0094002",
+    "imdb_rating": 6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4158,8 +4159,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0093349",
+    "imdb_rating": 5.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4188,8 +4189,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt5235802",
+    "imdb_rating": 6.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4233,8 +4234,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0100274",
+    "imdb_rating": 6.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4248,8 +4249,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0073471",
+    "imdb_rating": 6.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4278,8 +4279,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0084481",
+    "imdb_rating": 6.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4293,8 +4294,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0059592",
+    "imdb_rating": 7.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4323,8 +4324,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0056905",
+    "imdb_rating": 6.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4338,8 +4339,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt5749596",
+    "imdb_rating": 6.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4353,8 +4354,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0054177",
+    "imdb_rating": 7.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4413,8 +4414,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt5235758",
+    "imdb_rating": 7.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4428,8 +4429,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0065173",
+    "imdb_rating": 5.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4443,8 +4444,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0109020",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4458,8 +4459,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt1602620",
+    "imdb_rating": 7.9,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4473,8 +4474,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0103793",
+    "imdb_rating": 7.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4488,8 +4489,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0387898",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4503,8 +4504,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0216625",
+    "imdb_rating": 7.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4518,8 +4519,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0119167",
+    "imdb_rating": 7.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4533,8 +4534,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt5304464",
+    "imdb_rating": 6.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4565,8 +4566,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0098327",
+    "imdb_rating": 7.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4580,8 +4581,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt1149362",
+    "imdb_rating": 7.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4595,8 +4596,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0324197",
+    "imdb_rating": 6.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4610,8 +4611,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0019702",
+    "imdb_rating": 6.9,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4625,8 +4626,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0018756",
+    "imdb_rating": 5.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4640,8 +4641,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0046912",
+    "imdb_rating": 8.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4655,8 +4656,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0017825",
+    "imdb_rating": 6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4685,8 +4686,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0074512",
+    "imdb_rating": 6.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4700,8 +4701,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0032484",
+    "imdb_rating": 7.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4732,8 +4733,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0045897",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4747,8 +4748,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0031505",
+    "imdb_rating": 6.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4777,8 +4778,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0037017",
+    "imdb_rating": 7.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4792,8 +4793,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0058329",
+    "imdb_rating": 7.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4807,8 +4808,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0033922",
+    "imdb_rating": 6.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4822,8 +4823,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0021165",
+    "imdb_rating": 6.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4922,8 +4923,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0032976",
+    "imdb_rating": 8.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4971,8 +4972,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0035279",
+    "imdb_rating": 7.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -4986,8 +4987,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0028231",
+    "imdb_rating": 6.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5001,8 +5002,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0036342",
+    "imdb_rating": 7.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5016,8 +5017,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0038109",
+    "imdb_rating": 7.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5061,8 +5062,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0034248",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5076,8 +5077,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0026029",
+    "imdb_rating": 7.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5108,8 +5109,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0018876",
+    "imdb_rating": 5.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5123,8 +5124,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0030341",
+    "imdb_rating": 7.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5138,8 +5139,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0017075",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5153,8 +5154,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0025452",
+    "imdb_rating": 6.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5168,8 +5169,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0020142",
+    "imdb_rating": 6.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5198,8 +5199,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0016230",
+    "imdb_rating": 5.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5213,8 +5214,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0018328",
+    "imdb_rating": 6.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5228,8 +5229,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0022395",
+    "imdb_rating": 5.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5243,8 +5244,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0048750",
+    "imdb_rating": 7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5258,8 +5259,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0051207",
+    "imdb_rating": 7.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5273,8 +5274,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0048728",
+    "imdb_rating": 7.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5288,8 +5289,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0065112",
+    "imdb_rating": 6.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5303,8 +5304,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0061107",
+    "imdb_rating": 6.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5318,8 +5319,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0042004",
+    "imdb_rating": 6.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5369,8 +5370,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0064040",
+    "imdb_rating": 8.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5384,8 +5385,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0062229",
+    "imdb_rating": 8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5416,8 +5417,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0056217",
+    "imdb_rating": 8.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5491,8 +5492,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt3967856",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5526,8 +5527,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt1706620",
+    "imdb_rating": 7.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5541,8 +5542,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0468492",
+    "imdb_rating": 7.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5556,8 +5557,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0048021",
+    "imdb_rating": 8.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5610,9 +5611,11 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
-    "ratings": {},
+    "imdb_id": "tt0407467",
+    "imdb_rating": 6.7,
+    "ratings": {
+      "Φώτης": "5"
+    },
     "top3": {},
     "watchlistVotes": []
   },
@@ -5625,8 +5628,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt6777170",
+    "imdb_rating": 6.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5655,8 +5658,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0281534",
+    "imdb_rating": 6.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5670,8 +5673,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt1020773",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5685,8 +5688,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0100234",
+    "imdb_rating": 8.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5700,8 +5703,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0085641",
+    "imdb_rating": 6.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5715,8 +5718,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0079204",
+    "imdb_rating": 7.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5730,8 +5733,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0086923",
+    "imdb_rating": 7.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5745,8 +5748,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0409965",
+    "imdb_rating": 6.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5760,8 +5763,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0097843",
+    "imdb_rating": 7.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5790,8 +5793,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt1843287",
+    "imdb_rating": 7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5805,8 +5808,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt1284587",
+    "imdb_rating": 6.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5839,8 +5842,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0301978",
+    "imdb_rating": 7.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5854,8 +5857,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0070766",
+    "imdb_rating": 7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5869,8 +5872,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0076098",
+    "imdb_rating": 6.9,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5884,8 +5887,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0071859",
+    "imdb_rating": 7.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5899,8 +5902,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0209463",
+    "imdb_rating": 7.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5914,8 +5917,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0111845",
+    "imdb_rating": 7.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5929,8 +5932,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0418239",
+    "imdb_rating": 6.9,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -5998,9 +6001,11 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
-    "ratings": {},
+    "imdb_id": "tt0084549",
+    "imdb_rating": 7.7,
+    "ratings": {
+      "Παντελής": "9"
+    },
     "top3": {},
     "watchlistVotes": []
   },
@@ -6013,8 +6018,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0078763",
+    "imdb_rating": 7.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6043,8 +6048,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0086961",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6073,8 +6078,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0075256",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6121,8 +6126,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0074220",
+    "imdb_rating": 6.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6183,15 +6188,15 @@
   },
   {
     "director": "Stanley Kubrick",
-    "movie": "2001: A Space Oddysey",
+    "movie": "2001: A Space Odyssey",
     "year": "1968",
     "rank": 106,
     "mn": "",
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0062622",
+    "imdb_rating": 8.3,
     "ratings": {
       "Μητσέας": "5",
       "Φώτης": "9"
@@ -6228,8 +6233,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0072684",
+    "imdb_rating": 8.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6278,8 +6283,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0045758",
+    "imdb_rating": 5.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6293,8 +6298,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0093058",
+    "imdb_rating": 8.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6308,8 +6313,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0048254",
+    "imdb_rating": 6.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6323,8 +6328,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0056193",
+    "imdb_rating": 7.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6355,8 +6360,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0054331",
+    "imdb_rating": 7.9,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6370,8 +6375,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0049406",
+    "imdb_rating": 7.9,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6385,8 +6390,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0081505",
+    "imdb_rating": 8.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6400,8 +6405,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0071411",
+    "imdb_rating": 8.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6415,8 +6420,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0065649",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6430,8 +6435,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0100998",
+    "imdb_rating": 7.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6445,8 +6450,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0040979",
+    "imdb_rating": 7.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6460,8 +6465,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0057565",
+    "imdb_rating": 8.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6475,8 +6480,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0048198",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6490,8 +6495,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0044741",
+    "imdb_rating": 8.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6505,8 +6510,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0080979",
+    "imdb_rating": 7.9,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6520,8 +6525,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0107474",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6535,8 +6540,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0039090",
+    "imdb_rating": 7.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6583,13 +6588,11 @@
     "watchlist": "Y",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0042876",
+    "imdb_rating": 8.1,
     "ratings": {},
     "top3": {},
-    "watchlistVotes": [
-      "Φώτης"
-    ]
+    "watchlistVotes": []
   },
   {
     "director": "Akira Kurosawa",
@@ -6600,8 +6603,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0058888",
+    "imdb_rating": 8.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6615,8 +6618,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0101991",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6630,8 +6633,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0056443",
+    "imdb_rating": 8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6645,8 +6648,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0036400",
+    "imdb_rating": 6.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6675,8 +6678,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0042958",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6690,8 +6693,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0047478",
+    "imdb_rating": 8.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6705,8 +6708,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0041699",
+    "imdb_rating": 7.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6720,8 +6723,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0054460",
+    "imdb_rating": 8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6735,8 +6738,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0043614",
+    "imdb_rating": 7.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6750,8 +6753,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0050330",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6765,8 +6768,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0038182",
+    "imdb_rating": 6.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6780,8 +6783,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0036947",
+    "imdb_rating": 5.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6795,8 +6798,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0041870",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6810,8 +6813,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0038310",
+    "imdb_rating": 6.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6825,8 +6828,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0050613",
+    "imdb_rating": 8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6923,8 +6926,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0075404",
+    "imdb_rating": 8.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6940,7 +6943,9 @@
     "tokenPts": 0,
     "imdb_id": null,
     "imdb_rating": null,
-    "ratings": {},
+    "ratings": {
+      "Παντελής": "9.5"
+    },
     "top3": {},
     "watchlistVotes": []
   },
@@ -6971,7 +6976,7 @@
     "imdb_id": null,
     "imdb_rating": null,
     "ratings": {
-      "Παντελής": "9"
+      "Παντελής": "9.5"
     },
     "top3": {},
     "watchlistVotes": []
@@ -7024,8 +7029,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0054756",
+    "imdb_rating": 5.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7059,8 +7064,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0054422",
+    "imdb_rating": 5.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7074,8 +7079,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0068361",
+    "imdb_rating": 7.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7107,8 +7112,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0105483",
+    "imdb_rating": 5.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7122,8 +7127,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0056668",
+    "imdb_rating": 7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7137,8 +7142,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0292963",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7167,8 +7172,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0068369",
+    "imdb_rating": 6.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7182,8 +7187,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0118901",
+    "imdb_rating": 5.9,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7197,8 +7202,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0085398",
+    "imdb_rating": 6.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7212,8 +7217,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0083806",
+    "imdb_rating": 7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7244,8 +7249,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0075995",
+    "imdb_rating": 7.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7259,8 +7264,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0058083",
+    "imdb_rating": 8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7274,8 +7279,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0097328",
+    "imdb_rating": 5.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7289,8 +7294,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0419749",
+    "imdb_rating": 7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7304,8 +7309,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0087313",
+    "imdb_rating": 6.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7319,8 +7324,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0120683",
+    "imdb_rating": 5.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7334,8 +7339,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0107057",
+    "imdb_rating": 5.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7349,8 +7354,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0080975",
+    "imdb_rating": 5.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7364,8 +7369,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0064574",
+    "imdb_rating": 5.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7379,8 +7384,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0056196",
+    "imdb_rating": 7.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7394,8 +7399,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0071780",
+    "imdb_rating": 5.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7409,8 +7414,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0071877",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7443,8 +7448,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0119783",
+    "imdb_rating": 6.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7458,8 +7463,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0091786",
+    "imdb_rating": 5.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7473,8 +7478,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0082945",
+    "imdb_rating": 7.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7488,8 +7493,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0100442",
+    "imdb_rating": 6.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7503,8 +7508,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0096018",
+    "imdb_rating": 7.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7550,8 +7555,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0053349",
+    "imdb_rating": 6.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7565,8 +7570,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0066767",
+    "imdb_rating": 6.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7580,8 +7585,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0064035",
+    "imdb_rating": 5.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7595,8 +7600,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0061556",
+    "imdb_rating": 6.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7610,8 +7615,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0052832",
+    "imdb_rating": 7.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7625,8 +7630,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0060479",
+    "imdb_rating": 6.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7640,8 +7645,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0059274",
+    "imdb_rating": 7.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7655,8 +7660,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0091554",
+    "imdb_rating": 5.9,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7670,8 +7675,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0070468",
+    "imdb_rating": 6.9,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7685,8 +7690,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0059575",
+    "imdb_rating": 7.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7700,8 +7705,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0063569",
+    "imdb_rating": 6.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7715,8 +7720,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0084855",
+    "imdb_rating": 7.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7730,8 +7735,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0078504",
+    "imdb_rating": 5.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7763,8 +7768,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0087182",
+    "imdb_rating": 6.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7782,7 +7787,7 @@
     "imdb_rating": 7.2,
     "ratings": {
       "Μητσέας": "4",
-      "Παντελής": "4.9",
+      "Παντελής": "5",
       "Στέλιας": "4"
     },
     "top3": {},
@@ -7797,8 +7802,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0460829",
+    "imdb_rating": 6.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7917,8 +7922,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0055599",
+    "imdb_rating": 5.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7932,8 +7937,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0088689",
+    "imdb_rating": 6.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7947,8 +7952,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0080388",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7979,8 +7984,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0072709",
+    "imdb_rating": 6.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -7994,8 +7999,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0087096",
+    "imdb_rating": 5.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8009,8 +8014,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0104237",
+    "imdb_rating": 6.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8024,8 +8029,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0051378",
+    "imdb_rating": 7.9,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8039,8 +8044,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0071733",
+    "imdb_rating": 7.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8054,8 +8059,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0097884",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8069,8 +8074,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0067778",
+    "imdb_rating": 7.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8084,8 +8089,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0082783",
+    "imdb_rating": 7.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8099,8 +8104,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0078111",
+    "imdb_rating": 6.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8114,8 +8119,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0057058",
+    "imdb_rating": 7.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8129,8 +8134,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0052556",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8144,8 +8149,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0062457",
+    "imdb_rating": 6.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8159,8 +8164,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0111590",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8174,8 +8179,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0059956",
+    "imdb_rating": 6.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8189,8 +8194,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0054494",
+    "imdb_rating": 6.9,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8204,8 +8209,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0248667",
+    "imdb_rating": 6.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8219,8 +8224,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt2717822",
+    "imdb_rating": 5.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8287,8 +8292,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0091474",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8319,8 +8324,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt1152836",
+    "imdb_rating": 6.9,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8352,8 +8357,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0085780",
+    "imdb_rating": 5.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8367,8 +8372,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0104691",
+    "imdb_rating": 7.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8382,8 +8387,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0083190",
+    "imdb_rating": 7.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8508,8 +8513,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0092067",
+    "imdb_rating": 8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8540,8 +8545,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0097814",
+    "imdb_rating": 7.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8555,8 +8560,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0096283",
+    "imdb_rating": 8.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8570,8 +8575,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0087544",
+    "imdb_rating": 8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8585,8 +8590,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0876563",
+    "imdb_rating": 7.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8600,8 +8605,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0104652",
+    "imdb_rating": 7.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8649,8 +8654,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt6587046",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8664,8 +8669,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0079833",
+    "imdb_rating": 7.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8679,8 +8684,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt2013293",
+    "imdb_rating": 7.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8729,8 +8734,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt2106345",
+    "imdb_rating": 8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8799,7 +8804,7 @@
   },
   {
     "director": "Nanni Moretti",
-    "movie": "La stanza del figlio",
+    "movie": "La Stanza del Figlio",
     "year": "2001",
     "rank": null,
     "mn": "",
@@ -8879,7 +8884,8 @@
     "ratings": {
       "Μητσέας": "4",
       "Στέλιας": "8",
-      "Φώτης": "5"
+      "Φώτης": "6",
+      "Λεόντιος": "7.8"
     },
     "top3": {},
     "watchlistVotes": []
@@ -8893,8 +8899,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt5013056",
+    "imdb_rating": 7.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -8929,7 +8935,7 @@
     "imdb_rating": 8.8,
     "ratings": {
       "Μητσέας": "3",
-      "Παντελής": "8",
+      "Παντελής": "8.3",
       "Στέλιας": "9",
       "Φώτης": "8"
     },
@@ -8967,7 +8973,8 @@
     "imdb_rating": 8.7,
     "ratings": {
       "Στέλιας": "7",
-      "Φώτης": "6.5"
+      "Φώτης": "8.5",
+      "Λεόντιος": "7.8"
     },
     "top3": {},
     "watchlistVotes": []
@@ -8981,8 +8988,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": "tt24735934",
-    "imdb_rating": null,
+    "imdb_id": "tt0209144",
+    "imdb_rating": 8.4,
     "ratings": {
       "Μητσέας": "7",
       "Παντελής": "9",
@@ -9019,8 +9026,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt6723592",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9040,26 +9047,28 @@
       "Μητσέας": "6",
       "Παντελής": "7",
       "Στέλιας": "9.2",
-      "Φώτης": "10"
+      "Φώτης": "10",
+      "Λεόντιος": "9"
     },
     "top3": {},
     "watchlistVotes": []
   },
   {
     "director": "Christopher Nolan",
-    "movie": "The Dark Khight Rises",
+    "movie": "The Dark Knight Rises",
     "year": "2012",
     "rank": 110,
     "mn": "",
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt1345836",
+    "imdb_rating": 8.4,
     "ratings": {
       "Μητσέας": "3",
       "Στέλιας": "6",
-      "Φώτης": "3"
+      "Φώτης": "3",
+      "Λεόντιος": "5"
     },
     "top3": {},
     "watchlistVotes": []
@@ -9077,7 +9086,7 @@
     "imdb_rating": 8.5,
     "ratings": {
       "Παντελής": "8",
-      "Φώτης": "8"
+      "Φώτης": "7"
     },
     "top3": {},
     "watchlistVotes": []
@@ -9109,8 +9118,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0072962",
+    "imdb_rating": 7.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9124,8 +9133,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt2398149",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9139,8 +9148,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt5893264",
+    "imdb_rating": 5.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9154,8 +9163,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0104779",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9169,8 +9178,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt1692486",
+    "imdb_rating": 7.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9203,8 +9212,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0060268",
+    "imdb_rating": 7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9218,8 +9227,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0109579",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9233,8 +9242,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0095174",
+    "imdb_rating": 6.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9248,8 +9257,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0056291",
+    "imdb_rating": 7.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9263,8 +9272,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0067372",
+    "imdb_rating": 7.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9295,8 +9304,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0091757",
+    "imdb_rating": 6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9310,8 +9319,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0059646",
+    "imdb_rating": 7.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9342,8 +9351,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0080009",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9357,8 +9366,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0061655",
+    "imdb_rating": 7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9372,8 +9381,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt1139328",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9387,8 +9396,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0142688",
+    "imdb_rating": 6.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9402,8 +9411,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt14549270",
+    "imdb_rating": 5.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9434,8 +9443,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0074811",
+    "imdb_rating": 7.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9449,8 +9458,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt2406252",
+    "imdb_rating": 7.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9464,8 +9473,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0070913",
+    "imdb_rating": 5.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9479,8 +9488,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0118749",
+    "imdb_rating": 7.9,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9494,8 +9503,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0119256",
+    "imdb_rating": 7.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9524,8 +9533,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt11271038",
+    "imdb_rating": 7.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9539,8 +9548,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0175880",
+    "imdb_rating": 8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9573,8 +9582,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0272338",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9588,8 +9597,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt1560747",
+    "imdb_rating": 7.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9659,8 +9668,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0071115",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9674,8 +9683,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0068309",
+    "imdb_rating": 6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9689,8 +9698,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0163988",
+    "imdb_rating": 6.9,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9810,8 +9819,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0119485",
+    "imdb_rating": 7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9934,8 +9943,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0106226",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9949,8 +9958,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0338751",
+    "imdb_rating": 7.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -9964,8 +9973,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0090863",
+    "imdb_rating": 7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10035,8 +10044,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0095497",
+    "imdb_rating": 7.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10050,8 +10059,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0077838",
+    "imdb_rating": 8.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10083,8 +10092,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0063803",
+    "imdb_rating": 6.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10098,8 +10107,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0103594",
+    "imdb_rating": 6.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10113,9 +10122,11 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
-    "ratings": {},
+    "imdb_id": "tt0401445",
+    "imdb_rating": 6.9,
+    "ratings": {
+      "Φώτης": "5"
+    },
     "top3": {},
     "watchlistVotes": []
   },
@@ -10128,8 +10139,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0078748",
+    "imdb_rating": 8.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10143,8 +10154,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt2316204",
+    "imdb_rating": 6.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10158,8 +10169,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt5294550",
+    "imdb_rating": 6.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10173,8 +10184,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0765429",
+    "imdb_rating": 7.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10188,7 +10199,7 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
+    "imdb_id": "tt5200568",
     "imdb_rating": null,
     "ratings": {},
     "top3": {},
@@ -10203,8 +10214,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0096933",
+    "imdb_rating": 6.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10236,8 +10247,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0758774",
+    "imdb_rating": 7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10251,8 +10262,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt1528100",
+    "imdb_rating": 6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10303,7 +10314,7 @@
     "imdb_rating": 6.8,
     "ratings": {
       "Μητσέας": "5",
-      "Φώτης": "7"
+      "Φώτης": "6"
     },
     "top3": {},
     "watchlistVotes": []
@@ -10317,8 +10328,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt11214590",
+    "imdb_rating": 6.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10349,8 +10360,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0089469",
+    "imdb_rating": 6.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10364,8 +10375,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0325805",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10396,8 +10407,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt1446714",
+    "imdb_rating": 7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10411,8 +10422,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0955308",
+    "imdb_rating": 6.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10426,8 +10437,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0094008",
+    "imdb_rating": 6.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10441,8 +10452,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt2193215",
+    "imdb_rating": 5.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10522,8 +10533,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0118158",
+    "imdb_rating": 6.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10537,8 +10548,8 @@
     "watchlist": "Y",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0063555",
+    "imdb_rating": 7.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10552,8 +10563,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0078723",
+    "imdb_rating": 5.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10582,8 +10593,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0096794",
+    "imdb_rating": 6.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10597,8 +10608,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0118607",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10612,8 +10623,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt3682448",
+    "imdb_rating": 7.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10646,8 +10657,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0075860",
+    "imdb_rating": 7.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10661,8 +10672,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0067023",
+    "imdb_rating": 7.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10693,8 +10704,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0092965",
+    "imdb_rating": 7.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10708,8 +10719,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0102057",
+    "imdb_rating": 6.8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10774,8 +10785,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0073195",
+    "imdb_rating": 8.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10807,8 +10818,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0443272",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10822,8 +10833,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0181689",
+    "imdb_rating": 7.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10837,8 +10848,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0408306",
+    "imdb_rating": 7.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10869,8 +10880,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt1677720",
+    "imdb_rating": 7.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10953,8 +10964,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0088939",
+    "imdb_rating": 7.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10983,8 +10994,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0119567",
+    "imdb_rating": 6.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -10998,7 +11009,7 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
+    "imdb_id": "tt14431904",
     "imdb_rating": null,
     "ratings": {},
     "top3": {},
@@ -11013,8 +11024,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0072226",
+    "imdb_rating": 6.7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11028,8 +11039,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0362227",
+    "imdb_rating": 7.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11043,8 +11054,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt1568911",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11058,8 +11069,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0407304",
+    "imdb_rating": 6.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11073,8 +11084,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt3581652",
+    "imdb_rating": 7.1,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11388,8 +11399,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0052330",
+    "imdb_rating": 6.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11437,8 +11448,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0053258",
+    "imdb_rating": 6.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11452,8 +11463,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0176227",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11499,8 +11510,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0086551",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11514,8 +11525,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0070460",
+    "imdb_rating": 8,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11529,8 +11540,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0060390",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11561,8 +11572,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0078771",
+    "imdb_rating": 7,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11576,8 +11587,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0064990",
+    "imdb_rating": 6.9,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11591,8 +11602,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0054389",
+    "imdb_rating": 7.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11606,8 +11617,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0074152",
+    "imdb_rating": 7.6,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11621,8 +11632,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0062695",
+    "imdb_rating": 7.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11669,8 +11680,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0061955",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11684,8 +11695,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0077315",
+    "imdb_rating": 6.9,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11699,8 +11710,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0080610",
+    "imdb_rating": 7.3,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11714,8 +11725,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0076155",
+    "imdb_rating": 7.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11729,8 +11740,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0058458",
+    "imdb_rating": 7.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11744,8 +11755,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0073114",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11759,8 +11770,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0064285",
+    "imdb_rating": 7.4,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11774,8 +11785,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0082370",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11789,8 +11800,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0066989",
+    "imdb_rating": 7.2,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -11822,8 +11833,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0156248",
+    "imdb_rating": 6.5,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -13266,17 +13277,18 @@
   {
     "director": "Jonathan Demme",
     "movie": "The Silence of the Lambs",
-    "year": "1992",
+    "year": "1991",
     "rank": 14,
     "mn": "",
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0102926",
+    "imdb_rating": 8.6,
     "ratings": {
       "Μητσέας": "7",
       "Παντελής": "9",
+      "Στέλιας": "9.5",
       "Φώτης": "10",
       "Λεόντιος": "9.2"
     },
@@ -13294,8 +13306,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt11351238",
+    "imdb_rating": 4,
     "ratings": {
       "Παντελής": "2",
       "Στέλιας": "0",
@@ -13314,8 +13326,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt1379182",
+    "imdb_rating": 7.1,
     "ratings": {
       "Φώτης": "4.5",
       "Λεόντιος": "6.9"
@@ -13559,7 +13571,7 @@
     "ratings": {
       "Παντελής": "7.5",
       "Στέλιας": "8",
-      "Φώτης": "5"
+      "Φώτης": "5.5"
     },
     "top3": {},
     "watchlistVotes": []
@@ -13766,6 +13778,7 @@
     "imdb_rating": 9.3,
     "ratings": {
       "Παντελής": "8.5",
+      "Στέλιας": "10",
       "Φώτης": "7.5"
     },
     "top3": {},
@@ -13807,16 +13820,16 @@
     "watchlistVotes": []
   },
   {
-    "director": "Celine Sciamma",
-    "movie": "Portrait of a Lady on fire",
-    "year": "2019",
+    "director": "Céline Sciamma",
+    "movie": "Portrait of a Lady on Fire",
+    "year": "2020",
     "rank": null,
     "mn": "Y",
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt8613070",
+    "imdb_rating": 8,
     "ratings": {
       "Παντελής": "8",
       "Στέλιας": "10",
@@ -13928,7 +13941,8 @@
     "imdb_rating": 8.2,
     "ratings": {
       "Στέλιας": "9.2",
-      "Φώτης": "8"
+      "Φώτης": "8",
+      "Λεόντιος": "9"
     },
     "top3": {},
     "watchlistVotes": []
@@ -14033,7 +14047,8 @@
     "imdb_rating": 8.2,
     "ratings": {
       "Παντελής": "10",
-      "Φώτης": "9"
+      "Στέλιας": "8.8",
+      "Φώτης": "8.5"
     },
     "top3": {},
     "watchlistVotes": []
@@ -14455,7 +14470,7 @@
     "imdb_rating": 6.7,
     "ratings": {
       "Παντελής": "7.8",
-      "Φώτης": "8"
+      "Φώτης": "7.5"
     },
     "top3": {},
     "watchlistVotes": []
@@ -15127,13 +15142,11 @@
     "watchlist": "Y",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0113725",
+    "imdb_rating": 7.5,
     "ratings": {},
     "top3": {},
-    "watchlistVotes": [
-      "Φώτης"
-    ]
+    "watchlistVotes": []
   },
   {
     "director": "Tony Kaye",
@@ -15166,7 +15179,7 @@
     "imdb_id": "tt0107653",
     "imdb_rating": 7.7,
     "ratings": {
-      "Φώτης": "6.5"
+      "Φώτης": "8.5"
     },
     "top3": {},
     "watchlistVotes": []
@@ -15457,8 +15470,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0181592",
+    "imdb_rating": 8,
     "ratings": {
       "Παντελής": "7.5",
       "Φώτης": "5.5"
@@ -15625,15 +15638,15 @@
   },
   {
     "director": "Peter Segal",
-    "movie": "The Naked Gun 33⅓: The Final Insult",
+    "movie": "Naked Gun 33 1/3: The Final Insult",
     "year": "1994",
     "rank": null,
     "mn": "",
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0110622",
+    "imdb_rating": 6.5,
     "ratings": {
       "Παντελής": "7",
       "Φώτης": "6.5"
@@ -15882,7 +15895,8 @@
     "ratings": {
       "Παντελής": "0",
       "Στέλιας": "3",
-      "Φώτης": "8"
+      "Φώτης": "7",
+      "Λεόντιος": "7.3"
     },
     "top3": {},
     "watchlistVotes": []
@@ -16792,15 +16806,15 @@
   },
   {
     "director": "Blake Edwards",
-    "movie": "The Revenge of the Pink Panther",
+    "movie": "Revenge of the Pink Panther",
     "year": "1978",
     "rank": null,
     "mn": "",
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0078163",
+    "imdb_rating": 6.6,
     "ratings": {
       "Παντελής": "7"
     },
@@ -16879,15 +16893,15 @@
   },
   {
     "director": "Guy Hamilton",
-    "movie": "The Mirror Cracked",
+    "movie": "The Mirror Crack'd",
     "year": "1980",
     "rank": null,
     "mn": "",
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt0081163",
+    "imdb_rating": 6.2,
     "ratings": {
       "Παντελής": "7"
     },
@@ -16921,8 +16935,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt11564570",
+    "imdb_rating": 7.1,
     "ratings": {
       "Παντελής": "6.5",
       "Φώτης": "6"
@@ -16939,8 +16953,8 @@
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt14364480",
+    "imdb_rating": 7.3,
     "ratings": {
       "Παντελής": "6.8",
       "Φώτης": "7"
@@ -17135,22 +17149,23 @@
     "ratings": {
       "Παντελής": "5.5",
       "Στέλιας": "6",
-      "Φώτης": "2"
+      "Φώτης": "2",
+      "Λεόντιος": "8.5"
     },
     "top3": {},
     "watchlistVotes": []
   },
   {
     "director": "Charlie Kaufman",
-    "movie": "I’m Thinking of Ending Things",
+    "movie": "I'm Thinking of Ending Things",
     "year": "2020",
     "rank": null,
     "mn": "",
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
+    "imdb_id": "tt7939766",
+    "imdb_rating": 6.5,
     "ratings": {
       "Φώτης": "6"
     },
@@ -17177,14 +17192,14 @@
   {
     "director": "Sam Mendes",
     "movie": "1917",
-    "year": "2019",
+    "year": "2020",
     "rank": null,
     "mn": "",
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": "tt24820246",
-    "imdb_rating": null,
+    "imdb_id": "tt8579674",
+    "imdb_rating": 8.2,
     "ratings": {
       "Φώτης": "6.5"
     },
@@ -17272,7 +17287,9 @@
     "imdb_rating": 6.4,
     "ratings": {
       "Παντελής": "6",
-      "Φώτης": "7.5"
+      "Στέλιας": "6",
+      "Φώτης": "7.5",
+      "Λεόντιος": "6.5"
     },
     "top3": {},
     "watchlistVotes": []
@@ -17324,7 +17341,8 @@
     "imdb_id": "tt26612950",
     "imdb_rating": 7.4,
     "ratings": {
-      "Παντελής": "7.5"
+      "Παντελής": "7.5",
+      "Στέλιας": "8"
     },
     "top3": {},
     "watchlistVotes": []
@@ -17341,7 +17359,348 @@
     "imdb_id": "tt11697690",
     "imdb_rating": 6.7,
     "ratings": {
-      "Παντελής": "3"
+      "Παντελής": "3",
+      "Στέλιας": "3"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Curry Barker",
+    "movie": "Obsession",
+    "year": "2026",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt37287335",
+    "imdb_rating": 8,
+    "ratings": {
+      "Στέλιας": "8.2",
+      "Λεόντιος": "8"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Justine Triet",
+    "movie": "Anatomy of a Fall",
+    "year": "2024",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt17009710",
+    "imdb_rating": 7.6,
+    "ratings": {},
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Neil Burger",
+    "movie": "The Illusionist",
+    "year": "2006",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0443543",
+    "imdb_rating": 7.5,
+    "ratings": {
+      "Παντελής": "8"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Steven Soderbergh",
+    "movie": "Kafka",
+    "year": "1991",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0102181",
+    "imdb_rating": 6.8,
+    "ratings": {
+      "Παντελής": "7.5"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Θανάσης Παπαθανασίου, Μιχάλης Ρέππας",
+    "movie": "Το Κλάμα Βγήκε απ' τον Παράδεισο",
+    "year": "2001",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": null,
+    "imdb_rating": null,
+    "ratings": {
+      "Παντελής": "8.5"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Θανάσης Παπαθανασίου, Μιχάλης Ρέππας",
+    "movie": "Safe Sex",
+    "year": "1999",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0220016",
+    "imdb_rating": 6.6,
+    "ratings": {
+      "Παντελής": "5"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Θανάσης Παπαθανασίου, Μιχάλης Ρέππας",
+    "movie": "Αυστηρώς Κατάλληλο",
+    "year": "2008",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": null,
+    "imdb_rating": null,
+    "ratings": {
+      "Παντελής": "7.2"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Νίκος Τζίμας",
+    "movie": "Ο Άνθρωπος με το Γαρύφαλλο",
+    "year": "1980",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": null,
+    "imdb_rating": null,
+    "ratings": {
+      "Παντελής": "7"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Elio Petri",
+    "movie": "Indagine su Un Cittadino al di Sopra di Ogni Sospetto",
+    "year": "1970",
+    "rank": null,
+    "mn": "Y",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0065889",
+    "imdb_rating": 8,
+    "ratings": {
+      "Παντελής": "8.8",
+      "Στέλιας": "8.7"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Rémi Bezançon",
+    "movie": "Le premier jour du reste de ta vie",
+    "year": "2008",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0926759",
+    "imdb_rating": 7.5,
+    "ratings": {
+      "Στέλιας": "9.5"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "M. Night Shyamalan",
+    "movie": "Split",
+    "year": "2016",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt4972582",
+    "imdb_rating": 7.3,
+    "ratings": {
+      "Φώτης": "6.5"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "M. Night Shyamalan",
+    "movie": "Unbreakable",
+    "year": "2000",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0217869",
+    "imdb_rating": 7.3,
+    "ratings": {
+      "Φώτης": "7.5"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "M. Night Shyamalan",
+    "movie": "Signs",
+    "year": "2002",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0286106",
+    "imdb_rating": 6.8,
+    "ratings": {
+      "Φώτης": "6"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "M. Night Shyamalan",
+    "movie": "Glass",
+    "year": "2019",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt6823368",
+    "imdb_rating": 6.6,
+    "ratings": {
+      "Φώτης": "5.5"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Damien Leone",
+    "movie": "Terrifier",
+    "year": "2016",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt4281724",
+    "imdb_rating": 5.5,
+    "ratings": {
+      "Στέλιας": "7"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Damien Leone",
+    "movie": "Terrifier 2",
+    "year": "2022",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt10403420",
+    "imdb_rating": 6,
+    "ratings": {
+      "Στέλιας": "7.5"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Damien Leone",
+    "movie": "Terrifier 3",
+    "year": "2024",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt27911000",
+    "imdb_rating": 6.2,
+    "ratings": {
+      "Στέλιας": "7.5"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Charlie Chaplin",
+    "movie": "The Kid",
+    "year": "1921",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0012349",
+    "imdb_rating": 8.2,
+    "ratings": {
+      "Παντελής": "9"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Michael Haneke",
+    "movie": "Das Schloss",
+    "year": "1997",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0120075",
+    "imdb_rating": 6.5,
+    "ratings": {
+      "Παντελής": "4.5"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Christopher Nolan",
+    "movie": "The Odyssey",
+    "year": "2026",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt33764258",
+    "imdb_rating": 8.5,
+    "ratings": {
+      "Φώτης": "6.5"
     },
     "top3": {},
     "watchlistVotes": []
