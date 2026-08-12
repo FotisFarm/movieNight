@@ -9,10 +9,15 @@ const router = express.Router();
 const { VOTERS, GROUP_SIZE } = require('../config');
 
 async function enrichMovie(movie) {
-  const ratings = await db.all('SELECT voter, score, comment FROM ratings WHERE movie_id = ?', movie.id);
-  const top3 = await db.all('SELECT voter, rank FROM top3 WHERE movie_id = ?', movie.id);
-  const watchlistVotes = (await db.all('SELECT voter FROM watchlist_votes WHERE movie_id = ?', movie.id))
-    .map(r => r.voter);
+  // These three are independent — issued concurrently so the whole enrichment
+  // costs one network round trip instead of three. libSQL is remote, so
+  // sequential awaits here meant 3x the latency for no reason.
+  const [ratings, top3, wlRows] = await Promise.all([
+    db.all('SELECT voter, score, comment FROM ratings WHERE movie_id = ?', movie.id),
+    db.all('SELECT voter, rank FROM top3 WHERE movie_id = ?', movie.id),
+    db.all('SELECT voter FROM watchlist_votes WHERE movie_id = ?', movie.id),
+  ]);
+  const watchlistVotes = wlRows.map(r => r.voter);
 
   const ratingsMap = {};
   const commentsMap = {};
@@ -66,17 +71,12 @@ async function enrichMoviesBatch(movies) {
   const ids = movies.map(m => m.id);
   const placeholders = ids.map(() => '?').join(',');
 
-  const ratingsRows = await db.all(
-    `SELECT movie_id, voter, score, comment FROM ratings WHERE movie_id IN (${placeholders})`, ...ids
-  );
-
-  const top3Rows = await db.all(
-    `SELECT movie_id, voter, rank FROM top3 WHERE movie_id IN (${placeholders})`, ...ids
-  );
-
-  const wlRows = await db.all(
-    `SELECT movie_id, voter FROM watchlist_votes WHERE movie_id IN (${placeholders})`, ...ids
-  );
+  // Same reasoning as enrichMovie: independent queries, one round trip.
+  const [ratingsRows, top3Rows, wlRows] = await Promise.all([
+    db.all(`SELECT movie_id, voter, score, comment FROM ratings WHERE movie_id IN (${placeholders})`, ...ids),
+    db.all(`SELECT movie_id, voter, rank FROM top3 WHERE movie_id IN (${placeholders})`, ...ids),
+    db.all(`SELECT movie_id, voter FROM watchlist_votes WHERE movie_id IN (${placeholders})`, ...ids),
+  ]);
 
   // Build lookup maps
   const ratingsMap = {};

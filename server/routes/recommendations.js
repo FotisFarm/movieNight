@@ -17,9 +17,12 @@ router.get('/', ah(async (req, res) => {
   const maxVoters = Math.min(4, Math.max(0, isNaN(_mv) ? 2 : _mv));
   const minDirFilms = Math.max(1, parseInt(req.query.minDirFilms) || 2);
 
-  const allMovies  = await db.all('SELECT * FROM movies');
-  const allRatings = await db.all('SELECT movie_id, voter, score FROM ratings');
-  const allTop3    = await db.all('SELECT movie_id, voter, rank FROM top3');
+  // Independent full-table reads — concurrent, so this costs one round trip.
+  const [allMovies, allRatings, allTop3] = await Promise.all([
+    db.all('SELECT * FROM movies'),
+    db.all('SELECT movie_id, voter, score FROM ratings'),
+    db.all('SELECT movie_id, voter, rank FROM top3'),
+  ]);
   const movieById  = new Map(allMovies.map(m => [m.id, m]));
 
   // Index ratings and top3 by movie_id
