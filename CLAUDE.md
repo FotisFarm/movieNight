@@ -70,17 +70,19 @@ MovieNights/
 │   ├── db-readonly.js        # Second libSQL client (ideally a read-only Turso token) + runReadOnlySql (chatbot)
 │   ├── llm.js                # Anthropic chatbot: text-to-SQL tool runner (claude-sonnet-5)
 │   ├── data/
-│   │   ├── seed.json         # 834 films (has UTF-8 BOM — stripped in seed.js); directors stored as full names
+│   │   ├── seed.json         # Regenerated nightly from production — see [DB backup](#db-backup--seed-refresh)
 │   │   └── movies.db         # local-file DB fallback (gitignored) — only used when TURSO_DATABASE_URL is unset
 │   ├── routes/
 │   │   ├── movies.js         # CRUD + enrichMovie (scores, ratings, comments)
 │   │   ├── rankings.js       # 12 ranking panels across 4 row groups
 │   │   ├── recommendations.js  # GET /api/recommendations — Bayesian ranked picks
 │   │   └── chat.js           # POST /api/chat — natural-language chatbot (read-only)
-│   └── scripts/              # One-off DB maintenance scripts (IMDb enrichment etc.)
+│   └── scripts/
+│       ├── backup-and-seed.js  # Nightly SQL dump + seed.json regeneration (async API, current)
+│       └── ...                 # Older one-off IMDb enrichment scripts (still on the dead sync API — see below)
 ├── .github/
 │   └── workflows/
-│       └── db-backup.yml     # Daily DB snapshot → backups branch (02:00 UTC, 7-day rolling window)
+│       └── db-backup.yml     # Daily 02:00 UTC: SQL snapshot → backups branch + seed.json refresh → main
 ├── Dockerfile                # Multi-stage: Vite build → lean Node runtime
 ├── docker-compose.yml
 └── CLAUDE.md                 # This file
@@ -94,7 +96,7 @@ ratings (id, movie_id → movies, voter TEXT, score REAL, comment TEXT,  UNIQUE(
 top3    (id, movie_id → movies, voter TEXT, rank INT CHECK(rank>=1 AND rank<=10),  UNIQUE(movie_id, voter))  -- legacy name; now Top 10
 watchlist_votes (id, movie_id → movies, voter TEXT,  UNIQUE(movie_id, voter))
 ```
-Seeding is idempotent — skips if `COUNT(*) > 0` in movies.
+Seeding is idempotent — skips if `COUNT(*) > 0` in movies. `seed.json` is regenerated nightly from production, so a fresh clone seeds a local DB with **current** data, not the original 834-film spreadsheet import — see [DB backup & seed refresh](#db-backup--seed-refresh).
 `imdb_id` / `imdb_rating` are populated from OMDb on add and shown in the UI — see [IMDb integration](#imdb-integration).
 `watchlist_votes` rows are deleted when a film leaves the watchlist (and cascade on film delete).
 
@@ -105,7 +107,7 @@ Migrated from `better-sqlite3` (local file + Docker volume) to **Turso** (`@libs
 - **`movie_scores` is now a permanent `VIEW`** (created in `db.js`'s `init()`, dropped and recreated on every boot so a changed `GROUP_SIZE` isn't baked in stale), not a `TEMP VIEW` on the read-only connection — a remote libSQL connection isn't guaranteed to reuse the same session between separate `.execute()` calls, so a session-scoped TEMP VIEW isn't safe there.
 - **`rank_bonus` is inlined SQL arithmetic** (`(11 - rank) / 10.0`) instead of a registered JS callback (`db.function('rank_bonus', rankBonus)`) — a remote engine can't invoke a callback into the Node process per row.
 - **`server/db-readonly.js`** (chatbot) uses a second libSQL client, ideally authenticated with a Turso database-scoped **read-only token** (`TURSO_READONLY_AUTH_TOKEN`, minted via `turso db tokens create --read-only`) for an engine-enforced read-only guarantee — falls back to the main `TURSO_AUTH_TOKEN` if unset, in which case `runReadOnlySql`'s `SELECT`/`WITH`-prefix guard is the only defense.
-- **`server/scripts/*.js`** (one-off IMDb enrichment / maintenance scripts) still call the old `db.prepare(...)` API and were **not** updated in this migration — they'll throw `db.prepare is not a function` until rewritten to the new async `get`/`all`/`run` helpers.
+- **`server/scripts/*.js`** — the older one-off IMDb enrichment / maintenance scripts still call the old `db.prepare(...)` API and were **not** updated in this migration; they'll throw `db.prepare is not a function` until rewritten to the async `get`/`all`/`run` helpers. The exception is **`backup-and-seed.js`**, which was written against the current API and works.
 - **Setup required** (not done from here — needs an actual Turso account): create a database, get its `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` (+ optional read-only token), set them as Render env vars, and import the current DB content — Turso's CLI supports creating a database directly from an existing SQLite file (verify exact current syntax against Turso's docs, e.g. something like `turso db create <name> --from-file <path>`). Once real rows exist, `seed.js`'s idempotent skip (`COUNT(*) > 0`) prevents the 834-film seed from ever overwriting them.
 
 ## Auth
@@ -276,13 +278,26 @@ Migrated off a self-managed SSH/Docker Compose host to a Render Web Service buil
 - Sessions are still in-memory (`express-session`, no store), so every Render deploy/restart still **logs everyone out** — same caveat as before, plus Render's Free-tier idle spin-down (if used) would cause this more often than a redeploy alone would. Turso persistence fixes *data* loss on restart; it doesn't change this session behavior.
 
 ### Deploy
-Render auto-deploys from GitHub on push (or via a manual deploy from the dashboard) — this is configured in Render, not in this repo. The old `[deploy]`-in-commit-message convention and `.github/workflows/deploy.yml` (SSH into the old host) are **deprecated**: the workflow no longer triggers on push (`workflow_dispatch` only) since there's no SSH target anymore. Whether pushing to `main` deploys to Render depends on that service's auto-deploy setting in the Render dashboard.
+Render **auto-deploys from GitHub on push to `main`** (`autoDeploy: yes`, trigger: commit) — configured in Render, not in this repo. The old `[deploy]`-in-commit-message convention and `.github/workflows/deploy.yml` (SSH into the retired host) are **gone**: the workflow was deleted in the Render migration.
 
-### DB backup — currently disabled, needs redesign
-The old `.github/workflows/db-backup.yml` (daily SSH pull from the Docker volume → `backups` branch) has no valid target on Render/Turso and was disabled (schedule removed, `workflow_dispatch` only) rather than fixed. **There is currently no automated backup running.** Turso itself may offer point-in-time recovery/branching on paid plans — worth checking before rebuilding a GitHub Actions-based backup.
+**Skipping a deploy**: put `[skip render]` (or `[skip deploy]` / `[skip cd]`) in the commit message. This matters because **sessions are in-memory** — every deploy logs all five voters out, so commits that don't change runtime behaviour (docs, the nightly `seed.json` refresh) should carry the skip marker.
 
-### Getting the current DB into Turso
-Since the DB now lives in Turso rather than on a Render disk, there's no "SSH into the instance and copy a file" step anymore — the data has to be imported into Turso directly (e.g. from an existing SQLite file) before the app's first boot against it; see [Database / persistence](#database--persistence-turso). The most recent pre-migration snapshot is still recoverable from the `backups` branch (`git fetch origin backups`), or from `main`'s history at commit `6956940` for the 2026-08-08 snapshot, if you need a starting file to import from.
+## DB backup & seed refresh
+`.github/workflows/db-backup.yml` runs daily at 02:00 UTC (also `workflow_dispatch`-able) and is driven by `server/scripts/backup-and-seed.js`. It reads production Turso over the network — **no SSH, no host dependency** — and produces two artifacts:
+
+| Artifact | Destination | Purpose |
+|---|---|---|
+| `movies_YYYY-MM-DD.sql` | `backups` branch, 7-day rolling window | Restorable snapshot: `sqlite3 movies.db < movies_2026-08-12.sql` |
+| refreshed `server/data/seed.json` | `main`, committed with `[skip render]` | A fresh clone seeds a local DB with **current** data |
+
+- **Required repo secrets**: `TURSO_DATABASE_URL`, `TURSO_READONLY_AUTH_TOKEN`.
+- **Comments are deliberately excluded** from both artifacts — the repo is public and per-voter comments are personal notes. The `ratings.comment` column still exists in the dumped schema, so restored rows just get `''`. Ratings, Top-10 picks, watchlist votes and IMDb data *are* included.
+- **`seed.json` now carries `imdb_id`/`imdb_rating`**, so a local run doesn't re-fetch everything from OMDb (a fresh cloner won't have an `OMDB_API_KEY`). `seed.js` also seeds `watchlist_votes`.
+- Output is pretty-printed with stable key/row ordering (`ORDER BY id`, voters in `VOTERS` order) so an unchanged day produces **no diff at all**, and a changed day produces a small readable one. The regenerated file has no UTF-8 BOM; `seed.js`'s BOM strip is conditional so both forms work.
+- **Legacy `movies_*.db` files on the `backups` branch are never pruned** — only `movies_*.sql` ages out. Those binary snapshots are the only surviving record of the pre-Turso database.
+
+### Getting a DB into Turso
+There's no "SSH into the instance and copy a file" step anymore — data is imported into Turso directly; see [Database / persistence](#database--persistence-turso). Recoverable starting points: any `.sql` snapshot on the `backups` branch, the legacy `movies_*.db` files there, or `main`'s history at commit `6956940` for the 2026-08-08 pre-migration snapshot.
 
 ## Color scheme (score thresholds)
 - ≥ 7.5 → green (`score-high`)
