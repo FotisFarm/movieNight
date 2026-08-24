@@ -1,5 +1,5 @@
 -- Movie Nights production snapshot
--- generated 2026-08-16T02:53:38.375Z
+-- generated 2026-08-24T02:56:49.115Z
 --
 -- Restore into a local SQLite file with:  sqlite3 movies.db < this-file.sql
 PRAGMA foreign_keys=OFF;
