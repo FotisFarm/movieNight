@@ -1,5 +1,5 @@
 -- Movie Nights production snapshot
--- generated 2026-08-18T02:49:41.432Z
+-- generated 2026-08-26T02:58:30.548Z
 --
 -- Restore into a local SQLite file with:  sqlite3 movies.db < this-file.sql
 PRAGMA foreign_keys=OFF;
@@ -244,7 +244,7 @@ INSERT INTO movies (id, director, title, year, rank_global, mn, watchlist, cinob
 INSERT INTO movies (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts, imdb_id, imdb_rating) VALUES (224, 'David Fincher', 'The Killer', '2023', NULL, 0, 0, '', '', 0, 'tt1136617', 6.7);
 INSERT INTO movies (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts, imdb_id, imdb_rating) VALUES (225, 'David Fincher', 'The Social Network', '2010', 114, 0, 0, '', '', 0, 'tt1285016', 7.8);
 INSERT INTO movies (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts, imdb_id, imdb_rating) VALUES (226, 'David Fincher', 'Zodiac', '2007', NULL, 0, 0, '', '', 0, 'tt0443706', 7.7);
-INSERT INTO movies (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts, imdb_id, imdb_rating) VALUES (227, 'Miloš Forman', 'Amadeus', '1984', 3, 0, 0, '', '🥈', 2, 'tt0086879', 8.4);
+INSERT INTO movies (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts, imdb_id, imdb_rating) VALUES (227, 'Miloš Forman', 'Amadeus', '1984', 3, 1, 0, '', '🥈', 2, 'tt0086879', 8.4);
 INSERT INTO movies (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts, imdb_id, imdb_rating) VALUES (228, 'Miloš Forman', 'Audition', '1964', NULL, 0, 0, '', '', 0, 'tt0057230', 6.5);
 INSERT INTO movies (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts, imdb_id, imdb_rating) VALUES (229, 'Miloš Forman', 'Black Peter', '1964', NULL, 0, 0, '', '', 0, 'tt0056919', 7);
 INSERT INTO movies (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts, imdb_id, imdb_rating) VALUES (230, 'Miloš Forman', 'Goya''s Ghost', '2006', NULL, 0, 0, '', '', 0, NULL, NULL);
@@ -721,7 +721,7 @@ INSERT INTO movies (id, director, title, year, rank_global, mn, watchlist, cinob
 INSERT INTO movies (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts, imdb_id, imdb_rating) VALUES (701, 'Quentin Tarantino', 'Jackie Brown', '1997', NULL, 0, 0, '', '', 0, 'tt0119396', 7.5);
 INSERT INTO movies (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts, imdb_id, imdb_rating) VALUES (702, 'Quentin Tarantino', 'Kill Bill: Volume 1', '2003', 43, 0, 0, '', '', 0, NULL, NULL);
 INSERT INTO movies (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts, imdb_id, imdb_rating) VALUES (703, 'Quentin Tarantino', 'Kill Bill: Volume 2', '2004', 88, 0, 0, '', '', 0, 'tt0422704', 7.1);
-INSERT INTO movies (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts, imdb_id, imdb_rating) VALUES (704, 'Quentin Tarantino', 'Once Upon a Time in Hollywood', '2019', NULL, 0, 0, '', '', 0, 'tt21942610', NULL);
+INSERT INTO movies (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts, imdb_id, imdb_rating) VALUES (704, 'Quentin Tarantino', 'Once Upon a Time in Hollywood', '2019', NULL, 0, 0, '', '', 0, 'tt7131622', 7.6);
 INSERT INTO movies (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts, imdb_id, imdb_rating) VALUES (705, 'Quentin Tarantino', 'Pulp Fiction', '1994', 32, 0, 0, '', '', 0, 'tt0110912', 8.8);
 INSERT INTO movies (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts, imdb_id, imdb_rating) VALUES (706, 'Quentin Tarantino', 'Reservoir Dogs', '1992', 6, 0, 0, '', '', 0, 'tt0105236', 8.3);
 INSERT INTO movies (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts, imdb_id, imdb_rating) VALUES (707, 'Quentin Tarantino', 'The Hateful Eight', '2015', NULL, 0, 0, '', '', 0, 'tt3460252', 7.8);
@@ -1702,7 +1702,7 @@ INSERT INTO ratings (id, movie_id, voter, score) VALUES (924, 907, 'Παντελ
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (928, 840, 'Φώτης', 9);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (930, 903, 'Φώτης', 8);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (932, 901, 'Φώτης', 7.5);
-INSERT INTO ratings (id, movie_id, voter, score) VALUES (934, 900, 'Φώτης', 5);
+INSERT INTO ratings (id, movie_id, voter, score) VALUES (934, 900, 'Φώτης', 6);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (936, 899, 'Φώτης', 6);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (938, 892, 'Φώτης', 7);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (940, 889, 'Φώτης', 3);
@@ -1727,8 +1727,8 @@ INSERT INTO ratings (id, movie_id, voter, score) VALUES (963, 924, 'Φώτης',
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (964, 925, 'Φώτης', 9);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (965, 926, 'Φώτης', 7.5);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (969, 927, 'Φώτης', 9);
-INSERT INTO ratings (id, movie_id, voter, score) VALUES (971, 928, 'Φώτης', 8);
-INSERT INTO ratings (id, movie_id, voter, score) VALUES (972, 929, 'Φώτης', 9);
+INSERT INTO ratings (id, movie_id, voter, score) VALUES (971, 928, 'Φώτης', 8.5);
+INSERT INTO ratings (id, movie_id, voter, score) VALUES (972, 929, 'Φώτης', 9.5);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (973, 930, 'Φώτης', 8.5);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (974, 931, 'Φώτης', 8);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (975, 932, 'Φώτης', 7.5);
@@ -1791,11 +1791,11 @@ INSERT INTO ratings (id, movie_id, voter, score) VALUES (1053, 974, 'Παντε�
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (1054, 975, 'Παντελής', 6.5);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (1055, 976, 'Παντελής', 5.5);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (1056, 977, 'Παντελής', 8);
-INSERT INTO ratings (id, movie_id, voter, score) VALUES (1058, 977, 'Φώτης', 7);
+INSERT INTO ratings (id, movie_id, voter, score) VALUES (1058, 977, 'Φώτης', 6);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (1060, 975, 'Φώτης', 2);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (1062, 974, 'Φώτης', 6);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (1064, 973, 'Φώτης', 7.5);
-INSERT INTO ratings (id, movie_id, voter, score) VALUES (1093, 978, 'Φώτης', 6.5);
+INSERT INTO ratings (id, movie_id, voter, score) VALUES (1093, 978, 'Φώτης', 6);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (1094, 979, 'Φώτης', 8);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (1096, 980, 'Φώτης', 8.5);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (1097, 981, 'Φώτης', 7);
@@ -1804,7 +1804,7 @@ INSERT INTO ratings (id, movie_id, voter, score) VALUES (1099, 983, 'Φώτης'
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (1100, 984, 'Φώτης', 7.5);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (1101, 985, 'Φώτης', 8);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (1102, 986, 'Φώτης', 0);
-INSERT INTO ratings (id, movie_id, voter, score) VALUES (1103, 987, 'Φώτης', 3.5);
+INSERT INTO ratings (id, movie_id, voter, score) VALUES (1103, 987, 'Φώτης', 4.5);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (1105, 988, 'Φώτης', 7.5);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (1106, 989, 'Φώτης', 7);
 INSERT INTO ratings (id, movie_id, voter, score) VALUES (1107, 990, 'Φώτης', 7);
@@ -1976,16 +1976,6 @@ CREATE TABLE "top3" (
 INSERT INTO top3 (id, movie_id, voter, rank) VALUES (14, 123, 'Μητσέας', 3);
 INSERT INTO top3 (id, movie_id, voter, rank) VALUES (15, 878, 'Μητσέας', 1);
 INSERT INTO top3 (id, movie_id, voter, rank) VALUES (16, 879, 'Μητσέας', 2);
-INSERT INTO top3 (id, movie_id, voter, rank) VALUES (124, 352, 'Φώτης', 1);
-INSERT INTO top3 (id, movie_id, voter, rank) VALUES (125, 227, 'Φώτης', 2);
-INSERT INTO top3 (id, movie_id, voter, rank) VALUES (126, 442, 'Φώτης', 3);
-INSERT INTO top3 (id, movie_id, voter, rank) VALUES (127, 28, 'Φώτης', 4);
-INSERT INTO top3 (id, movie_id, voter, rank) VALUES (128, 819, 'Φώτης', 5);
-INSERT INTO top3 (id, movie_id, voter, rank) VALUES (129, 834, 'Φώτης', 6);
-INSERT INTO top3 (id, movie_id, voter, rank) VALUES (130, 50, 'Φώτης', 7);
-INSERT INTO top3 (id, movie_id, voter, rank) VALUES (131, 924, 'Φώτης', 8);
-INSERT INTO top3 (id, movie_id, voter, rank) VALUES (132, 908, 'Φώτης', 9);
-INSERT INTO top3 (id, movie_id, voter, rank) VALUES (133, 533, 'Φώτης', 10);
 INSERT INTO top3 (id, movie_id, voter, rank) VALUES (165, 66, 'Στέλιας', 1);
 INSERT INTO top3 (id, movie_id, voter, rank) VALUES (166, 143, 'Στέλιας', 2);
 INSERT INTO top3 (id, movie_id, voter, rank) VALUES (167, 144, 'Στέλιας', 3);
@@ -2006,6 +1996,16 @@ INSERT INTO top3 (id, movie_id, voter, rank) VALUES (312, 713, 'Παντελής
 INSERT INTO top3 (id, movie_id, voter, rank) VALUES (313, 55, 'Παντελής', 8);
 INSERT INTO top3 (id, movie_id, voter, rank) VALUES (314, 227, 'Παντελής', 9);
 INSERT INTO top3 (id, movie_id, voter, rank) VALUES (315, 338, 'Παντελής', 10);
+INSERT INTO top3 (id, movie_id, voter, rank) VALUES (327, 352, 'Φώτης', 1);
+INSERT INTO top3 (id, movie_id, voter, rank) VALUES (328, 227, 'Φώτης', 2);
+INSERT INTO top3 (id, movie_id, voter, rank) VALUES (329, 442, 'Φώτης', 3);
+INSERT INTO top3 (id, movie_id, voter, rank) VALUES (330, 28, 'Φώτης', 4);
+INSERT INTO top3 (id, movie_id, voter, rank) VALUES (331, 819, 'Φώτης', 5);
+INSERT INTO top3 (id, movie_id, voter, rank) VALUES (332, 834, 'Φώτης', 6);
+INSERT INTO top3 (id, movie_id, voter, rank) VALUES (333, 50, 'Φώτης', 7);
+INSERT INTO top3 (id, movie_id, voter, rank) VALUES (334, 643, 'Φώτης', 8);
+INSERT INTO top3 (id, movie_id, voter, rank) VALUES (335, 924, 'Φώτης', 9);
+INSERT INTO top3 (id, movie_id, voter, rank) VALUES (336, 533, 'Φώτης', 10);
 
 DROP TABLE IF EXISTS watchlist_votes;
 CREATE TABLE watchlist_votes (
