@@ -17704,5 +17704,39 @@
     },
     "top3": {},
     "watchlistVotes": []
+  },
+  {
+    "director": "Berger",
+    "movie": "Conclave",
+    "year": "2024",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt20215234",
+    "imdb_rating": 7.4,
+    "ratings": {
+      "Στέλιας": "7.5"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "M. Night Shyamalan",
+    "movie": "The Sixth Sense",
+    "year": "1999",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0167404",
+    "imdb_rating": 8.2,
+    "ratings": {
+      "Στέλιας": "8.5"
+    },
+    "top3": {},
+    "watchlistVotes": []
   }
 ]
