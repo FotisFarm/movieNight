@@ -148,6 +148,20 @@ const normName = s => (s || '').toLowerCase().normalize('NFD')
   .replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}\s]/gu, " ")
   .replace(/\s+/g, ' ').trim();
 
+const hasGreek = s => /[Ͱ-Ͽἀ-῿]/.test(s);
+const hasLatin = s => /[a-z]/.test(s);
+
+// Two names written in different alphabets share no comparable characters, so
+// no string test can tell "Θόδωρος Αγγελόπουλος" from "Theo Angelopoulos"
+// apart from a genuinely different person. Treat that as no evidence rather
+// than as disagreement — otherwise every Greek film in the collection is
+// blocked over a transliteration.
+function comparableScripts(a, b) {
+  if (hasGreek(a) && !hasGreek(b) && hasLatin(b)) return false;
+  if (hasGreek(b) && !hasGreek(a) && hasLatin(a)) return false;
+  return true;
+}
+
 async function directorAgrees(candidate, ourDirector) {
   const ours = normName(ourDirector);
   if (!ours) return true;
@@ -157,8 +171,10 @@ async function directorAgrees(candidate, ourDirector) {
   if (names.some(n => n === ours || n.includes(ours) || ours.includes(n))) return true;
   // Compare surname tokens — the part most likely to survive transliteration.
   const surnames = ours.split(' ').filter(w => w.length > 3);
-  if (!surnames.length) return false;
-  return names.some(n => n.split(' ').some(w => surnames.includes(w)));
+  if (surnames.length && names.some(n => n.split(' ').some(w => surnames.includes(w)))) return true;
+  // Nothing matched. Only call that a disagreement if the two were written in
+  // the same alphabet and so were actually comparable.
+  return !names.some(n => comparableScripts(ours, n));
 }
 
 // Scores a candidate: lower is better. Title distance dominates; a year that
