@@ -63,28 +63,6 @@
   flex-shrink: 0;
 }
 
-/* HAL 9000 eye — chatbot link */
-.hal-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2px;
-  border-radius: 50%;
-  line-height: 0;
-}
-.hal-eye {
-  display: block;
-  filter: drop-shadow(0 0 3px rgba(224, 40, 40, 0.45));
-  transition: filter 0.2s, transform 0.2s;
-}
-.hal-link:hover .hal-eye {
-  filter: drop-shadow(0 0 6px rgba(255, 70, 40, 0.85));
-  transform: scale(1.06);
-}
-.hal-link.active .hal-eye {
-  filter: drop-shadow(0 0 7px rgba(255, 70, 40, 0.95));
-}
-
 .header-voter {
   font-size: 12px;
   color: var(--text2);
@@ -298,7 +276,6 @@
   .header-voter-desktop { display: none; }
   .header-logout-desktop { display: none; }
   .header-right .theme-dropdown { display: none; }
-  .header-right .hal-link { display: none; }
 
   .mobile-footer {
     display: flex;

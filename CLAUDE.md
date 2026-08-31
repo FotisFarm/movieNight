@@ -43,7 +43,7 @@ MovieNights/
 ├── client/                   # React + Vite frontend
 │   └── src/
 │       ├── api.js            # fetch wrapper (getMovies, getRankings, getRecommendations, etc.)
-│       ├── App.jsx           # Router: / → /films, /rankings, /watchlist, /recommendations, /controversy, /stats
+│       ├── App.jsx           # Router: /films, /rankings, /watchlist, /lists, /recommendations, /controversy, /stats, /compare, /chat
 │       ├── index.css         # Global styles, CSS variables, shared classes
 │       ├── components/
 │       │   ├── MovieCard.jsx / .css          # Film card (grid + list view)
@@ -61,10 +61,12 @@ MovieNights/
 │           ├── Recommendations.jsx / .css  # "Picks" page — ranked unrated/partially-rated films
 │           ├── Controversy.jsx / .css   # Films ranked by score std deviation
 │           ├── Stats.jsx / .css         # Per-voter overview + head-to-head comparison
+│           ├── Lists.jsx / .css         # Custom named film lists (index + detail)
 │           └── Chat.jsx / .css          # Natural-language chatbot over the DB (read-only)
 ├── server/
 │   ├── index.js              # Express entry point, seeds DB, mounts routes
 │   ├── db.js                 # libSQL client (Turso/local file), async get/all/run/transaction helpers, schema+migrations
+│   ├── enrich.js             # enrichMovie / enrichMoviesBatch — shared by the movies and lists routes
 │   ├── seed.js               # One-time seeding from data/seed.json
 │   ├── omdb.js               # OMDb helpers: lookupImdb, searchImdb (fuzzy), getImdbById, extractImdbId
 │   ├── db-readonly.js        # Second libSQL client (ideally a read-only Turso token) + runReadOnlySql (chatbot)
@@ -73,9 +75,10 @@ MovieNights/
 │   │   ├── seed.json         # Regenerated nightly from production — see [DB backup](#db-backup--seed-refresh)
 │   │   └── movies.db         # local-file DB fallback (gitignored) — only used when TURSO_DATABASE_URL is unset
 │   ├── routes/
-│   │   ├── movies.js         # CRUD + enrichMovie (scores, ratings, comments)
+│   │   ├── movies.js         # CRUD (scores/ratings/comments come from enrich.js)
 │   │   ├── rankings.js       # 12 ranking panels across 4 row groups
 │   │   ├── recommendations.js  # GET /api/recommendations — Bayesian ranked picks
+│   │   ├── lists.js          # /api/lists — custom named film lists
 │   │   └── chat.js           # POST /api/chat — natural-language chatbot (read-only)
 │   └── scripts/
 │       ├── backup-and-seed.js  # Nightly SQL dump + seed.json regeneration (async API, current)
@@ -95,6 +98,8 @@ movies  (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, 
 ratings (id, movie_id → movies, voter TEXT, score REAL, comment TEXT,  UNIQUE(movie_id, voter))
 top3    (id, movie_id → movies, voter TEXT, rank INT CHECK(rank>=1 AND rank<=10),  UNIQUE(movie_id, voter))  -- legacy name; now Top 10
 watchlist_votes (id, movie_id → movies, voter TEXT,  UNIQUE(movie_id, voter))
+lists      (id, title TEXT, description TEXT, created_by TEXT, created_at TEXT DEFAULT datetime('now'))
+list_items (id, list_id → lists, movie_id → movies, position INT,  UNIQUE(list_id, movie_id))
 ```
 Seeding is idempotent — skips if `COUNT(*) > 0` in movies. `seed.json` is regenerated nightly from production, so a fresh clone seeds a local DB with **current** data, not the original 834-film spreadsheet import — see [DB backup & seed refresh](#db-backup--seed-refresh).
 `imdb_id` / `imdb_rating` are populated from OMDb on add and shown in the UI — see [IMDb integration](#imdb-integration).
@@ -213,6 +218,7 @@ predictedScore = confidence * actualFairBoosted + (1 - confidence) * prior
 - `MovieModal` has an inline edit mode (✎ button) for title, director, and year — PATCH payload always includes these fields
 - **Live rank badges** (Films page): `allMovies` state (always full, unfiltered) feeds a `rankMap` memo that computes fair/group/mnFair/mnGroup rank positions using the same tiebreaker order as `rankings.js`. MovieCard receives `rank_global` and `mn_rank` from this map, not from the DB column. MN badge shows `MN #N` where N is the MN-specific rank matching the active score mode.
 - **Rankings refetch on navigate**: `Rankings.jsx` uses `useLocation().key` as a `useEffect` dependency — React Router changes `.key` on every navigation, so rankings always reload when switching to the Rankings tab.
+- **List-view `MovieCard` wraps instead of truncating**: the row is a wrapping flex line (`flex-wrap: wrap`) and `.card-info` has `flex: 1 1 220px` (150px under 640px), so when the badges + voter pills can't fit beside the title they drop to a second row and the title gets two full lines (`-webkit-line-clamp: 2`) rather than an ellipsis. This matters most with 5 voters in a narrow container — the Stats-page film-list modal, `DirectorYearModal`, the Picks list.
 - **`stdDev`**: computed in `enrichMovie()` as `sqrt(Σ(score - mean)² / n)`, rounded to 2dp. `null` when `n < 2`. Used by Controversy page and "Most Controversial" sort. Color thresholds: `<1` → green (consensus), `1–2` → gold, `≥2` → red (polarising).
 - **Controversy page** (`/controversy`): fetches all rated films client-side, filters to `voterCount ≥ 2 && stdDev != null`, sorts by `stdDev DESC`. Per-voter score pills colored by individual score.
 - **Stats page** (`/stats`): fetches all 834 films once, computes everything client-side via `useMemo`. Per-voter cards show rated count, mean score, top-10 pick count, fav director/decade, score distribution bar chart; clicking a card opens a drill-down modal (top/bottom films, director/decade breakdown). An "Everyone's Top 10" section lists each voter's ranked picks. (Voter head-to-head moved to the `/compare` page.)
@@ -259,8 +265,29 @@ All candidates are then scored by **length-normalised Levenshtein distance to th
 - **Mismatch warning**: when the entered id's canonical title/year differ from the film's, a gold banner shows *"IMDb says X — your entry is Y"* plus a **Use IMDb's values** button. It **warns, never blocks** — Greek/alternate titles legitimately differ. Comparison ignores case/whitespace.
 - `extractImdbId` is duplicated in `client/src/utils.js` (client-side convenience) and `server/omdb.js` (the authority — the API never trusts the client).
 
+## Custom lists — `/lists`
+Free-form, named film lists ("Christmas 2026", "Noir night", …) that live alongside the watchlist and don't touch any film flag.
+
+- **Tables**: `lists` + `list_items` (see [Database schema](#database-schema)). Deleting a list cascades its items; deleting a film cascades out of every list. Films themselves are **never** deleted by a list operation.
+- **Routes** (`server/routes/lists.js`, all behind `requireAuth`):
+  | Route | Does |
+  |---|---|
+  | `GET /api/lists` | every list + `film_count`, newest first |
+  | `GET /api/lists/:id` | the list + `films[]`, fully enriched, in `position` order |
+  | `POST /api/lists` | create (`created_by` = session voter; title required, ≤80 chars) |
+  | `PATCH /api/lists/:id` | rename / re-describe — **creator or `mnAdmin` only**, else 403 |
+  | `DELETE /api/lists/:id` | delete — same 403 rule |
+  | `POST /api/lists/:id/items` | append `{ movie_id }`; `INSERT OR IGNORE`, so re-adding is a no-op |
+  | `DELETE /api/lists/:id/items/:movieId` | remove one entry |
+  | `PUT /api/lists/:id/items` | `{ order: [movieId…] }` — rewrites `position` in a transaction |
+- **Permissions are deliberately split**: *anyone* logged in can add/remove films from *any* list (it's a 5-friend group, lists are collaborative), but only the creator (or `mnAdmin`) can rename or delete one, so nobody wipes someone else's list by accident.
+- **`enrichMovie`/`enrichMoviesBatch` moved to `server/enrich.js`** so this route can return the same movie shape as `/api/movies` without importing the movies router. `routes/movies.js` now imports them from there.
+- **UI**: `/lists` is the index (cards, "+ New list"), `/lists/:id` the detail — both rendered by `pages/Lists.jsx` off the same route component. The detail view has a debounced search-and-add box (hits `GET /api/movies?search=`), `MovieCard listView` rows, per-row ✕ remove, and dnd-kit drag reorder (optimistic, reverts on error) for the creator/admin.
+
 ## Chatbot — "HAL 9000" (natural-language Q&A)
-`/chat` page lets any logged-in voter ask free-form questions about the data ("which director do we rate highest?", "what should I watch from the watchlist?"). **Read-only** — it can query the DB but never mutate it. The chatbot is branded as **HAL 9000**; the entry point is a red HAL-eye SVG (`HalLink` in `Header.jsx`) placed **left of the theme selector** in `header-right` (and in the mobile footer) — it is **not** a nav-bar page link.
+`/chat` page lets any logged-in voter ask free-form questions about the data ("which director do we rate highest?", "what should I watch from the watchlist?"). **Read-only** — it can query the DB but never mutate it. The chatbot is branded as **HAL 9000**.
+
+⚠️ **HAL has no UI entry point.** The red HAL-eye SVG (`HalLink` in `Header.jsx`, left of the theme selector and in the mobile footer) was **removed on 2026-08-31 by request** — HAL is not surfaced anywhere in the app. The `/chat` route, `pages/Chat.jsx`, `POST /api/chat` and `server/llm.js` are all still wired and working, so the page is reachable by typing the URL and restoring it means putting a link back in `Header.jsx` (the eye's SVG markup and its `.hal-link`/`.hal-eye` CSS were deleted — see git history for `Header.jsx`/`Header.css` before that commit).
 
 - **Model**: `claude-sonnet-5` via the Anthropic SDK **tool runner** (`server/llm.js`), persona = HAL 9000. Thinking is disabled to keep chat responses snappy.
 - **Cards**: when an answer lists films/directors/years/decades, HAL appends a fenced ` ```cards ` block holding a JSON array (`{ type, id?, value?, title, meta, score, scoreLabel }`). `Chat.jsx` parses that block out of the reply (`parseReply`) and renders a **column of cards** styled like the Stats-page highlight tiles (`hal-card*` classes). Every card is clickable (`cardTarget`): `movie` cards carry `movies.id` → open `MovieModal`; `director`/`year`/`decade` cards carry `value` → open `DirectorYearModal` (the same group view the Rankings page uses). Value types mirror Rankings: director = name, year = `String`, decade = number (start year). Requires `ANTHROPIC_API_KEY` in the root `.env` (loaded by dotenv). If the key is unset, `/api/chat` returns a graceful "chat unavailable" reply instead of erroring — the rest of the app is unaffected.
