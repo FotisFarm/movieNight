@@ -33,8 +33,8 @@ async function seed() {
     for (const row of rows) {
       const rank = parseInt(row.rank) || null;
       const { lastInsertRowid: movieId } = await tx.run(
-        `INSERT INTO movies (director, title, year, rank_global, mn, watchlist, tokens, token_pts, imdb_id, imdb_rating)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO movies (director, title, year, rank_global, mn, watchlist, tokens, token_pts, imdb_id, imdb_rating, poster_path)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         row.director || '',
         row.movie || '',
         row.year || '',
@@ -47,6 +47,8 @@ async function seed() {
         // the original hand-built seed, where OMDb fills them in on demand.
         row.imdb_id ?? null,
         row.imdb_rating ?? null,
+        // TMDB poster path — same story: only present in regenerated seeds.
+        row.poster_path ?? null,
       );
 
       for (const voter of VOTERS) {

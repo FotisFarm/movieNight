@@ -22,6 +22,18 @@ export function fmtScore(v) {
   return Number.isInteger(v) ? String(v) : v.toFixed(1);
 }
 
+// TMDB serves posters at fixed, documented widths off its own CDN, so we store
+// only the bare path (e.g. '/3bhkrj58Vtu7enYsRolD1fZdja1.jpg') and pick the
+// width here. Measured for one poster: w92 3 KB, w185 7 KB, w500 33 KB — worth
+// asking for the size you'll actually display rather than scaling in CSS.
+const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/';
+export const POSTER_SIZES = ['w92', 'w154', 'w185', 'w342', 'w500', 'w780', 'original'];
+
+export function posterUrl(path, size = 'w185') {
+  if (!path) return null;
+  return `${TMDB_IMAGE_BASE}${POSTER_SIZES.includes(size) ? size : 'w185'}${path}`;
+}
+
 // Pull an IMDb id out of anything the user pastes: a full URL, a bare id, or a fragment.
 // e.g. "https://www.imdb.com/title/tt6751668/?ref_=fn_1" -> "tt6751668". Returns '' if none.
 export function extractImdbId(input) {

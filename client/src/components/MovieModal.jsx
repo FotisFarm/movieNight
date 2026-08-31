@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
 import { useAppConfig } from '../AppConfigContext';
-import { fmtScore10 as fmt, scoreClass, extractImdbId } from '../utils';
+import { fmtScore10 as fmt, scoreClass, extractImdbId, posterUrl } from '../utils';
 import './MovieModal.css';
 
 const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
@@ -206,6 +206,15 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal">
         <div className="modal-header">
+          {movie.poster_path && (
+            <img
+              className="modal-poster"
+              src={posterUrl(movie.poster_path, 'w185')}
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+          )}
           <div className="modal-header-text">
             {editing ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

@@ -69,6 +69,7 @@ MovieNights/
 │   ├── enrich.js             # enrichMovie / enrichMoviesBatch — shared by the movies and lists routes
 │   ├── seed.js               # One-time seeding from data/seed.json
 │   ├── omdb.js               # OMDb helpers: lookupImdb, searchImdb (fuzzy), getImdbById, extractImdbId
+│   ├── tmdb.js               # TMDB helpers: poster lookup by imdb_id (see [Posters](#posters-tmdb))
 │   ├── db-readonly.js        # Second libSQL client (ideally a read-only Turso token) + runReadOnlySql (chatbot)
 │   ├── llm.js                # Anthropic chatbot: text-to-SQL tool runner (claude-sonnet-5)
 │   ├── data/
@@ -82,6 +83,9 @@ MovieNights/
 │   │   └── chat.js           # POST /api/chat — natural-language chatbot (read-only)
 │   └── scripts/
 │       ├── backup-and-seed.js  # Nightly SQL dump + seed.json regeneration (async API, current)
+│       ├── backfill-posters.js # Fills movies.poster_path from TMDB (re-runnable)
+│       ├── fix-imdb-ids.js     # Repairs imdb_ids pointing at making-ofs/trailers
+│       ├── poster-census.js    # Poster coverage report (OMDb vs TMDB), no DB needed
 │       └── ...                 # Older one-off IMDb enrichment scripts (still on the dead sync API — see below)
 ├── .github/
 │   └── workflows/
@@ -94,7 +98,7 @@ MovieNights/
 ## Database schema
 ```sql
 movies  (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts,
-         imdb_id TEXT, imdb_rating REAL)
+         imdb_id TEXT, imdb_rating REAL, poster_path TEXT)
 ratings (id, movie_id → movies, voter TEXT, score REAL, comment TEXT,  UNIQUE(movie_id, voter))
 top3    (id, movie_id → movies, voter TEXT, rank INT CHECK(rank>=1 AND rank<=10),  UNIQUE(movie_id, voter))  -- legacy name; now Top 10
 watchlist_votes (id, movie_id → movies, voter TEXT,  UNIQUE(movie_id, voter))
@@ -103,6 +107,7 @@ list_items (id, list_id → lists, movie_id → movies, position INT,  UNIQUE(li
 ```
 Seeding is idempotent — skips if `COUNT(*) > 0` in movies. `seed.json` is regenerated nightly from production, so a fresh clone seeds a local DB with **current** data, not the original 834-film spreadsheet import — see [DB backup & seed refresh](#db-backup--seed-refresh).
 `imdb_id` / `imdb_rating` are populated from OMDb on add and shown in the UI — see [IMDb integration](#imdb-integration).
+`poster_path` is a **TMDB** path (`/abc.jpg`), not a URL — see [Posters (TMDB)](#posters-tmdb).
 `watchlist_votes` rows are deleted when a film leaves the watchlist (and cascade on film delete).
 
 ## Database / persistence (Turso)
@@ -283,6 +288,36 @@ Free-form, named film lists ("Christmas 2026", "Noir night", …) that live alon
 - **Permissions are deliberately split**: *anyone* logged in can add/remove films from *any* list (it's a 5-friend group, lists are collaborative), but only the creator (or `mnAdmin`) can rename or delete one, so nobody wipes someone else's list by accident.
 - **`enrichMovie`/`enrichMoviesBatch` moved to `server/enrich.js`** so this route can return the same movie shape as `/api/movies` without importing the movies router. `routes/movies.js` now imports them from there.
 - **UI**: `/lists` is the index (cards, "+ New list"), `/lists/:id` the detail — both rendered by `pages/Lists.jsx` off the same route component. The detail view has a debounced search-and-add box (hits `GET /api/movies?search=`), `MovieCard listView` rows, per-row ✕ remove, and dnd-kit drag reorder (optimistic, reverts on error) for the creator/admin.
+
+## Posters (TMDB)
+Film posters come from **TMDB**, not OMDb. `TMDB_API_KEY` (root `.env`, forwarded in `docker-compose.yml`) accepts either a v3 API key or a v4 read token — `server/tmdb.js` tells them apart by shape (a v4 token is a JWT and goes in the `Authorization` header). Unset key → every helper returns `null` and the app works without posters, same pattern as `OMDB_API_KEY`.
+
+**Why TMDB and not OMDb's `Poster` field** (OMDb already returns one, for free, on calls we make anyway):
+- OMDb hands back whatever Amazon size string it has — measured across three films: `_QL75_UY562_CR..` (24 KB), `_QL75_UX380_CR..` (45 KB), `_SX300` (13 KB). Same UI slot, 3.5× spread, no way to ask for a width. Rewriting the directive (`._V1_SX150.jpg`) does work, but it's undocumented Amazon URL munging.
+- TMDB serves documented, stable widths off its own CDN. Measured for one poster: `w92` 3 KB, `w154` 6 KB, `w185` 7 KB, `w342` 25 KB, `w500` 33 KB, `original` 119 KB.
+- OMDb's free tier is **1,000 requests/day**, so a one-shot backfill of ~888 films spends the day's quota and silently breaks `lookupImdb`/`searchImdb` meanwhile. TMDB has no daily cap.
+
+**Design**: store only `poster_path` (`/3bhkrj58Vtu7enYsRolD1fZdja1.jpg`); the width is chosen at render time by `posterUrl(path, size)` in `client/src/utils.js`. Moving providers later means changing one column, not the UI.
+
+- **`server/tmdb.js`** — `findByImdbId` (the main path: TMDB indexes by `imdb_id`, so it's an exact lookup with no fuzzy matching to get wrong), `searchMovie`, `getExternalIds`, `lookupPosterPath`.
+- **Kept separate from OMDb on purpose**: OMDb still owns *identity* (`imdb_id`, `imdb_rating`, the tuned fuzzy title matching in `omdb.js`); TMDB only ever answers "what poster goes with this film?".
+- **Write points**: `POST /api/movies` resolves a poster after the IMDb enrichment (own try/catch — a TMDB outage can't cost the IMDb data just written); `PATCH /api/movies/:id` re-points `poster_path` whenever `imdb_id` changes, and **clears it on a TMDB miss** rather than leaving the previous film's artwork.
+- **UI**: `MovieCard` renders a fixed 2:3 box (`w92` in list view, `w185` in grid) with `loading="lazy"` — the aspect box means row heights are settled before any image arrives, so nothing reflows as they stream in. Films with no poster keep the footprint and show a `🎞` placeholder. `MovieModal` shows `w185` in its header.
+- **Attribution**: TMDB's terms require it ("This product uses the TMDB API but is not endorsed or certified by TMDB") — **not yet added to the UI**.
+
+### Backfilling
+`server/scripts/backfill-posters.js` fills `poster_path` for every film with an `imdb_id` and no poster. Re-runnable and safe (TMDB has no cap); `--dry-run`, `--force`, `--limit=N`. Talks to whatever DB `server/db.js` points at, so it needs the usual Turso env in production.
+
+### ⚠️ Wrong `imdb_id`s — `server/scripts/fix-imdb-ids.js`
+The poster work surfaced a pre-existing data bug: **~20 films had an `imdb_id` pointing at the wrong IMDb entry** — a making-of, a trailer, a Q&A, a podcast episode. `tt2709758` was "The Making of 'Schindler's List'", `tt1013648` "The Making of 'Good Will Hunting'", `tt5235758` "Bande-annonce de 'Week End'". Those films showed the **wrong IMDb rating** and could not resolve a poster. Cause: `omdb.js`'s `searchImdb` matches whole words only and happily returns a companion piece for the real film (the documented limitation).
+
+Detection uses TMDB, which indexes by `imdb_id`: an id resolving to a film whose title/year don't match ours — or to nothing — is suspect. The replacement is found by searching TMDB for our own title + year and reading back that film's IMDb id.
+
+Two safety rules, both learned the hard way from the first dry run:
+1. **Auto-apply only when the stored id resolves to *nothing* on TMDB.** If it resolves to a real film, a "wrong" title may just be an alternate one (*Se7en*, *Nouvelle Vague*, *Warriors of the Wind*), so it's left for a human.
+2. **Containment title matching needs a 0.6 length ratio.** Bare containment matched "Seven" inside "Seven Sundays" and would have overwritten *Se7en*'s perfectly good id with a different film.
+
+Nothing is written without `--apply`. 12 films were repaired this way (`imdb_id`, `imdb_rating` and `poster_path` all rewritten); the rest print for manual fixing through the `MovieModal` IMDb editor.
 
 ## Chatbot — "HAL 9000" (natural-language Q&A)
 `/chat` page lets any logged-in voter ask free-form questions about the data ("which director do we rate highest?", "what should I watch from the watchlist?"). **Read-only** — it can query the DB but never mutate it. The chatbot is branded as **HAL 9000**.

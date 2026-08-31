@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { rankBonus } = require('../scoring');
 const { lookupImdb, searchImdb, getImdbById, extractImdbId } = require('../omdb');
+const { findByImdbId, lookupPosterPath } = require('../tmdb');
 const ah = require('../asyncHandler');
 const { enrichMovie, enrichMoviesBatch } = require('../enrich');
 
@@ -174,6 +175,15 @@ router.post('/', ah(async (req, res) => {
       await db.run('UPDATE movies SET imdb_id = ?, imdb_rating = ? WHERE id = ?',
         imdb.imdbId, imdb.imdbRating ?? null, lastInsertRowid);
     }
+    // Poster comes from TMDB, keyed off whichever IMDb id we settled on; falls
+    // back to a title search when there is none. Separate try/catch so a TMDB
+    // outage can't cost us the IMDb data we just wrote.
+    try {
+      const posterPath = await lookupPosterPath(imdb?.imdbId, title.trim(), year.trim());
+      if (posterPath) {
+        await db.run('UPDATE movies SET poster_path = ? WHERE id = ?', posterPath, lastInsertRowid);
+      }
+    } catch (_) { /* no poster is not a failure */ }
   } catch (_) { /* film is still added even if OMDb is unavailable */ }
 
   res.status(201).json(await enrichMovie(
@@ -205,10 +215,18 @@ router.patch('/:id', ah(async (req, res) => {
     if (!cleanId) {
       updates.imdb_id = null;
       updates.imdb_rating = null;
+      // The poster was resolved from that id, so it goes too.
+      updates.poster_path = null;
     } else {
       updates.imdb_id = cleanId;
       const detail = await getImdbById(cleanId);
       updates.imdb_rating = detail?.imdbRating ?? null;
+      // Re-point the poster at the film the new id actually names. A TMDB
+      // miss clears it rather than leaving the previous film's artwork.
+      try {
+        const found = await findByImdbId(cleanId);
+        updates.poster_path = found?.posterPath ?? null;
+      } catch (_) { updates.poster_path = null; }
     }
   }
 

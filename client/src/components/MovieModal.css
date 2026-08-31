@@ -109,3 +109,20 @@
 @media (max-width: 480px) {
   .rating-number-input { width: 60px; font-size: 14px; }
 }
+
+/* ── Poster in the modal header ──
+   Fixed width with a 2:3 box; the header text keeps its own column so a long
+   title still wraps rather than squeezing the image. */
+.modal-poster {
+  width: 86px;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 5px;
+  flex-shrink: 0;
+  background: var(--surface3);
+  align-self: flex-start;
+}
+
+@media (max-width: 640px) {
+  .modal-poster { width: 62px; }
+}

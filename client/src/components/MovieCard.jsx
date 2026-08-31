@@ -1,5 +1,5 @@
 import RankIcon from './RankIcon';
-import { fmtScore10 as fmt, scoreClass } from '../utils';
+import { fmtScore10 as fmt, scoreClass, posterUrl } from '../utils';
 import { useAppConfig } from '../AppConfigContext';
 import './MovieCard.css';
 
@@ -20,9 +20,22 @@ function VoterPills({ ratings, top3, voters }) {
   });
 }
 
+// Fixed 2:3 box so the row height never changes as images stream in, and the
+// films with no poster (a wrong or missing imdb_id) still line up with the rest.
+function Poster({ path, title, size }) {
+  const src = posterUrl(path, size);
+  return (
+    <div className="card-poster">
+      {src
+        ? <img src={src} alt="" loading="lazy" decoding="async" />
+        : <span className="card-poster-empty" aria-hidden="true">🎞</span>}
+    </div>
+  );
+}
+
 export default function MovieCard({ movie, onClick, listView = false, scoreMode = 'fair' }) {
   const { voters, minVoters } = useAppConfig();
-  const { title, director, year, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id } = movie;
+  const { title, director, year, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, poster_path } = movie;
 
   const hasScore = voterCount >= minVoters;
   const displayScore = hasScore
@@ -56,6 +69,8 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
   if (listView) {
     return (
       <article className={cardClass} onClick={onClick} {...keyProps}>
+        <Poster path={poster_path} title={title} size="w92" />
+
         <div className="card-score">
           {displayScore !== null && (
             <div className={`score-big ${scoreClass(displayScore)}`}>{fmt(displayScore)}</div>
@@ -87,6 +102,8 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
 
   return (
     <article className={cardClass} onClick={onClick} {...keyProps}>
+      <Poster path={poster_path} title={title} size="w185" />
+
       <div className="card-score">
         {displayScore !== null && (
           <div className={`score-big ${scoreClass(displayScore)}`}>{fmt(displayScore)}</div>
