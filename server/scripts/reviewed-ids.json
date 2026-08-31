@@ -1,0 +1,86 @@
+[
+  {
+    "match": { "title": "Dune Part 2", "year": "2024" },
+    "imdb_id": "tt15239678",
+    "newTitle": "Dune: Part Two",
+    "note": "typo'd short title"
+  },
+  {
+    "match": { "title": "A Ship Bound for India", "year": "1947" },
+    "imdb_id": "tt0039834",
+    "newTitle": "A Ship to India",
+    "note": "Bergman; loose translation of Skepp till India land"
+  },
+  {
+    "match": { "title": "My Life to Live", "year": "1962" },
+    "imdb_id": "tt0056663",
+    "newTitle": "Vivre Sa Vie",
+    "note": "Godard; English translation stored, canonical title is French"
+  },
+  {
+    "match": { "title": "Two or Three Things I Know About Her", "year": "1967" },
+    "imdb_id": "tt0060304",
+    "newTitle": "2 or 3 Things I Know About Her",
+    "note": "Godard; numerals in canonical title"
+  },
+  {
+    "match": { "title": "How's It Going", "year": "1976" },
+    "imdb_id": "tt0074335",
+    "newTitle": "How's It Going?",
+    "note": "Godard; year left at 1976 — TMDB's 1978 is a later release date"
+  },
+  {
+    "match": { "title": "Short Working Day", "year": "1981" },
+    "imdb_id": "tt0082631",
+    "newTitle": null,
+    "note": "Kieslowski; title already correct. Year left at 1981 — TMDB's 1995 is a posthumous release date"
+  },
+  {
+    "match": { "title": "Casablanca", "year": "1941" },
+    "imdb_id": "tt0034583",
+    "newTitle": null,
+    "note": "title already correct. Year left alone: ours says 1941, TMDB 1943, the film is actually 1942 — neither source is right, so this is a human call"
+  },
+  {
+    "match": { "title": "Star Wars Episode VI: The Return of the Jedi", "year": "1983" },
+    "imdb_id": "tt0086190",
+    "newTitle": null,
+    "note": "title deliberately kept — user prefers the Episode VI naming over TMDB's 'Return of the Jedi'"
+  },
+  {
+    "match": { "title": "A Fistful of Dynamite", "year": "1971" },
+    "imdb_id": "tt0067140",
+    "newTitle": null,
+    "note": "title deliberately kept — user prefers this over TMDB's 'Duck, You Sucker'"
+  },
+  {
+    "match": { "title": "Φανερός Πράκτωρ \"000\"", "year": "1967" },
+    "imdb_id": "tt0123313",
+    "newTitle": null,
+    "note": "Greek film in a Greek collection — keeping the Greek title over TMDB's English one"
+  },
+  {
+    "match": { "title": "All about sex", "year": "1972" },
+    "imdb_id": "tt0068555",
+    "newTitle": "Everything You Always Wanted to Know About Sex *But Were Afraid to Ask",
+    "note": "Woody Allen; stored title was a paraphrase and matched a 2020 film"
+  },
+  {
+    "match": { "title": "The Girl Friends", "year": "1955" },
+    "imdb_id": "tt0047821",
+    "newTitle": "Le Amiche",
+    "note": "Antonioni; stored translation matched a different 1968 film"
+  },
+  {
+    "match": { "title": "Intorelable Cruelty", "year": "2003" },
+    "imdb_id": "tt0138524",
+    "newTitle": "Intolerable Cruelty",
+    "note": "typo; director stored as 'Coen Brothers' so the filmography rescue could not run"
+  },
+  {
+    "match": { "title": "The Ballad of Bluster Scruggs", "year": "2018" },
+    "imdb_id": "tt6412452",
+    "newTitle": "The Ballad of Buster Scruggs",
+    "note": "typo (Bluster -> Buster); same Coen Brothers problem"
+  }
+]
