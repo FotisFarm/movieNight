@@ -110,6 +110,24 @@ async function init() {
       voter    TEXT    NOT NULL,
       UNIQUE(movie_id, voter)
     );
+
+    CREATE TABLE IF NOT EXISTS lists (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      title       TEXT    NOT NULL,
+      description TEXT    NOT NULL DEFAULT '',
+      created_by  TEXT    NOT NULL DEFAULT '',
+      created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS list_items (
+      id       INTEGER PRIMARY KEY AUTOINCREMENT,
+      list_id  INTEGER NOT NULL REFERENCES lists(id)  ON DELETE CASCADE,
+      movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+      position INTEGER NOT NULL DEFAULT 0,
+      UNIQUE(list_id, movie_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_list_items_list ON list_items(list_id, position);
   `);
 
   // Migrations

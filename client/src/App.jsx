@@ -8,6 +8,7 @@ import Recommendations from './pages/Recommendations';
 import Controversy from './pages/Controversy';
 import Stats from './pages/Stats';
 import Compare from './pages/Compare';
+import Lists from './pages/Lists';
 import Chat from './pages/Chat';
 import Login from './pages/Login';
 import { api } from './api';
@@ -75,6 +76,8 @@ function AppInner() {
           <Route path="/recommendations" element={<Recommendations />} />
           <Route path="/controversy" element={<Controversy />} />
           <Route path="/stats" element={<Stats voter={voter} />} />
+          <Route path="/lists" element={<Lists voter={voter} />} />
+          <Route path="/lists/:id" element={<Lists voter={voter} />} />
           <Route path="/compare" element={<Compare />} />
           <Route path="/chat" element={<Chat voter={voter} />} />
         </Routes>

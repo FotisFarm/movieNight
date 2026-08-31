@@ -1,0 +1,186 @@
+.lists-page { max-width: 900px; margin: 0 auto; }
+
+.lists-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lists-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.lists-desc {
+  font-size: 13px;
+  color: var(--text2);
+  margin-top: 4px;
+  max-width: 640px;
+}
+
+.lists-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.lists-detail-actions { display: flex; gap: 8px; }
+
+.lists-danger { color: var(--red); border-color: var(--red); }
+.lists-danger:hover:not(:disabled) { background: var(--red); color: #fff; }
+
+.lists-detail-sub {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 6px;
+}
+
+.lists-empty {
+  text-align: center;
+  color: var(--text2);
+  font-size: 14px;
+  padding: 48px 16px;
+}
+
+/* ── Create / edit form ── */
+.lists-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin: 14px 0;
+}
+
+.lists-edit-buttons { display: flex; gap: 8px; }
+
+/* ── Index grid ── */
+.lists-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.lists-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 96px;
+}
+
+.lists-card:hover { border-color: var(--accent); background: var(--surface2); }
+
+.lists-card-title { font-size: 15px; font-weight: 700; color: var(--text); overflow-wrap: anywhere; }
+
+.lists-card-desc {
+  font-size: 12px;
+  color: var(--text2);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.lists-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.lists-card-by { color: var(--text3); }
+
+/* ── Add-film search ── */
+.lists-page .list-add-box { position: relative; margin: 14px 0; }
+.list-add-input { width: 100%; }
+
+.list-add-results {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+}
+
+.list-add-empty { padding: 12px 14px; font-size: 12px; color: var(--text3); }
+
+.list-add-result {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  color: var(--text);
+}
+.list-add-result:last-child { border-bottom: none; }
+.list-add-result:hover:not(:disabled) { background: var(--surface2); }
+.list-add-result:disabled { cursor: default; opacity: .5; }
+
+.list-add-title { font-size: 13px; font-weight: 600; }
+.list-add-meta  { font-size: 11px; color: var(--text3); flex: 1; min-width: 0; }
+.list-add-action { font-size: 11px; color: var(--accent); white-space: nowrap; }
+
+/* ── Films on a list ── */
+.list-films { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+
+.list-film-row { display: flex; align-items: center; gap: 6px; }
+
+.list-film-card { flex: 1; min-width: 0; }
+
+.list-drag-handle {
+  cursor: grab;
+  color: var(--text3);
+  font-size: 15px;
+  padding: 4px 2px;
+  touch-action: none;
+  user-select: none;
+}
+.list-drag-handle:active { cursor: grabbing; }
+
+.list-remove-btn {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 6px 8px;
+}
+.list-remove-btn:hover { border-color: var(--red); color: var(--red); }
+
+.lists-confirm-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px;
+}
