@@ -82,5 +82,11 @@
     "imdb_id": "tt6412452",
     "newTitle": "The Ballad of Buster Scruggs",
     "note": "typo (Bluster -> Buster); same Coen Brothers problem"
+  },
+  {
+    "match": { "title": "Summer in the City", "year": "1970" },
+    "imdb_id": "tt0066421",
+    "newTitle": null,
+    "note": "Wenders' diploma film. resolve-missing-ids first matched tt5429840 -- a different 1970 film of the same name by Christian Blackwood and Robert Leacock -- because the title+year path did not check the director. Caught by the director audit; the resolver now verifies director on that path too."
   }
 ]

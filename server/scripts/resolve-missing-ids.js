@@ -133,6 +133,34 @@ async function directorFilmography(name) {
   return films;
 }
 
+// Does TMDB credit this candidate to the director we have on file?
+//
+// Deliberately lenient, because a mismatch here only *blocks* an automatic
+// write — it never causes one. Our director strings are a mix of scripts and
+// conventions ("Θόδωρος Αγγελόπουλος" against TMDB's "Theo Angelopoulos",
+// "Coen Brothers" against "Joel Coen, Ethan Coen", "Bong Joon-ho" against
+// "Bong Joon Ho"), so surname-token overlap is the widest net that still
+// rejects an outright different person. An unknown director passes: absence
+// of evidence isn't evidence of a wrong match.
+// norm() strips spaces too, which is right for titles and wrong for names —
+// this one keeps word boundaries so surnames stay comparable.
+const normName = s => (s || '').toLowerCase().normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}\s]/gu, " ")
+  .replace(/\s+/g, ' ').trim();
+
+async function directorAgrees(candidate, ourDirector) {
+  const ours = normName(ourDirector);
+  if (!ours) return true;
+  const credits = await tmdb(`/movie/${candidate.tmdbId}/credits`);
+  const names = (credits?.crew || []).filter(c => c.job === 'Director').map(c => normName(c.name));
+  if (!names.length) return true;
+  if (names.some(n => n === ours || n.includes(ours) || ours.includes(n))) return true;
+  // Compare surname tokens — the part most likely to survive transliteration.
+  const surnames = ours.split(' ').filter(w => w.length > 3);
+  if (!surnames.length) return false;
+  return names.some(n => n.split(' ').some(w => surnames.includes(w)));
+}
+
 // Scores a candidate: lower is better. Title distance dominates; a year that
 // disagrees is penalised but not fatal, since our recorded years drift.
 function score(film, candidate) {
@@ -196,7 +224,15 @@ async function bestCandidate(film) {
     // Confident when the title is close and the year agrees, OR when the
     // director's own filmography pins an exact year — that combination is
     // hard to get wrong even when the title is a translation.
-    const strongTitle = dist <= 0.25 && gap <= 1;
+    //
+    // The title path additionally requires the director to agree. Without
+    // that check it matched "Summer in the City" (1970, Wim Wenders) to a
+    // different 1970 film of the same name by Christian Blackwood — same
+    // title, same year, wrong film. A candidate reached through the
+    // director's own filmography has already proved the director by
+    // construction.
+    const directorOk = best.via === 'director' || await directorAgrees(best, film.director);
+    const strongTitle = dist <= 0.25 && gap <= 1 && directorOk;
     const directorPin = best.via === 'director' && gap === 0 && dist <= 0.6;
     const entry = { film, best, imdbId, dist: +dist.toFixed(2), gap };
 
