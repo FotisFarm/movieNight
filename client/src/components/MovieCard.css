@@ -95,10 +95,15 @@
 .voter-score { font-weight: 700; }
 
 /* ── List view ── */
+/* The row is a wrapping flex line: the title block claims a minimum width, so
+   when the badges and voter pills can't fit beside it they drop to a second
+   row instead of squeezing the title into an ellipsis. */
 .movie-card.list-view {
   padding: 8px 14px;
   align-items: center;
-  gap: 14px;
+  flex-wrap: wrap;
+  column-gap: 14px;
+  row-gap: 6px;
 }
 
 .movie-card.list-view .card-score {
@@ -111,17 +116,19 @@
 }
 
 .movie-card.list-view .card-info {
-  flex: 1;
+  flex: 1 1 220px;
   min-width: 0;
 }
 
 .movie-card.list-view .card-title {
   font-size: 14px;
   font-weight: 700;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  display: block;
 }
 
 .movie-card.list-view .card-meta {
@@ -137,8 +144,14 @@
 
 .movie-card.list-view .card-ratings {
   margin-top: 0;
-  flex-shrink: 0;
+  flex: 0 1 auto;
   flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.movie-card.list-view .badge-imdb-pill {
+  flex-shrink: 0;
 }
 
 /* ── Cold Press list-view card ── */
@@ -289,13 +302,12 @@
 }
 
 @media (max-width: 640px) {
-  .movie-card.list-view {
-    flex-wrap: wrap;
+  .movie-card.list-view .card-info {
+    flex-basis: 150px;
   }
   .movie-card.list-view .card-ratings {
-    width: 100%;
-    margin-top: 6px;
-    flex-wrap: wrap;
+    margin-left: 0;
+    justify-content: flex-start;
   }
   .movie-card.list-view .card-score {
     min-width: 52px;
