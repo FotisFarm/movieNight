@@ -13,3 +13,4 @@ data/*.db
 data/*.db-shm
 data/*.db-wal
 client/data/
+.env.bak.*

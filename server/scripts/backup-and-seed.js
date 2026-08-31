@@ -16,7 +16,7 @@ const fs = require('fs');
 const path = require('path');
 const { VOTERS } = require('../config');
 
-const TABLES = ['movies', 'ratings', 'top3', 'watchlist_votes'];
+const TABLES = ['movies', 'ratings', 'top3', 'watchlist_votes', 'lists', 'list_items'];
 const OUT_SQL = process.env.OUT_SQL || path.join(__dirname, '..', '..', 'movies_dump.sql');
 const SEED_PATH = path.join(__dirname, '..', 'data', 'seed.json');
 
@@ -113,6 +113,7 @@ async function writeSeedJson() {
       tokenPts: m.token_pts || 0,
       imdb_id: m.imdb_id ?? null,
       imdb_rating: m.imdb_rating ?? null,
+      poster_path: m.poster_path ?? null,
       ratings: orderedByVoter(extra.ratings),
       top3: orderedByVoter(extra.top3),
       watchlistVotes: extra.watchlistVotes.slice().sort(),
