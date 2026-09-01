@@ -128,6 +128,27 @@ async function init() {
     );
 
     CREATE INDEX IF NOT EXISTS idx_list_items_list ON list_items(list_id, position);
+
+    -- Append-only trail of score and Top 10 changes. Never updated, never
+    -- deleted except by the movie FK cascade. kind='score' rows carry a score
+    -- (NULL = the rating was cleared); kind='top10' rows carry a rank
+    -- (NULL = the film left that voter's Top 10). source is 'user' for
+    -- anything written live and 'backfill' for rows reconstructed from the
+    -- daily snapshots on the backups branch, whose changed_by is unknowable.
+    CREATE TABLE IF NOT EXISTS rating_history (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      movie_id   INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+      voter      TEXT    NOT NULL,
+      kind       TEXT    NOT NULL DEFAULT 'score',
+      score      REAL,
+      rank       INTEGER,
+      changed_by TEXT    NOT NULL DEFAULT '',
+      source     TEXT    NOT NULL DEFAULT 'user',
+      changed_at TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_rating_history ON rating_history(movie_id, voter, changed_at);
+    CREATE INDEX IF NOT EXISTS idx_rating_history_when ON rating_history(changed_at);
   `);
 
   // Migrations

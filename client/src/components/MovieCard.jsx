@@ -1,23 +1,86 @@
+import { useState } from 'react';
 import RankIcon from './RankIcon';
 import { fmtScore10 as fmt, scoreClass, posterUrl } from '../utils';
 import { useAppConfig } from '../AppConfigContext';
+import {
+  useRatingHistory, useAnchor, useHoverIntent, HistoryPopover, HistoryWindow,
+} from './RatingHistory';
 import './MovieCard.css';
 
-function VoterPills({ ratings, top3, voters }) {
-  return voters.map(v => {
-    const score = ratings?.[v];
-    if (score == null) return null;
-    const rank = top3?.[v];
-    return (
-      <span key={v} className="voter-pill">
-        {rank && <span className="voter-medal"><RankIcon rank={rank} /></span>}
-        <span className="voter-abbr">{v.slice(0, 3)}</span>
-        <span className={`voter-score ${scoreClass(score)}`}>
-          {Number.isInteger(score) ? score : score.toFixed(1)}
-        </span>
-      </span>
-    );
-  });
+// Each pill is the entry point to that voter's rating history: hover (or tap)
+// floats a small stepped graph, clicking opens the detail window. The history
+// itself is only fetched once a pill is actually hovered — see RatingHistory.
+function VoterPills({ movieId, title, ratings, top3, voters }) {
+  const [openVoter, setOpenVoter] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [detailVoter, setDetailVoter] = useState(null);
+
+  const { loading, data } = useRatingHistory(movieId, !!openVoter || !!detailVoter);
+  const anchor = useAnchor(openVoter ? anchorEl : null);
+  const hover = useHoverIntent();
+
+  const close = () => { setOpenVoter(null); setAnchorEl(null); };
+
+  const openDetail = (voter) => { close(); setDetailVoter(voter); };
+
+  // The card itself opens MovieModal on click, so every pill interaction has to
+  // stop propagating — same rule the IMDb badge already follows.
+  const handleClick = (event, voter) => {
+    event.stopPropagation();
+    hover.cancel();
+    if (openVoter === voter) openDetail(voter);   // second tap on mobile
+    else { setOpenVoter(voter); setAnchorEl(event.currentTarget); }
+  };
+
+  return (
+    <>
+      {voters.map(v => {
+        const score = ratings?.[v];
+        if (score == null) return null;
+        const rank = top3?.[v];
+        return (
+          <span
+            key={v}
+            className={`voter-pill rh-has-history${openVoter === v ? ' rh-open' : ''}`}
+            role="button"
+            tabIndex={0}
+            aria-label={`${v} rated ${score} — show rating history`}
+            onMouseEnter={e => { const el = e.currentTarget; hover.enter(() => { setOpenVoter(v); setAnchorEl(el); }); }}
+            onMouseLeave={() => hover.leave(close)}
+            onClick={e => handleClick(e, v)}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(e, v); } }}
+          >
+            {rank && <span className="voter-medal"><RankIcon rank={rank} /></span>}
+            <span className="voter-abbr">{v.slice(0, 3)}</span>
+            <span className={`voter-score ${scoreClass(score)}`}>
+              {Number.isInteger(score) ? score : score.toFixed(1)}
+            </span>
+          </span>
+        );
+      })}
+
+      {openVoter && anchor && (
+        <HistoryPopover
+          voter={openVoter}
+          rows={data?.[openVoter] || []}
+          loading={loading}
+          anchor={anchor}
+          onOpen={() => openDetail(openVoter)}
+          onHoverEnter={hover.cancel}
+          onHoverLeave={() => hover.leave(close)}
+        />
+      )}
+
+      {detailVoter && (
+        <HistoryWindow
+          title={title}
+          voter={detailVoter}
+          rows={data?.[detailVoter] || []}
+          onClose={() => setDetailVoter(null)}
+        />
+      )}
+    </>
+  );
 }
 
 // Fixed 2:3 box so the row height never changes as images stream in, and the
@@ -35,7 +98,7 @@ function Poster({ path, title, size }) {
 
 export default function MovieCard({ movie, onClick, listView = false, scoreMode = 'fair' }) {
   const { voters, minVoters } = useAppConfig();
-  const { title, director, year, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, poster_path } = movie;
+  const { id, title, director, year, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, poster_path } = movie;
 
   const hasScore = voterCount >= minVoters;
   const displayScore = hasScore
@@ -92,7 +155,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
         </div>
 
         <div className="card-ratings">
-          <VoterPills ratings={ratings} top3={top3} voters={voters} />
+          <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} />
         </div>
 
         {ImdbBadge}
@@ -124,7 +187,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
         </div>
 
         <div className="card-ratings">
-          <VoterPills ratings={ratings} top3={top3} voters={voters} />
+          <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} />
         </div>
 
         {ImdbBadge}
