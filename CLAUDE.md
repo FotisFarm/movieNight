@@ -102,6 +102,8 @@ movies  (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, 
 ratings (id, movie_id → movies, voter TEXT, score REAL, comment TEXT,  UNIQUE(movie_id, voter))
 top3    (id, movie_id → movies, voter TEXT, rank INT CHECK(rank>=1 AND rank<=10),  UNIQUE(movie_id, voter))  -- legacy name; now Top 10
 watchlist_votes (id, movie_id → movies, voter TEXT,  UNIQUE(movie_id, voter))
+rating_history  (id, movie_id → movies, voter TEXT, kind TEXT, score REAL, rank INT,
+                 changed_by TEXT, source TEXT, changed_at TEXT)  -- append-only, see [Rating history](#rating-history)
 lists      (id, title TEXT, description TEXT, created_by TEXT, created_at TEXT DEFAULT datetime('now'))
 list_items (id, list_id → lists, movie_id → movies, position INT,  UNIQUE(list_id, movie_id))
 ```
@@ -269,6 +271,29 @@ All candidates are then scored by **length-normalised Levenshtein distance to th
 - **`MovieModal`**: the **IMDb tile is always rendered** (a `＋` when unset). Clicking the yellow badge opens imdb.com (`stopPropagation`); clicking anywhere else on the tile toggles the IMDb editor, which sits directly under the info-grid. The editor has an id field (accepts a pasted link), a **Search** button (candidate list), a clear ✕, and a **"View on IMDb ↗"** link.
 - **Mismatch warning**: when the entered id's canonical title/year differ from the film's, a gold banner shows *"IMDb says X — your entry is Y"* plus a **Use IMDb's values** button. It **warns, never blocks** — Greek/alternate titles legitimately differ. Comparison ignores case/whitespace.
 - `extractImdbId` is duplicated in `client/src/utils.js` (client-side convenience) and `server/omdb.js` (the authority — the API never trusts the client).
+
+## Rating history
+Every score change and Top 10 movement is recorded in `rating_history` (append-only, never updated). Surfaced on the **voter pills of every `MovieCard`**: hover — or tap on mobile — floats a small stepped graph, clicking opens a detail window with the full 0–10 axis. Visible to everyone, like the scores themselves.
+
+- **Stepped, never interpolated.** A rating is a value that *holds* until someone changes it, so a straight line from 7.0 to 6.0 would draw a 6.5 in mid-July that nobody ever gave. `StepChart` in `client/src/components/RatingHistory.jsx` draws flat runs and vertical transitions; the flat stretch is the information.
+- **`kind`** is `'score'` (carries `score`; NULL = the rating was cleared) or `'top10'` (carries `rank`; NULL = the film left that voter's Top 10).
+- **`changed_by` is the session voter, not `voter`** — `mnAdmin` can edit anyone's rating and the trail says who actually did it.
+- **Writes are diffed first.** `MovieModal` PATCHes the whole ratings map on every save, so `routes/movies.js` compares against the stored values before appending — otherwise editing a film's title would log a no-op row per voter. The read + upsert + append run in one `db.transaction`.
+- **Top 10 logging covers knock-on movement.** A single pick renumbers or evicts *other* films (see the overflow rule), so the PATCH handler snapshots each affected voter's whole Top 10 before the change and records every film whose position moved, not just the one edited.
+- **Deliberately NOT in `enrichMovie`.** That runs over all ~1,090 films on Films, Stats and Picks; `rating_history` is the only table here that grows without bound. `GET /api/movies/:id/history` returns one film's rows grouped by voter, fetched on first hover (180ms hover intent) and cached for the session in `RatingHistory.jsx`.
+- **The popover is portalled to `<body>`** with fixed positioning and edge flipping — inside the card it would be clipped by the grid's overflow. It carries its own hover handlers so the pointer can travel from pill to popover without it closing, and every pill interaction calls `stopPropagation` (the card's own click opens `MovieModal`).
+- **Backups**: `rating_history` is in the `.sql` snapshot but deliberately **not** in `seed.json` — that file is committed daily and engineered to produce no diff on an unchanged day, which an append-only table would break permanently.
+
+### Backfill — `server/scripts/backfill-rating-history.js`
+`ratings` has never had a timestamp, so the history before this feature was reconstructed from the daily snapshots on the `backups` branch: the 7-day pruning window only removes files from the branch *tip*, so every historical commit still holds that day's dump. Diffing consecutive days recovers when each score actually moved. `--dry-run` (default), `--apply`, `--force`, `--limit=N`, `--branch=`.
+
+Verified against ground truth: *Dead Poets Society* 7 → 6, *The Return of the King* 9 → 9.5, *Alexander* 3.5 → 4.5, all on 2026-08-25.
+
+What the archive can and can't give:
+- **Floor is 2026-06-23.** The first week of snapshots (06-16 → 06-22) are 4 KB files holding nothing but a SQLite header — the workflow ran before there was a database to dump. They're skipped, not read as an empty state.
+- **Granularity is uneven.** The `.sql` era (2026-08-12 →) is genuinely daily. The pre-Turso `.db` era has only 5 distinct snapshots (06-23, 06-26, 06-29, 07-03, then nothing until the migration), so ~6 weeks of changes land stamped on 2026-08-12.
+- **Attribution is unknowable** — the dumps record values, not who typed them. Every reconstructed row gets `source='backfill'` and an empty `changed_by`.
+- ⚠️ **Only valid against a database whose ids ARE the snapshot ids** — production, or a restore from one of these dumps. A DB seeded from `seed.json` has its ids reassigned by AUTOINCREMENT, and the history would silently attach to the wrong films. The script verifies alignment by title against the newest snapshot and refuses below 90%.
 
 ## Custom lists — `/lists`
 Free-form, named film lists ("Christmas 2026", "Noir night", …) that live alongside the watchlist and don't touch any film flag.

@@ -56,6 +56,33 @@ router.get('/', ah(async (req, res) => {
   res.json(await enrichMoviesBatch(movies));
 }));
 
+// GET /api/movies/:id/history  — every voter's score and Top 10 trail for one
+// film. Deliberately NOT part of enrichMovie: that runs over all ~850 films on
+// the Films, Stats and Picks pages, and rating_history is the one table here
+// that grows without bound. Fetched per film, on demand, and cached client-side.
+router.get('/:id/history', ah(async (req, res) => {
+  const rows = await db.all(`
+    SELECT voter, kind, score, rank, changed_by, source, changed_at
+    FROM rating_history
+    WHERE movie_id = ?
+    ORDER BY changed_at, id
+  `, req.params.id);
+
+  // Grouped by voter so the client can draw one series per pill without regrouping.
+  const byVoter = {};
+  for (const row of rows) {
+    (byVoter[row.voter] ||= []).push({
+      kind: row.kind,
+      score: row.score,
+      rank: row.rank,
+      changedBy: row.changed_by,
+      source: row.source,
+      changedAt: row.changed_at,
+    });
+  }
+  res.json(byVoter);
+}));
+
 // POST /api/movies/:id/watchlist-vote  — must be before /:id
 router.post('/:id/watchlist-vote', ah(async (req, res) => {
   const id = Number(req.params.id);
@@ -242,20 +269,40 @@ router.patch('/:id', ah(async (req, res) => {
 
   if (ratings) {
     const votersToRate = (isAdmin || VOTERS.includes(sessionVoter)) ? VOTERS : [sessionVoter];
-    for (const voter of votersToRate) {
-      if (voter in ratings) {
-        if (!isAdmin && voter !== sessionVoter) continue;
-        const score = ratings[voter];
-        if (score === null || score === '') {
-          await db.run('DELETE FROM ratings WHERE movie_id = ? AND voter = ?', id, voter);
-        } else {
-          await db.run(`
-            INSERT INTO ratings (movie_id, voter, score) VALUES (?, ?, ?)
-            ON CONFLICT(movie_id, voter) DO UPDATE SET score = excluded.score
-          `, id, voter, parseFloat(score));
+    // One transaction so `ratings` and its history can't disagree — the history
+    // is append-only, so a half-applied write here would never self-heal.
+    await db.transaction(async (tx) => {
+      // MovieModal PATCHes the whole ratings map on every save, so the new
+      // value has to be diffed against the stored one: without this, editing a
+      // film's title would append a no-op history row for every voter.
+      const existing = await tx.all('SELECT voter, score FROM ratings WHERE movie_id = ?', id);
+      const before = new Map(existing.map(r => [r.voter, r.score]));
+
+      for (const voter of votersToRate) {
+        if (voter in ratings) {
+          if (!isAdmin && voter !== sessionVoter) continue;
+          const raw = ratings[voter];
+          const score = (raw === null || raw === '') ? null : parseFloat(raw);
+          if (score === null) {
+            await tx.run('DELETE FROM ratings WHERE movie_id = ? AND voter = ?', id, voter);
+          } else {
+            await tx.run(`
+              INSERT INTO ratings (movie_id, voter, score) VALUES (?, ?, ?)
+              ON CONFLICT(movie_id, voter) DO UPDATE SET score = excluded.score
+            `, id, voter, score);
+          }
+          const previous = before.has(voter) ? before.get(voter) : null;
+          if (previous !== score) {
+            // changed_by is the session voter, not `voter` — mnAdmin can edit
+            // someone else's rating, and the trail should say so.
+            await tx.run(`
+              INSERT INTO rating_history (movie_id, voter, kind, score, changed_by)
+              VALUES (?, ?, 'score', ?, ?)
+            `, id, voter, score, sessionVoter || '');
+          }
         }
       }
-    }
+    });
   }
 
   if (comments) {
@@ -270,6 +317,17 @@ router.patch('/:id', ah(async (req, res) => {
 
   if (top3) {
     const touched = new Set();
+
+    // Snapshot each affected voter's whole Top 10 before anything moves: the
+    // renumber/eviction step below can change the rank of films other than
+    // this one, and those movements belong in the history too.
+    const ranksBefore = new Map();
+    for (const voter of VOTERS) {
+      if (!(voter in top3)) continue;
+      if (!isAdmin && voter !== sessionVoter) continue;
+      const rows = await db.all('SELECT movie_id, rank FROM top3 WHERE voter = ?', voter);
+      ranksBefore.set(voter, new Map(rows.map(r => [r.movie_id, r.rank])));
+    }
 
     for (const voter of VOTERS) {
       if (voter in top3) {
@@ -309,6 +367,23 @@ router.patch('/:id', ah(async (req, res) => {
           await tx.run('UPDATE top3 SET rank = ? WHERE id = ?', i + 1, rows[i].id);
         }
       });
+    }
+
+    // Now that ranks have settled, record every film whose position actually
+    // moved — the one just edited, anything renumbered around it, and anything
+    // the overflow rule evicted (rank null).
+    for (const [voter, before] of ranksBefore) {
+      const rows = await db.all('SELECT movie_id, rank FROM top3 WHERE voter = ?', voter);
+      const after = new Map(rows.map(r => [r.movie_id, r.rank]));
+      for (const movieId of new Set([...before.keys(), ...after.keys()])) {
+        const previous = before.has(movieId) ? before.get(movieId) : null;
+        const rank = after.has(movieId) ? after.get(movieId) : null;
+        if (previous === rank) continue;
+        await db.run(`
+          INSERT INTO rating_history (movie_id, voter, kind, rank, changed_by)
+          VALUES (?, ?, 'top10', ?, ?)
+        `, movieId, voter, rank, sessionVoter || '');
+      }
     }
   }
 

@@ -16,7 +16,12 @@ const fs = require('fs');
 const path = require('path');
 const { VOTERS } = require('../config');
 
-const TABLES = ['movies', 'ratings', 'top3', 'watchlist_votes', 'lists', 'list_items'];
+// rating_history goes into the .sql snapshot (it's the only restorable record
+// of it) but deliberately NOT into seed.json: that file is committed daily and
+// engineered to produce no diff on an unchanged day, which an append-only table
+// would break permanently. buildSeed() below queries its own tables, so adding
+// it here affects the snapshot only.
+const TABLES = ['movies', 'ratings', 'top3', 'watchlist_votes', 'lists', 'list_items', 'rating_history'];
 const OUT_SQL = process.env.OUT_SQL || path.join(__dirname, '..', '..', 'movies_dump.sql');
 const SEED_PATH = path.join(__dirname, '..', 'data', 'seed.json');
 
