@@ -1,0 +1,86 @@
+# Manual production deploy to the Oracle Cloud box (Milan).
+#
+# Dispatch-only, on purpose. Prod is stateless but sessions are in-memory
+# (express-session, no store), so every redeploy logs all five voters out —
+# and the nightly seed.json refresh commits to `main`, which would otherwise
+# trigger a deploy for a data-only change. Deploying stays a decision.
+#
+# Requires repo secrets: SSH_PRIVATE_KEY, SSH_HOST, SSH_USER.
+# Optional repo variable: DEPLOY_PATH (defaults to ~/MovieNights).
+name: Deploy to prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch or commit to deploy'
+        required: false
+        default: 'main'
+      rebuild:
+        description: 'Force a no-cache image rebuild'
+        type: boolean
+        required: false
+        default: false
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH
+        env:
+          SSH_KEY:  ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '~/MovieNights' }}
+          DEPLOY_REF: ${{ inputs.ref }}
+          REBUILD: ${{ inputs.rebuild }}
+        run: |
+          ssh -o BatchMode=yes "$SSH_USER@$SSH_HOST" \
+            "DEPLOY_PATH='$DEPLOY_PATH' DEPLOY_REF='$DEPLOY_REF' REBUILD='$REBUILD' bash -s" <<'ENDSSH'
+            set -euo pipefail
+            cd "${DEPLOY_PATH/#\~/$HOME}"
+
+            echo "== before: $(git rev-parse --short HEAD) =="
+            git fetch --all --prune
+            git checkout "$DEPLOY_REF"
+            git pull --ff-only
+            echo "== after:  $(git rev-parse --short HEAD) =="
+
+            # The root .env stays on the box and is never touched by this
+            # workflow — it holds the prod Turso token, MN_PASSWORD, the OMDb /
+            # TMDB / Anthropic keys and GUEST_PASSWORD.
+            if [ ! -f .env ]; then echo "No .env on the box — refusing to deploy."; exit 1; fi
+
+            if [ "$REBUILD" = "true" ]; then
+              docker compose build --no-cache
+            fi
+            docker compose up -d --build
+            docker image prune -f >/dev/null || true
+            docker compose ps
+          ENDSSH
+
+      - name: Health check
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+        run: |
+          for i in $(seq 1 20); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "http://$SSH_HOST:3000/api/auth/me" || true)
+            # 401 is a healthy answer here: the route is up and rejecting an
+            # unauthenticated caller. Anything 2xx/4xx means Express is serving.
+            if [ "$code" != "000" ]; then echo "Up (HTTP $code)"; exit 0; fi
+            echo "waiting for the app... ($i)"; sleep 5
+          done
+          echo "App did not answer on :3000 after 100s"; exit 1
