@@ -231,3 +231,26 @@
   font-weight: 600;
   opacity: 0.75;
 }
+
+/* Popover-sized rank label. The halo is what makes it legible where it
+   crosses the line or the shaded area under it. */
+.rh-pick-label.sm {
+  font-size: 8px;
+}
+
+.rh-pick-label {
+  paint-order: stroke;
+  stroke: var(--surface2);
+  stroke-width: 2.5px;
+  stroke-linejoin: round;
+}
+
+.rh-pop-picks {
+  margin-left: 6px;
+  color: var(--gold);
+  font-weight: 600;
+}
+
+/* The detail window sits on --surface, the popover on --surface2, so the
+   halo has to match whichever ground it's drawn on or it shows as a ring. */
+.rh-win .rh-pick-label { stroke: var(--surface); }

@@ -175,7 +175,7 @@ export function StepChart({ scores, picks = [], width, height, full = false, axi
       <circle cx={x(real[0].at)} cy={y(real[0].value)} r={axis ? 3.5 : 2.4} fill="var(--text3)" />
       <circle cx={x(end)} cy={y(last.value)} r={axis ? 4 : 3} fill={stroke} />
 
-      {picks.filter(pick => pick.at >= start && (axis || pick.rank != null)).map((pick, i) => {
+      {picks.filter(pick => pick.at >= start).map((pick, i) => {
         // A Top 10 marker sits on the line at the moment the pick happened —
         // the score at that time, not the current one.
         const at = Math.min(Math.max(pick.at, start), end);
@@ -184,6 +184,10 @@ export function StepChart({ scores, picks = [], width, height, full = false, axi
         const left = x(at);
         const top = y(held.value);
         const out = pick.rank == null;
+        // The label goes above the marker, unless the marker is riding the top
+        // of the chart — then it drops below so it can't be clipped away.
+        const above = top - size > (axis ? 14 : 11);
+        const labelY = above ? top - size : top + size + (axis ? 9 : 8);
         return (
           <g key={`p${i}`}>
             <rect
@@ -197,11 +201,17 @@ export function StepChart({ scores, picks = [], width, height, full = false, axi
             </rect>
             {/* The rank is the whole point of the marker — a gold diamond that
                 doesn't say #2 only tells you that *something* happened. */}
-            {axis && (
-              <text x={left} y={top - size} className={out ? 'rh-pick-label out' : 'rh-pick-label'} textAnchor="middle">
-                {out ? 'out' : `#${pick.rank}`}
-              </text>
-            )}
+            {/* Drawn at both sizes, not just in the detail window: a bare gold
+                diamond whose rank only appears on hover says that *something*
+                happened without saying what, and on a phone there is no hover
+                at all. */}
+            <text
+              x={left} y={labelY}
+              className={`rh-pick-label${out ? ' out' : ''}${axis ? '' : ' sm'}`}
+              textAnchor="middle"
+            >
+              {out ? 'out' : `#${pick.rank}`}
+            </text>
           </g>
         );
       })}
@@ -257,7 +267,10 @@ export function HistoryPopover({ voter, rows, loading, anchor, onOpen, onHoverEn
             <span>today</span>
           </div>
           <div className="rh-pop-foot">
-            <span>{summary.changes === 0 ? 'never changed' : `${summary.changes} change${summary.changes === 1 ? '' : 's'}`}</span>
+            <span>
+              {summary.changes === 0 ? 'never changed' : `${summary.changes} change${summary.changes === 1 ? '' : 's'}`}
+              {picks.length > 0 && <span className="rh-pop-picks">◆ {picks.length} Top 10</span>}
+            </span>
             <button type="button" className="rh-more" onClick={onOpen}>Detail ›</button>
           </div>
         </>
