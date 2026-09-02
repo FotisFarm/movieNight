@@ -213,3 +213,21 @@
   outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
+
+/* Detail-window chart annotations. The popover deliberately has neither:
+   at 182x52 a date row and rank badges would crowd out the line itself. */
+.rh-tick {
+  font-size: 9px;
+  fill: var(--text3);
+}
+
+.rh-pick-label {
+  font-size: 9px;
+  font-weight: 700;
+  fill: var(--gold);
+}
+
+.rh-pick-label.out {
+  font-weight: 600;
+  opacity: 0.75;
+}
