@@ -74,6 +74,16 @@ jobs:
             cd "$target"
 
             echo "== before: $(git rev-parse --short HEAD) =="
+            # The box is a deploy target, not a workspace: anything modified in
+            # tracked files here is an accident, and one of them (a regenerated
+            # server/package-lock.json) has already broken a build, because the
+            # image builds with npm ci and it refuses an out-of-sync lock file.
+            # Log whatever is being thrown away, then throw it away.
+            if [ -n "$(git status --porcelain -uno)" ]; then
+              echo "Discarding local changes to tracked files:"
+              git status --short -uno
+              git checkout -- .
+            fi
             git fetch --all --prune
             git checkout "$DEPLOY_REF"
             git pull --ff-only
