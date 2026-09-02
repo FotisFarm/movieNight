@@ -73,7 +73,9 @@ export function StepChart({ scores, picks = [], width, height, full = false, axi
   const padLeft = axis ? 26 : 6;
   const padRight = 6;
   const padTop = 8;
-  const padBottom = axis ? 22 : 10;
+  // Two rows of date labels stagger under the detail chart, so it needs more
+  // floor than the popover, which shows no dates at all.
+  const padBottom = axis ? 36 : 10;
 
   const values = real.map(e => e.value);
   const lo = full ? 0 : Math.max(0, Math.min(...values) - 0.5);
@@ -114,6 +116,22 @@ export function StepChart({ scores, picks = [], width, height, full = false, axi
   const baseline = height - padBottom;
   const areaPath = `${paths[paths.length - 1]} L${x(end)},${baseline} L${x(runs[runs.length - 1][0].at)},${baseline} Z`;
 
+  // A date under every change — the point of the detail view is *when* a
+  // rating moved, and the step shape alone doesn't say. Labels alternate
+  // between two rows when they'd collide, and a label with no room on either
+  // row is dropped rather than drawn on top of its neighbour.
+  const dateTicks = [];
+  if (axis) {
+    const placed = [[], []];
+    for (const event of real) {
+      const px = x(event.at);
+      const row = [0, 1].find(r => placed[r].every(other => Math.abs(other - px) > 36));
+      if (row === undefined) continue;
+      placed[row].push(px);
+      dateTicks.push({ px, row, label: formatDay(event.at) });
+    }
+  }
+
   const gridValues = full ? [10, 8, 6, 4, 2] : [hi, lo];
 
   return (
@@ -137,6 +155,18 @@ export function StepChart({ scores, picks = [], width, height, full = false, axi
         </g>
       ))}
 
+      {dateTicks.map((tick, i) => (
+        <g key={`t${i}`}>
+          <line
+            x1={tick.px} y1={padTop} x2={tick.px} y2={baseline}
+            stroke="var(--border)" strokeDasharray="2 4" opacity="0.65"
+          />
+          <text x={tick.px} y={baseline + 13 + tick.row * 11} className="rh-tick" textAnchor="middle">
+            {tick.label}
+          </text>
+        </g>
+      ))}
+
       <path d={areaPath} fill={stroke} opacity="0.09" />
       {paths.map((d, i) => (
         <path key={i} d={d} fill="none" stroke={stroke} strokeWidth={axis ? 2.5 : 2} strokeLinejoin="round" strokeLinecap="round" />
@@ -145,23 +175,47 @@ export function StepChart({ scores, picks = [], width, height, full = false, axi
       <circle cx={x(real[0].at)} cy={y(real[0].value)} r={axis ? 3.5 : 2.4} fill="var(--text3)" />
       <circle cx={x(end)} cy={y(last.value)} r={axis ? 4 : 3} fill={stroke} />
 
-      {picks.filter(p => p.rank != null && p.at >= start).map((pick, i) => {
+      {picks.filter(pick => pick.at >= start).map((pick, i) => {
         // A Top 10 marker sits on the line at the moment the pick happened —
         // the score at that time, not the current one.
         const at = Math.min(Math.max(pick.at, start), end);
         const held = real.filter(e => e.at <= at).pop() || real[0];
         const size = axis ? 8 : 6;
+        const left = x(at);
+        const top = y(held.value);
+        const out = pick.rank == null;
+        // The label goes above the marker, unless the marker is riding the top
+        // of the chart — then it drops below so it can't be clipped away.
+        const above = top - size > (axis ? 14 : 11);
+        const labelY = above ? top - size : top + size + (axis ? 9 : 8);
         return (
-          <rect
-            key={i}
-            x={x(at) - size / 2} y={y(held.value) - size / 2}
-            width={size} height={size} fill="var(--gold)"
-            transform={`rotate(45 ${x(at)} ${y(held.value)})`}
-          >
-            <title>{`Top 10 · #${pick.rank}`}</title>
-          </rect>
+          <g key={`p${i}`}>
+            <rect
+              x={left - size / 2} y={top - size / 2}
+              width={size} height={size}
+              fill={out ? 'none' : 'var(--gold)'}
+              stroke={out ? 'var(--gold)' : 'none'} strokeWidth="1.5"
+              transform={`rotate(45 ${left} ${top})`}
+            >
+              <title>{out ? 'Left the Top 10' : `Top 10 · #${pick.rank}`}</title>
+            </rect>
+            {/* The rank is the whole point of the marker — a gold diamond that
+                doesn't say #2 only tells you that *something* happened. */}
+            {/* Drawn at both sizes, not just in the detail window: a bare gold
+                diamond whose rank only appears on hover says that *something*
+                happened without saying what, and on a phone there is no hover
+                at all. */}
+            <text
+              x={left} y={labelY}
+              className={`rh-pick-label${out ? ' out' : ''}${axis ? '' : ' sm'}`}
+              textAnchor="middle"
+            >
+              {out ? 'out' : `#${pick.rank}`}
+            </text>
+          </g>
         );
       })}
+
     </svg>
   );
 }
@@ -213,7 +267,10 @@ export function HistoryPopover({ voter, rows, loading, anchor, onOpen, onHoverEn
             <span>today</span>
           </div>
           <div className="rh-pop-foot">
-            <span>{summary.changes === 0 ? 'never changed' : `${summary.changes} change${summary.changes === 1 ? '' : 's'}`}</span>
+            <span>
+              {summary.changes === 0 ? 'never changed' : `${summary.changes} change${summary.changes === 1 ? '' : 's'}`}
+              {picks.length > 0 && <span className="rh-pop-picks">◆ {picks.length} Top 10</span>}
+            </span>
             <button type="button" className="rh-more" onClick={onOpen}>Detail ›</button>
           </div>
         </>
@@ -251,10 +308,6 @@ export function HistoryWindow({ title, voter, rows, onClose }) {
           {summary ? (
             <>
               <StepChart scores={scores} picks={picks} width={348} height={168} full axis />
-              <div className="rh-win-x">
-                <span>{formatDay(scores[0].at)}</span>
-                <span>today</span>
-              </div>
               <div className="rh-win-stats">
                 <div className="rh-stat"><span className="k">Now</span><span className="v">{summary.last}</span></div>
                 <div className="rh-stat">
@@ -266,7 +319,7 @@ export function HistoryWindow({ title, voter, rows, onClose }) {
                 <div className="rh-stat"><span className="k">Changes</span><span className="v">{summary.changes}</span></div>
               </div>
               {picks.length > 0 && (
-                <div className="rh-legend"><i />Top 10 movement</div>
+                <div className="rh-legend"><i />Top 10 position when it changed</div>
               )}
               {scores.some(e => e.source === 'backfill') && (
                 <p className="rh-note">
