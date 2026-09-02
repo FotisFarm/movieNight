@@ -51,7 +51,27 @@ jobs:
           ssh -o BatchMode=yes "$SSH_USER@$SSH_HOST" \
             "DEPLOY_PATH='$DEPLOY_PATH' DEPLOY_REF='$DEPLOY_REF' REBUILD='$REBUILD' bash -s" <<'ENDSSH'
             set -euo pipefail
-            cd "${DEPLOY_PATH/#\~/$HOME}"
+            # DEPLOY_PATH is a hint, not gospel — the clone has been moved and
+            # renamed over the box's life. Fall back to searching $HOME for the
+            # checkout that actually has this repo as its origin.
+            target="${DEPLOY_PATH/#~/$HOME}"
+            if [ ! -d "$target/.git" ]; then
+              echo "No repo at $target — searching $HOME..."
+              found=""
+              for dir in "$HOME"/*/ "$HOME"/*/*/; do
+                [ -d "${dir}.git" ] || continue
+                if git -C "$dir" remote get-url origin 2>/dev/null | grep -qi 'movienight'; then
+                  found="${dir%/}"; break
+                fi
+              done
+              if [ -z "$found" ]; then
+                echo "Could not find the checkout. $HOME contains:"; ls -la "$HOME"
+                exit 1
+              fi
+              echo "Found it at $found — set the DEPLOY_PATH repo variable to this."
+              target="$found"
+            fi
+            cd "$target"
 
             echo "== before: $(git rev-parse --short HEAD) =="
             git fetch --all --prune
