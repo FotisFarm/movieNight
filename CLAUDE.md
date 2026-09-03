@@ -4,7 +4,7 @@
 A full-stack web app that replaces a Google Sheets spreadsheet used by a group of 5 friends to rate films, track Movie Night sessions, and maintain rankings. Seeded from 834 films originally in the spreadsheet.
 
 ## Stack
-- **Frontend**: React 18 + Vite, React Router v6, no UI library
+- **Frontend**: React 18 + Vite, React Router v6. No general UI framework, but Radix primitives (`react-dialog`, `react-select`, `react-tooltip`), `dnd-kit` (list reordering) and `framer-motion` are in use
 - **Backend**: Node.js + Express
 - **Database**: SQLite dialect via `@libsql/client` (Turso in production, a local file in dev — see [Database / persistence](#database--persistence-turso))
 - **Containerisation**: Docker (single `Dockerfile`, client build + server runtime); `docker-compose.yml` runs the Oracle prod box and local use
@@ -44,54 +44,72 @@ MovieNights/
 │   └── src/
 │       ├── api.js            # fetch wrapper (getMovies, getRankings, getRecommendations, etc.)
 │       ├── App.jsx           # Router: /films, /rankings, /watchlist, /lists, /recommendations, /controversy, /stats, /compare, /chat
-│       ├── index.css         # Global styles, CSS variables, shared classes
+│       ├── constants.js      # VOTERS fallback for components that render before /api/config lands
+│       ├── utils.js          # fmt, scoreClass, posterUrl, extractImdbId (client-side convenience copy)
+│       ├── AppConfigContext.jsx  # Fetches GET /api/config → { voters, groupSize, minVoters } — see [Configurable voters](#configurable-voters--group-size)
+│       ├── ThemeContext.jsx  # Theme state + localStorage persistence — see [Themes](#themes)
+│       ├── index.css         # Global styles, CSS variables, shared classes, all theme palettes
 │       ├── components/
 │       │   ├── MovieCard.jsx / .css          # Film card (grid + list view)
-│       │   ├── MovieModal.jsx / .css         # Edit ratings, top3, flags, title/director/year
+│       │   ├── MovieModal.jsx / .css         # Edit ratings, top10, flags, title/director/year
 │       │   ├── AddMovieModal.jsx             # Add new film
 │       │   ├── DirectorYearModal.jsx / .css  # Click director/year in Rankings → films + mean score
+│       │   ├── RatingHistory.jsx / .css      # Voter-pill hover popover + StepChart — see [Rating history](#rating-history)
+│       │   ├── RankIcon.jsx                  # Top 10 rank badge (🥇🥈🥉 for 1–3, number badge for 4–10)
 │       │   ├── RankingSection.jsx / .css
-│       │   └── Header.jsx / .css
+│       │   └── Header.jsx / .css             # Nav + theme dropdown + mobile footer
 │       ├── hooks/
-│       │   └── useToast.jsx
+│       │   ├── useToast.jsx
+│       │   └── useRankMap.js # Live fair/group/mnFair/mnGroup rank positions from the full film list
+│       ├── stories/          # MovieCard + RankingSection Storybook stories — ⚠️ no storybook dep or script; orphaned
 │       └── pages/
+│           ├── Login.jsx                # Voter-name buttons + shared password
 │           ├── Films.jsx / .css         # Main film browser
 │           ├── Rankings.jsx / .css      # 4-row rankings layout
 │           ├── Watchlist.jsx / .css
 │           ├── Recommendations.jsx / .css  # "Picks" page — ranked unrated/partially-rated films
 │           ├── Controversy.jsx / .css   # Films ranked by score std deviation
-│           ├── Stats.jsx / .css         # Per-voter overview + head-to-head comparison
+│           ├── Stats.jsx / .css         # Per-voter overview + drill-down + everyone's Top 10
+│           ├── Compare.jsx / .css       # Two modes: film-vs-film and voter-vs-voter head-to-head
 │           ├── Lists.jsx / .css         # Custom named film lists (index + detail)
-│           └── Chat.jsx / .css          # Natural-language chatbot over the DB (read-only)
+│           └── Chat.jsx / .css          # Natural-language Q&A over the DB (read-only)
 ├── server/
-│   ├── index.js              # Express entry point, seeds DB, mounts routes
+│   ├── index.js              # Express entry point, seeds DB, mounts routes, serves GET /api/config
+│   ├── config.js             # VOTERS / GROUP_SIZE / MIN_VOTERS, env-overridable
+│   ├── scoring.js            # rankBonus(rank) = (11 − rank) / 10 — the single definition
+│   ├── asyncHandler.js       # Wraps async route handlers so rejections reach the error middleware
 │   ├── db.js                 # libSQL client (Turso/local file), async get/all/run/transaction helpers, schema+migrations
 │   ├── enrich.js             # enrichMovie / enrichMoviesBatch — shared by the movies and lists routes
 │   ├── seed.js               # One-time seeding from data/seed.json
 │   ├── omdb.js               # OMDb helpers: lookupImdb, searchImdb (fuzzy), getImdbById, extractImdbId
 │   ├── tmdb.js               # TMDB helpers: poster lookup by imdb_id (see [Posters](#posters-tmdb))
-│   ├── db-readonly.js        # Second libSQL client (ideally a read-only Turso token) + runReadOnlySql (chatbot)
-│   ├── llm.js                # Anthropic chatbot: text-to-SQL tool runner (claude-sonnet-5)
+│   ├── db-readonly.js        # Second libSQL client (ideally a read-only Turso token) + runReadOnlySql
+│   ├── llm.js                # Anthropic text-to-SQL tool runner (claude-sonnet-5)
 │   ├── data/
 │   │   ├── seed.json         # Regenerated nightly from production — see [DB backup](#db-backup--seed-refresh)
 │   │   └── movies.db         # local-file DB fallback (gitignored) — only used when TURSO_DATABASE_URL is unset
 │   ├── routes/
+│   │   ├── auth.js           # /api/auth — login/logout/me; VOTERS + mnAdmin + the Σάκιας guest
 │   │   ├── movies.js         # CRUD (scores/ratings/comments come from enrich.js)
 │   │   ├── rankings.js       # 12 ranking panels across 4 row groups
 │   │   ├── recommendations.js  # GET /api/recommendations — Bayesian ranked picks
 │   │   ├── lists.js          # /api/lists — custom named film lists
-│   │   └── chat.js           # POST /api/chat — natural-language chatbot (read-only)
+│   │   └── chat.js           # POST /api/chat — natural-language Q&A (read-only)
 │   └── scripts/
 │       ├── backup-and-seed.js  # Nightly SQL dump + seed.json regeneration (async API, current)
 │       ├── backfill-posters.js # Fills movies.poster_path from TMDB (re-runnable)
+│       ├── backfill-rating-history.js  # Reconstructs history from the backups branch — see [Backfill](#backfill--serverscriptsbackfill-rating-historyjs)
 │       ├── fix-imdb-ids.js     # Repairs imdb_ids pointing at making-ofs/trailers
 │       ├── poster-census.js    # Poster coverage report (OMDb vs TMDB), no DB needed
 │       └── ...                 # Older one-off IMDb enrichment scripts (still on the dead sync API — see below)
 ├── .github/
 │   └── workflows/
-│       └── db-backup.yml     # Daily 02:00 UTC: SQL snapshot → backups branch + seed.json refresh → main
+│       ├── db-backup.yml     # Daily 02:00 UTC: SQL snapshot → backups branch + seed.json refresh → main
+│       └── deploy.yml        # Manual dispatch: SSH deploy to the Oracle prod box — see [Environments](#environments-prod--dev)
 ├── Dockerfile                # Multi-stage: Vite build → lean Node runtime
 ├── docker-compose.yml
+├── PICKS.md                  # Full walkthrough of the recommendations formula
+├── README.md                 # Public-facing overview
 └── CLAUDE.md                 # This file
 ```
 
@@ -123,10 +141,11 @@ Migrated from `better-sqlite3` (local file + Docker volume) to **Turso** (`@libs
 - **Setup required** (not done from here — needs an actual Turso account): create a database, get its `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` (+ optional read-only token), set them as Render env vars, and import the current DB content — Turso's CLI supports creating a database directly from an existing SQLite file (verify exact current syntax against Turso's docs, e.g. something like `turso db create <name> --from-file <path>`). Once real rows exist, `seed.js`'s idempotent skip (`COUNT(*) > 0`) prevents the 834-film seed from ever overwriting them.
 
 ## Auth
-Per-voter session auth. Login page shows the 5 voter names as buttons; all share the same password (`MN_PASSWORD` from `.env`).
+Per-voter session auth. Login page shows the voter names as buttons; all share the same password (`MN_PASSWORD` from `.env`).
 `req.session.voter` stores the logged-in voter name. `GET /api/auth/me` returns `{ voter }`.
+Valid users are `VOTERS` **plus `mnAdmin`** (same password — can edit anyone's rating and reset the watchlist) and a separate guest account **`Σάκιας`**, which authenticates against `GUEST_PASSWORD` instead and is disabled when that variable is unset (see `server/routes/auth.js`).
 `.env` lives at repo root; `server/index.js` loads it with `require('dotenv').config({ path: '../.env' })`.
-Session secret also comes from `.env` (`SESSION_SECRET`). All `/api/*` routes except `/api/auth` require auth (`req.session.voter` must be set).
+Session secret also comes from `.env` (`SESSION_SECRET`). All `/api/*` routes except `/api/auth` and `/api/config` require auth (`req.session.voter` must be set).
 
 ## Voters
 ```
@@ -134,6 +153,20 @@ Session secret also comes from `.env` (`SESSION_SECRET`). All `/api/*` routes ex
 GROUP_SIZE = 5
 ```
 
+### Configurable voters & group size
+Neither list is hardcoded any more. **`server/config.js`** reads `VOTERS` (comma-separated) and `GROUP_SIZE` from the environment, falling back to the five names above and 5, and derives `MIN_VOTERS = min(2, GROUP_SIZE)`. Everything server-side imports from there.
+
+The client learns them at runtime: **`GET /api/config`** (declared in `server/index.js` *before* the `requireAuth` mounts, so the login page can read it) returns `{ voters, groupSize, minVoters }`, and **`AppConfigContext.jsx`** fetches it once at boot and exposes `useAppConfig()`. Components use that, not a constant — `client/src/constants.js` holds only a hardcoded `VOTERS` fallback for the first render before the fetch lands.
+
+Practical consequence: **don't hardcode voter names or `5` in new code** — read `useAppConfig()` on the client and `require('./config')` on the server. This is what lets the single-voter "Σάκιας" deployment work off the same codebase.
+
+## Themes
+Ten film-inspired colour schemes, selectable from a dropdown in `Header.jsx` (and the mobile footer). `THEMES` there is the list; the palettes live in `client/src/index.css` as `[data-theme="..."]` blocks overriding the CSS variables.
+
+- **`ThemeContext.jsx`** holds the state, persists it to `localStorage` under `mn-theme`, and writes `document.documentElement.dataset.theme`. The default, `'original'`, sets the attribute to `''` so bare `:root` applies.
+- Ids: `matrix`, `vertigo`, `clockwork`, `taxi-driver`, `blade-runner`, `amelie`, `godfather`, `grand-budapest`, `itmfl`, plus `original`.
+- `index.css` also contains `cold-press`, `signal` and `blanc` blocks that are **not** in the dropdown — earlier drafts, still styled but unreachable.
+- Themes go well beyond variable swaps: several override component-level selectors (`[data-theme="cold-press"] .modal-header`, …), so **a new shared component may need per-theme rules** rather than inheriting cleanly.
 ## Scoring formulas
 | Name | Formula | Used for |
 |---|---|---|
@@ -223,12 +256,13 @@ predictedScore = confidence * actualFairBoosted + (1 - confidence) * prior
 - `enrichMovie()` in `routes/movies.js` is called on every read and computes all score variants + returns `ratings`, `comments`, `top3` maps. `boost` is computed unconditionally (outside the `n > 0` block) so it's always available for client-side tiebreaking
 - Production: Express serves `server/public/` (copied from `client/dist`) as static, then a `*` catch-all for React Router
 - `MovieModal` has an inline edit mode (✎ button) for title, director, and year — PATCH payload always includes these fields
-- **Live rank badges** (Films page): `allMovies` state (always full, unfiltered) feeds a `rankMap` memo that computes fair/group/mnFair/mnGroup rank positions using the same tiebreaker order as `rankings.js`. MovieCard receives `rank_global` and `mn_rank` from this map, not from the DB column. MN badge shows `MN #N` where N is the MN-specific rank matching the active score mode.
+- **Live rank badges** (Films page): `allMovies` state (always full, unfiltered) feeds **`hooks/useRankMap.js`**, which computes fair/group/mnFair/mnGroup rank positions using the same tiebreaker order as `rankings.js` (and `minVoters` from `useAppConfig()`). MovieCard receives `rank_global` and `mn_rank` from that map, not from the DB column. MN badge shows `MN #N` where N is the MN-specific rank matching the active score mode.
 - **Rankings refetch on navigate**: `Rankings.jsx` uses `useLocation().key` as a `useEffect` dependency — React Router changes `.key` on every navigation, so rankings always reload when switching to the Rankings tab.
 - **List-view `MovieCard` wraps instead of truncating**: the row is a wrapping flex line (`flex-wrap: wrap`) and `.card-info` has `flex: 1 1 220px` (150px under 640px), so when the badges + voter pills can't fit beside the title they drop to a second row and the title gets two full lines (`-webkit-line-clamp: 2`) rather than an ellipsis. This matters most with 5 voters in a narrow container — the Stats-page film-list modal, `DirectorYearModal`, the Picks list.
 - **`stdDev`**: computed in `enrichMovie()` as `sqrt(Σ(score - mean)² / n)`, rounded to 2dp. `null` when `n < 2`. Used by Controversy page and "Most Controversial" sort. Color thresholds: `<1` → green (consensus), `1–2` → gold, `≥2` → red (polarising).
 - **Controversy page** (`/controversy`): fetches all rated films client-side, filters to `voterCount ≥ 2 && stdDev != null`, sorts by `stdDev DESC`. Per-voter score pills colored by individual score.
 - **Stats page** (`/stats`): fetches all 834 films once, computes everything client-side via `useMemo`. Per-voter cards show rated count, mean score, top-10 pick count, fav director/decade, score distribution bar chart; clicking a card opens a drill-down modal (top/bottom films, director/decade breakdown). An "Everyone's Top 10" section lists each voter's ranked picks. (Voter head-to-head moved to the `/compare` page.)
+- **Compare page** (`/compare`): two modes behind a Movies/Voters toggle. *Movies* — pick two films with an inline substring picker and see every voter's two scores side by side, plus a win/draw/loss tally over voters who rated both. *Voters* — the head-to-head that used to live on Stats. Voter lists come from `useAppConfig()`, so it degrades to the single-voter deployment.
 - **Watchlist voting**: `watchlist_votes` table tracks per-voter votes. `enrichMovie()` adds `watchlistVotes: string[]` to every movie. `POST /api/movies/:id/watchlist-vote` toggles the session voter's vote (insert or delete). Watchlist page shows a "Most Wanted" ranking panel (films with ≥1 vote, sorted by vote count desc, tiebreak: voterCount desc) above the card grid. Vote button on each card reflects the logged-in voter's vote status. The `voter` prop is passed from `App.jsx` (sourced from session via `api.me()`).
 - **`/api/movies/:id/watchlist-vote`** must be declared before `/:id` in Express (same rule as `/directors`).
 - **Removing a film from the watchlist wipes its votes** — handled server-side in `PATCH /:id` (when `watchlist` goes truthy → falsy), so it covers every path: the Remove button, "Mark as MN", and the `MovieModal` watchlist toggle. Re-adding a film starts with zero votes. Deleting a film cascades its votes via the FK.
@@ -366,7 +400,7 @@ Two environments, each on its own branch and its own Turso database. Roles were 
 | URL | `http://130.110.13.27:3000` — **no TLS** | `https://movienight-prod.onrender.com` |
 | Branch | `main` | `dev` |
 | Turso DB | `movies` | `movies-dev` |
-| Deploy | **manual**: `git pull && docker compose up -d --build` | auto-deploys on push to `dev` |
+| Deploy | **manual**, two ways: the `Deploy to prod` GitHub Action (`deploy.yml`, `workflow_dispatch` — inputs `ref` and `rebuild`; needs secrets `SSH_PRIVATE_KEY`/`SSH_HOST`/`SSH_USER` and optional variable `DEPLOY_PATH`), or `git pull && docker compose up -d --build` on the box | auto-deploys on push to `dev` |
 | Runs via | `docker-compose.yml` + root `.env` | Dockerfile + Render dashboard env vars |
 
 **Workflow**: work on `dev` → Render deploys it automatically → verify → merge `dev` → `main` → pull on the Oracle box. The merge is the gate; prod only ever runs code that already ran on dev. (Before this split, both hosts ran `main` and every push went straight to production — that's how the crash bug in `af30411` reached prod for ~45 minutes.)
@@ -383,6 +417,13 @@ Two environments, each on its own branch and its own Turso database. Roles were 
 - The Oregon Render service (`movienight-ghpk`) is **suspended**, not deleted, and holds a revoked token.
 
 ## DB backup & seed refresh
+
+**Why snapshots exist when Turso is the live database.** Turso is hosting, not backup — it keeps the current state highly available, which is a different job:
+- **Application and human error replicate instantly.** A bad migration, a mis-aimed `PATCH`, or `POST /api/movies/watchlist/reset` with `mode: 'all'` is a perfectly valid write. Managed durability preserves it faithfully; only a yesterday's-copy does not.
+- **They're provider- and account-independent.** The dumps are plain SQLite text on a git branch, restorable into any SQLite engine. Losing the Turso account, or having a token invalidated, doesn't touch them — and token invalidation is group-wide here, so it takes prod and dev at once.
+- **`seed.json` is a separate job entirely.** It isn't disaster recovery: it's what lets a fresh clone or a local dev run start with current data and no Turso credentials at all.
+- **They turned out to be a time series nobody designed.** `ratings` has never had a timestamp, so the entire pre-feature rating history was reconstructed by diffing consecutive daily dumps — see [Backfill](#backfill--serverscriptsbackfill-rating-historyjs). Point-in-time copies answered a question the live database structurally could not.
+
 `.github/workflows/db-backup.yml` runs daily at 02:00 UTC (also `workflow_dispatch`-able) and is driven by `server/scripts/backup-and-seed.js`. It reads the **prod** Turso database (`movies`) over the network — **no SSH, no host dependency** — and produces two artifacts:
 
 | Artifact | Destination | Purpose |
