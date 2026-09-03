@@ -2,8 +2,6 @@ const db = require('./db');
 const path = require('path');
 const fs = require('fs');
 
-const VOTERS = ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'];
-
 function parseRating(s) {
   if (!s || typeof s !== 'string') return null;
   s = s.replace(/\*/g, '').trim();
@@ -51,7 +49,10 @@ async function seed() {
         row.poster_path ?? null,
       );
 
-      for (const voter of VOTERS) {
+      // Iterate the voters present in the seed file, not a fixed list: a seed
+      // regenerated after a voter joins carries names this build may not know
+      // about, and dropping them here would lose real ratings silently.
+      for (const voter of new Set([...Object.keys(row.ratings || {}), ...Object.keys(row.top3 || {})])) {
         const score = parseRating(row.ratings?.[voter]);
         if (score !== null) {
           await tx.run('INSERT OR IGNORE INTO ratings (movie_id, voter, score) VALUES (?, ?, ?)', movieId, voter, score);

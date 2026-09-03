@@ -10,6 +10,10 @@ services:
     environment:
       - NODE_ENV=production
       - DATA_DIR=/app/data
+      # Group membership. Unset = the five names and GROUP_SIZE=5 baked into
+      # server/config.js; set both together when a voter joins or leaves.
+      - VOTERS=${VOTERS:-}
+      - GROUP_SIZE=${GROUP_SIZE:-}
       - TURSO_DATABASE_URL=${TURSO_DATABASE_URL:-}
       - TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN:-}
       - TURSO_READONLY_AUTH_TOKEN=${TURSO_READONLY_AUTH_TOKEN:-}

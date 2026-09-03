@@ -43,6 +43,11 @@ jobs:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_READONLY_AUTH_TOKEN }}
           OUT_SQL: ${{ github.workspace }}/movies_dump.sql
+          # seed.json keys ratings by voter name and emits only names it
+          # knows, so a stale list here would silently drop a new voter's
+          # ratings from the committed seed every night.
+          VOTERS: ${{ vars.VOTERS }}
+          GROUP_SIZE: ${{ vars.GROUP_SIZE }}
         run: node scripts/backup-and-seed.js
 
       - name: Commit refreshed seed.json to main
