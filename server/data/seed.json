@@ -5974,9 +5974,7 @@
     "imdb_id": "tt0407467",
     "imdb_rating": 6.7,
     "poster_path": "/zBrJBUo0XwmAq5BpfRjvfUbPVje.jpg",
-    "ratings": {
-      "Φώτης": "5"
-    },
+    "ratings": {},
     "top3": {},
     "watchlistVotes": []
   },
@@ -14128,7 +14126,7 @@
     "poster_path": "/qNbMsKVzigERgJUbwf8pKyZogpb.jpg",
     "ratings": {
       "Παντελής": "8.5",
-      "Φώτης": "9.5",
+      "Φώτης": "10",
       "Λεόντιος": "9.2"
     },
     "top3": {},
