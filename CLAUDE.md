@@ -122,8 +122,10 @@ top3    (id, movie_id → movies, voter TEXT, rank INT CHECK(rank>=1 AND rank<=1
 watchlist_votes (id, movie_id → movies, voter TEXT,  UNIQUE(movie_id, voter))
 rating_history  (id, movie_id → movies, voter TEXT, kind TEXT, score REAL, rank INT,
                  changed_by TEXT, source TEXT, changed_at TEXT)  -- append-only, see [Rating history](#rating-history)
-lists      (id, title TEXT, description TEXT, created_by TEXT, created_at TEXT DEFAULT datetime('now'))
+lists      (id, title TEXT, description TEXT, created_by TEXT, created_at TEXT DEFAULT datetime('now'),
+            slug TEXT UNIQUE)                                    -- URL slug, see [Custom lists](#custom-lists--lists)
 list_items (id, list_id → lists, movie_id → movies, position INT,  UNIQUE(list_id, movie_id))
+list_slug_aliases (slug TEXT PRIMARY KEY, list_id → lists)       -- slugs a list used to answer to, after a rename
 ```
 Seeding is idempotent — skips if `COUNT(*) > 0` in movies. `seed.json` is regenerated nightly from production, so a fresh clone seeds a local DB with **current** data, not the original 834-film spreadsheet import — see [DB backup & seed refresh](#db-backup--seed-refresh).
 `imdb_id` / `imdb_rating` are populated from OMDb on add and shown in the UI — see [IMDb integration](#imdb-integration).
@@ -204,7 +206,7 @@ Score sorts filter out films with <2 voters before sorting (`scoreSortActive` fl
 2. Higher total token value wins (rankBonus: #1=1.0 > #2=0.9 > … > #10=0.1)
 3. Older year wins
 
-## Rankings layout (4 rows × 3 panels)
+## Rankings layout (1 of 4 rows × 4 panels)
 | Row | Score field | Description |
 |---|---|---|
 | Fair Score — All Films | `fairBoosted` | ÷voters + tokens, all rated films (≥2 votes) |
@@ -212,7 +214,9 @@ Score sorts filter out films with <2 voters before sorting (`scoreSortActive` fl
 | Group Score — All Films | `boostedScore` | ÷5 + tokens, all rated films |
 | Group Score — Movie Nights Only | `boostedScore` | same, `mn = 1` only |
 
-Each row has: Top 10 Films · Top Directors · Top Years
+Each row has: Top 10 Films · Top Directors · Top Years · Top Decades
+
+**Two selectors pick which row is on screen** — *Score* (Fair / Group) and *Films* (Movie Nights / All), defaulting to **Fair · Movie Nights**. `GET /api/rankings` returns every panel for all four combinations in one response, so switching is instant and never refetches. Both choices persist per browser in `localStorage` (`mn_rankScore`, `mn_rankScope`), alongside the existing `mn_rankPanels` (which panel types are shown) and `mn_minDirFilms`.
 
 Clicking a **director** or **year** row opens `DirectorYearModal` — shows all matching films as MovieCards (list view, sorted by the clicked panel's `scoreKey` desc) plus the mean score (same `scoreKey`) of films with ≥2 votes. The `scoreKey` and `mnOnly` flag travel from ROWS config → `RankingSection` prop → click callback → `selectedLabel` state → `DirectorYearModal` prop. Clicking a film card within opens the standard `MovieModal`.
 
@@ -262,6 +266,7 @@ predictedScore = confidence * actualFairBoosted + (1 - confidence) * prior
 - **`stdDev`**: computed in `enrichMovie()` as `sqrt(Σ(score - mean)² / n)`, rounded to 2dp. `null` when `n < 2`. Used by Controversy page and "Most Controversial" sort. Color thresholds: `<1` → green (consensus), `1–2` → gold, `≥2` → red (polarising).
 - **Controversy page** (`/controversy`): fetches all rated films client-side, filters to `voterCount ≥ 2 && stdDev != null`, sorts by `stdDev DESC`. Per-voter score pills colored by individual score.
 - **Stats page** (`/stats`): fetches all 834 films once, computes everything client-side via `useMemo`. Per-voter cards show rated count, mean score, top-10 pick count, fav director/decade, score distribution bar chart; clicking a card opens a drill-down modal (top/bottom films, director/decade breakdown). An "Everyone's Top 10" section lists each voter's ranked picks. (Voter head-to-head moved to the `/compare` page.)
+  - **Highlight tiles and the score cap**: `fairBoosted` is capped at 10 and ~14 of the ~200 scored films sit exactly on that cap, so it can't order the top on its own. "Highest rated" breaks ties by voter count first (same rule as everywhere else), then by the **uncapped** `fairScore + boost`, then oldest year. "Lowest rated" is sorted independently rather than read off the end of that list — reversing a descending sort reverses its tiebreaks too, which used to award "worst" to the *least*-voted film; voter count still points the same way, only score and year flip.
 - **Compare page** (`/compare`): two modes behind a Movies/Voters toggle. *Movies* — pick two films with an inline substring picker and see every voter's two scores side by side, plus a win/draw/loss tally over voters who rated both. *Voters* — the head-to-head that used to live on Stats. Voter lists come from `useAppConfig()`, so it degrades to the single-voter deployment.
 - **Watchlist voting**: `watchlist_votes` table tracks per-voter votes. `enrichMovie()` adds `watchlistVotes: string[]` to every movie. `POST /api/movies/:id/watchlist-vote` toggles the session voter's vote (insert or delete). Watchlist page shows a "Most Wanted" ranking panel (films with ≥1 vote, sorted by vote count desc, tiebreak: voterCount desc) above the card grid. Vote button on each card reflects the logged-in voter's vote status. The `voter` prop is passed from `App.jsx` (sourced from session via `api.me()`).
 - **`/api/movies/:id/watchlist-vote`** must be declared before `/:id` in Express (same rule as `/directors`).
@@ -332,21 +337,31 @@ What the archive can and can't give:
 ## Custom lists — `/lists`
 Free-form, named film lists ("Christmas 2026", "Noir night", …) that live alongside the watchlist and don't touch any film flag.
 
-- **Tables**: `lists` + `list_items` (see [Database schema](#database-schema)). Deleting a list cascades its items; deleting a film cascades out of every list. Films themselves are **never** deleted by a list operation.
-- **Routes** (`server/routes/lists.js`, all behind `requireAuth`):
+- **Tables**: `lists` + `list_items` + `list_slug_aliases` (see [Database schema](#database-schema)). Deleting a list cascades its items and aliases; deleting a film cascades out of every list. Films themselves are **never** deleted by a list operation.
+- **Routes** (`server/routes/lists.js`, all behind `requireAuth`). `:key` is a slug, an alias, or a numeric id — see [Slugs](#list-urls--slugs):
   | Route | Does |
   |---|---|
-  | `GET /api/lists` | every list + `film_count`, newest first |
-  | `GET /api/lists/:id` | the list + `films[]`, fully enriched, in `position` order |
-  | `POST /api/lists` | create (`created_by` = session voter; title required, ≤80 chars) |
-  | `PATCH /api/lists/:id` | rename / re-describe — **creator or `mnAdmin` only**, else 403 |
-  | `DELETE /api/lists/:id` | delete — same 403 rule |
-  | `POST /api/lists/:id/items` | append `{ movie_id }`; `INSERT OR IGNORE`, so re-adding is a no-op |
-  | `DELETE /api/lists/:id/items/:movieId` | remove one entry |
-  | `PUT /api/lists/:id/items` | `{ order: [movieId…] }` — rewrites `position` in a transaction |
+  | `GET /api/lists` | every list + `film_count`, up to 6 `posters`, newest first. `?movieId=` also sets `has_film` per list |
+  | `GET /api/lists/:key` | the list + `films[]`, fully enriched, in `position` order |
+  | `POST /api/lists` | create (`created_by` = session voter; title required, ≤80 chars; slug derived from the title) |
+  | `PATCH /api/lists/:key` | rename / re-describe — **creator or `mnAdmin` only**, else 403. A title change re-slugs and parks the old slug |
+  | `DELETE /api/lists/:key` | delete — same 403 rule |
+  | `POST /api/lists/:key/items` | append `{ movie_id }`; `INSERT OR IGNORE`, so re-adding is a no-op |
+  | `DELETE /api/lists/:key/items/:movieId` | remove one entry |
+  | `PUT /api/lists/:key/items` | `{ order: [movieId…] }` — rewrites `position` in a transaction |
+
+### List URLs & slugs
+Lists are addressed by slug (`/lists/christougenna-2026`), not by id.
+- **`server/slugify.js`** turns a title into a slug: Greek is **transliterated to Latin** (a Greek slug percent-encodes into noise the moment someone pastes the link into a chat app), Latin accents are stripped, and a purely numeric result is prefixed (`list-2026`) so slugs and legacy numeric ids can never collide.
+- **`server/listSlugs.js`'s `uniqueSlug`** resolves collisions with a numeric suffix (`noir-night`, `noir-night-2`), checking both current slugs and parked aliases. It takes the db helpers as an argument so `db.js` can call it during `init()` without a require cycle.
+- **A rename re-slugs the list** so the URL keeps matching the name on screen, and the outgoing slug is parked in `list_slug_aliases` — a link already shared in the group chat still resolves and the client swaps the address bar for the canonical slug (`navigate(..., { replace: true })`). Bare numeric ids resolve too, for links predating slugs.
+- **`db.js` backfills** a slug for every list that has none, so lists created before the migration keep working. The column is added nullable (SQLite can't `ALTER TABLE ADD COLUMN … UNIQUE`) with a separate unique index.
+- Writes from the client address the list by **numeric id**, which never changes.
 - **Permissions are deliberately split**: *anyone* logged in can add/remove films from *any* list (it's a 5-friend group, lists are collaborative), but only the creator (or `mnAdmin`) can rename or delete one, so nobody wipes someone else's list by accident.
 - **`enrichMovie`/`enrichMoviesBatch` moved to `server/enrich.js`** so this route can return the same movie shape as `/api/movies` without importing the movies router. `routes/movies.js` now imports them from there.
-- **UI**: `/lists` is the index (cards, "+ New list"), `/lists/:id` the detail — both rendered by `pages/Lists.jsx` off the same route component. The detail view has a debounced search-and-add box (hits `GET /api/movies?search=`), `MovieCard listView` rows, per-row ✕ remove, and dnd-kit drag reorder (optimistic, reverts on error) for the creator/admin.
+- **UI**: `/lists` is the index (cards, "+ New list"), `/lists/:key` the detail — both rendered by `pages/Lists.jsx` off the same route component. The detail view has a debounced search-and-add box (hits `GET /api/movies?search=`), `MovieCard listView` rows, per-row ✕ remove, and dnd-kit drag reorder (optimistic, reverts on error) for the creator/admin.
+- **Index cards stack posters**: `PosterStack` in `Lists.jsx` renders the `posters` the API returns as a 2:3 strip above the title, plus `+N` for the remainder. Up to three sit side by side; past that they overlap (`.lists-card-posters.overlap`, `-18px` margin) so a long list stays inside the card instead of scaling the artwork down.
+- **Films can be added from anywhere**, not just this page: `MovieModal` has a **Lists** section (toggle chip per list, `has_film` = on the list, plus a "+ New list" field that creates and adds in one step). Membership is written straight through to the item endpoints rather than batched into the modal's Save, so it commits on click — which is why `ListDetail` refetches when the modal closes.
 
 ## Posters (TMDB)
 Film posters come from **TMDB**, not OMDb. `TMDB_API_KEY` (root `.env`, forwarded in `docker-compose.yml`) accepts either a v3 API key or a v4 read token — `server/tmdb.js` tells them apart by shape (a v4 token is a JWT and goes in the `Authorization` header). Unset key → every helper returns `null` and the app works without posters, same pattern as `OMDB_API_KEY`.
