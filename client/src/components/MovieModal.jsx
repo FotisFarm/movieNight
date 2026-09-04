@@ -60,6 +60,14 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   const [imdbOpen,     setImdbOpen]     = useState(false); // IMDb editor shown (via tile click)
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saveError,     setSaveError]     = useState('');
+  // Custom lists this film can be dropped into. Membership is written straight
+  // through (own endpoints) rather than riding along with Save, so the chips
+  // reflect the server the moment they're clicked.
+  const [lists,        setLists]        = useState(null);   // null = still loading
+  const [listBusyId,   setListBusyId]   = useState(null);
+  const [newListTitle, setNewListTitle] = useState('');
+  const [newListOpen,  setNewListOpen]  = useState(false);
+  const [listError,    setListError]    = useState('');
 
   useEffect(() => {
     function onKey(e) {
@@ -71,6 +79,15 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
 
   useEffect(() => {
     api.getTop10Counts().then(setTop10Counts).catch(() => {});
+  }, [movieId]);
+
+  useEffect(() => {
+    if (!movieId) return;
+    setLists(null);
+    setNewListOpen(false);
+    setNewListTitle('');
+    setListError('');
+    api.getLists(movieId).then(setLists).catch(() => setLists([]));
   }, [movieId]);
 
   useEffect(() => {
@@ -139,6 +156,45 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
       setImdbCandidates([]);
     } finally {
       setImdbBusy(false);
+    }
+  }
+
+  // Add or remove this film from one list. Lists are collaborative, so anyone
+  // logged in may do this on any list.
+  async function toggleList(list) {
+    setListBusyId(list.id);
+    setListError('');
+    try {
+      if (list.has_film) await api.removeFromList(list.id, movieId);
+      else               await api.addToList(list.id, movieId);
+      setLists(current => current.map(l => (
+        l.id === list.id
+          ? { ...l, has_film: !l.has_film, film_count: l.film_count + (l.has_film ? -1 : 1) }
+          : l
+      )));
+    } catch (e) {
+      setListError(e.message);
+    } finally {
+      setListBusyId(null);
+    }
+  }
+
+  // Create a list and drop this film into it in one go.
+  async function createListWithFilm() {
+    const title = newListTitle.trim();
+    if (!title) return;
+    setListBusyId('new');
+    setListError('');
+    try {
+      const created = await api.createList({ title });
+      await api.addToList(created.id, movieId);
+      setLists(current => [{ ...created, film_count: 1, posters: [], has_film: true }, ...(current || [])]);
+      setNewListTitle('');
+      setNewListOpen(false);
+    } catch (e) {
+      setListError(e.message);
+    } finally {
+      setListBusyId(null);
     }
   }
 
@@ -542,6 +598,61 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
               👁 Watchlist
             </button>
           </div>
+
+          {/* Lists — saved immediately, independent of the Save button */}
+          <div className="modal-section-label section-label" style={{ marginTop: 20 }}>Lists</div>
+          {lists === null ? (
+            <div style={{ fontSize: 12, color: 'var(--text2)' }}>Loading lists…</div>
+          ) : (
+            <>
+              <div className="flags-row">
+                {lists.map(l => (
+                  <button
+                    key={l.id}
+                    className={`toggle-btn${l.has_film ? ' active' : ''}`}
+                    disabled={listBusyId === l.id}
+                    title={l.has_film ? `Remove from “${l.title}”` : `Add to “${l.title}”`}
+                    onClick={() => toggleList(l)}
+                  >
+                    {l.has_film ? '✓ ' : '+ '}{l.title}
+                  </button>
+                ))}
+                {!newListOpen && (
+                  <button className="toggle-btn" onClick={() => setNewListOpen(true)}>+ New list</button>
+                )}
+              </div>
+
+              {newListOpen && (
+                <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                  <input
+                    className="input"
+                    autoFocus
+                    maxLength={80}
+                    placeholder="New list title"
+                    value={newListTitle}
+                    onChange={e => setNewListTitle(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && createListWithFilm()}
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={createListWithFilm}
+                    disabled={listBusyId === 'new' || !newListTitle.trim()}
+                  >
+                    Create &amp; add
+                  </button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => { setNewListOpen(false); setNewListTitle(''); }}>✕</button>
+                </div>
+              )}
+
+              {lists.length === 0 && !newListOpen && (
+                <div style={{ fontSize: 12, color: 'var(--text2)' }}>No lists yet.</div>
+              )}
+              {listError && (
+                <div style={{ fontSize: 12, color: 'var(--red)', marginTop: 6 }}>{listError}</div>
+              )}
+            </>
+          )}
 
         </div>
 

@@ -13,7 +13,32 @@ import { api } from '../api';
 import MovieCard from '../components/MovieCard';
 import MovieModal from '../components/MovieModal';
 import { useToast } from '../hooks/useToast.jsx';
+import { posterUrl } from '../utils';
 import './Lists.css';
+
+// ── Stacked poster preview on an index card ──
+// Up to six posters sit side by side; past three they slide over each other so a
+// long list still fits the card width instead of shrinking the artwork.
+function PosterStack({ posters = [], filmCount = 0 }) {
+  if (posters.length === 0) return null;
+  const hidden = filmCount - posters.length;
+  return (
+    <div className={`lists-card-posters${posters.length > 3 ? ' overlap' : ''}`}>
+      {posters.map((path, index) => (
+        <img
+          key={`${path}-${index}`}
+          className="lists-card-poster"
+          style={{ zIndex: posters.length - index }}
+          src={posterUrl(path, 'w92')}
+          alt=""
+          loading="lazy"
+          decoding="async"
+        />
+      ))}
+      {hidden > 0 && <span className="lists-card-poster-more">+{hidden}</span>}
+    </div>
+  );
+}
 
 // ── One draggable film row inside a list ──
 function ListFilmRow({ movie, editable, onOpen, onRemove }) {
@@ -274,7 +299,9 @@ function ListDetail({ id, voter }) {
       {modalId && (
         <MovieModal
           movieId={modalId}
-          onClose={() => setModalId(null)}
+          // The modal can add/remove this film from any list, including this one,
+          // so refetch on close rather than trusting the local copy.
+          onClose={() => { setModalId(null); api.getList(id).then(setList).catch(() => {}); }}
           onSaved={saved => setList(l => ({
             ...l,
             films: l.films.map(f => (f.id === saved.id ? saved : f)),
@@ -357,6 +384,7 @@ function ListIndex({ voter }) {
         <div className="lists-grid">
           {lists.map(l => (
             <div key={l.id} className="lists-card" onClick={() => navigate(`/lists/${l.id}`)}>
+              <PosterStack posters={l.posters} filmCount={l.film_count} />
               <div className="lists-card-title">{l.title}</div>
               {l.description && <div className="lists-card-desc">{l.description}</div>}
               <div className="lists-card-foot">

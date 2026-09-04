@@ -42,7 +42,8 @@ export const api = {
   },
   toggleWatchlistVote: (id, targetVoter) => request(`/movies/${id}/watchlist-vote`, { method: 'POST', body: targetVoter ? { targetVoter } : undefined }),
   resetWatchlist: (mode) => request('/movies/watchlist/reset', { method: 'POST', body: { mode } }),
-  getLists: () => request('/lists'),
+  // movieId flags which lists already contain that film (has_film) for the modal picker.
+  getLists: (movieId) => request(`/lists${movieId ? `?movieId=${movieId}` : ''}`),
   getList: (id) => request(`/lists/${id}`),
   createList: (data) => request('/lists', { method: 'POST', body: data }),
   updateList: (id, data) => request(`/lists/${id}`, { method: 'PATCH', body: data }),

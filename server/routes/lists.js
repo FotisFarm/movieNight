@@ -20,8 +20,13 @@ function cleanDescription(value) {
   return String(value ?? '').trim().slice(0, 300);
 }
 
-// GET /api/lists — every list with its film count (no film rows)
-router.get('/', ah(async (_req, res) => {
+// How many posters the index cards stack on each list card.
+const POSTER_PREVIEW_COUNT = 6;
+
+// GET /api/lists — every list with its film count plus a few poster paths for the
+// index cards. `?movieId=` additionally flags which lists already hold that film,
+// which is what the MovieModal's list picker toggles against.
+router.get('/', ah(async (req, res) => {
   const rows = await db.all(`
     SELECT l.*, COUNT(li.id) AS film_count
     FROM lists l
@@ -29,7 +34,36 @@ router.get('/', ah(async (_req, res) => {
     GROUP BY l.id
     ORDER BY l.created_at DESC, l.id DESC
   `);
-  res.json(rows.map(r => ({ ...r, film_count: Number(r.film_count) })));
+
+  // One pass over every list's films, in list order, keeping the first few posters
+  // per list — cheaper than a correlated subquery per list.
+  const posterRows = await db.all(`
+    SELECT li.list_id, m.poster_path
+    FROM list_items li
+    JOIN movies m ON m.id = li.movie_id
+    WHERE m.poster_path IS NOT NULL AND m.poster_path != ''
+    ORDER BY li.list_id, li.position, li.id
+  `);
+  const postersByList = new Map();
+  for (const row of posterRows) {
+    const posters = postersByList.get(row.list_id) || [];
+    if (posters.length < POSTER_PREVIEW_COUNT) posters.push(row.poster_path);
+    postersByList.set(row.list_id, posters);
+  }
+
+  const movieId = parseInt(req.query.movieId, 10);
+  let listsWithMovie = new Set();
+  if (Number.isInteger(movieId)) {
+    const memberships = await db.all('SELECT list_id FROM list_items WHERE movie_id = ?', movieId);
+    listsWithMovie = new Set(memberships.map(m => m.list_id));
+  }
+
+  res.json(rows.map(r => ({
+    ...r,
+    film_count: Number(r.film_count),
+    posters: postersByList.get(r.id) || [],
+    has_film: listsWithMovie.has(r.id),
+  })));
 }));
 
 // GET /api/lists/:id — the list plus its films, fully enriched and in order

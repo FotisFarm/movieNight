@@ -184,3 +184,36 @@
   gap: 8px;
   padding: 16px;
 }
+
+/* ── Poster stack on an index card ──
+   Posters keep a full 2:3 footprint; once there are more than three they overlap
+   (negative margin) so the strip stays inside the card instead of scaling down. */
+.lists-card-posters {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+  min-height: 66px;
+}
+
+.lists-card-poster {
+  width: 44px;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.lists-card-posters.overlap { gap: 0; }
+.lists-card-posters.overlap .lists-card-poster { box-shadow: -2px 0 6px rgba(0, 0, 0, .35); }
+.lists-card-posters.overlap .lists-card-poster + .lists-card-poster { margin-left: -18px; }
+
+.lists-card-poster-more {
+  font-size: 11px;
+  color: var(--text3);
+  margin-left: 6px;
+  white-space: nowrap;
+}
