@@ -80,13 +80,30 @@ function computeGlobalStats(movies, groupSize) {
 
   const meanScore = scored.length ? avg(scored.map(m => m.fairBoosted)) : null;
 
-  const fairRanked = [...scored].sort((a, b) => {
-    if (b.fairBoosted !== a.fairBoosted) return b.fairBoosted - a.fairBoosted;
-    if (b.voterCount  !== a.voterCount)  return b.voterCount  - a.voterCount;
-    return (parseInt(a.year) || 9999) - (parseInt(b.year) || 9999);
-  });
-  const bestFilm   = fairRanked[0] ?? null;
-  const worstFilm  = fairRanked[fairRanked.length - 1] ?? null;
+  // fairBoosted is capped at 10, and 14 of ~200 scored films sit on that cap —
+  // so the cap alone can't order the top. The uncapped sum (fairScore + boost)
+  // still can: The Godfather is 9.50 + 1.9, La Vita è Bella 9.95 + 1.3, both
+  // shown as 10,00. Voter count stays the first tiebreak, as everywhere else in
+  // the app: a film all five have seen outranks one two people loved.
+  const uncapped = m => m.fairScore + (m.boost ?? 0);
+
+  const bestFilm = [...scored].sort((a, b) =>
+    b.fairBoosted - a.fairBoosted
+    || b.voterCount - a.voterCount
+    || uncapped(b) - uncapped(a)
+    || (parseInt(a.year) || 9999) - (parseInt(b.year) || 9999)   // older wins
+  )[0] ?? null;
+
+  // Not simply the last element of the list above: reversing a descending sort
+  // reverses its tiebreaks too, which would hand "worst" to the film with the
+  // fewest voters. The comparisons that express confidence (voter count) keep
+  // pointing the same way; only the score and the year flip.
+  const worstFilm = [...scored].sort((a, b) =>
+    a.fairBoosted - b.fairBoosted
+    || b.voterCount - a.voterCount
+    || uncapped(a) - uncapped(b)
+    || (parseInt(b.year) || 0) - (parseInt(a.year) || 0)         // newer wins
+  )[0] ?? null;
   const mostContro = scored
     .filter(m => m.stdDev != null)
     .reduce((c, m) => (!c || m.stdDev > c.stdDev) ? m : c, null);
