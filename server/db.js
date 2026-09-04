@@ -1,6 +1,7 @@
 const { createClient } = require('@libsql/client');
 const path = require('path');
 const fs = require('fs');
+const { uniqueSlug } = require('./listSlugs');
 
 // Turso (remote libSQL) in production; a local SQLite file in dev when no
 // TURSO_DATABASE_URL is set, so `npm run dev` / running the server locally
@@ -129,6 +130,15 @@ async function init() {
 
     CREATE INDEX IF NOT EXISTS idx_list_items_list ON list_items(list_id, position);
 
+    -- Every slug a list has ever answered to. A rename re-slugs the list (the
+    -- URL should match the name on screen), and the outgoing slug is parked
+    -- here so a link already shared in the group chat still resolves — it just
+    -- redirects to the current one. Cascades when the list is deleted.
+    CREATE TABLE IF NOT EXISTS list_slug_aliases (
+      slug    TEXT    PRIMARY KEY,
+      list_id INTEGER NOT NULL REFERENCES lists(id) ON DELETE CASCADE
+    );
+
     -- Append-only trail of score and Top 10 changes. Never updated, never
     -- deleted except by the movie FK cascade. kind='score' rows carry a score
     -- (NULL = the rating was cleared); kind='top10' rows carry a rank
@@ -158,6 +168,13 @@ async function init() {
   // TMDB poster path (e.g. '/3bhkrj58Vtu7enYsRolD1fZdja1.jpg'), not a full
   // URL — the width is chosen at render time. See server/tmdb.js.
   try { await client.execute('ALTER TABLE movies ADD COLUMN poster_path TEXT DEFAULT NULL'); } catch (_) {}
+
+  // Readable list URLs (/lists/christougenna-2026). The column is added
+  // nullable — SQLite can't add a UNIQUE column — then every list without one
+  // is slugged below, so lists created before this migration keep working.
+  try { await client.execute('ALTER TABLE lists ADD COLUMN slug TEXT DEFAULT NULL'); } catch (_) {}
+  await client.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_lists_slug ON lists(slug)');
+  await backfillListSlugs();
 
   // Widen top3 rank constraint 1-3 -> 1-10 (SQLite can't ALTER a CHECK, so rebuild). Idempotent.
   try {
@@ -221,6 +238,16 @@ async function init() {
       GROUP BY movie_id
     ) t ON t.movie_id = m.id
   `);
+}
+
+// Give every list a slug — lists created before the slug column existed have
+// NULL, and so would 404 under the new /lists/:slug routing.
+async function backfillListSlugs() {
+  const rows = await all("SELECT id, title FROM lists WHERE slug IS NULL OR slug = ''");
+  for (const row of rows) {
+    const slug = await uniqueSlug({ get }, row.title, row.id);
+    await run('UPDATE lists SET slug = ? WHERE id = ?', slug, row.id);
+  }
 }
 
 module.exports = { client, get, all, run, transaction, init };

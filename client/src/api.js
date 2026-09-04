@@ -44,7 +44,8 @@ export const api = {
   resetWatchlist: (mode) => request('/movies/watchlist/reset', { method: 'POST', body: { mode } }),
   // movieId flags which lists already contain that film (has_film) for the modal picker.
   getLists: (movieId) => request(`/lists${movieId ? `?movieId=${movieId}` : ''}`),
-  getList: (id) => request(`/lists/${id}`),
+  // key is a slug, an old slug, or a numeric id — all three resolve server-side.
+  getList: (key) => request(`/lists/${encodeURIComponent(key)}`),
   createList: (data) => request('/lists', { method: 'POST', body: data }),
   updateList: (id, data) => request(`/lists/${id}`, { method: 'PATCH', body: data }),
   deleteList: (id) => request(`/lists/${id}`, { method: 'DELETE' }),

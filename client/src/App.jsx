@@ -77,7 +77,9 @@ function AppInner() {
           <Route path="/controversy" element={<Controversy />} />
           <Route path="/stats" element={<Stats voter={voter} />} />
           <Route path="/lists" element={<Lists voter={voter} />} />
-          <Route path="/lists/:id" element={<Lists voter={voter} />} />
+          {/* :key is a slug ("christougenna-2026"); an old slug or a bare id
+              still resolves server-side and redirects to the canonical URL. */}
+          <Route path="/lists/:key" element={<Lists voter={voter} />} />
           <Route path="/compare" element={<Compare />} />
           <Route path="/chat" element={<Chat voter={voter} />} />
         </Routes>

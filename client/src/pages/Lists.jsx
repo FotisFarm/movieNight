@@ -124,8 +124,12 @@ function AddFilmBox({ existingIds, onAdd }) {
   );
 }
 
-// ── List detail (/lists/:id) ──
-function ListDetail({ id, voter }) {
+// ── List detail (/lists/:key) ──
+// `listKey` is whatever is in the URL: the list's slug, a slug it had before a
+// rename, or a bare id from a link predating slugs. All three resolve
+// server-side; the last two get corrected in the address bar once the list
+// lands. Writes address the list by numeric id, which never changes.
+function ListDetail({ listKey, voter }) {
   const navigate = useNavigate();
   const [list, setList]       = useState(null);
   const [loading, setLoading] = useState(true);
@@ -144,11 +148,16 @@ function ListDetail({ id, voter }) {
 
   useEffect(() => {
     setLoading(true);
-    api.getList(id)
-      .then(l => { setList(l); setDraftTitle(l.title); setDraftDesc(l.description || ''); })
+    api.getList(listKey)
+      .then(l => {
+        setList(l); setDraftTitle(l.title); setDraftDesc(l.description || '');
+        // Arrived via an old slug or a numeric id — swap the URL for the
+        // canonical one without adding a history entry.
+        if (l.slug && l.slug !== listKey) navigate(`/lists/${l.slug}`, { replace: true });
+      })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [listKey]);
 
   if (loading) return <div className="spinner" />;
   if (error || !list) return <div className="lists-empty">{error || "List not found"}</div>;
@@ -181,6 +190,9 @@ function ListDetail({ id, voter }) {
     try {
       const updated = await api.updateList(list.id, { title, description: draftDesc.trim() });
       setList(l => ({ ...l, ...updated }));
+      // A rename re-slugs the list; follow it so the URL matches the new title.
+      // The old slug keeps resolving server-side, so shared links survive.
+      if (updated.slug && updated.slug !== list.slug) navigate(`/lists/${updated.slug}`, { replace: true });
       setEditing(false);
     } catch (e) { toast(e.message); }
   }
@@ -301,7 +313,7 @@ function ListDetail({ id, voter }) {
           movieId={modalId}
           // The modal can add/remove this film from any list, including this one,
           // so refetch on close rather than trusting the local copy.
-          onClose={() => { setModalId(null); api.getList(id).then(setList).catch(() => {}); }}
+          onClose={() => { setModalId(null); api.getList(list.id).then(setList).catch(() => {}); }}
           onSaved={saved => setList(l => ({
             ...l,
             films: l.films.map(f => (f.id === saved.id ? saved : f)),
@@ -338,7 +350,7 @@ function ListIndex({ voter }) {
     try {
       const created = await api.createList({ title, description: newDesc.trim() });
       setNewTitle(''); setNewDesc(''); setCreating(false);
-      navigate(`/lists/${created.id}`);
+      navigate(`/lists/${created.slug}`);
     } catch (e) { toast(e.message); }
   }
 
@@ -383,7 +395,7 @@ function ListIndex({ voter }) {
       ) : (
         <div className="lists-grid">
           {lists.map(l => (
-            <div key={l.id} className="lists-card" onClick={() => navigate(`/lists/${l.id}`)}>
+            <div key={l.id} className="lists-card" onClick={() => navigate(`/lists/${l.slug || l.id}`)}>
               <PosterStack posters={l.posters} filmCount={l.film_count} />
               <div className="lists-card-title">{l.title}</div>
               {l.description && <div className="lists-card-desc">{l.description}</div>}
@@ -402,6 +414,7 @@ function ListIndex({ voter }) {
 }
 
 export default function Lists({ voter }) {
-  const { id } = useParams();
-  return id ? <ListDetail id={id} voter={voter} /> : <ListIndex voter={voter} />;
+  const { key } = useParams();
+  // Remount on a different list rather than reusing the detail component's state.
+  return key ? <ListDetail key={key} listKey={key} voter={voter} /> : <ListIndex voter={voter} />;
 }

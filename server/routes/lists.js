@@ -2,8 +2,27 @@ const express = require('express');
 const db = require('../db');
 const ah = require('../asyncHandler');
 const { enrichMoviesBatch } = require('../enrich');
+const { uniqueSlug } = require('../listSlugs');
 
 const router = express.Router();
+
+// Lists are addressed by slug (/api/lists/christougenna-2026). Three things can
+// resolve, in this order:
+//   1. a list's current slug,
+//   2. a slug it used to have, parked in list_slug_aliases by a rename — the
+//      client redirects to the canonical one,
+//   3. a bare numeric id, for links made before slugs existed.
+// slugify() never produces a bare number, so (1) and (3) can't collide.
+async function findList(key) {
+  const bySlug = await db.get('SELECT * FROM lists WHERE slug = ?', key);
+  if (bySlug) return bySlug;
+
+  const alias = await db.get('SELECT list_id FROM list_slug_aliases WHERE slug = ?', key);
+  if (alias) return db.get('SELECT * FROM lists WHERE id = ?', alias.list_id);
+
+  if (/^\d+$/.test(String(key))) return db.get('SELECT * FROM lists WHERE id = ?', key);
+  return undefined;
+}
 
 // Lists are collaborative: anybody logged in can create one and add/remove
 // films from any list. Renaming and deleting a list is restricted to whoever
@@ -66,9 +85,11 @@ router.get('/', ah(async (req, res) => {
   })));
 }));
 
-// GET /api/lists/:id — the list plus its films, fully enriched and in order
-router.get('/:id', ah(async (req, res) => {
-  const list = await db.get('SELECT * FROM lists WHERE id = ?', req.params.id);
+// GET /api/lists/:key — the list plus its films, fully enriched and in order.
+// The response carries the canonical `slug`, so a client that arrived on an old
+// alias or a numeric id can correct its own URL.
+router.get('/:key', ah(async (req, res) => {
+  const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
 
   const movies = await db.all(`
@@ -87,16 +108,16 @@ router.post('/', ah(async (req, res) => {
   if (!title) return res.status(400).json({ error: 'Title is required' });
 
   const result = await db.run(
-    'INSERT INTO lists (title, description, created_by) VALUES (?, ?, ?)',
-    title, cleanDescription(req.body.description), req.session.voter
+    'INSERT INTO lists (title, description, created_by, slug) VALUES (?, ?, ?, ?)',
+    title, cleanDescription(req.body.description), req.session.voter, await uniqueSlug(db, title)
   );
   const list = await db.get('SELECT * FROM lists WHERE id = ?', result.lastInsertRowid);
   res.status(201).json({ ...list, film_count: 0 });
 }));
 
-// PATCH /api/lists/:id — rename / re-describe
-router.patch('/:id', ah(async (req, res) => {
-  const list = await db.get('SELECT * FROM lists WHERE id = ?', req.params.id);
+// PATCH /api/lists/:key — rename / re-describe
+router.patch('/:key', ah(async (req, res) => {
+  const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
   if (!canEditList(req, list)) return res.status(403).json({ error: 'Only the list creator can edit this list' });
 
@@ -106,13 +127,32 @@ router.patch('/:id', ah(async (req, res) => {
     ? cleanDescription(req.body.description)
     : list.description;
 
+  // A rename re-slugs the list so the URL keeps matching the name on screen,
+  // and parks the outgoing slug as an alias so links already shared still land
+  // here. The alias table doubles as the "don't reuse this" record, so a later
+  // list can't claim a slug that still points somewhere.
+  let slug = list.slug;
+  if (title !== list.title) {
+    slug = await uniqueSlug(db, title, list.id);
+    if (slug !== list.slug) {
+      await db.transaction(async tx => {
+        // This list may be reclaiming a slug it parked in an earlier rename.
+        await tx.run('DELETE FROM list_slug_aliases WHERE slug = ?', slug);
+        if (list.slug) {
+          await tx.run('INSERT OR REPLACE INTO list_slug_aliases (slug, list_id) VALUES (?, ?)', list.slug, list.id);
+        }
+        await tx.run('UPDATE lists SET slug = ? WHERE id = ?', slug, list.id);
+      });
+    }
+  }
+
   await db.run('UPDATE lists SET title = ?, description = ? WHERE id = ?', title, description, list.id);
   res.json(await db.get('SELECT * FROM lists WHERE id = ?', list.id));
 }));
 
-// DELETE /api/lists/:id — items cascade, films themselves are never touched
-router.delete('/:id', ah(async (req, res) => {
-  const list = await db.get('SELECT * FROM lists WHERE id = ?', req.params.id);
+// DELETE /api/lists/:key — items and slug aliases cascade, films themselves are never touched
+router.delete('/:key', ah(async (req, res) => {
+  const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
   if (!canEditList(req, list)) return res.status(403).json({ error: 'Only the list creator can delete this list' });
 
@@ -120,9 +160,9 @@ router.delete('/:id', ah(async (req, res) => {
   res.status(204).end();
 }));
 
-// POST /api/lists/:id/items { movie_id } — append (idempotent)
-router.post('/:id/items', ah(async (req, res) => {
-  const list = await db.get('SELECT * FROM lists WHERE id = ?', req.params.id);
+// POST /api/lists/:key/items { movie_id } — append (idempotent)
+router.post('/:key/items', ah(async (req, res) => {
+  const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
 
   const movieId = parseInt(req.body.movie_id, 10);
@@ -140,19 +180,21 @@ router.post('/:id/items', ah(async (req, res) => {
   res.status(201).json({ film_count: Number(count.n) });
 }));
 
-// DELETE /api/lists/:id/items/:movieId
-router.delete('/:id/items/:movieId', ah(async (req, res) => {
+// DELETE /api/lists/:key/items/:movieId
+router.delete('/:key/items/:movieId', ah(async (req, res) => {
+  const list = await findList(req.params.key);
+  if (!list) return res.status(404).json({ error: 'Not found' });
   const result = await db.run(
     'DELETE FROM list_items WHERE list_id = ? AND movie_id = ?',
-    req.params.id, req.params.movieId
+    list.id, req.params.movieId
   );
   if (result.changes === 0) return res.status(404).json({ error: 'Not on this list' });
   res.status(204).end();
 }));
 
-// PUT /api/lists/:id/items { order: [movieId, ...] } — manual reorder
-router.put('/:id/items', ah(async (req, res) => {
-  const list = await db.get('SELECT * FROM lists WHERE id = ?', req.params.id);
+// PUT /api/lists/:key/items { order: [movieId, ...] } — manual reorder
+router.put('/:key/items', ah(async (req, res) => {
+  const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
 
   const order = Array.isArray(req.body.order) ? req.body.order : null;
