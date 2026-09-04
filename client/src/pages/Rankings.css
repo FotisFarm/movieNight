@@ -58,3 +58,10 @@
   .ranking-row-panels { grid-template-columns: 1fr; }
   .ranking-row-title  { font-size: 14px; }
 }
+
+/* Small caption before each group of control buttons ("Score", "Films", "Show") */
+.ranking-ctl-label {
+  font-size: 12px;
+  color: var(--text3);
+  margin-right: 4px;
+}

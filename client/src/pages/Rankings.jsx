@@ -7,8 +7,12 @@ import DirectorYearModal from '../components/DirectorYearModal';
 import { useToast } from '../hooks/useToast.jsx';
 import './Rankings.css';
 
+// One row group per (score mode × scope) combination. The page shows the one
+// the two selectors below point at — Fair · Movie Nights by default, the view
+// this group actually argues about.
 const ROWS = [
   {
+    scoreMode: 'group', scope: 'all',
     label: 'Group Score — All Films',
     description: 'Score calculated as if the whole group always votes (sum ÷ group size), plus a Top 10 token bonus: 🥇+1.0 down to #10 +0.1, capped at 10. Films not yet seen by the whole group are penalised — a deliberate measure of collective buy-in.',
     rowScoreKey: 'boostedScore', mnOnly: false,
@@ -20,6 +24,7 @@ const ROWS = [
     ],
   },
   {
+    scoreMode: 'group', scope: 'mn',
     label: 'Group Score — Movie Nights Only',
     description: 'Group formula (÷5, Top 10 token bonus 🥇+1.0 … #10 +0.1, capped at 10) restricted to Movie Night films.',
     rowScoreKey: 'boostedScore', mnOnly: true,
@@ -31,6 +36,7 @@ const ROWS = [
     ],
   },
   {
+    scoreMode: 'fair', scope: 'all',
     label: 'Fair Score — All Films',
     description: 'Average of actual votes cast (÷ number of voters), plus a Top 10 token bonus: #1 +1.0 down to #10 +0.1 (−0.1 per rank). Scores are capped at 10. Films rated by fewer than 2 people are excluded.',
     rowScoreKey: 'fairBoosted', mnOnly: false,
@@ -42,6 +48,7 @@ const ROWS = [
     ],
   },
   {
+    scoreMode: 'fair', scope: 'mn',
     label: 'Fair Score — Movie Nights Only',
     description: 'Same formula (÷ voters, Top 10 token bonus 🥇+1.0 … #10 +0.1, capped at 10), restricted to films screened during a Movie Night session.',
     rowScoreKey: 'fairBoosted', mnOnly: true,
@@ -52,6 +59,16 @@ const ROWS = [
       { title: '📆 Top Decades',   key: 'fairDecadesMn', scoreKey: 'avg' },
     ],
   },
+];
+
+const SCORE_MODES = [
+  { key: 'fair',  label: 'Fair',  hint: 'Average of the votes actually cast (÷ voters)' },
+  { key: 'group', label: 'Group', hint: 'Divided by the whole group, so unseen films are penalised' },
+];
+
+const SCOPES = [
+  { key: 'mn',  label: 'Movie Nights', hint: 'Only films screened at a Movie Night' },
+  { key: 'all', label: 'All Films',    hint: 'Every rated film' },
 ];
 
 const PANEL_TYPES = [
@@ -74,6 +91,10 @@ export default function Rankings() {
   const [selectedId, setSelectedId]   = useState(null);
   const [selectedLabel, setSelectedLabel] = useState(null);
   const [minDirFilms, setMinDirFilms] = useState(() => parseInt(localStorage.getItem('mn_minDirFilms')) || 2);
+  // Fair · Movie Nights is the default view; the choice sticks per browser like
+  // the other ranking controls.
+  const [scoreMode, setScoreMode] = useState(() => localStorage.getItem('mn_rankScore') || 'fair');
+  const [scope, setScope]         = useState(() => localStorage.getItem('mn_rankScope') || 'mn');
   const [visibleTypes, setVisibleTypes] = useState(() => {
     try { return JSON.parse(localStorage.getItem('mn_rankPanels')) || ['films']; }
     catch { return ['films']; }
@@ -92,6 +113,16 @@ export default function Rankings() {
   function changeMinDirFilms(n) {
     setMinDirFilms(n);
     localStorage.setItem('mn_minDirFilms', n);
+  }
+
+  function changeScoreMode(mode) {
+    setScoreMode(mode);
+    localStorage.setItem('mn_rankScore', mode);
+  }
+
+  function changeScope(next) {
+    setScope(next);
+    localStorage.setItem('mn_rankScope', next);
   }
 
   function togglePanelType(type) {
@@ -120,6 +151,30 @@ export default function Rankings() {
   return (
     <div className="rankings-rows">
       <div className="ranking-controls">
+        <span className="ranking-ctl-label">Score</span>
+        {SCORE_MODES.map(({ key, label, hint }) => (
+          <button
+            key={key}
+            title={hint}
+            className={`btn btn-sm ${scoreMode === key ? 'btn-rank-active' : 'btn-ghost'}`}
+            onClick={() => changeScoreMode(key)}
+          >
+            {label}
+          </button>
+        ))}
+        <div className="filter-sep" />
+        <span className="ranking-ctl-label">Films</span>
+        {SCOPES.map(({ key, label, hint }) => (
+          <button
+            key={key}
+            title={hint}
+            className={`btn btn-sm ${scope === key ? 'btn-rank-active' : 'btn-ghost'}`}
+            onClick={() => changeScope(key)}
+          >
+            {label}
+          </button>
+        ))}
+        <div className="filter-sep" />
         <label className="filter-item">
           Min films
           <select className="select select-sm" value={minDirFilms} onChange={e => changeMinDirFilms(parseInt(e.target.value))}>
@@ -129,7 +184,7 @@ export default function Rankings() {
           </select>
         </label>
         <div className="filter-sep" />
-        <span style={{ fontSize: 12, color: 'var(--text3)', marginRight: 4 }}>Show</span>
+        <span className="ranking-ctl-label">Show</span>
         {PANEL_TYPES.map(({ key, label }) => (
           <button
             key={key}
@@ -140,7 +195,7 @@ export default function Rankings() {
           </button>
         ))}
       </div>
-      {ROWS.map(row => (
+      {ROWS.filter(row => row.scoreMode === scoreMode && row.scope === scope).map(row => (
         <div key={row.label} className="ranking-row-group">
           <div className="ranking-row-header">
             <h2 className="ranking-row-title">{row.label}</h2>
