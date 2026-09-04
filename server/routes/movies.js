@@ -126,12 +126,34 @@ router.put('/top10', ah(async (req, res) => {
   const order = Array.isArray(req.body.order) ? req.body.order : null;
   if (!order || !VOTERS.includes(voter)) return res.status(400).json({ error: 'Bad request' });
   const ids = order.map(Number).filter(Boolean).slice(0, 10);
+
+  // Snapshot before the rewrite so the trail can record what actually moved.
+  // This is a delete-and-reinsert, so without the diff every drag would either
+  // log nothing (as it used to) or log all ten picks as changed.
+  const rowsBefore = await db.all('SELECT movie_id, rank FROM top3 WHERE voter = ?', voter);
+  const ranksBefore = new Map(rowsBefore.map(r => [r.movie_id, r.rank]));
+
   await db.transaction(async (tx) => {
     await tx.run('DELETE FROM top3 WHERE voter = ?', voter);
     for (let i = 0; i < ids.length; i++) {
       await tx.run('INSERT INTO top3 (movie_id, voter, rank) VALUES (?, ?, ?)', ids[i], voter, i + 1);
     }
   });
+
+  // Same shape as the PATCH /:id path: one row per film whose position changed,
+  // rank NULL meaning it left this voter's Top 10. changed_by is the session
+  // voter, so an admin reordering someone else's picks is attributed correctly.
+  const ranksAfter = new Map(ids.map((movieId, index) => [movieId, index + 1]));
+  for (const movieId of new Set([...ranksBefore.keys(), ...ranksAfter.keys()])) {
+    const previous = ranksBefore.has(movieId) ? ranksBefore.get(movieId) : null;
+    const rank = ranksAfter.has(movieId) ? ranksAfter.get(movieId) : null;
+    if (previous === rank) continue;
+    await db.run(`
+      INSERT INTO rating_history (movie_id, voter, kind, rank, changed_by)
+      VALUES (?, ?, 'top10', ?, ?)
+    `, movieId, voter, rank, sessionVoter || '');
+  }
+
   res.json({ ok: true });
 }));
 
