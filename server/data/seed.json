@@ -469,7 +469,7 @@
       "Φώτης": "10"
     },
     "top3": {
-      "Φώτης": 5
+      "Φώτης": 4
     },
     "watchlistVotes": []
   },
@@ -1233,7 +1233,7 @@
     "year": "1968",
     "rank": null,
     "mn": "",
-    "watchlist": "Y",
+    "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0063611",
@@ -1243,10 +1243,7 @@
       "Παντελής": "9.1"
     },
     "top3": {},
-    "watchlistVotes": [
-      "Παντελής",
-      "Φώτης"
-    ]
+    "watchlistVotes": []
   },
   {
     "director": "Ingmar Bergman",
@@ -3270,7 +3267,7 @@
     "year": "1954",
     "rank": null,
     "mn": "",
-    "watchlist": "Y",
+    "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0047296",
@@ -3280,9 +3277,7 @@
       "Παντελής": "8"
     },
     "top3": {},
-    "watchlistVotes": [
-      "Παντελής"
-    ]
+    "watchlistVotes": []
   },
   {
     "director": "Eric Rohmer",
@@ -3872,7 +3867,7 @@
     },
     "top3": {
       "Παντελής": 9,
-      "Φώτης": 3
+      "Φώτης": 2
     },
     "watchlistVotes": []
   },
@@ -5925,7 +5920,7 @@
     "year": "2016",
     "rank": 67,
     "mn": "Y",
-    "watchlist": "Y",
+    "watchlist": "",
     "tokens": "🥇🥇",
     "tokenPts": 6,
     "imdb_id": "tt4954522",
@@ -5937,11 +5932,9 @@
     },
     "top3": {
       "Στέλιας": 5,
-      "Φώτης": 1
+      "Φώτης": 6
     },
-    "watchlistVotes": [
-      "Φώτης"
-    ]
+    "watchlistVotes": []
   },
   {
     "director": "Julia Ducournau",
@@ -6201,7 +6194,7 @@
     "ratings": {
       "Παντελής": "7",
       "Στέλιας": "7.5",
-      "Φώτης": "8"
+      "Φώτης": "9"
     },
     "top3": {},
     "watchlistVotes": []
@@ -7005,7 +6998,7 @@
     "year": "1950",
     "rank": null,
     "mn": "",
-    "watchlist": "Y",
+    "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0042876",
@@ -7013,9 +7006,7 @@
     "poster_path": "/ijWibsAU1iBcCD8tuIZfTmDzMVE.jpg",
     "ratings": {},
     "top3": {},
-    "watchlistVotes": [
-      "Φώτης"
-    ]
+    "watchlistVotes": []
   },
   {
     "director": "Akira Kurosawa",
@@ -7448,7 +7439,7 @@
     },
     "top3": {
       "Παντελής": 3,
-      "Φώτης": 4
+      "Φώτης": 3
     },
     "watchlistVotes": []
   },
@@ -8333,7 +8324,7 @@
     "year": "2001",
     "rank": 100,
     "mn": "Y",
-    "watchlist": "Y",
+    "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0166924",
@@ -8344,9 +8335,7 @@
       "Φώτης": "7"
     },
     "top3": {},
-    "watchlistVotes": [
-      "Φώτης"
-    ]
+    "watchlistVotes": []
   },
   {
     "director": "David Lynch",
@@ -9588,7 +9577,7 @@
     "imdb_rating": 8.2,
     "poster_path": "/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
     "ratings": {
-      "Φώτης": "8"
+      "Φώτης": "7"
     },
     "top3": {},
     "watchlistVotes": []
@@ -9776,7 +9765,7 @@
     "year": "1974",
     "rank": 28,
     "mn": "",
-    "watchlist": "Y",
+    "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0071315",
@@ -9788,9 +9777,7 @@
       "Φώτης": "8"
     },
     "top3": {},
-    "watchlistVotes": [
-      "Φώτης"
-    ]
+    "watchlistVotes": []
   },
   {
     "director": "Roman Polanski",
@@ -11221,7 +11208,7 @@
     "year": "1969",
     "rank": null,
     "mn": "",
-    "watchlist": "Y",
+    "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0063555",
@@ -11229,9 +11216,7 @@
     "poster_path": "/rMUbQf7RgsYgQ47AFf1wpoSt4dX.jpg",
     "ratings": {},
     "top3": {},
-    "watchlistVotes": [
-      "Παντελής"
-    ]
+    "watchlistVotes": []
   },
   {
     "director": "Steven Spielberg",
@@ -12097,7 +12082,7 @@
       "Φώτης": "10"
     },
     "top3": {
-      "Φώτης": 2
+      "Φώτης": 1
     },
     "watchlistVotes": []
   },
@@ -13874,7 +13859,7 @@
     },
     "top3": {
       "Παντελής": 4,
-      "Φώτης": 6
+      "Φώτης": 5
     },
     "watchlistVotes": []
   },
@@ -14516,7 +14501,7 @@
     "year": "2015",
     "rank": null,
     "mn": "",
-    "watchlist": "Y",
+    "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt4226388",
@@ -14776,7 +14761,7 @@
     "year": "2008",
     "rank": null,
     "mn": "",
-    "watchlist": "Y",
+    "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt1174047",
@@ -14786,9 +14771,7 @@
       "Στέλιας": "9.6"
     },
     "top3": {},
-    "watchlistVotes": [
-      "Φώτης"
-    ]
+    "watchlistVotes": []
   },
   {
     "director": "Jerry Schatzberg",
@@ -16124,7 +16107,7 @@
     "year": "1995",
     "rank": null,
     "mn": "",
-    "watchlist": "Y",
+    "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0113725",
@@ -16929,7 +16912,6 @@
     "poster_path": "/h7Lcio0c9ohxPhSZg42eTlKIVVY.jpg",
     "ratings": {
       "Μητσέας": "3",
-      "Παντελής": "0",
       "Στέλιας": "3",
       "Φώτης": "7",
       "Λεόντιος": "7.3"
@@ -18942,8 +18924,7 @@
     "imdb_rating": 6.7,
     "poster_path": "/plCXgcDPlxo07ZQDKTNWw7gfOZg.jpg",
     "ratings": {
-      "Μητσέας": "6.5",
-      "Φώτης": "6.5"
+      "Μητσέας": "6.5"
     },
     "top3": {},
     "watchlistVotes": []
