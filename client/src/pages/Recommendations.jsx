@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
+import WatchlistBadge from '../components/WatchlistBadge';
 import { useToast } from '../hooks/useToast.jsx';
 import { useAppConfig } from '../AppConfigContext';
 import { fmt, scoreClass } from '../utils';
@@ -119,6 +120,20 @@ export default function Recommendations() {
 
   function handleDeleted(id) {
     setAllFilms(f => f.filter(x => x.id !== id));
+  }
+
+  async function handleWatchlistToggle(id, nextWl) {
+    const target = allFilms.find(f => f.id === id);
+    const title = target?.title ? `"${target.title}"` : 'Film';
+    setAllFilms(fs => fs.map(f => f.id === id ? { ...f, watchlist: nextWl } : f));
+    toast(nextWl ? `Added ${title} to Watchlist` : `Removed ${title} from Watchlist`);
+    try {
+      await api.updateMovie(id, { watchlist: nextWl });
+    } catch (err) {
+      console.error(err);
+      setAllFilms(fs => fs.map(f => f.id === id ? { ...f, watchlist: !nextWl } : f));
+      toast(`Failed to update Watchlist for ${title}`);
+    }
   }
 
   return (
@@ -276,7 +291,7 @@ export default function Recommendations() {
                       <span className="rec-title">{f.title}</span>
                       <div className="rec-badges">
                         {f.mn        && <span className="badge badge-mn">MN</span>}
-                        {f.watchlist && <span className="badge badge-wl">WL</span>}
+                        <WatchlistBadge id={f.id} watchlist={f.watchlist} onToggle={handleWatchlistToggle} />
                         {f.imdb_rating != null && (
                           f.imdb_id ? (
                             <a href={`https://www.imdb.com/title/${f.imdb_id}/`} className="badge-imdb-pill" target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} title="View on IMDb">

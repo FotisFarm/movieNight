@@ -222,6 +222,28 @@ export default function Films() {
     toast(`"${movie.title}" added!`);
   }
 
+  async function handleWatchlistToggle(id, nextWl) {
+    const targetMovie = movies.find(m => m.id === id);
+    const title = targetMovie?.title ? `"${targetMovie.title}"` : 'Film';
+
+    // Optimistic update
+    setMovies(ms => ms.map(m => m.id === id ? { ...m, watchlist: nextWl } : m));
+    setAllMovies(ms => ms.map(m => m.id === id ? { ...m, watchlist: nextWl } : m));
+
+    // Instant toast feedback
+    toast(nextWl ? `Added ${title} to Watchlist` : `Removed ${title} from Watchlist`);
+
+    // Background sync to server
+    try {
+      await api.updateMovie(id, { watchlist: nextWl });
+    } catch (err) {
+      console.error(err);
+      setMovies(ms => ms.map(m => m.id === id ? { ...m, watchlist: !nextWl } : m));
+      setAllMovies(ms => ms.map(m => m.id === id ? { ...m, watchlist: !nextWl } : m));
+      toast(`Failed to update Watchlist for ${title}`);
+    }
+  }
+
   return (
     <div className="films-page">
       {/* ── Top Bar: Search, Sort, Views, Add Film ── */}
@@ -612,6 +634,7 @@ export default function Films() {
                   onClick={() => setSelectedId(m.id)}
                   listView={viewMode === 'list'}
                   scoreMode={scoreMode}
+                  onWatchlistToggle={handleWatchlistToggle}
                 />
               ))}
             </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import RankIcon from './RankIcon';
+import WatchlistBadge from './WatchlistBadge';
 import { fmtScore10 as fmt, scoreClass, posterUrl } from '../utils';
 import { useAppConfig } from '../AppConfigContext';
 import {
@@ -96,7 +97,7 @@ function Poster({ path, title, size }) {
   );
 }
 
-export default function MovieCard({ movie, onClick, listView = false, scoreMode = 'fair' }) {
+export default function MovieCard({ movie, onClick, listView = false, scoreMode = 'fair', onWatchlistToggle }) {
   const { voters, minVoters } = useAppConfig();
   const { id, title, director, year, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, poster_path } = movie;
 
@@ -150,7 +151,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
 
         <div className="card-badges">
           {mn          && <span className="badge badge-mn">MN{mn_rank ? ` #${mn_rank}` : ''}</span>}
-          {watchlist   && <span className="badge badge-wl">WL</span>}
+          <WatchlistBadge id={id} watchlist={watchlist} onToggle={onWatchlistToggle} />
           {rank_global && <span className="badge badge-ranked">#{rank_global}</span>}
         </div>
 
@@ -163,7 +164,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
     );
   }
 
-  const hasBadges = Boolean(mn || watchlist || rank_global);
+  const hasBadges = Boolean(mn || watchlist || rank_global || onWatchlistToggle);
   const hasVoterRatings = Boolean(voters && voters.some(v => ratings?.[v] != null));
   const hasRatingsOrImdb = Boolean(hasVoterRatings || imdb_rating != null);
 
@@ -189,7 +190,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
         {hasBadges && (
           <div className="card-badges">
             {mn          && <span className="badge badge-mn">MN{mn_rank ? ` #${mn_rank}` : ''}</span>}
-            {watchlist   && <span className="badge badge-wl">WL</span>}
+            <WatchlistBadge id={id} watchlist={watchlist} onToggle={onWatchlistToggle} />
             {rank_global && <span className="badge badge-ranked">#{rank_global}</span>}
           </div>
         )}
