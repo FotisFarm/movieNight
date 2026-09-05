@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../api';
 import { useAppConfig } from '../AppConfigContext';
 import { fmtScore10 as fmt, scoreClass, extractImdbId, posterUrl } from '../utils';
+import ReorderTop10Dialog from './ReorderTop10Dialog';
 import './MovieModal.css';
 
 const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
@@ -68,14 +69,33 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   const [newListTitle, setNewListTitle] = useState('');
   const [newListOpen,  setNewListOpen]  = useState(false);
   const [listError,    setListError]    = useState('');
+  const [reorderVoter, setReorderVoter] = useState(null);
+  const [top10Reordered, setTop10Reordered] = useState(false);
+
+  function handleModalClose() {
+    if (top10Reordered) {
+      api.getMovie(movieId).then(m => {
+        onSaved?.(m);
+        onClose();
+      }).catch(() => onClose());
+    } else {
+      onClose();
+    }
+  }
 
   useEffect(() => {
     function onKey(e) {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (reorderVoter) {
+          setReorderVoter(null);
+        } else {
+          handleModalClose();
+        }
+      }
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, reorderVoter, top10Reordered, movieId]);
 
   useEffect(() => {
     api.getTop10Counts().then(setTop10Counts).catch(() => {});
@@ -259,7 +279,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   ) / 100;
 
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && handleModalClose()}>
       <div className="modal movie-modal-split">
         <div className="modal-header">
           <div className="modal-header-text">
@@ -282,7 +302,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
             <button className="btn btn-ghost btn-sm" onClick={() => setEditing(e => !e)}>
               {editing ? 'Done' : '✎'}
             </button>
-            <button className="modal-close" onClick={onClose}>✕</button>
+            <button className="modal-close" onClick={handleModalClose}>✕</button>
           </div>
         </div>
 
@@ -540,8 +560,11 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                 const isOn = val != null;
                 const canEdit = isAdmin || v === currentVoter;
                 const currentRank = top3[v] ?? null;
-                const nextSlot = (top10Counts[v] ?? 0) + 1;
-                const opts = currentRank != null ? [currentRank] : (nextSlot <= 10 ? [nextSlot] : []);
+                const voterCount = top10Counts[v] ?? 0;
+                const maxRank = Math.max(currentRank || 1, Math.min(10, voterCount + (currentRank != null ? 0 : 1)));
+                const opts = canEdit
+                  ? Array.from({ length: maxRank }, (_, i) => i + 1)
+                  : (currentRank != null ? [currentRank] : []);
                 const isSelf = v === currentVoter;
 
                 return (
@@ -563,7 +586,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                             className="select select-sm voter-top10-select"
                             value={currentRank ?? ''}
                             disabled={!canEdit}
-                            title={canEdit ? "Assign to your Top 10" : "Top 10 Rank"}
+                            title={canEdit ? "Assign to Top 10 rank" : "Top 10 Rank"}
                             onChange={e => setTop3(t => ({ ...t, [v]: e.target.value ? parseInt(e.target.value) : null }))}
                           >
                             <option value="">Top 10: —</option>
@@ -571,6 +594,17 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                               <option key={rank} value={rank}>{rankLabel(rank)}</option>
                             ))}
                           </select>
+                        )}
+
+                        {canEdit && isOn && (voterCount >= 1 || currentRank != null) && (
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm voter-reorder-btn"
+                            title={`Reorder ${isSelf ? 'your' : v + "'s"} Top 10`}
+                            onClick={() => setReorderVoter(v)}
+                          >
+                            <span className="reorder-icon">⠿</span> Reorder
+                          </button>
                         )}
 
                         {isOn && (
@@ -696,7 +730,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
               Delete
             </button>
           )}
-          <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          <button className="btn btn-ghost" onClick={handleModalClose}>Cancel</button>
           {saveError && (
             <span style={{ fontSize: 12, color: 'var(--red)', marginRight: 8 }}>{saveError}</span>
           )}
@@ -704,6 +738,24 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
             {saving ? 'Saving…' : 'Save'}
           </button>
         </div>
+
+        {reorderVoter && (
+          <ReorderTop10Dialog
+            voter={reorderVoter}
+            currentMovieId={movieId}
+            currentMovieTitle={editTitle}
+            currentMovieYear={editYear}
+            currentMovieDirector={editDirector}
+            currentMoviePoster={movie.poster_path}
+            onClose={() => setReorderVoter(null)}
+            onOrderUpdated={(newPicks) => {
+              setTop10Reordered(true);
+              const found = newPicks.find(p => p.id === movieId);
+              setTop3(t => ({ ...t, [reorderVoter]: found ? found.rank : null }));
+              setTop10Counts(c => ({ ...c, [reorderVoter]: newPicks.length }));
+            }}
+          />
+        )}
       </div>
     </div>
   );

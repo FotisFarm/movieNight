@@ -31,6 +31,7 @@ export const api = {
   imdbSearch: (title, year) => request(`/movies/imdb-search?title=${encodeURIComponent(title)}&year=${encodeURIComponent(year || '')}`),
   imdbDetail: (imdbId) => request(`/movies/imdb-detail?imdbId=${encodeURIComponent(imdbId)}`),
   reorderTop10: (order, voter) => request('/movies/top10', { method: 'PUT', body: voter ? { order, voter } : { order } }),
+  getTop10: (voter) => request(`/movies/top10/${encodeURIComponent(voter)}`),
   getTop10Counts: () => request('/movies/top10-counts'),
   getRankings: (params = {}) => {
     const qs = new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([, v]) => v != null))).toString();
