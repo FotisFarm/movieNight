@@ -28,8 +28,8 @@ function VoterPills({ ratings, voters }) {
   );
 }
 
-const DEFAULTS = { search: '', filterMn: false, filterWl: false, filterVoter: '', filterDir: '', filterYear: '' };
-const DEFAULT_WEIGHTS = { dw: 0.45, ew: 0.45, tw: 0.10 };
+const DEFAULTS = { search: '', filterMn: false, filterWl: false, filterDir: '', filterYear: '' };
+const DEFAULT_WEIGHTS = { dw: 0.50, ew: 0.50, tw: 0.10, maxVoters: 2, minDirFilms: 2 };
 
 export default function Recommendations() {
   const { voters } = useAppConfig();
@@ -41,15 +41,14 @@ export default function Recommendations() {
   const [search,      setSearch]      = useState(DEFAULTS.search);
   const [filterMn,    setFilterMn]    = useState(DEFAULTS.filterMn);
   const [filterWl,    setFilterWl]    = useState(DEFAULTS.filterWl);
-  const [filterVoter, setFilterVoter] = useState(DEFAULTS.filterVoter);
   const [filterDir,   setFilterDir]   = useState(DEFAULTS.filterDir);
   const [filterYear,  setFilterYear]  = useState(DEFAULTS.filterYear);
 
   const [dw, setDw] = useState(DEFAULT_WEIGHTS.dw);
   const [ew, setEw] = useState(DEFAULT_WEIGHTS.ew);
   const [tw, setTw] = useState(DEFAULT_WEIGHTS.tw);
-  const [maxVoters, setMaxVoters] = useState(2);
-  const [minDirFilms, setMinDirFilms] = useState(() => parseInt(localStorage.getItem('mn_minDirFilms')) || 2);
+  const [maxVoters, setMaxVoters] = useState(DEFAULT_WEIGHTS.maxVoters);
+  const [minDirFilms, setMinDirFilms] = useState(() => parseInt(localStorage.getItem('mn_minDirFilms')) || DEFAULT_WEIGHTS.minDirFilms);
   const [unvotedBy, setUnvotedBy] = useState(new Set());
 
   const weightTimer = useRef(null);
@@ -75,32 +74,54 @@ export default function Recommendations() {
     });
   }
 
-  // Normalised display percentages
-  const wTotal = dw + ew + tw || 1;
-  const pDir = Math.round((dw / wTotal) * 100);
-  const pEra = Math.round((ew / wTotal) * 100);
-  const pTop = Math.round((tw / wTotal) * 100);
+  // Base prior weights (Director + Era = 100%)
+  const baseTotal = dw + ew || 1;
+  const pDir = Math.round((dw / baseTotal) * 100);
+  const pEra = Math.round((ew / baseTotal) * 100);
+  // Additive Top 10 Halo Boost strength
+  const boostMultiplier = (tw / 0.10).toFixed(1);
+  const boostLabel = tw <= 0.001 ? 'Off (0×)' : `${boostMultiplier}×`;
 
   // CSS variable cascades into ::webkit-slider-runnable-track pseudo-element
-  function trackStyle(val) {
-    return { '--fill': `${Math.round(val * 10) * 10}%` };
+  function trackStyle(val, max = 1) {
+    const pct = Math.min(100, Math.max(0, Math.round((val / max) * 100)));
+    return { '--fill': `${pct}%` };
   }
 
   const directors = [...new Set(allFilms.map(f => f.director).filter(Boolean))].sort();
 
-  const filtersActive = search || filterMn || filterWl || filterVoter || filterDir || filterYear;
+  const filtersActive = Boolean(search || filterMn || filterWl || filterDir || filterYear || unvotedBy.size > 0);
 
   function resetFilters() {
-    setSearch(''); setFilterMn(false); setFilterWl(false);
-    setFilterVoter(''); setFilterDir(''); setFilterYear('');
+    setSearch('');
+    setFilterMn(false);
+    setFilterWl(false);
+    setFilterDir('');
+    setFilterYear('');
+    setUnvotedBy(new Set());
+  }
+
+  const weightsModified = Boolean(
+    Math.abs(dw - DEFAULT_WEIGHTS.dw) > 0.001 ||
+    Math.abs(ew - DEFAULT_WEIGHTS.ew) > 0.001 ||
+    Math.abs(tw - DEFAULT_WEIGHTS.tw) > 0.001 ||
+    maxVoters !== DEFAULT_WEIGHTS.maxVoters ||
+    minDirFilms !== DEFAULT_WEIGHTS.minDirFilms
+  );
+
+  function resetWeights() {
+    setDw(DEFAULT_WEIGHTS.dw);
+    setEw(DEFAULT_WEIGHTS.ew);
+    setTw(DEFAULT_WEIGHTS.tw);
+    setMaxVoters(DEFAULT_WEIGHTS.maxVoters);
+    changeMinDirFilms(DEFAULT_WEIGHTS.minDirFilms);
   }
 
   const films = allFilms.filter(f => {
-    if (filterMn  && !f.mn)       return false;
+    if (filterMn  && !f.mn)        return false;
     if (filterWl  && !f.watchlist) return false;
     if (filterDir && f.director !== filterDir) return false;
     if (filterYear && f.year !== filterYear)   return false;
-    if (filterVoter && f.ratings?.[filterVoter] == null) return false;
     if (unvotedBy.size > 0) {
       for (const v of unvotedBy) {
         if (f.ratings?.[v] != null) return false;
@@ -140,14 +161,14 @@ export default function Recommendations() {
     <div>
       <Toast />
 
-      {/* Filters */}
-      <div className="films-filters">
+      {/* ── Movie Discovery Filters ── */}
+      <div className="films-filters recs-filters-bar">
         <div className="filter-row">
-          <div className="search-box" style={{ maxWidth: 280 }}>
+          <div className="search-box" style={{ maxWidth: 240 }}>
             <span className="search-icon">🔍</span>
             <input
               className="input search-input"
-              placeholder="Search…"
+              placeholder="Search picks, directors…"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -167,73 +188,89 @@ export default function Recommendations() {
 
           <div className="filter-sep" />
 
-          <label className="filter-item">
-            Voter
-            <select className="select select-sm" value={filterVoter} onChange={e => setFilterVoter(e.target.value)}>
-              <option value="">All</option>
-              {voters.map(v => <option key={v}>{v}</option>)}
-            </select>
-          </label>
+          <div className="recs-unvoted-cluster">
+            <span className="recs-filter-tag">Unvoted by</span>
+            <div className="recs-unvoted-pills">
+              {voters.map(v => (
+                <button
+                  key={v}
+                  type="button"
+                  className={`voter-pill-toggle${unvotedBy.has(v) ? ' active' : ''}`}
+                  onClick={() => toggleUnvotedBy(v)}
+                  title={`Show only films not yet rated by ${v}`}
+                >
+                  {v.slice(0, 3)}
+                </button>
+              ))}
+            </div>
+          </div>
 
-          <label className="filter-item">
-            Director
-            <select className="select select-sm" value={filterDir} onChange={e => setFilterDir(e.target.value)}>
-              <option value="">All</option>
+          <div className="filter-sep" />
+
+          <label className="filter-item-inline">
+            <span className="filter-label">Director</span>
+            <select className="select select-sm" value={filterDir} onChange={e => setFilterDir(e.target.value)} style={{ maxWidth: 160 }}>
+              <option value="">All Directors</option>
               {directors.map(d => <option key={d}>{d}</option>)}
             </select>
           </label>
 
-          <label className="filter-item">
-            Year
-            <input className="input input-sm" style={{ width: 74 }} placeholder="1972"
+          <label className="filter-item-inline">
+            <span className="filter-label">Year</span>
+            <input className="input input-sm" style={{ width: 68 }} placeholder="e.g. 1972"
               value={filterYear} onChange={e => setFilterYear(e.target.value)} />
           </label>
 
           <div className="filter-sep" />
 
           <button
+            type="button"
             className={`btn btn-sm${filtersActive ? ' btn-ghost filter-reset-active' : ' btn-ghost'}`}
             onClick={resetFilters}
             disabled={!filtersActive}
           >
-            Reset
+            Reset Filters
           </button>
 
           <span className="filter-count">{films.length} / {allFilms.length} picks</span>
         </div>
       </div>
 
-      {/* Bias sliders */}
+      {/* ── Prediction Model & Weights Toolbar ── */}
       <div className="recs-biases">
-        <span className="recs-bias-label">Bias</span>
+        <div className="recs-model-badge">⚡ Model Weights</div>
+
         <label className="recs-bias-item">
-          <span>Director <em>{pDir}%</em></span>
-          <div className="recs-slider-wrap" style={trackStyle(dw)}>
-            <input type="range" min={0} max={10} step={1} value={Math.round(dw * 10)}
-              onChange={e => setDw(parseFloat(e.target.value) / 10)} />
+          <span>Director Track <em>{pDir}%</em></span>
+          <div className="recs-slider-wrap" style={trackStyle(dw, 1)}>
+            <input type="range" min={0} max={1} step={0.05} value={dw}
+              onChange={e => setDw(parseFloat(e.target.value))} />
           </div>
         </label>
+
         <label className="recs-bias-item">
-          <span>Era <em>{pEra}%</em></span>
-          <div className="recs-slider-wrap" style={trackStyle(ew)}>
-            <input type="range" min={0} max={10} step={1} value={Math.round(ew * 10)}
-              onChange={e => setEw(parseFloat(e.target.value) / 10)} />
+          <span>Decade Era <em>{pEra}%</em></span>
+          <div className="recs-slider-wrap" style={trackStyle(ew, 1)}>
+            <input type="range" min={0} max={1} step={0.05} value={ew}
+              onChange={e => setEw(parseFloat(e.target.value))} />
           </div>
         </label>
-        <label className="recs-bias-item">
-          <span>Top 10 <em>{pTop}%</em></span>
-          <div className="recs-slider-wrap" style={trackStyle(tw)}>
-            <input type="range" min={0} max={10} step={1} value={Math.round(tw * 10)}
-              onChange={e => setTw(parseFloat(e.target.value) / 10)} />
+
+        <label className="recs-bias-item" style={{ minWidth: 140 }}>
+          <span>Top 10 Boost <em className="halo-boost-val">{boostLabel}</em></span>
+          <div className="recs-slider-wrap" style={trackStyle(tw, 0.20)}>
+            <input type="range" min={0} max={0.20} step={0.02} value={tw}
+              onChange={e => setTw(parseFloat(e.target.value))} />
           </div>
         </label>
+
         <div className="recs-bias-sep" />
 
         <label className="recs-bias-item recs-bias-item--inline">
-          <span className="recs-bias-label">Max voters</span>
+          <span className="recs-bias-label">Candidates</span>
           <select className="select select-sm" value={maxVoters} onChange={e => setMaxVoters(parseInt(e.target.value))}>
             {[0, 1, 2, 3, 4].map(n => (
-              <option key={n} value={n}>{n} {n === 1 ? 'vote' : 'votes'}</option>
+              <option key={n} value={n}>≤ {n} {n === 1 ? 'vote' : 'votes'}</option>
             ))}
           </select>
         </label>
@@ -242,30 +279,21 @@ export default function Recommendations() {
           <span className="recs-bias-label">Min dir films</span>
           <select className="select select-sm" value={minDirFilms} onChange={e => changeMinDirFilms(parseInt(e.target.value))}>
             {[1, 2, 3, 4].map(n => (
-              <option key={n} value={n}>{n === 1 ? 'No min' : `${n} films`}</option>
+              <option key={n} value={n}>{n === 1 ? 'No min (1)' : `≥ ${n} films`}</option>
             ))}
           </select>
         </label>
 
         <div className="recs-bias-sep" />
 
-        <div className="recs-unvoted">
-          <span className="recs-bias-label">Unvoted by</span>
-          <div className="recs-unvoted-pills">
-            {voters.map(v => (
-              <button
-                key={v}
-                className={`voter-pill-toggle${unvotedBy.has(v) ? ' active' : ''}`}
-                onClick={() => toggleUnvotedBy(v)}
-              >
-                {v.slice(0, 3)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <button className="btn btn-ghost btn-sm" onClick={() => { setDw(DEFAULT_WEIGHTS.dw); setEw(DEFAULT_WEIGHTS.ew); setTw(DEFAULT_WEIGHTS.tw); }}>
-          Reset
+        <button
+          type="button"
+          className={`btn btn-sm btn-ghost${weightsModified ? ' filter-reset-active' : ''}`}
+          onClick={resetWeights}
+          disabled={!weightsModified}
+          title="Reset model weights to default"
+        >
+          Reset Model
         </button>
       </div>
 

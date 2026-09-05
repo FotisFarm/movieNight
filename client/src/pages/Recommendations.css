@@ -5,6 +5,13 @@
   margin-bottom: 16px;
 }
 
+.recs-filters-bar {
+  padding: 10px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+
 .filter-row {
   display: flex;
   align-items: center;
@@ -28,14 +35,68 @@
   white-space: nowrap;
 }
 
+.filter-item-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text2);
+  white-space: nowrap;
+}
+
+.filter-item-inline .filter-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.filter-reset-active {
+  color: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+
+.recs-unvoted-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.recs-filter-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
 .recs-biases {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   padding: 8px 16px;
   background: var(--surface2);
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
+}
+
+.recs-model-badge {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  background: rgba(233, 69, 96, 0.12);
+  border-radius: 6px;
+  border: 1px solid rgba(233, 69, 96, 0.25);
+  white-space: nowrap;
+}
+
+.halo-boost-val {
+  color: var(--gold) !important;
 }
 
 .recs-bias-label {
