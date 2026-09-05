@@ -92,8 +92,12 @@ export default function Films() {
   function resetFilters() {
     Object.entries(DEFAULTS).forEach(([k, v]) => setters[k](v));
   }
-  function toggleVoter(v) {
-    setFilterVoters(vs => vs.includes(v) ? vs.filter(x => x !== v) : [...vs, v]);
+  function toggleVoter(v, e) {
+    if (e && (e.shiftKey || e.ctrlKey || e.metaKey)) {
+      setFilterVoters(vs => vs.includes(v) ? vs.filter(x => x !== v) : [...vs, v]);
+    } else {
+      setFilterVoters(vs => (vs.length === 1 && vs[0] === v) ? [] : [v]);
+    }
   }
 
   const fetchMovies = useCallback(async (params) => {
@@ -293,9 +297,10 @@ export default function Films() {
         </button>
       </div>
 
-      {/* ── Filter Pills Bar ── */}
+      {/* ── Filter Toolbar ── */}
       <div className="films-filter-bar">
-        <div className="films-quick-pills">
+        {/* Scope toggles: Movie Night & Watchlist */}
+        <div className="filter-scope-group">
           <button
             type="button"
             className={`filter-chip filter-chip-mn${filterMn ? ' active' : ''}`}
@@ -311,34 +316,84 @@ export default function Films() {
           >
             <span className="chip-icon">👁</span> Watchlist
           </button>
-
-          <select
-            className={`select select-sm filter-status-select${filterRated ? ' filter-select-active' : ''}`}
-            value={filterRated}
-            onChange={e => setFilterRated(e.target.value)}
-          >
-            <option value="">Status: All</option>
-            <option value="voted">Voted Only</option>
-            <option value="unvoted">Unvoted Only</option>
-          </select>
         </div>
 
         <div className="filter-bar-sep" />
 
-        {/* Voter pills */}
-        <div className="films-voter-pills">
-          <span className="voter-pills-label">Voter:</span>
-          {voters.map(v => (
+        {/* Unified Voter & Rating Status Cluster */}
+        <div className="filter-voter-cluster">
+          <span className="voter-cluster-label">Voter:</span>
+          <div className="filter-voter-pills">
             <button
-              key={v}
               type="button"
-              className={`voter-pill${filterVoters.includes(v) ? ' active' : ''}`}
-              onClick={() => toggleVoter(v)}
-              title={`Toggle films rated by ${v}`}
+              className={`voter-pill${filterVoters.length === 0 ? ' active' : ''}`}
+              onClick={() => setFilterVoters([])}
+              title="All voters (clear voter filter)"
             >
-              {v}
+              All
             </button>
-          ))}
+            {voters.map(v => (
+              <button
+                key={v}
+                type="button"
+                className={`voter-pill${filterVoters.includes(v) ? ' active' : ''}`}
+                onClick={e => toggleVoter(v, e)}
+                title={`Filter films by ${v} (click to select, Shift-click to multi-select)`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+
+          <div className="filter-status-seg">
+            {filterVoters.length === 0 ? (
+              <>
+                <button
+                  type="button"
+                  className={`status-seg-btn${filterRated === '' ? ' active' : ''}`}
+                  onClick={() => setFilterRated('')}
+                  title="Show all films regardless of votes"
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  className={`status-seg-btn${filterRated === 'voted' ? ' active' : ''}`}
+                  onClick={() => setFilterRated('voted')}
+                  title="Show films with at least 1 vote from anyone"
+                >
+                  Voted
+                </button>
+                <button
+                  type="button"
+                  className={`status-seg-btn status-seg-unvoted${filterRated === 'unvoted' ? ' active' : ''}`}
+                  onClick={() => setFilterRated('unvoted')}
+                  title="Show films with 0 votes across the whole group"
+                >
+                  Unvoted
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={`status-seg-btn${filterRated !== 'unvoted' ? ' active' : ''}`}
+                  onClick={() => setFilterRated('voted')}
+                  title={`Show films voted by ${filterVoters.join(', ')}`}
+                >
+                  Voted by {filterVoters.length === 1 ? filterVoters[0] : `${filterVoters.length} voters`}
+                </button>
+                <button
+                  type="button"
+                  className={`status-seg-btn status-seg-unvoted${filterRated === 'unvoted' ? ' active' : ''}`}
+                  onClick={() => setFilterRated('unvoted')}
+                  title={`Show films NOT voted by ${filterVoters.join(', ')}`}
+                >
+                  Unvoted by {filterVoters.length === 1 ? filterVoters[0] : `${filterVoters.length} voters`}
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="filter-bar-sep" />
@@ -350,7 +405,7 @@ export default function Films() {
           onClick={() => setMoreFiltersOpen(o => !o)}
           title="Toggle advanced filters (Director, Year, Voter count)"
         >
-          <span>More filters{advancedFilterCount > 0 ? ` (${advancedFilterCount})` : ''}</span>
+          <span>Filters{advancedFilterCount > 0 ? ` (${advancedFilterCount})` : ''}</span>
           <span className="filter-toggle-caret">{moreFiltersOpen ? '▲' : '▼'}</span>
         </button>
 
