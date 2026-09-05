@@ -293,7 +293,7 @@ export default function Header({ voter, onLogout }) {
                   >
                     <span className="nav-item-icon">🎯</span>
                     <div className="nav-item-text">
-                      <span className="nav-item-title">Smart Picks</span>
+                      <span className="nav-item-title">Picks</span>
                       <span className="nav-item-desc">Bayesian Recommendations</span>
                     </div>
                   </NavLink>
@@ -483,7 +483,7 @@ export default function Header({ voter, onLogout }) {
               >
                 <div className="hub-card-icon">🎯</div>
                 <div className="hub-card-text">
-                  <div className="hub-card-title">Smart Picks</div>
+                  <div className="hub-card-title">Picks</div>
                   <div className="hub-card-desc">Bayesian Predictive Recommendations</div>
                 </div>
                 {pathname.startsWith('/recommendations') && <span className="hub-card-check">✓</span>}

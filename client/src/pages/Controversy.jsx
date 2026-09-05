@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
-import DiscoveryTabs from '../components/DiscoveryTabs';
 import { useToast } from '../hooks/useToast.jsx';
 import { useAppConfig } from '../AppConfigContext';
 import { fmt, scoreClass } from '../utils';
@@ -51,9 +50,8 @@ export default function Controversy() {
     .sort((a, b) => b.stdDev - a.stdDev);
 
   return (
-    <div className="controversy-container">
+    <div>
       <Toast />
-      <DiscoveryTabs />
 
       <div className="films-filters">
         <div className="filter-row">
