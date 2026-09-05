@@ -163,34 +163,45 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
     );
   }
 
+  const hasBadges = Boolean(mn || watchlist || rank_global);
+  const hasVoterRatings = Boolean(voters && voters.some(v => ratings?.[v] != null));
+  const hasRatingsOrImdb = Boolean(hasVoterRatings || imdb_rating != null);
+
   return (
     <article className={cardClass} onClick={onClick} {...keyProps}>
       <Poster path={poster_path} title={title} size="w185" />
 
-      <div className="card-score">
-        {displayScore !== null && (
-          <div className={`score-big ${scoreClass(displayScore)}`}>{fmt(displayScore)}</div>
-        )}
-      </div>
-
       <div className="card-body">
-        <h3 className="card-title">{title}</h3>
+        <div className="card-header-row">
+          <h3 className="card-title" title={title}>{title}</h3>
+          {displayScore !== null && (
+            <div className={`score-big ${scoreClass(displayScore)} card-grid-score`}>
+              {fmt(displayScore)}
+            </div>
+          )}
+        </div>
+
         <p className="card-meta">
           <span className="card-director">{director}</span>
           {year ? <> · <span className="card-year">{year}</span></> : null}
         </p>
 
-        <div className="card-badges">
-          {mn          && <span className="badge badge-mn">MN{mn_rank ? ` #${mn_rank}` : ''}</span>}
-          {watchlist   && <span className="badge badge-wl">WL</span>}
-          {rank_global && <span className="badge badge-ranked">#{rank_global}</span>}
-        </div>
+        {hasBadges && (
+          <div className="card-badges">
+            {mn          && <span className="badge badge-mn">MN{mn_rank ? ` #${mn_rank}` : ''}</span>}
+            {watchlist   && <span className="badge badge-wl">WL</span>}
+            {rank_global && <span className="badge badge-ranked">#{rank_global}</span>}
+          </div>
+        )}
 
-        <div className="card-ratings">
-          <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} />
-        </div>
-
-        {ImdbBadge}
+        {hasRatingsOrImdb && (
+          <div className="card-ratings">
+            {hasVoterRatings && (
+              <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} />
+            )}
+            {ImdbBadge}
+          </div>
+        )}
       </div>
     </article>
   );

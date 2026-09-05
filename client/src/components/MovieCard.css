@@ -26,7 +26,7 @@
    footprint and show a placeholder rather than collapsing. */
 .card-poster {
   flex-shrink: 0;
-  width: 54px;
+  width: 58px;
   aspect-ratio: 2 / 3;
   border-radius: 4px;
   overflow: hidden;
@@ -34,6 +34,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  align-self: flex-start;
 }
 
 .card-poster img {
@@ -52,14 +53,15 @@
 .movie-card.list-view .card-poster {
   width: 34px;
   border-radius: 3px;
+  align-self: center;
 }
 
 @media (max-width: 640px) {
-  .card-poster { width: 46px; }
+  .card-poster { width: 48px; }
   .movie-card.list-view .card-poster { width: 30px; }
 }
 
-/* ── Score column ── */
+/* ── Score column (list view) ── */
 .card-score {
   flex-shrink: 0;
   text-align: right;
@@ -77,8 +79,34 @@
   line-height: 1.2;
 }
 
+/* ── Grid card header & score ── */
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.card-header-row .card-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-grid-score {
+  flex-shrink: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
 /* ── Grid card body ── */
-.card-body { flex: 1; min-width: 0; }
+.card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
 
 .card-title {
   font-size: 15px;
@@ -107,15 +135,26 @@
   display: flex;
   gap: 5px;
   flex-wrap: wrap;
-  margin-top: 7px;
+  margin-top: 6px;
   align-items: center;
+}
+
+.card-badges:empty {
+  display: none;
+  margin: 0;
 }
 
 .card-ratings {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 7px;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.card-ratings:empty {
+  display: none;
+  margin: 0;
 }
 
 /* ── Voter pills ── */
@@ -216,7 +255,8 @@
   border-left-color: var(--accent);
 }
 
-[data-theme="cold-press"] .movie-card.list-view .score-big {
+[data-theme="cold-press"] .movie-card.list-view .score-big,
+[data-theme="cold-press"] .card-grid-score {
   font-family: 'Courier New', monospace;
   font-size: 14px;
   font-weight: 700;
@@ -298,9 +338,10 @@
   background: var(--green);
 }
 
-[data-theme="signal"] .movie-card.list-view .score-big {
+[data-theme="signal"] .movie-card.list-view .score-big,
+[data-theme="signal"] .card-grid-score {
   font-family: Consolas, monospace;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: -.02em;
 }
