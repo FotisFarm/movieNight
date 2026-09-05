@@ -1,3 +1,8 @@
+.rankings-page {
+  display: flex;
+  flex-direction: column;
+}
+
 .rankings-rows {
   display: flex;
   flex-direction: column;
@@ -10,6 +15,9 @@
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-start;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
 }
 
 .btn-rank-active {

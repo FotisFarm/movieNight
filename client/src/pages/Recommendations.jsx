@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
+import DiscoveryTabs from '../components/DiscoveryTabs';
 import { useToast } from '../hooks/useToast.jsx';
 import { useAppConfig } from '../AppConfigContext';
 import { fmt, scoreClass } from '../utils';
@@ -122,8 +123,9 @@ export default function Recommendations() {
   }
 
   return (
-    <div>
+    <div className="recommendations-container">
       <Toast />
+      <DiscoveryTabs />
 
       {/* Filters */}
       <div className="films-filters">
@@ -257,7 +259,7 @@ export default function Recommendations() {
       {/* List */}
       <div className="recs-page">
         <div className="recs-header">
-          <h1 className="recs-title">Picks</h1>
+          <h1 className="recs-title">Smart Picks</h1>
           <p className="recs-sub">Films ranked by predicted group enjoyment · click to rate</p>
         </div>
 

@@ -4,6 +4,7 @@ import { api } from '../api';
 import RankingSection from '../components/RankingSection';
 import MovieModal from '../components/MovieModal';
 import DirectorYearModal from '../components/DirectorYearModal';
+import DiscoveryTabs from '../components/DiscoveryTabs';
 import { useToast } from '../hooks/useToast.jsx';
 import './Rankings.css';
 
@@ -139,17 +140,10 @@ export default function Rankings() {
     api.getRankings({ minDirFilms }).then(setData).catch(console.error);
   }
 
-  if (loading) return <div className="spinner" />;
-
-  if (!data) return (
-    <div className="empty">
-      <div className="empty-icon">📊</div>
-      <div className="empty-title">Couldn't load rankings</div>
-    </div>
-  );
-
   return (
-    <div className="rankings-rows">
+    <div className="rankings-page">
+      <DiscoveryTabs />
+
       <div className="ranking-controls">
         <span className="ranking-ctl-label">Score</span>
         {SCORE_MODES.map(({ key, label, hint }) => (
@@ -195,30 +189,42 @@ export default function Rankings() {
           </button>
         ))}
       </div>
-      {ROWS.filter(row => row.scoreMode === scoreMode && row.scope === scope).map(row => (
-        <div key={row.label} className="ranking-row-group">
-          <div className="ranking-row-header">
-            <h2 className="ranking-row-title">{row.label}</h2>
-            <p className="ranking-row-desc">{row.description}</p>
-          </div>
-          <div className="ranking-row-panels">
-            {row.panels.filter(panel => visibleTypes.includes(panelType(panel.key))).map(panel => (
-              <RankingSection
-                key={panel.key}
-                title={panel.title}
-                rows={data[panel.key]}
-                scoreKey={panel.scoreKey}
-                rowScoreKey={row.rowScoreKey}
-                mn={row.mnOnly}
-                onMovieClick={panel.clickable ? setSelectedId : undefined}
-                onDirectorClick={(d, sk, mnOnly) => setSelectedLabel({ type: 'director', value: d, scoreKey: sk, mnOnly })}
-                onYearClick={(y, sk, mnOnly) => setSelectedLabel({ type: 'year', value: String(y), scoreKey: sk, mnOnly })}
-                onDecadeClick={(d, sk, mnOnly) => setSelectedLabel({ type: 'decade', value: parseInt(d), scoreKey: sk, mnOnly })}
-              />
-            ))}
-          </div>
+
+      {loading ? (
+        <div className="spinner" style={{ margin: '60px auto' }} />
+      ) : !data ? (
+        <div className="empty">
+          <div className="empty-icon">📊</div>
+          <div className="empty-title">Couldn't load rankings</div>
         </div>
-      ))}
+      ) : (
+        <div className="rankings-rows">
+          {ROWS.filter(row => row.scoreMode === scoreMode && row.scope === scope).map(row => (
+            <div key={row.label} className="ranking-row-group">
+              <div className="ranking-row-header">
+                <h2 className="ranking-row-title">{row.label}</h2>
+                <p className="ranking-row-desc">{row.description}</p>
+              </div>
+              <div className="ranking-row-panels">
+                {row.panels.filter(panel => visibleTypes.includes(panelType(panel.key))).map(panel => (
+                  <RankingSection
+                    key={panel.key}
+                    title={panel.title}
+                    rows={data[panel.key]}
+                    scoreKey={panel.scoreKey}
+                    rowScoreKey={row.rowScoreKey}
+                    mn={row.mnOnly}
+                    onMovieClick={panel.clickable ? setSelectedId : undefined}
+                    onDirectorClick={(d, sk, mnOnly) => setSelectedLabel({ type: 'director', value: d, scoreKey: sk, mnOnly })}
+                    onYearClick={(y, sk, mnOnly) => setSelectedLabel({ type: 'year', value: String(y), scoreKey: sk, mnOnly })}
+                    onDecadeClick={(d, sk, mnOnly) => setSelectedLabel({ type: 'decade', value: parseInt(d), scoreKey: sk, mnOnly })}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {selectedId && (
         <MovieModal
