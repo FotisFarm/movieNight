@@ -396,6 +396,21 @@
   gap: 0;
 }
 
+/* ── Mobile Filter Trigger Button ── */
+.mobile-filters-btn {
+  display: none;
+}
+
+/* ── Mobile Active Filter Strip ── */
+.films-mobile-active-strip {
+  display: none;
+}
+
+/* ── Mobile Drawer Overlay & Sheet ── */
+.mobile-drawer-overlay {
+  display: none;
+}
+
 /* ── Responsive rules ── */
 @media (max-width: 900px) {
   .films-filter-actions {
@@ -407,25 +422,280 @@
   }
 }
 
-@media (max-width: 640px) {
-  .search-box {
-    max-width: 100%;
-    flex-basis: 100%;
+@media (max-width: 768px) {
+  /* Hide heavy desktop filter bars */
+  .films-filter-bar,
+  .films-advanced-drawer {
+    display: none !important;
   }
+
+  /* Compact Top Bar on mobile */
   .films-top-bar {
-    row-gap: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
   }
+
+  .search-box {
+    flex: 1 1 180px;
+    max-width: 100%;
+  }
+
+  .btn-add-film {
+    padding: 7px 12px;
+  }
+
   .films-sort-wrap {
-    flex: 1;
-  }
-  .films-sort-select {
-    flex: 1;
+    flex: 1 1 130px;
     min-width: 0;
   }
+
+  .films-sort-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .mobile-filters-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+  }
+
+  .mobile-filters-btn:hover {
+    color: var(--text);
+    border-color: var(--text3);
+  }
+
+  .mobile-filters-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* Active Filter Ribbon (single-line horizontal scroll) */
+  .films-mobile-active-strip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 2px 0 10px 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .films-mobile-active-strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .active-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 9px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .active-chip-unvoted {
+    border-color: #e06c75;
+    background: rgba(224, 108, 117, 0.16);
+    color: #e06c75;
+  }
+
+  .active-chip button {
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .active-chip button:hover {
+    color: var(--text);
+  }
+
+  .active-chip-clear {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 2px 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Drawer Overlay & Bottom Sheet */
+  .mobile-drawer-overlay {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: 1000;
+    backdrop-filter: blur(3px);
+    justify-content: center;
+    align-items: flex-end;
+    animation: drawerFadeIn 0.15s ease;
+  }
+
+  .mobile-drawer-content {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 18px 18px 0 0;
+    width: 100%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.6);
+    animation: drawerSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes drawerFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes drawerSlideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .mobile-drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mobile-drawer-title-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .mobile-drawer-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+  }
+
+  .mobile-drawer-count {
+    font-size: 12px;
+    color: var(--text3);
+  }
+
+  .mobile-drawer-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mobile-drawer-reset {
+    color: var(--accent) !important;
+    padding: 4px 8px !important;
+  }
+
+  .mobile-drawer-close {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  .mobile-drawer-close:hover {
+    color: var(--text);
+  }
+
+  .mobile-drawer-body {
+    padding: 16px 18px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-drawer-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mobile-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text3);
+    letter-spacing: 0.05em;
+  }
+
+  .mobile-cluster {
+    width: 100%;
+  }
+
+  .mobile-seg {
+    width: 100%;
+    display: flex;
+    margin-top: 6px;
+  }
+
+  .mobile-seg .status-seg-btn {
+    flex: 1;
+    text-align: center;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  .mobile-drawer-footer {
+    padding: 12px 18px;
+    border-top: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .mobile-drawer-apply {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
   .films-grid {
     grid-template-columns: 1fr;
-  }
-  .filter-bar-sep {
-    display: none;
   }
 }

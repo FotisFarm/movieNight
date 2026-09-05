@@ -41,6 +41,7 @@ export default function Films() {
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(() =>
     !!(searchParams.get('director') || searchParams.get('yearMin') || searchParams.get('yearMax') || searchParams.get('minVoters') || searchParams.get('maxVoters'))
   );
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const { toast, Toast }              = useToast();
 
   const [search, setSearch]           = useState(() => searchParams.get('q') || DEFAULTS.search);
@@ -122,6 +123,20 @@ export default function Films() {
     refreshAllMovies();
     api.getDirectors().then(setDirectors).catch(() => {});
   }, [fetchMovies]);
+
+  useEffect(() => {
+    if (mobileDrawerOpen) {
+      document.body.style.overflow = 'hidden';
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') setMobileDrawerOpen(false);
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [mobileDrawerOpen]);
 
   useEffect(() => {
     clearTimeout(searchTimer.current);
@@ -292,10 +307,70 @@ export default function Films() {
           </button>
         </div>
 
+        <button
+          type="button"
+          className={`btn btn-sm btn-ghost mobile-filters-btn${activeFilterCount > 0 ? ' active' : ''}`}
+          onClick={() => setMobileDrawerOpen(true)}
+          title="Open filters"
+        >
+          <span>⚙️ Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</span>
+        </button>
+
         <button className="btn btn-primary btn-add-film" onClick={() => setShowAdd(true)}>
           + Add Film
         </button>
       </div>
+
+      {/* ── Active Filters Ribbon (Mobile & Compact Summary) ── */}
+      {activeFilterCount > 0 && (
+        <div className="films-mobile-active-strip">
+          {filterMn && (
+            <span className="active-chip">
+              🎬 MN
+              <button type="button" onClick={() => setFilterMn(false)} title="Remove Movie Night filter">✕</button>
+            </span>
+          )}
+          {filterWl && (
+            <span className="active-chip">
+              👁 WL
+              <button type="button" onClick={() => setFilterWl(false)} title="Remove Watchlist filter">✕</button>
+            </span>
+          )}
+          {filterVoters.length > 0 && (
+            <span className={`active-chip${filterRated === 'unvoted' ? ' active-chip-unvoted' : ''}`}>
+              👤 {filterRated === 'unvoted' ? 'Unvoted: ' : 'Voted: '}{filterVoters.join(', ')}
+              <button type="button" onClick={() => { setFilterVoters([]); setFilterRated(''); }} title="Remove voter filter">✕</button>
+            </span>
+          )}
+          {filterVoters.length === 0 && filterRated && (
+            <span className={`active-chip${filterRated === 'unvoted' ? ' active-chip-unvoted' : ''}`}>
+              {filterRated === 'unvoted' ? 'Unrated (0)' : 'Rated (≥1)'}
+              <button type="button" onClick={() => setFilterRated('')} title="Remove status filter">✕</button>
+            </span>
+          )}
+          {filterDirector && (
+            <span className="active-chip">
+              🎭 {filterDirector}
+              <button type="button" onClick={() => setFilterDirector('')} title="Remove director filter">✕</button>
+            </span>
+          )}
+          {(filterYearMin || filterYearMax) && (
+            <span className="active-chip">
+              📅 {filterYearMin || '…'}–{filterYearMax || '…'}
+              <button type="button" onClick={() => { setFilterYearMin(''); setFilterYearMax(''); }} title="Remove year filter">✕</button>
+            </span>
+          )}
+          {(filterMinVoters || filterMaxVoters) && (
+            <span className="active-chip">
+              🗳 {filterMinVoters ? `≥${filterMinVoters}` : ''}{filterMinVoters && filterMaxVoters ? ' & ' : ''}{filterMaxVoters ? `≤${filterMaxVoters}` : ''} votes
+              <button type="button" onClick={() => { setFilterMinVoters(''); setFilterMaxVoters(''); }} title="Remove vote count filter">✕</button>
+            </span>
+          )}
+          <button type="button" className="active-chip-clear" onClick={resetFilters}>
+            Clear all
+          </button>
+        </div>
+      )}
 
       {/* ── Filter Toolbar ── */}
       <div className="films-filter-bar">
@@ -568,6 +643,208 @@ export default function Films() {
       {showAdd && (
         <AddMovieModal onClose={() => setShowAdd(false)} onAdded={handleAdded} />
       )}
+
+      {/* ── Mobile Filter Drawer ── */}
+      {mobileDrawerOpen && (
+        <div className="mobile-drawer-overlay" onClick={() => setMobileDrawerOpen(false)}>
+          <div className="mobile-drawer-content" onClick={e => e.stopPropagation()}>
+            <div className="mobile-drawer-header">
+              <div className="mobile-drawer-title-wrap">
+                <h2 className="mobile-drawer-title">Filters</h2>
+                <span className="mobile-drawer-count">{searchFiltered.length} / {movies.length} films</span>
+              </div>
+              <div className="mobile-drawer-header-actions">
+                {filtersActive && (
+                  <button type="button" className="btn btn-sm btn-ghost mobile-drawer-reset" onClick={resetFilters}>
+                    Reset
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="mobile-drawer-close"
+                  onClick={() => setMobileDrawerOpen(false)}
+                  aria-label="Close filters"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="mobile-drawer-body">
+              {/* Scope section */}
+              <div className="mobile-drawer-section">
+                <span className="mobile-section-label">Catalog Scope</span>
+                <div className="filter-scope-group">
+                  <button
+                    type="button"
+                    className={`filter-chip filter-chip-mn${filterMn ? ' active' : ''}`}
+                    onClick={() => setFilterMn(m => !m)}
+                  >
+                    <span className="chip-icon">🎬</span> Movie Night
+                  </button>
+                  <button
+                    type="button"
+                    className={`filter-chip filter-chip-wl${filterWl ? ' active' : ''}`}
+                    onClick={() => setFilterWl(w => !w)}
+                  >
+                    <span className="chip-icon">👁</span> Watchlist
+                  </button>
+                </div>
+              </div>
+
+              {/* Voter & Status Cluster */}
+              <div className="mobile-drawer-section">
+                <span className="mobile-section-label">Voter & Rating Status</span>
+                <div className="filter-voter-cluster mobile-cluster">
+                  <div className="filter-voter-pills">
+                    <button
+                      type="button"
+                      className={`voter-pill${filterVoters.length === 0 ? ' active' : ''}`}
+                      onClick={() => setFilterVoters([])}
+                    >
+                      All
+                    </button>
+                    {voters.map(v => (
+                      <button
+                        key={v}
+                        type="button"
+                        className={`voter-pill${filterVoters.includes(v) ? ' active' : ''}`}
+                        onClick={e => toggleVoter(v, e)}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="filter-status-seg mobile-seg">
+                    {filterVoters.length === 0 ? (
+                      <>
+                        <button
+                          type="button"
+                          className={`status-seg-btn${filterRated === '' ? ' active' : ''}`}
+                          onClick={() => setFilterRated('')}
+                        >
+                          All
+                        </button>
+                        <button
+                          type="button"
+                          className={`status-seg-btn${filterRated === 'voted' ? ' active' : ''}`}
+                          onClick={() => setFilterRated('voted')}
+                        >
+                          Voted
+                        </button>
+                        <button
+                          type="button"
+                          className={`status-seg-btn status-seg-unvoted${filterRated === 'unvoted' ? ' active' : ''}`}
+                          onClick={() => setFilterRated('unvoted')}
+                        >
+                          Unvoted
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className={`status-seg-btn${filterRated !== 'unvoted' ? ' active' : ''}`}
+                          onClick={() => setFilterRated('voted')}
+                        >
+                          Voted by {filterVoters.length === 1 ? filterVoters[0] : `${filterVoters.length} voters`}
+                        </button>
+                        <button
+                          type="button"
+                          className={`status-seg-btn status-seg-unvoted${filterRated === 'unvoted' ? ' active' : ''}`}
+                          onClick={() => setFilterRated('unvoted')}
+                        >
+                          Unvoted by {filterVoters.length === 1 ? filterVoters[0] : `${filterVoters.length} voters`}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Director section */}
+              <div className="mobile-drawer-section">
+                <label className="mobile-section-label" htmlFor="mobile-filter-director">Director</label>
+                <select
+                  id="mobile-filter-director"
+                  className="select select-sm"
+                  style={{ width: '100%' }}
+                  value={filterDirector}
+                  onChange={e => setFilterDirector(e.target.value)}
+                >
+                  <option value="">All Directors ({directors.length})</option>
+                  {directors.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+
+              {/* Release Year */}
+              <div className="mobile-drawer-section">
+                <span className="mobile-section-label">Release Year</span>
+                <div className="advanced-range-inputs">
+                  <input
+                    className="input input-sm advanced-input"
+                    placeholder="From"
+                    value={filterYearMin}
+                    onChange={e => setFilterYearMin(e.target.value)}
+                  />
+                  <span className="range-dash">–</span>
+                  <input
+                    className="input input-sm advanced-input"
+                    placeholder="To"
+                    value={filterYearMax}
+                    onChange={e => setFilterYearMax(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Votes Count */}
+              <div className="mobile-drawer-section">
+                <span className="mobile-section-label">Votes Count</span>
+                <div className="advanced-range-inputs">
+                  <select
+                    className="select select-sm advanced-select-range"
+                    value={filterMinVoters}
+                    onChange={e => setFilterMinVoters(e.target.value)}
+                  >
+                    <option value="">Min</option>
+                    <option value="1">≥ 1</option>
+                    <option value="2">≥ 2</option>
+                    <option value="3">≥ 3</option>
+                    <option value="4">≥ 4</option>
+                    <option value="5">≥ 5</option>
+                  </select>
+                  <span className="range-dash">–</span>
+                  <select
+                    className="select select-sm advanced-select-range"
+                    value={filterMaxVoters}
+                    onChange={e => setFilterMaxVoters(e.target.value)}
+                  >
+                    <option value="">Max</option>
+                    <option value="0">0</option>
+                    <option value="1">≤ 1</option>
+                    <option value="2">≤ 2</option>
+                    <option value="3">≤ 3</option>
+                    <option value="4">≤ 4</option>
+                    <option value="5">≤ 5</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="mobile-drawer-footer">
+              <button
+                type="button"
+                className="btn btn-primary mobile-drawer-apply"
+                onClick={() => setMobileDrawerOpen(false)}
+              >
+                Show {searchFiltered.length} Films
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Toast />
     </div>
   );
