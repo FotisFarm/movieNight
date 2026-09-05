@@ -1,3 +1,153 @@
+/* ── Split Movie Modal Container ── */
+.modal.movie-modal-split {
+  max-width: 980px;
+  width: 95vw;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Two-Column Layout ── */
+.movie-modal-body-split {
+  display: grid;
+  grid-template-columns: 310px 1fr;
+  gap: 26px;
+  padding: 22px 24px;
+  overflow-y: auto;
+  align-items: start;
+}
+
+/* ── Left Column: Identity, Scores, Flags, Lists ── */
+.movie-modal-left {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.movie-modal-poster-wrap {
+  width: 100%;
+  max-width: 260px;
+  margin: 0 auto;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
+}
+
+.movie-modal-poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.movie-modal-poster-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  color: var(--text3);
+  background: var(--surface2);
+}
+
+/* ── Right Column: Voter Ratings ── */
+.movie-modal-right {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.movie-modal-right-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.voter-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.voter-rating-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  transition: border-color 0.15s, opacity 0.15s;
+}
+
+.voter-rating-card:hover {
+  border-color: var(--surface3);
+}
+
+.voter-rating-card.voter-card-self {
+  border-color: rgba(124, 106, 247, 0.4);
+  background: linear-gradient(180deg, var(--surface2) 0%, rgba(124, 106, 247, 0.04) 100%);
+}
+
+.voter-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.voter-card-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 120px;
+}
+
+.voter-avatar-circle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.voter-name-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.voter-card-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.voter-top10-select {
+  width: 105px !important;
+  padding: 3px 6px !important;
+  font-size: 11px !important;
+}
+
 .ratings-grid {
   display: flex;
   flex-direction: column;
@@ -16,7 +166,7 @@
 }
 
 .rating-off { opacity: .45; }
-.rating-locked { opacity: .5; pointer-events: none; }
+.rating-locked { opacity: .65; }
 
 .rating-header {
   display: flex;
@@ -39,7 +189,7 @@
 }
 
 .rating-number-input {
-  width: 72px;
+  width: 68px;
   background: var(--surface3);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -106,23 +256,28 @@
   flex-wrap: wrap;
 }
 
-@media (max-width: 480px) {
+/* ── Responsive rules ── */
+@media (max-width: 768px) {
+  .modal.movie-modal-split {
+    max-width: 100%;
+    width: 100%;
+    max-height: 94vh;
+    margin: 8px;
+  }
+
+  .movie-modal-body-split {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 14px;
+  }
+
+  .movie-modal-poster-wrap {
+    max-width: 180px;
+  }
+
+  .voter-card-header {
+    gap: 8px;
+  }
+
   .rating-number-input { width: 60px; font-size: 14px; }
-}
-
-/* ── Poster in the modal header ──
-   Fixed width with a 2:3 box; the header text keeps its own column so a long
-   title still wraps rather than squeezing the image. */
-.modal-poster {
-  width: 86px;
-  aspect-ratio: 2 / 3;
-  object-fit: cover;
-  border-radius: 5px;
-  flex-shrink: 0;
-  background: var(--surface3);
-  align-self: flex-start;
-}
-
-@media (max-width: 640px) {
-  .modal-poster { width: 62px; }
 }
