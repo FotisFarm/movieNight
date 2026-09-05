@@ -55,6 +55,17 @@
 }
 
 /* ── Dropdown navigation hubs (Rankings, Stats) ── */
+button.nav-link {
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  line-height: inherit;
+  display: inline-flex;
+  align-items: center;
+}
+
 .nav-dropdown {
   position: relative;
   display: flex;
@@ -71,18 +82,19 @@
 .nav-caret {
   font-size: 8px;
   opacity: 0.6;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, transform 0.15s ease;
   display: inline-block;
   padding: 1px 2px;
 }
 
-.nav-dropdown:hover .nav-caret {
+.nav-dropdown:hover .nav-caret,
+.nav-dropdown.open .nav-caret {
   opacity: 1;
 }
 
 .nav-dropdown-menu {
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + 2px);
   left: 0;
   min-width: 230px;
   background: var(--surface2);
@@ -95,6 +107,17 @@
   gap: 3px;
   z-index: 250;
   animation: dropdownFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Invisible hover bridge connecting trigger to menu across any vertical seam */
+.nav-dropdown-menu::before {
+  content: '';
+  position: absolute;
+  top: -14px;
+  left: 0;
+  right: 0;
+  height: 14px;
+  background: transparent;
 }
 
 @keyframes dropdownFadeIn {

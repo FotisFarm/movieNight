@@ -131,6 +131,39 @@ export default function Header({ voter, onLogout }) {
   const rankingsRef = useRef(null);
   const statsRef = useRef(null);
 
+  // Debounce timers for smooth hover transitions between trigger and menu
+  const rankingsTimerRef = useRef(null);
+  const statsTimerRef = useRef(null);
+
+  const handleRankingsEnter = () => {
+    if (rankingsTimerRef.current) clearTimeout(rankingsTimerRef.current);
+    setRankingsOpen(true);
+  };
+
+  const handleRankingsLeave = () => {
+    rankingsTimerRef.current = setTimeout(() => {
+      setRankingsOpen(false);
+    }, 180);
+  };
+
+  const handleStatsEnter = () => {
+    if (statsTimerRef.current) clearTimeout(statsTimerRef.current);
+    setStatsOpen(true);
+  };
+
+  const handleStatsLeave = () => {
+    statsTimerRef.current = setTimeout(() => {
+      setStatsOpen(false);
+    }, 180);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (rankingsTimerRef.current) clearTimeout(rankingsTimerRef.current);
+      if (statsTimerRef.current) clearTimeout(statsTimerRef.current);
+    };
+  }, []);
+
   // Active hub detection
   const isRankingsHubActive = (
     pathname.startsWith('/rankings') ||
@@ -217,35 +250,28 @@ export default function Header({ voter, onLogout }) {
 
             {/* Rankings Hub Dropdown */}
             <div
-              className="nav-dropdown"
+              className={`nav-dropdown ${rankingsOpen ? 'open' : ''}`}
               ref={rankingsRef}
-              onMouseEnter={() => setRankingsOpen(true)}
-              onMouseLeave={() => setRankingsOpen(false)}
+              onMouseEnter={handleRankingsEnter}
+              onMouseLeave={handleRankingsLeave}
             >
-              <NavLink
-                to="/rankings"
-                className={({ isActive }) =>
-                  (isActive || isRankingsHubActive) ? 'nav-link active nav-dropdown-trigger' : 'nav-link nav-dropdown-trigger'
-                }
+              <button
+                type="button"
+                className={`nav-link nav-dropdown-trigger ${isRankingsHubActive ? 'active' : ''}`}
+                onClick={() => setRankingsOpen(o => !o)}
+                aria-expanded={rankingsOpen}
+                aria-haspopup="true"
               >
                 <span>Rankings</span>
-                <span
-                  className="nav-caret"
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Toggle Rankings menu"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setRankingsOpen(o => !o);
-                  }}
-                >
-                  {rankingsOpen ? '▴' : '▾'}
-                </span>
-              </NavLink>
+                <span className="nav-caret">{rankingsOpen ? '▴' : '▾'}</span>
+              </button>
 
               {rankingsOpen && (
-                <div className="nav-dropdown-menu">
+                <div
+                  className="nav-dropdown-menu"
+                  onMouseEnter={handleRankingsEnter}
+                  onMouseLeave={handleRankingsLeave}
+                >
                   <NavLink
                     to="/rankings"
                     end
@@ -290,35 +316,28 @@ export default function Header({ voter, onLogout }) {
 
             {/* Stats Hub Dropdown */}
             <div
-              className="nav-dropdown"
+              className={`nav-dropdown ${statsOpen ? 'open' : ''}`}
               ref={statsRef}
-              onMouseEnter={() => setStatsOpen(true)}
-              onMouseLeave={() => setStatsOpen(false)}
+              onMouseEnter={handleStatsEnter}
+              onMouseLeave={handleStatsLeave}
             >
-              <NavLink
-                to="/stats"
-                className={({ isActive }) =>
-                  (isActive || isStatsHubActive) ? 'nav-link active nav-dropdown-trigger' : 'nav-link nav-dropdown-trigger'
-                }
+              <button
+                type="button"
+                className={`nav-link nav-dropdown-trigger ${isStatsHubActive ? 'active' : ''}`}
+                onClick={() => setStatsOpen(o => !o)}
+                aria-expanded={statsOpen}
+                aria-haspopup="true"
               >
                 <span>Stats</span>
-                <span
-                  className="nav-caret"
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Toggle Stats menu"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setStatsOpen(o => !o);
-                  }}
-                >
-                  {statsOpen ? '▴' : '▾'}
-                </span>
-              </NavLink>
+                <span className="nav-caret">{statsOpen ? '▴' : '▾'}</span>
+              </button>
 
               {statsOpen && (
-                <div className="nav-dropdown-menu">
+                <div
+                  className="nav-dropdown-menu"
+                  onMouseEnter={handleStatsEnter}
+                  onMouseLeave={handleStatsLeave}
+                >
                   <NavLink
                     to="/stats"
                     end
