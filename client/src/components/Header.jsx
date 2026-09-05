@@ -55,22 +55,25 @@ function IconRankings() {
   );
 }
 
+function IconLists() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <line x1="8" y1="6" x2="21" y2="6" />
+      <line x1="8" y1="12" x2="21" y2="12" />
+      <line x1="8" y1="18" x2="21" y2="18" />
+      <line x1="3" y1="6" x2="3.01" y2="6" />
+      <line x1="3" y1="12" x2="3.01" y2="12" />
+      <line x1="3" y1="18" x2="3.01" y2="18" />
+    </svg>
+  );
+}
+
 function IconStats() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <line x1="18" y1="20" x2="18" y2="10" />
       <line x1="12" y1="20" x2="12" y2="4" />
       <line x1="6" y1="20" x2="6" y2="14" />
-    </svg>
-  );
-}
-
-function IconMore() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="1.5" />
-      <circle cx="19" cy="12" r="1.5" />
-      <circle cx="5" cy="12" r="1.5" />
     </svg>
   );
 }
@@ -120,13 +123,16 @@ function ThemeDropdown({ up = false }) {
 }
 
 export default function Header({ voter, onLogout }) {
-  const { theme, setTheme } = useTheme();
   const location = useLocation();
   const pathname = location.pathname;
 
+  // Desktop dropdown state
   const [rankingsOpen, setRankingsOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
+
+  // Mobile hub sheet state (mirroring desktop hub dropdowns)
+  const [mobileRankingsOpen, setMobileRankingsOpen] = useState(false);
+  const [mobileStatsOpen, setMobileStatsOpen] = useState(false);
 
   const rankingsRef = useRef(null);
   const statsRef = useRef(null);
@@ -176,18 +182,12 @@ export default function Header({ voter, onLogout }) {
     pathname.startsWith('/compare')
   );
 
-  const isMoreHubActive = (
-    pathname.startsWith('/lists') ||
-    pathname.startsWith('/recommendations') ||
-    pathname.startsWith('/controversy') ||
-    pathname.startsWith('/compare')
-  );
-
-  // Close menus on route change
+  // Close all menus & sheets on route change
   useEffect(() => {
     setRankingsOpen(false);
     setStatsOpen(false);
-    setMoreOpen(false);
+    setMobileRankingsOpen(false);
+    setMobileStatsOpen(false);
   }, [pathname]);
 
   // Click outside to close desktop dropdowns
@@ -204,22 +204,24 @@ export default function Header({ voter, onLogout }) {
     return () => document.removeEventListener('mousedown', handleOutside);
   }, []);
 
-  // Escape key closes menus
+  // Escape key closes all dropdowns & sheets
   useEffect(() => {
     function handleKeyDown(e) {
       if (e.key === 'Escape') {
         setRankingsOpen(false);
         setStatsOpen(false);
-        setMoreOpen(false);
+        setMobileRankingsOpen(false);
+        setMobileStatsOpen(false);
       }
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Lock body scroll when mobile More sheet is open
+  // Lock body scroll when mobile Hub sheet is open
+  const isMobileSheetOpen = mobileRankingsOpen || mobileStatsOpen;
   useEffect(() => {
-    if (moreOpen) {
+    if (isMobileSheetOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -227,7 +229,7 @@ export default function Header({ voter, onLogout }) {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [moreOpen]);
+  }, [isMobileSheetOpen]);
 
   return (
     <>
@@ -366,14 +368,16 @@ export default function Header({ voter, onLogout }) {
             </div>
           </nav>
 
+          {/* Header Right: Themes, Voter & Sign Out (Unified across desktop & mobile) */}
           <div className="header-right">
             <ThemeDropdown />
-            {voter && <span className="header-voter header-voter-desktop">{voter}</span>}
+            {voter && <span className="header-voter">{voter}</span>}
             {onLogout && (
               <button
                 type="button"
-                className="btn btn-ghost btn-sm header-logout-desktop"
+                className="btn btn-ghost btn-sm header-logout"
                 onClick={onLogout}
+                title="Sign out"
               >
                 Sign out
               </button>
@@ -382,7 +386,7 @@ export default function Header({ voter, onLogout }) {
         </div>
       </header>
 
-      {/* Mobile 5-Tab Bottom Navigation Bar (visible only <= 640px) */}
+      {/* Mobile 5-Tab Bottom Navigation Bar (Mirroring desktop 1-to-1) */}
       <nav className="mobile-bottom-bar" aria-label="Mobile Bottom Navigation">
         <NavLink
           to="/films"
@@ -400,149 +404,155 @@ export default function Header({ voter, onLogout }) {
           <span className="mobile-tab-label">Watchlist</span>
         </NavLink>
 
-        <NavLink
-          to="/rankings"
-          className={({ isActive }) => (isActive || (isRankingsHubActive && !isMoreHubActive)) ? 'mobile-tab active' : 'mobile-tab'}
+        <button
+          type="button"
+          className={`mobile-tab ${isRankingsHubActive ? 'active' : ''}`}
+          onClick={() => {
+            setMobileStatsOpen(false);
+            setMobileRankingsOpen(o => !o);
+          }}
+          aria-label="Toggle Rankings hub"
+          aria-expanded={mobileRankingsOpen}
         >
           <IconRankings />
-          <span className="mobile-tab-label">Rankings</span>
-        </NavLink>
+          <span className="mobile-tab-label">Rankings ▾</span>
+        </button>
 
         <NavLink
-          to="/stats"
-          className={({ isActive }) => (isActive || (isStatsHubActive && pathname !== '/compare')) ? 'mobile-tab active' : 'mobile-tab'}
+          to="/lists"
+          className={({ isActive }) => isActive ? 'mobile-tab active' : 'mobile-tab'}
         >
-          <IconStats />
-          <span className="mobile-tab-label">Stats</span>
+          <IconLists />
+          <span className="mobile-tab-label">Lists</span>
         </NavLink>
 
         <button
           type="button"
-          className={`mobile-tab mobile-tab-more ${isMoreHubActive ? 'active' : ''}`}
-          onClick={() => setMoreOpen(true)}
-          aria-label="More navigation options"
-          aria-expanded={moreOpen}
+          className={`mobile-tab ${isStatsHubActive ? 'active' : ''}`}
+          onClick={() => {
+            setMobileRankingsOpen(false);
+            setMobileStatsOpen(o => !o);
+          }}
+          aria-label="Toggle Stats hub"
+          aria-expanded={mobileStatsOpen}
         >
-          <div className="mobile-tab-icon-wrap">
-            <IconMore />
-            {isMoreHubActive && <span className="mobile-more-badge-dot" />}
-          </div>
-          <span className="mobile-tab-label">More</span>
+          <IconStats />
+          <span className="mobile-tab-label">Stats ▾</span>
         </button>
       </nav>
 
-      {/* Mobile "More" Bottom Sheet Drawer */}
-      {moreOpen && (
-        <div className="more-drawer-overlay" onClick={() => setMoreOpen(false)}>
-          <div className="more-drawer-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="more-drawer-handle" />
-            <div className="more-drawer-header">
-              <div className="more-drawer-title-row">
-                <span className="more-drawer-logo">🎬</span>
-                <span className="more-drawer-title">More Navigation</span>
+      {/* Mobile "Rankings Hub" Bottom Sheet */}
+      {mobileRankingsOpen && (
+        <div className="hub-sheet-overlay" onClick={() => setMobileRankingsOpen(false)}>
+          <div className="hub-sheet" onClick={e => e.stopPropagation()}>
+            <div className="hub-sheet-handle" />
+            <div className="hub-sheet-header">
+              <div className="hub-sheet-title-row">
+                <span className="hub-sheet-icon">🏆</span>
+                <span className="hub-sheet-title">Rankings & Discovery</span>
               </div>
               <button
                 type="button"
-                className="more-drawer-close"
-                onClick={() => setMoreOpen(false)}
-                aria-label="Close menu"
+                className="hub-sheet-close"
+                onClick={() => setMobileRankingsOpen(false)}
+                aria-label="Close"
               >
                 ✕
               </button>
             </div>
 
-            <div className="more-drawer-body">
-              <div className="more-nav-grid">
-                <NavLink
-                  to="/lists"
-                  className={({ isActive }) => isActive ? 'more-nav-card active' : 'more-nav-card'}
-                  onClick={() => setMoreOpen(false)}
-                >
-                  <div className="more-card-icon">📑</div>
-                  <div className="more-card-content">
-                    <div className="more-card-title">Lists</div>
-                    <div className="more-card-desc">Custom curated collections</div>
-                  </div>
-                </NavLink>
-
-                <NavLink
-                  to="/recommendations"
-                  className={({ isActive }) => isActive ? 'more-nav-card active' : 'more-nav-card'}
-                  onClick={() => setMoreOpen(false)}
-                >
-                  <div className="more-card-icon">🎯</div>
-                  <div className="more-card-content">
-                    <div className="more-card-title">Picks</div>
-                    <div className="more-card-desc">Bayesian predictive engine</div>
-                  </div>
-                </NavLink>
-
-                <NavLink
-                  to="/controversy"
-                  className={({ isActive }) => isActive ? 'more-nav-card active' : 'more-nav-card'}
-                  onClick={() => setMoreOpen(false)}
-                >
-                  <div className="more-card-icon">⚡</div>
-                  <div className="more-card-content">
-                    <div className="more-card-title">Controversy</div>
-                    <div className="more-card-desc">Polarizing group films</div>
-                  </div>
-                </NavLink>
-
-                <NavLink
-                  to="/compare"
-                  className={({ isActive }) => isActive ? 'more-nav-card active' : 'more-nav-card'}
-                  onClick={() => setMoreOpen(false)}
-                >
-                  <div className="more-card-icon">⚖️</div>
-                  <div className="more-card-content">
-                    <div className="more-card-title">Compare</div>
-                    <div className="more-card-desc">Head-to-head match-ups</div>
-                  </div>
-                </NavLink>
-              </div>
-
-              <div className="more-drawer-divider" />
-
-              <div className="more-drawer-section">
-                <div className="more-section-label">Theme Palette</div>
-                <div className="more-themes-grid">
-                  {THEMES.map(t => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      className={`more-theme-chip ${theme === t.id ? 'active' : ''}`}
-                      onClick={() => setTheme(t.id)}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
+            <div className="hub-sheet-body">
+              <NavLink
+                to="/rankings"
+                end
+                className={({ isActive }) => isActive ? 'hub-card active' : 'hub-card'}
+                onClick={() => setMobileRankingsOpen(false)}
+              >
+                <div className="hub-card-icon">🏆</div>
+                <div className="hub-card-text">
+                  <div className="hub-card-title">Leaderboards</div>
+                  <div className="hub-card-desc">Top 10 Films, Directors & Decades</div>
                 </div>
-              </div>
+                {pathname === '/rankings' && <span className="hub-card-check">✓</span>}
+              </NavLink>
 
-              {voter && (
-                <>
-                  <div className="more-drawer-divider" />
-                  <div className="more-account-row">
-                    <div className="more-account-info">
-                      <span className="more-account-label">Signed in as</span>
-                      <span className="more-account-name">{voter}</span>
-                    </div>
-                    {onLogout && (
-                      <button
-                        type="button"
-                        className="btn btn-ghost btn-sm more-signout-btn"
-                        onClick={() => {
-                          setMoreOpen(false);
-                          onLogout();
-                        }}
-                      >
-                        Sign out
-                      </button>
-                    )}
-                  </div>
-                </>
-              )}
+              <NavLink
+                to="/recommendations"
+                className={({ isActive }) => isActive ? 'hub-card active' : 'hub-card'}
+                onClick={() => setMobileRankingsOpen(false)}
+              >
+                <div className="hub-card-icon">🎯</div>
+                <div className="hub-card-text">
+                  <div className="hub-card-title">Picks</div>
+                  <div className="hub-card-desc">Bayesian Predictive Recommendations</div>
+                </div>
+                {pathname.startsWith('/recommendations') && <span className="hub-card-check">✓</span>}
+              </NavLink>
+
+              <NavLink
+                to="/controversy"
+                className={({ isActive }) => isActive ? 'hub-card active' : 'hub-card'}
+                onClick={() => setMobileRankingsOpen(false)}
+              >
+                <div className="hub-card-icon">⚡</div>
+                <div className="hub-card-text">
+                  <div className="hub-card-title">Controversy</div>
+                  <div className="hub-card-desc">Polarization & Score Divergence</div>
+                </div>
+                {pathname.startsWith('/controversy') && <span className="hub-card-check">✓</span>}
+              </NavLink>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile "Stats Hub" Bottom Sheet */}
+      {mobileStatsOpen && (
+        <div className="hub-sheet-overlay" onClick={() => setMobileStatsOpen(false)}>
+          <div className="hub-sheet" onClick={e => e.stopPropagation()}>
+            <div className="hub-sheet-handle" />
+            <div className="hub-sheet-header">
+              <div className="hub-sheet-title-row">
+                <span className="hub-sheet-icon">📊</span>
+                <span className="hub-sheet-title">Stats & Comparison</span>
+              </div>
+              <button
+                type="button"
+                className="hub-sheet-close"
+                onClick={() => setMobileStatsOpen(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="hub-sheet-body">
+              <NavLink
+                to="/stats"
+                end
+                className={({ isActive }) => isActive ? 'hub-card active' : 'hub-card'}
+                onClick={() => setMobileStatsOpen(false)}
+              >
+                <div className="hub-card-icon">📊</div>
+                <div className="hub-card-text">
+                  <div className="hub-card-title">Voter Analytics</div>
+                  <div className="hub-card-desc">Scores, Biases & Top 10s</div>
+                </div>
+                {pathname === '/stats' && <span className="hub-card-check">✓</span>}
+              </NavLink>
+
+              <NavLink
+                to="/compare"
+                className={({ isActive }) => isActive ? 'hub-card active' : 'hub-card'}
+                onClick={() => setMobileStatsOpen(false)}
+              >
+                <div className="hub-card-icon">⚖️</div>
+                <div className="hub-card-text">
+                  <div className="hub-card-title">Head-to-Head Compare</div>
+                  <div className="hub-card-desc">Film-vs-Film & Voter Matchups</div>
+                </div>
+                {pathname.startsWith('/compare') && <span className="hub-card-check">✓</span>}
+              </NavLink>
             </div>
           </div>
         </div>

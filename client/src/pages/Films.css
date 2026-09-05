@@ -398,7 +398,7 @@
 
 /* ── Mobile Filter Trigger Button ── */
 .mobile-filters-btn {
-  display: none;
+  display: none !important;
 }
 
 /* ── Mobile Active Filter Strip ── */
@@ -457,7 +457,7 @@
   }
 
   .mobile-filters-btn {
-    display: inline-flex;
+    display: inline-flex !important;
     align-items: center;
     gap: 5px;
     padding: 6px 12px;
