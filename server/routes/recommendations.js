@@ -324,14 +324,14 @@ router.get('/accuracy', ah(async (req, res) => {
     errors.push(absError);
 
     let verdict = 'accurate';
-    let verdictLabel = 'Accurate';
+    let verdictLabel = 'On Track';
     if (absError <= 0.5) {
       verdict = 'bullseye';
       verdictLabel = '🎯 Bullseye';
-    } else if (diff >= 1.5) {
+    } else if (diff >= 1.0) {
       verdict = 'surprise';
-      verdictLabel = '🚀 Surprise Hit';
-    } else if (diff <= -1.5) {
+      verdictLabel = '🌟 Pleasantly Surprised';
+    } else if (diff <= -1.0) {
       verdict = 'disappointment';
       verdictLabel = '📉 Underperformed';
     } else if (diff > 0.5) {
@@ -339,7 +339,7 @@ router.get('/accuracy', ah(async (req, res) => {
       verdictLabel = '▲ Beat Prior';
     } else if (diff < -0.5) {
       verdict = 'underperformed';
-      verdictLabel = '▼ Missed Prior';
+      verdictLabel = '▼ Below Prior';
     }
 
     const ratingRows = ratingsByMovie[m.id] || [];
@@ -370,6 +370,17 @@ router.get('/accuracy', ah(async (req, res) => {
     });
   }
 
+  // Assign catalog actualRank and priorRank across all evaluated films
+  evaluatedFilms.sort((a, b) => b.actualScore - a.actualScore);
+  evaluatedFilms.forEach((f, i) => {
+    f.actualRank = i + 1;
+  });
+
+  const byPrior = [...evaluatedFilms].sort((a, b) => b.predictedPrior - a.predictedPrior);
+  byPrior.forEach((f, i) => {
+    f.priorRank = i + 1;
+  });
+
   const total = errors.length;
   const mae = total > 0 ? Math.round((errors.reduce((a, b) => a + b, 0) / total) * 100) / 100 : 0;
   const withinHalf = errors.filter(e => e <= 0.5).length;
@@ -380,9 +391,10 @@ router.get('/accuracy', ah(async (req, res) => {
     ? Math.round((withDir.reduce((a, b) => a + b.absError, 0) / withDir.length) * 100) / 100
     : null;
 
-  const topBullseyes = [...evaluatedFilms].sort((a, b) => a.absError - b.absError).slice(0, 5);
-  const topSurprises = [...evaluatedFilms].sort((a, b) => b.diff - a.diff).slice(0, 5);
-  const topDisappointments = [...evaluatedFilms].sort((a, b) => a.diff - b.diff).slice(0, 5);
+  // Top 10 highlights & extremes
+  const topBullseyes = [...evaluatedFilms].sort((a, b) => a.absError - b.absError).slice(0, 10);
+  const topSurprises = [...evaluatedFilms].sort((a, b) => b.diff - a.diff).slice(0, 10);
+  const topDisappointments = [...evaluatedFilms].sort((a, b) => a.diff - b.diff).slice(0, 10);
 
   res.json({
     summary: {
@@ -398,7 +410,7 @@ router.get('/accuracy', ah(async (req, res) => {
     topBullseyes,
     topSurprises,
     topDisappointments,
-    films: evaluatedFilms.sort((a, b) => b.actualScore - a.actualScore),
+    films: evaluatedFilms,
   });
 }));
 

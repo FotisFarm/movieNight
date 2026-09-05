@@ -173,7 +173,7 @@
   border-radius: 2px;
 }
 
-/* ── Showcase Podiums ── */
+/* ── Showcase Podiums (Top 10s) ── */
 .preds-podiums-section {
   margin-bottom: 32px;
 }
@@ -190,7 +190,7 @@
 
 .preds-podiums-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
   gap: 16px;
 }
 
@@ -234,6 +234,7 @@
   padding: 2px 7px;
   border-radius: 99px;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .podium-bullseye .preds-podium-badge {
@@ -254,19 +255,19 @@
 .preds-podium-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .preds-podium-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 8px 10px;
+  gap: 8px;
+  padding: 6px 9px;
   border-radius: 6px;
   background: var(--surface2);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.12s, outline 0.12s;
 }
 
 .preds-podium-item:hover {
@@ -286,7 +287,7 @@
   font-size: 11px;
   font-weight: 700;
   color: var(--text2);
-  width: 16px;
+  width: 18px;
   flex-shrink: 0;
 }
 
@@ -298,8 +299,8 @@
 }
 
 .preds-podium-film-title {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
@@ -307,31 +308,75 @@
 }
 
 .preds-podium-film-sub {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--text2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+/* Dual-score / dual-rank layout */
 .preds-podium-scores {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
+  align-items: center;
+  gap: 8px;
   flex-shrink: 0;
 }
 
-.preds-podium-actual {
-  font-size: 13px;
+.preds-score-pair {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.preds-score-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  line-height: 1.15;
+}
+
+.preds-lbl {
+  font-size: 9px;
+  text-transform: uppercase;
   font-weight: 700;
+  color: var(--text2);
+  letter-spacing: 0.03em;
+}
+
+.preds-val {
+  font-size: 12px;
+  font-weight: 800;
+  min-width: 26px;
+  text-align: right;
+}
+
+.preds-val-prior {
+  color: var(--text2);
+  font-weight: 600;
+}
+
+.preds-rank-chip {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0 4px;
+  border-radius: 4px;
+  line-height: 14px;
 }
 
 .preds-podium-diff {
   font-size: 10px;
   font-weight: 700;
-  padding: 1px 5px;
+  padding: 2px 5px;
   border-radius: 4px;
+  white-space: nowrap;
+  min-width: 48px;
+  text-align: center;
 }
 
 /* ── Filter Toolbar ── */
@@ -469,9 +514,18 @@
 }
 
 .preds-cell-score {
+  white-space: nowrap;
+}
+
+.preds-score-with-rank {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.preds-score-with-rank strong {
   font-weight: 800;
   font-size: 14px;
-  white-space: nowrap;
 }
 
 .preds-cell-prior {
@@ -484,9 +538,16 @@
   gap: 2px;
 }
 
+.preds-prior-val-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .preds-prior-val {
   font-weight: 700;
   color: var(--text);
+  font-size: 13px;
 }
 
 .preds-prior-decomp {
@@ -566,6 +627,12 @@
   background: rgba(239, 68, 68, 0.08);
   color: #fca5a5;
   border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.verdict-accurate {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text2);
+  border: 1px solid var(--border);
 }
 
 @media (max-width: 640px) {

@@ -36,7 +36,8 @@ export default function Predictions() {
   const [modalId, setModalId] = useState(null);
   const { toast, Toast } = useToast();
 
-  const [minVoters, setMinVoters] = useState(3);
+  // Default to 2 voters (like the scoring rule threshold)
+  const [minVoters, setMinVoters] = useState(2);
   const [minDirFilms, setMinDirFilms] = useState(2);
 
   const [search, setSearch] = useState('');
@@ -101,10 +102,8 @@ export default function Predictions() {
         if (!f.title.toLowerCase().includes(q) && !f.director?.toLowerCase().includes(q)) return false;
       }
       if (verdictFilter === 'bullseye') return f.absError <= 0.5;
-      if (verdictFilter === 'surprise') return f.diff >= 1.5;
-      if (verdictFilter === 'disappointment') return f.diff <= -1.5;
-      if (verdictFilter === 'beat') return f.diff > 0.5;
-      if (verdictFilter === 'missed') return f.diff < -0.5;
+      if (verdictFilter === 'surprise') return f.diff >= 1.0;
+      if (verdictFilter === 'disappointment') return f.diff <= -1.0;
       if (verdictFilter === 'mn') return f.mn;
       return true;
     });
@@ -152,7 +151,7 @@ export default function Predictions() {
               value={minVoters}
               onChange={e => setMinVoters(Number(e.target.value))}
             >
-              <option value={2}>≥ 2 voters (All scored)</option>
+              <option value={2}>≥ 2 voters (Scoring rule · All scored)</option>
               <option value={3}>≥ 3 voters (Core group)</option>
               <option value={4}>≥ 4 voters (Consensus)</option>
             </select>
@@ -250,22 +249,22 @@ export default function Predictions() {
               </div>
             </div>
 
-            {/* ── Showcase Podiums ── */}
+            {/* ── Showcase Podiums (Top 10s with Dual Actual & Prior Rankings) ── */}
             <div className="preds-podiums-section">
               <h2 className="preds-section-title">
-                <span>🏆 Model Highlights & Extremes</span>
+                <span>🏆 Model Highlights & Extremes (Top 10)</span>
               </h2>
 
               <div className="preds-podiums-grid">
-                {/* Bullseyes */}
+                {/* 1. Bullseyes */}
                 <div className="preds-podium-card podium-bullseye">
                   <div className="preds-podium-header">
                     <span className="preds-podium-title">🎯 Top Bullseyes</span>
-                    <span className="preds-podium-badge">Exact Matches</span>
+                    <span className="preds-podium-badge">Spot-on (≤ ±0.5)</span>
                   </div>
                   <div className="preds-podium-list">
-                    {data.topBullseyes?.slice(0, 4).map((f, i) => (
-                      <div key={f.id} className="preds-podium-item" onClick={() => setModalId(f.id)}>
+                    {data.topBullseyes?.slice(0, 10).map((f, i) => (
+                      <div key={f.id} className="preds-podium-item" onClick={() => setModalId(f.id)} title="Click to view film details">
                         <div className="preds-podium-item-left">
                           <span className="preds-podium-rank">#{i + 1}</span>
                           <div className="preds-podium-meta">
@@ -274,23 +273,36 @@ export default function Predictions() {
                           </div>
                         </div>
                         <div className="preds-podium-scores">
-                          <span className={`preds-podium-actual ${scoreClass(f.actualScore)}`}>{fmt(f.actualScore)}</span>
-                          <span className="preds-podium-diff diff-bullseye">err: {fmt(f.absError)}</span>
+                          <div className="preds-score-pair">
+                            <div className="preds-score-line" title={`Actual Score: ${fmt(f.actualScore)} (Catalog Rank #${f.actualRank})`}>
+                              <span className="preds-lbl">Act</span>
+                              <strong className={`preds-val ${scoreClass(f.actualScore)}`}>{fmt(f.actualScore)}</strong>
+                              <span className="preds-rank-chip" title="Catalog actual rank">#{f.actualRank}</span>
+                            </div>
+                            <div className="preds-score-line" title={`Prior Expectation: ${fmt(f.predictedPrior)} (Catalog Rank #${f.priorRank})`}>
+                              <span className="preds-lbl">Pri</span>
+                              <strong className="preds-val preds-val-prior">{fmt(f.predictedPrior)}</strong>
+                              <span className="preds-rank-chip" title="Catalog prior rank">#{f.priorRank}</span>
+                            </div>
+                          </div>
+                          <span className="preds-podium-diff diff-bullseye">
+                            err: {fmt(f.absError)}
+                          </span>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Surprises */}
+                {/* 2. Pleasantly Surprised */}
                 <div className="preds-podium-card podium-surprise">
                   <div className="preds-podium-header">
-                    <span className="preds-podium-title">🚀 Top Surprises</span>
-                    <span className="preds-podium-badge">Crushed Prior</span>
+                    <span className="preds-podium-title">🌟 Pleasantly Surprised</span>
+                    <span className="preds-podium-badge">Exceeded Prior</span>
                   </div>
                   <div className="preds-podium-list">
-                    {data.topSurprises?.slice(0, 4).map((f, i) => (
-                      <div key={f.id} className="preds-podium-item" onClick={() => setModalId(f.id)}>
+                    {data.topSurprises?.slice(0, 10).map((f, i) => (
+                      <div key={f.id} className="preds-podium-item" onClick={() => setModalId(f.id)} title="Click to view film details">
                         <div className="preds-podium-item-left">
                           <span className="preds-podium-rank">#{i + 1}</span>
                           <div className="preds-podium-meta">
@@ -299,23 +311,36 @@ export default function Predictions() {
                           </div>
                         </div>
                         <div className="preds-podium-scores">
-                          <span className={`preds-podium-actual ${scoreClass(f.actualScore)}`}>{fmt(f.actualScore)}</span>
-                          <span className="preds-podium-diff diff-over">+{fmt(f.diff)}</span>
+                          <div className="preds-score-pair">
+                            <div className="preds-score-line" title={`Actual Score: ${fmt(f.actualScore)} (Catalog Rank #${f.actualRank})`}>
+                              <span className="preds-lbl">Act</span>
+                              <strong className={`preds-val ${scoreClass(f.actualScore)}`}>{fmt(f.actualScore)}</strong>
+                              <span className="preds-rank-chip" title="Catalog actual rank">#{f.actualRank}</span>
+                            </div>
+                            <div className="preds-score-line" title={`Prior Expectation: ${fmt(f.predictedPrior)} (Catalog Rank #${f.priorRank})`}>
+                              <span className="preds-lbl">Pri</span>
+                              <strong className="preds-val preds-val-prior">{fmt(f.predictedPrior)}</strong>
+                              <span className="preds-rank-chip" title="Catalog prior rank">#{f.priorRank}</span>
+                            </div>
+                          </div>
+                          <span className="preds-podium-diff diff-over">
+                            +{fmt(f.diff)}
+                          </span>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Letdowns */}
+                {/* 3. Underperformed */}
                 <div className="preds-podium-card podium-letdown">
                   <div className="preds-podium-header">
-                    <span className="preds-podium-title">📉 Biggest Underperformers</span>
+                    <span className="preds-podium-title">📉 Underperformed</span>
                     <span className="preds-podium-badge">Fell Short</span>
                   </div>
                   <div className="preds-podium-list">
-                    {data.topDisappointments?.slice(0, 4).map((f, i) => (
-                      <div key={f.id} className="preds-podium-item" onClick={() => setModalId(f.id)}>
+                    {data.topDisappointments?.slice(0, 10).map((f, i) => (
+                      <div key={f.id} className="preds-podium-item" onClick={() => setModalId(f.id)} title="Click to view film details">
                         <div className="preds-podium-item-left">
                           <span className="preds-podium-rank">#{i + 1}</span>
                           <div className="preds-podium-meta">
@@ -324,8 +349,21 @@ export default function Predictions() {
                           </div>
                         </div>
                         <div className="preds-podium-scores">
-                          <span className={`preds-podium-actual ${scoreClass(f.actualScore)}`}>{fmt(f.actualScore)}</span>
-                          <span className="preds-podium-diff diff-under">{fmt(f.diff)}</span>
+                          <div className="preds-score-pair">
+                            <div className="preds-score-line" title={`Actual Score: ${fmt(f.actualScore)} (Catalog Rank #${f.actualRank})`}>
+                              <span className="preds-lbl">Act</span>
+                              <strong className={`preds-val ${scoreClass(f.actualScore)}`}>{fmt(f.actualScore)}</strong>
+                              <span className="preds-rank-chip" title="Catalog actual rank">#{f.actualRank}</span>
+                            </div>
+                            <div className="preds-score-line" title={`Prior Expectation: ${fmt(f.predictedPrior)} (Catalog Rank #${f.priorRank})`}>
+                              <span className="preds-lbl">Pri</span>
+                              <strong className="preds-val preds-val-prior">{fmt(f.predictedPrior)}</strong>
+                              <span className="preds-rank-chip" title="Catalog prior rank">#{f.priorRank}</span>
+                            </div>
+                          </div>
+                          <span className="preds-podium-diff diff-under">
+                            {fmt(f.diff)}
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -359,21 +397,21 @@ export default function Predictions() {
                   className={`preds-verdict-btn${verdictFilter === 'bullseye' ? ' active' : ''}`}
                   onClick={() => setVerdictFilter('bullseye')}
                 >
-                  🎯 Bullseyes (≤ 0.5)
+                  🎯 Bullseyes (Spot-on)
                 </button>
                 <button
                   type="button"
                   className={`preds-verdict-btn${verdictFilter === 'surprise' ? ' active' : ''}`}
                   onClick={() => setVerdictFilter('surprise')}
                 >
-                  🚀 Surprises (≥ +1.5)
+                  🌟 Pleasantly Surprised
                 </button>
                 <button
                   type="button"
                   className={`preds-verdict-btn${verdictFilter === 'disappointment' ? ' active' : ''}`}
                   onClick={() => setVerdictFilter('disappointment')}
                 >
-                  📉 Underperformed (≤ -1.5)
+                  📉 Underperformed
                 </button>
                 <button
                   type="button"
@@ -391,10 +429,10 @@ export default function Predictions() {
               >
                 <option value="score-desc">Sort by Actual Score (High → Low)</option>
                 <option value="score-asc">Sort by Actual Score (Low → High)</option>
-                <option value="prior-desc">Sort by Predicted Prior</option>
+                <option value="prior-desc">Sort by Predicted Prior (High → Low)</option>
                 <option value="error-asc">Sort by Accuracy (Bullseyes first)</option>
-                <option value="diff-desc">Sort by Outperformance (+Δ first)</option>
-                <option value="diff-asc">Sort by Underperformance (-Δ first)</option>
+                <option value="diff-desc">Sort by Outperformance (Biggest Surprises)</option>
+                <option value="diff-asc">Sort by Underperformance (Biggest Drops)</option>
               </select>
             </div>
 
@@ -444,7 +482,10 @@ export default function Predictions() {
                         </td>
                         <td className="preds-cell-prior">
                           <div className="preds-prior-wrap">
-                            <span className="preds-prior-val">{fmt(f.predictedPrior)}</span>
+                            <div className="preds-prior-val-row">
+                              <span className="preds-prior-val">{fmt(f.predictedPrior)}</span>
+                              <span className="preds-rank-chip" title="Rank based on Prior expectation">#{f.priorRank}</span>
+                            </div>
                             <div className="preds-prior-decomp">
                               {f.dirAvg != null && <span className="preds-decomp-pill" title="Director track avg">Dir {fmt(f.dirAvg)}</span>}
                               {f.decAvg != null && <span className="preds-decomp-pill" title="Decade era avg">Dec {fmt(f.decAvg)}</span>}
@@ -453,7 +494,10 @@ export default function Predictions() {
                           </div>
                         </td>
                         <td className="preds-cell-score">
-                          <span className={scoreClass(f.actualScore)}>{fmt(f.actualScore)}</span>
+                          <div className="preds-score-with-rank">
+                            <strong className={scoreClass(f.actualScore)}>{fmt(f.actualScore)}</strong>
+                            <span className="preds-rank-chip" title="Rank based on Actual score">#{f.actualRank}</span>
+                          </div>
                         </td>
                         <td>
                           <span className={`preds-diff-pill ${f.absError <= 0.5 ? 'diff-bullseye' : f.diff > 0 ? 'diff-over' : 'diff-under'}`}>
