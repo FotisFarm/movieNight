@@ -38,7 +38,9 @@ export default function Films() {
   const [showAdd, setShowAdd]         = useState(false);
   const [viewMode, setViewMode]       = useState('list');
   const [scoreMode, setScoreMode]     = useState('fair');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [moreFiltersOpen, setMoreFiltersOpen] = useState(() =>
+    !!(searchParams.get('director') || searchParams.get('yearMin') || searchParams.get('yearMax') || searchParams.get('minVoters') || searchParams.get('maxVoters'))
+  );
   const { toast, Toast }              = useToast();
 
   const [search, setSearch]           = useState(() => searchParams.get('q') || DEFAULTS.search);
@@ -74,12 +76,16 @@ export default function Films() {
 
   const searchTimer = useRef(null);
 
-  const filtersActive = search || filterMn || filterRated || filterWl || filterVoters.length || filterDirector || filterYearMin || filterYearMax || filterMinVoters || filterMaxVoters;
+  const advancedFilterCount = [
+    !!filterDirector, !!filterYearMin, !!filterYearMax,
+    !!filterMinVoters, !!filterMaxVoters,
+  ].filter(Boolean).length;
+
+  const filtersActive = search || filterMn || filterRated || filterWl || filterVoters.length || advancedFilterCount > 0;
 
   const activeFilterCount = [
     filterMn, filterWl, filterVoters.length > 0,
-    !!filterDirector, !!filterYearMin, !!filterYearMax,
-    !!filterMinVoters, !!filterMaxVoters, !!filterRated,
+    !!filterRated, advancedFilterCount > 0,
   ].filter(Boolean).length;
 
   const setters = { search: setSearch, sortBy: setSortBy, sortVoter: setSortVoter, filterMn: setFilterMn, filterRated: setFilterRated, filterWl: setFilterWl, filterVoters: setFilterVoters, filterDirector: setFilterDirector, filterYearMin: setFilterYearMin, filterYearMax: setFilterYearMax, filterMinVoters: setFilterMinVoters, filterMaxVoters: setFilterMaxVoters };
@@ -198,16 +204,9 @@ export default function Films() {
   }
 
   return (
-    <div>
-      {/* Toolbar */}
-      <div className="films-toolbar">
-        <button
-          className={`btn btn-ghost filters-toggle-btn${activeFilterCount > 0 ? ' filters-toggle-active' : ''}`}
-          onClick={() => setSidebarOpen(o => !o)}
-        >
-          Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
-        </button>
-
+    <div className="films-page">
+      {/* ── Top Bar: Search, Sort, Views, Add Film ── */}
+      <div className="films-top-bar">
         <div className="search-box">
           <span className="search-icon">🔍</span>
           <input
@@ -221,134 +220,201 @@ export default function Films() {
           )}
         </div>
 
+        <div className="films-sort-wrap">
+          <select
+            className="select select-sm films-sort-select"
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value)}
+            title="Sort films"
+          >
+            <option value="alpha">Sort: A → Z</option>
+            <option value="alpha-dir">Sort: By Director</option>
+            <option value="year-desc">Sort: Newest</option>
+            <option value="year-asc">Sort: Oldest</option>
+            <option value="score-desc">Sort: Fair Score ↓</option>
+            <option value="score-asc">Sort: Fair Score ↑</option>
+            <option value="group-desc">Sort: Group Score ↓</option>
+            <option value="group-asc">Sort: Group Score ↑</option>
+            <option value="voter-desc">Sort: Voter Rating ↓</option>
+            <option value="voter-asc">Sort: Voter Rating ↑</option>
+            <option value="controversial">Sort: Most Controversial</option>
+            <option value="added-desc">Sort: Recently Added</option>
+            <option value="added-asc">Sort: First Added</option>
+          </select>
+
+          {(sortBy === 'voter-desc' || sortBy === 'voter-asc') && (
+            <select
+              className="select select-sm voter-sort-select"
+              value={sortVoter}
+              onChange={e => setSortVoter(e.target.value)}
+              title="Select voter to sort by"
+            >
+              {voters.map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          )}
+        </div>
+
         <div className="view-toggle">
-          <button className={`view-btn${scoreMode === 'fair' ? ' active' : ''}`}
-            onClick={() => setScoreMode('fair')} title="Fair: per-voter average + Top 3 token bonus">
+          <button
+            className={`view-btn${scoreMode === 'fair' ? ' active' : ''}`}
+            onClick={() => setScoreMode('fair')}
+            title="Fair: per-voter average + Top 10 token bonus"
+          >
             Fair
           </button>
-          <button className={`view-btn${scoreMode === 'group' ? ' active' : ''}`}
-            onClick={() => setScoreMode('group')} title="Group: sum ÷ 5 + Top 3 token bonus (penalises films not seen by all)">
+          <button
+            className={`view-btn${scoreMode === 'group' ? ' active' : ''}`}
+            onClick={() => setScoreMode('group')}
+            title="Group: sum ÷ 5 + Top 10 token bonus"
+          >
             Group
           </button>
         </div>
 
         <div className="view-toggle">
-          <button className={`view-btn${viewMode === 'list' ? ' active' : ''}`}
-            onClick={() => setViewMode('list')} title="List view">☰</button>
-          <button className={`view-btn${viewMode === 'grid' ? ' active' : ''}`}
-            onClick={() => setViewMode('grid')} title="Grid view">⊞</button>
+          <button
+            className={`view-btn${viewMode === 'list' ? ' active' : ''}`}
+            onClick={() => setViewMode('list')}
+            title="List view"
+          >
+            ☰
+          </button>
+          <button
+            className={`view-btn${viewMode === 'grid' ? ' active' : ''}`}
+            onClick={() => setViewMode('grid')}
+            title="Grid view"
+          >
+            ⊞
+          </button>
         </div>
 
-        <button className="btn btn-primary" onClick={() => setShowAdd(true)}>+ Add Film</button>
+        <button className="btn btn-primary btn-add-film" onClick={() => setShowAdd(true)}>
+          + Add Film
+        </button>
       </div>
 
-      {/* Two-column layout: sidebar + content */}
-      <div className="films-layout">
+      {/* ── Filter Pills Bar ── */}
+      <div className="films-filter-bar">
+        <div className="films-quick-pills">
+          <button
+            type="button"
+            className={`filter-chip filter-chip-mn${filterMn ? ' active' : ''}`}
+            onClick={() => setFilterMn(m => !m)}
+          >
+            <span className="chip-icon">🎬</span> Movie Night
+          </button>
 
-        <aside className={`films-sidebar${sidebarOpen ? ' films-sidebar--open' : ''}`}>
+          <button
+            type="button"
+            className={`filter-chip filter-chip-wl${filterWl ? ' active' : ''}`}
+            onClick={() => setFilterWl(w => !w)}
+          >
+            <span className="chip-icon">👁</span> Watchlist
+          </button>
 
-          {/* Sort */}
-          <div className="filter-group">
-            <span className="filter-group-label">Sort</span>
-            <select className="select select-sm filter-group-control" value={sortBy} onChange={e => setSortBy(e.target.value)}>
-              <option value="alpha">A → Z</option>
-              <option value="alpha-dir">By Director</option>
-              <option value="year-desc">Newest</option>
-              <option value="year-asc">Oldest</option>
-              <option value="score-desc">Fair Score ↓</option>
-              <option value="score-asc">Fair Score ↑</option>
-              <option value="group-desc">Group Score ↓</option>
-              <option value="group-asc">Group Score ↑</option>
-              <option value="voter-desc">Voter Rating ↓</option>
-              <option value="voter-asc">Voter Rating ↑</option>
-              <option value="controversial">Most Controversial</option>
-              <option value="added-desc">Recently Added</option>
-              <option value="added-asc">First Added</option>
-            </select>
-            {(sortBy === 'voter-desc' || sortBy === 'voter-asc') && (
-              <>
-                <span className="filter-group-label" style={{ marginTop: 8 }}>By voter</span>
-                <select className="select select-sm filter-group-control" value={sortVoter} onChange={e => setSortVoter(e.target.value)}>
-                  {voters.map(v => <option key={v}>{v}</option>)}
-                </select>
-              </>
-            )}
-          </div>
+          <select
+            className={`select select-sm filter-status-select${filterRated ? ' filter-select-active' : ''}`}
+            value={filterRated}
+            onChange={e => setFilterRated(e.target.value)}
+          >
+            <option value="">Status: All</option>
+            <option value="voted">Voted Only</option>
+            <option value="unvoted">Unvoted Only</option>
+          </select>
+        </div>
 
-          <div className="filter-divider" />
+        <div className="filter-bar-sep" />
 
-          {/* Quick toggles */}
-          <div className="filter-group">
-            <label className="filter-check filter-check-mn">
-              <input type="checkbox" checked={filterMn} onChange={e => setFilterMn(e.target.checked)} />
-              Movie Night
-            </label>
-            <label className="filter-check" style={{ marginTop: 6 }}>
-              <input type="checkbox" checked={filterWl} onChange={e => setFilterWl(e.target.checked)} />
-              Watchlist
-            </label>
-          </div>
+        {/* Voter pills */}
+        <div className="films-voter-pills">
+          <span className="voter-pills-label">Voter:</span>
+          {voters.map(v => (
+            <button
+              key={v}
+              type="button"
+              className={`voter-pill${filterVoters.includes(v) ? ' active' : ''}`}
+              onClick={() => toggleVoter(v)}
+              title={`Toggle films rated by ${v}`}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
 
-          <div className="filter-divider" />
+        <div className="filter-bar-sep" />
 
-          {/* Voted */}
-          <div className="filter-group">
-            <label className="filter-group-label" htmlFor="filter-voted">Voted</label>
-            <select id="filter-voted" className="select select-sm filter-group-control"
-              value={filterRated} onChange={e => setFilterRated(e.target.value)}>
-              <option value="">Any</option>
-              <option value="voted">Voted</option>
-              <option value="unvoted">Unvoted</option>
-            </select>
-          </div>
+        {/* More Filters Toggle */}
+        <button
+          type="button"
+          className={`btn btn-sm btn-ghost filter-more-toggle${moreFiltersOpen || advancedFilterCount > 0 ? ' active' : ''}`}
+          onClick={() => setMoreFiltersOpen(o => !o)}
+          title="Toggle advanced filters (Director, Year, Voter count)"
+        >
+          <span>More filters{advancedFilterCount > 0 ? ` (${advancedFilterCount})` : ''}</span>
+          <span className="filter-toggle-caret">{moreFiltersOpen ? '▲' : '▼'}</span>
+        </button>
 
-          {/* By voter */}
-          <div className="filter-group">
-            <span className="filter-group-label">By voter</span>
-            <div className="filter-voters">
-              {voters.map(v => (
-                <button
-                  key={v}
-                  type="button"
-                  className={`voter-pill${filterVoters.includes(v) ? ' active' : ''}`}
-                  onClick={() => toggleVoter(v)}
-                  title={`Films ${v} has rated`}
-                >
-                  {v}
-                </button>
-              ))}
-            </div>
-          </div>
+        {/* Reset & Count */}
+        <div className="films-filter-actions">
+          {filtersActive && (
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost filter-reset-active"
+              onClick={resetFilters}
+              title="Reset all active filters"
+            >
+              Reset ✕
+            </button>
+          )}
+          <span className="filter-count-badge">
+            {searchFiltered.length} / {movies.length}
+          </span>
+        </div>
+      </div>
 
-          <div className="filter-divider" />
-
-          {/* Director */}
-          <div className="filter-group">
-            <label className="filter-group-label" htmlFor="filter-director">Director</label>
-            <select id="filter-director" className="select select-sm filter-group-control"
-              value={filterDirector} onChange={e => setFilterDirector(e.target.value)}>
-              <option value="">All</option>
+      {/* ── Advanced Filters Collapsible Drawer ── */}
+      {moreFiltersOpen && (
+        <div className="films-advanced-drawer">
+          <div className="advanced-filter-item">
+            <label className="advanced-label" htmlFor="filter-director">Director</label>
+            <select
+              id="filter-director"
+              className="select select-sm advanced-select"
+              value={filterDirector}
+              onChange={e => setFilterDirector(e.target.value)}
+            >
+              <option value="">All Directors ({directors.length})</option>
               {directors.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
 
-          {/* Year */}
-          <div className="filter-group">
-            <span className="filter-group-label">Year</span>
-            <div className="filter-range-row">
-              <input className="input input-sm" placeholder="From"
-                value={filterYearMin} onChange={e => setFilterYearMin(e.target.value)} />
-              <span className="filter-range-sep">–</span>
-              <input className="input input-sm" placeholder="To"
-                value={filterYearMax} onChange={e => setFilterYearMax(e.target.value)} />
+          <div className="advanced-filter-item">
+            <span className="advanced-label">Release Year</span>
+            <div className="advanced-range-inputs">
+              <input
+                className="input input-sm advanced-input"
+                placeholder="From"
+                value={filterYearMin}
+                onChange={e => setFilterYearMin(e.target.value)}
+              />
+              <span className="range-dash">–</span>
+              <input
+                className="input input-sm advanced-input"
+                placeholder="To"
+                value={filterYearMax}
+                onChange={e => setFilterYearMax(e.target.value)}
+              />
             </div>
           </div>
 
-          {/* Voters */}
-          <div className="filter-group">
-            <span className="filter-group-label">Voters</span>
-            <div className="filter-range-row">
-              <select className="select select-sm" value={filterMinVoters} onChange={e => setFilterMinVoters(e.target.value)}>
+          <div className="advanced-filter-item">
+            <span className="advanced-label">Votes Count</span>
+            <div className="advanced-range-inputs">
+              <select
+                className="select select-sm advanced-select-range"
+                value={filterMinVoters}
+                onChange={e => setFilterMinVoters(e.target.value)}
+              >
                 <option value="">Min</option>
                 <option value="1">≥ 1</option>
                 <option value="2">≥ 2</option>
@@ -356,8 +422,12 @@ export default function Films() {
                 <option value="4">≥ 4</option>
                 <option value="5">≥ 5</option>
               </select>
-              <span className="filter-range-sep">–</span>
-              <select className="select select-sm" value={filterMaxVoters} onChange={e => setFilterMaxVoters(e.target.value)}>
+              <span className="range-dash">–</span>
+              <select
+                className="select select-sm advanced-select-range"
+                value={filterMaxVoters}
+                onChange={e => setFilterMaxVoters(e.target.value)}
+              >
                 <option value="">Max</option>
                 <option value="0">0</option>
                 <option value="1">≤ 1</option>
@@ -369,60 +439,61 @@ export default function Films() {
             </div>
           </div>
 
-          <div className="filter-divider" />
-
-          {/* Footer */}
-          <div className="filter-footer">
+          {advancedFilterCount > 0 && (
             <button
-              className={`btn btn-sm${filtersActive ? ' btn-ghost filter-reset-active' : ' btn-ghost'}`}
-              onClick={resetFilters}
-              disabled={!filtersActive}
+              type="button"
+              className="btn btn-sm btn-ghost advanced-clear-btn"
+              onClick={() => {
+                setFilterDirector('');
+                setFilterYearMin('');
+                setFilterYearMax('');
+                setFilterMinVoters('');
+                setFilterMaxVoters('');
+              }}
+              title="Clear advanced filters"
             >
-              Reset
+              Clear advanced
             </button>
-            <span className="filter-count">{searchFiltered.length} / {movies.length}</span>
-          </div>
-
-        </aside>
-
-        {/* Main content */}
-        <div className="films-main">
-          {loading ? (
-            <div className="spinner" />
-          ) : sorted.length === 0 ? (
-            <div className="empty">
-              <div className="empty-icon">🎬</div>
-              <div className="empty-title">No films found</div>
-              <div>Try adjusting your filters</div>
-            </div>
-          ) : (
-            <>
-              <div className={viewMode === 'grid' ? 'films-grid' : 'films-list'}>
-                {visible.map((m) => (
-                  <MovieCard
-                    key={m.id}
-                    movie={{
-                      ...m,
-                      rank_global: (scoreMode === 'group' ? rankMap.group   : rankMap.fair  )[m.id] ?? null,
-                      mn_rank:     (scoreMode === 'group' ? rankMap.mnGroup : rankMap.mnFair)[m.id] ?? null,
-                    }}
-                    onClick={() => setSelectedId(m.id)}
-                    listView={viewMode === 'list'}
-                    scoreMode={scoreMode}
-                  />
-                ))}
-              </div>
-              {hasMore && (
-                <div style={{ textAlign: 'center', marginTop: 24 }}>
-                  <button className="btn btn-ghost" onClick={() => setPage(p => p + 1)}>
-                    Load more ({sorted.length - visible.length} remaining)
-                  </button>
-                </div>
-              )}
-            </>
           )}
         </div>
+      )}
 
+      {/* Main content */}
+      <div className="films-main">
+        {loading ? (
+          <div className="spinner" />
+        ) : sorted.length === 0 ? (
+          <div className="empty">
+            <div className="empty-icon">🎬</div>
+            <div className="empty-title">No films found</div>
+            <div>Try adjusting your filters</div>
+          </div>
+        ) : (
+          <>
+            <div className={viewMode === 'grid' ? 'films-grid' : 'films-list'}>
+              {visible.map((m) => (
+                <MovieCard
+                  key={m.id}
+                  movie={{
+                    ...m,
+                    rank_global: (scoreMode === 'group' ? rankMap.group   : rankMap.fair  )[m.id] ?? null,
+                    mn_rank:     (scoreMode === 'group' ? rankMap.mnGroup : rankMap.mnFair)[m.id] ?? null,
+                  }}
+                  onClick={() => setSelectedId(m.id)}
+                  listView={viewMode === 'list'}
+                  scoreMode={scoreMode}
+                />
+              ))}
+            </div>
+            {hasMore && (
+              <div style={{ textAlign: 'center', marginTop: 24 }}>
+                <button className="btn btn-ghost" onClick={() => setPage(p => p + 1)}>
+                  Load more ({sorted.length - visible.length} remaining)
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {selectedId && (
