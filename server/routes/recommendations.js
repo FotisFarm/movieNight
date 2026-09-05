@@ -194,4 +194,212 @@ router.get('/', ah(async (req, res) => {
   res.json(results.slice(0, 200));
 }));
 
+// GET /api/recommendations/accuracy — Leave-One-Out Backtesting on Scored Movies
+router.get('/accuracy', ah(async (req, res) => {
+  const minVoters = Math.max(2, parseInt(req.query.minVoters) || 2);
+  const minDirFilms = Math.max(1, parseInt(req.query.minDirFilms) || 2);
+  const dw = 0.5;
+  const ew = 0.5;
+  const twRate = 0.15; // default 1.0x boost
+
+  const [allMovies, allRatings, allTop3] = await Promise.all([
+    db.all('SELECT * FROM movies'),
+    db.all('SELECT movie_id, voter, score FROM ratings'),
+    db.all('SELECT movie_id, voter, rank FROM top3'),
+  ]);
+  const movieById = new Map(allMovies.map(m => [m.id, m]));
+
+  const ratingsByMovie = {};
+  for (const r of allRatings) {
+    if (!ratingsByMovie[r.movie_id]) ratingsByMovie[r.movie_id] = [];
+    ratingsByMovie[r.movie_id].push(r);
+  }
+  const top3ByMovie = {};
+  for (const t of allTop3) {
+    if (!top3ByMovie[t.movie_id]) top3ByMovie[t.movie_id] = [];
+    top3ByMovie[t.movie_id].push(t.rank);
+  }
+
+  function computeFairBoosted(movieId) {
+    const rs = ratingsByMovie[movieId] || [];
+    if (rs.length < 2) return null;
+    const sum = rs.reduce((a, r) => a + r.score, 0);
+    const fair = sum / rs.length;
+    const boost = (top3ByMovie[movieId] || []).reduce((a, rank) => a + rankBonus(rank), 0);
+    return Math.min(10, fair + boost);
+  }
+
+  // Pre-calculate fairBoosted for all movies with >= 2 votes
+  const fairBoostedMap = new Map();
+  for (const m of allMovies) {
+    const fb = computeFairBoosted(m.id);
+    if (fb !== null) fairBoostedMap.set(m.id, fb);
+  }
+
+  // Index eligible movies by director and decade
+  const dirFilmsMap = {};
+  const decadeFilmsMap = {};
+  for (const m of allMovies) {
+    const fb = fairBoostedMap.get(m.id);
+    if (fb != null && m.director) {
+      if (!dirFilmsMap[m.director]) dirFilmsMap[m.director] = [];
+      dirFilmsMap[m.director].push({ id: m.id, score: fb });
+    }
+    if (fb != null && m.year) {
+      const dec = Math.floor(parseInt(m.year) / 10) * 10;
+      if (!isNaN(dec)) {
+        if (!decadeFilmsMap[dec]) decadeFilmsMap[dec] = [];
+        decadeFilmsMap[dec].push({ id: m.id, score: fb });
+      }
+    }
+  }
+
+  // Index top3 picks by director
+  const top3ByDirector = {};
+  for (const t of allTop3) {
+    const m = movieById.get(t.movie_id);
+    if (m?.director) {
+      if (!top3ByDirector[m.director]) top3ByDirector[m.director] = [];
+      top3ByDirector[m.director].push(t);
+    }
+  }
+
+  const scoredCandidates = allMovies.filter(m => (ratingsByMovie[m.id] || []).length >= minVoters);
+
+  const evaluatedFilms = [];
+  const errors = [];
+
+  for (const m of scoredCandidates) {
+    const actualScore = fairBoostedMap.get(m.id);
+    if (actualScore == null) continue;
+
+    const decade = m.year ? Math.floor(parseInt(m.year) / 10) * 10 : null;
+
+    // Leave-One-Out for director: exclude m.id
+    const otherDirFilms = (dirFilmsMap[m.director] || []).filter(x => x.id !== m.id);
+    const dirAvg = otherDirFilms.length >= minDirFilms
+      ? otherDirFilms.reduce((a, b) => a + b.score, 0) / otherDirFilms.length
+      : null;
+
+    // Leave-One-Out for decade: exclude m.id
+    const otherDecFilms = (decade && decadeFilmsMap[decade])
+      ? decadeFilmsMap[decade].filter(x => x.id !== m.id)
+      : [];
+    const decAvg = otherDecFilms.length > 0
+      ? otherDecFilms.reduce((a, b) => a + b.score, 0) / otherDecFilms.length
+      : null;
+
+    // Base prior
+    let base = null;
+    if (dirAvg !== null && decAvg !== null) {
+      base = dirAvg * dw + decAvg * ew;
+    } else if (dirAvg !== null) {
+      base = dirAvg;
+    } else if (decAvg !== null) {
+      base = decAvg;
+    }
+
+    // Halo boost from director's OTHER films in top 10
+    const otherTop3Picks = (top3ByDirector[m.director] || []).filter(t => t.movie_id !== m.id);
+    const otherPoints = otherTop3Picks.reduce((acc, t) => acc + rankBonus(t.rank), 0);
+    const otherUniqueFilms = new Set(otherTop3Picks.map(t => t.movie_id)).size;
+
+    let haloBoost = 0;
+    if (otherPoints > 0) {
+      const breadthMultiplier = 1.0 + 0.20 * Math.max(0, otherUniqueFilms - 1);
+      haloBoost = Math.min(0.75, otherPoints * breadthMultiplier * twRate);
+    }
+
+    let prior = null;
+    if (base !== null) {
+      prior = Math.min(10.0, base + haloBoost);
+    } else if (haloBoost > 0) {
+      prior = haloBoost;
+    }
+
+    if (prior === null) continue;
+
+    const diff = Math.round((actualScore - prior) * 100) / 100;
+    const absError = Math.round(Math.abs(diff) * 100) / 100;
+    errors.push(absError);
+
+    let verdict = 'accurate';
+    let verdictLabel = 'Accurate';
+    if (absError <= 0.5) {
+      verdict = 'bullseye';
+      verdictLabel = '🎯 Bullseye';
+    } else if (diff >= 1.5) {
+      verdict = 'surprise';
+      verdictLabel = '🚀 Surprise Hit';
+    } else if (diff <= -1.5) {
+      verdict = 'disappointment';
+      verdictLabel = '📉 Underperformed';
+    } else if (diff > 0.5) {
+      verdict = 'overperformed';
+      verdictLabel = '▲ Beat Prior';
+    } else if (diff < -0.5) {
+      verdict = 'underperformed';
+      verdictLabel = '▼ Missed Prior';
+    }
+
+    const ratingRows = ratingsByMovie[m.id] || [];
+    const ratingsMap = {};
+    for (const r of ratingRows) ratingsMap[r.voter] = r.score;
+
+    evaluatedFilms.push({
+      id: m.id,
+      title: m.title,
+      director: m.director,
+      year: m.year,
+      voterCount: ratingRows.length,
+      ratings: ratingsMap,
+      mn: m.mn === 1,
+      watchlist: m.watchlist === 1,
+      imdb_id: m.imdb_id ?? null,
+      imdb_rating: m.imdb_rating ?? null,
+      actualScore: Math.round(actualScore * 100) / 100,
+      predictedPrior: Math.round(prior * 100) / 100,
+      diff,
+      absError,
+      verdict,
+      verdictLabel,
+      dirAvg: dirAvg !== null ? Math.round(dirAvg * 100) / 100 : null,
+      decAvg: decAvg !== null ? Math.round(decAvg * 100) / 100 : null,
+      haloBoost: Math.round(haloBoost * 100) / 100,
+      hasDirectorTrack: dirAvg !== null,
+    });
+  }
+
+  const total = errors.length;
+  const mae = total > 0 ? Math.round((errors.reduce((a, b) => a + b, 0) / total) * 100) / 100 : 0;
+  const withinHalf = errors.filter(e => e <= 0.5).length;
+  const withinOne = errors.filter(e => e <= 1.0).length;
+
+  const withDir = evaluatedFilms.filter(f => f.hasDirectorTrack);
+  const maeWithDir = withDir.length > 0
+    ? Math.round((withDir.reduce((a, b) => a + b.absError, 0) / withDir.length) * 100) / 100
+    : null;
+
+  const topBullseyes = [...evaluatedFilms].sort((a, b) => a.absError - b.absError).slice(0, 5);
+  const topSurprises = [...evaluatedFilms].sort((a, b) => b.diff - a.diff).slice(0, 5);
+  const topDisappointments = [...evaluatedFilms].sort((a, b) => a.diff - b.diff).slice(0, 5);
+
+  res.json({
+    summary: {
+      totalEvaluated: total,
+      mae,
+      maeWithDir,
+      withinHalfCount: withinHalf,
+      withinHalfPct: total > 0 ? Math.round((withinHalf / total) * 100) : 0,
+      withinOneCount: withinOne,
+      withinOnePct: total > 0 ? Math.round((withinOne / total) * 100) : 0,
+      directorTrackCount: withDir.length,
+    },
+    topBullseyes,
+    topSurprises,
+    topDisappointments,
+    films: evaluatedFilms.sort((a, b) => b.actualScore - a.actualScore),
+  });
+}));
+
 module.exports = router;

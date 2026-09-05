@@ -1,3 +1,46 @@
+/* ── Top Sub-navigation Tabs ── */
+.preds-subnav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.preds-nav-tabs {
+  display: inline-flex;
+  gap: 6px;
+  background: var(--surface2);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.preds-nav-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.preds-nav-tab:hover {
+  color: var(--text);
+}
+
+.preds-nav-tab.active {
+  background: var(--accent);
+  color: #fff;
+}
+
 /* ── Filter bar (shared classes removed from Films.css) ── */
 .films-filters {
   padding: 10px 0 12px;

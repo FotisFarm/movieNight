@@ -174,6 +174,7 @@ export default function Header({ voter, onLogout }) {
   const isRankingsHubActive = (
     pathname.startsWith('/rankings') ||
     pathname.startsWith('/recommendations') ||
+    pathname.startsWith('/predictions') ||
     pathname.startsWith('/controversy')
   );
 
@@ -295,6 +296,17 @@ export default function Header({ voter, onLogout }) {
                     <div className="nav-item-text">
                       <span className="nav-item-title">Picks</span>
                       <span className="nav-item-desc">Bayesian Recommendations</span>
+                    </div>
+                  </NavLink>
+                  <NavLink
+                    to="/predictions"
+                    className={({ isActive }) => isActive ? 'nav-dropdown-item active' : 'nav-dropdown-item'}
+                    onClick={() => setRankingsOpen(false)}
+                  >
+                    <span className="nav-item-icon">🔮</span>
+                    <div className="nav-item-text">
+                      <span className="nav-item-title">Accuracy</span>
+                      <span className="nav-item-desc">Model Backtest & Retrospective</span>
                     </div>
                   </NavLink>
                   <NavLink
@@ -487,6 +499,19 @@ export default function Header({ voter, onLogout }) {
                   <div className="hub-card-desc">Bayesian Predictive Recommendations</div>
                 </div>
                 {pathname.startsWith('/recommendations') && <span className="hub-card-check">✓</span>}
+              </NavLink>
+
+              <NavLink
+                to="/predictions"
+                className={({ isActive }) => isActive ? 'hub-card active' : 'hub-card'}
+                onClick={() => setMobileRankingsOpen(false)}
+              >
+                <div className="hub-card-icon">🔮</div>
+                <div className="hub-card-text">
+                  <div className="hub-card-title">Accuracy</div>
+                  <div className="hub-card-desc">Model Backtesting & Retrospective</div>
+                </div>
+                {pathname.startsWith('/predictions') && <span className="hub-card-check">✓</span>}
               </NavLink>
 
               <NavLink

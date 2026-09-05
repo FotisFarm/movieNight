@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { NavLink } from 'react-router-dom';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
 import WatchlistBadge from '../components/WatchlistBadge';
@@ -160,6 +161,18 @@ export default function Recommendations() {
   return (
     <div>
       <Toast />
+
+      {/* ── Subnav between Picks & Prediction Accuracy ── */}
+      <div className="preds-subnav-bar">
+        <div className="preds-nav-tabs">
+          <NavLink to="/recommendations" className="preds-nav-tab active">
+            🎯 Picks (Recommendations)
+          </NavLink>
+          <NavLink to="/predictions" className="preds-nav-tab">
+            🔮 Prediction Accuracy & Backtest
+          </NavLink>
+        </div>
+      </div>
 
       {/* ── Movie Discovery Filters ── */}
       <div className="films-filters recs-filters-bar">

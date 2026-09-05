@@ -41,6 +41,10 @@ export const api = {
     const qs = new URLSearchParams(Object.fromEntries(Object.entries(weights).filter(([,v]) => v != null))).toString();
     return request(`/recommendations${qs ? `?${qs}` : ''}`);
   },
+  getPredictionAccuracy: (params = {}) => {
+    const qs = new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([,v]) => v != null))).toString();
+    return request(`/recommendations/accuracy${qs ? `?${qs}` : ''}`);
+  },
   toggleWatchlistVote: (id, targetVoter) => request(`/movies/${id}/watchlist-vote`, { method: 'POST', body: targetVoter ? { targetVoter } : undefined }),
   resetWatchlist: (mode) => request('/movies/watchlist/reset', { method: 'POST', body: { mode } }),
   // movieId flags which lists already contain that film (has_film) for the modal picker.
