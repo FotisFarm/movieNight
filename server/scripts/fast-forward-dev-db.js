@@ -141,10 +141,25 @@ async function main() {
   }
 
   // 6. Execute restore cleanly
-  console.log(`⚡ Dropping existing tables in reverse dependency order...`);
+  console.log(`⚡ Dropping existing tables and views in reverse dependency order...`);
+  try {
+    await client.execute('DROP VIEW IF EXISTS movie_scores');
+    console.log('  Dropped view movie_scores.');
+  } catch (e) {
+    console.warn('  Note: could not drop view movie_scores:', e.message);
+  }
+
   const dropOrder = ['rating_history', 'list_items', 'list_slug_aliases', 'lists', 'watchlist_votes', 'top3', 'ratings', 'movies'];
   for (const table of dropOrder) {
-    await client.execute(`DROP TABLE IF EXISTS "${table}"`);
+    process.stdout.write(`  Dropping ${table}... `);
+    try {
+      await client.execute(`DROP TABLE IF EXISTS "${table}"`);
+      console.log('done.');
+    } catch (e) {
+      console.log('FAILED!');
+      console.error(`❌ Detailed error dropping ${table}:`, e);
+      throw e;
+    }
   }
 
   const activeStmts = statements.filter(s => !s.trim().toUpperCase().startsWith('DROP TABLE'));
@@ -189,6 +204,8 @@ async function main() {
 
 main().catch(err => {
   console.error('\n❌ Error during database fast-forward:', err.message || err);
+  if (err.stack) console.error(err.stack);
+  if (err.cause) console.error('Cause:', err.cause);
   if (String(err).includes('401')) {
     console.error('\n💡 HTTP 401 Unauthorized Troubleshooting:');
     console.error('  1. Verify TURSO_DEV_DATABASE_URL points to the DEV database (e.g. libsql://movies-dev-xxxx.turso.io)');
