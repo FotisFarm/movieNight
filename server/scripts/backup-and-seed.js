@@ -60,7 +60,8 @@ async function writeSqlDump() {
 
     lines.push('', `DROP TABLE IF EXISTS ${table};`, `${schema.rows[0].sql};`);
 
-    const rs = await client.execute(`SELECT * FROM ${table} ORDER BY id`);
+    const orderCol = table === 'list_slug_aliases' ? 'slug' : 'id';
+    const rs = await client.execute(`SELECT * FROM ${table} ORDER BY ${orderCol}`);
     const cols = rs.columns.filter(c => c !== 'comment');
     for (const row of rs.rows) {
       const values = cols.map(c => sqlLiteral(row[c])).join(', ');
@@ -81,6 +82,9 @@ async function writeSeedJson() {
   const ratings = (await client.execute('SELECT movie_id, voter, score FROM ratings')).rows;
   const top3 = (await client.execute('SELECT movie_id, voter, rank FROM top3')).rows;
   const wlVotes = (await client.execute('SELECT movie_id, voter FROM watchlist_votes')).rows;
+
+  const withRuntime = movies.filter(m => m.runtime != null && m.runtime > 0).length;
+  console.log(`Films with runtime in database: ${withRuntime} / ${movies.length}`);
 
   const perMovie = new Map();
   for (const m of movies) perMovie.set(m.id, { ratings: {}, top3: {}, watchlistVotes: [] });
@@ -119,6 +123,7 @@ async function writeSeedJson() {
       imdb_id: m.imdb_id ?? null,
       imdb_rating: m.imdb_rating ?? null,
       poster_path: m.poster_path ?? null,
+      runtime: m.runtime ?? null,
       ratings: orderedByVoter(extra.ratings),
       top3: orderedByVoter(extra.top3),
       watchlistVotes: extra.watchlistVotes.slice().sort(),
