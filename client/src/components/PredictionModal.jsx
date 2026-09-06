@@ -116,7 +116,7 @@ export default function PredictionModal({ film, voters = [], onClose, onToggleWa
               <div className="pred-calc-card">
                 <div className="pred-calc-card-header">
                   <span className="pred-calc-title">Director Track</span>
-                  <span className="pred-calc-weight">50%</span>
+                  <span className="pred-calc-weight">{film.dirAvg != null ? '50%' : 'N/A'}</span>
                 </div>
                 <div className="pred-calc-val">
                   {film.dirAvg != null ? fmt(film.dirAvg) : '–'}
@@ -137,7 +137,7 @@ export default function PredictionModal({ film, voters = [], onClose, onToggleWa
               <div className="pred-calc-card">
                 <div className="pred-calc-card-header">
                   <span className="pred-calc-title">Decade Era</span>
-                  <span className="pred-calc-weight">50%</span>
+                  <span className="pred-calc-weight">{film.dirAvg != null ? '50%' : '100%'}</span>
                 </div>
                 <div className="pred-calc-val">
                   {film.decAvg != null ? fmt(film.decAvg) : '–'}
@@ -149,7 +149,7 @@ export default function PredictionModal({ film, voters = [], onClose, onToggleWa
                 </div>
                 {film.decAvg != null && (
                   <div className="pred-calc-contrib">
-                    Contribution: +{fmt(film.decAvg * 0.5)} pts
+                    Contribution: +{fmt(film.decAvg * (film.dirAvg != null ? 0.5 : 1.0))} pts
                   </div>
                 )}
               </div>
