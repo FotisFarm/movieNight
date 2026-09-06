@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
+import PredictionModal from '../components/PredictionModal';
 import WatchlistBadge from '../components/WatchlistBadge';
 import { useToast } from '../hooks/useToast.jsx';
 import { useAppConfig } from '../AppConfigContext';
@@ -33,7 +34,8 @@ export default function Predictions() {
   const { voters } = useAppConfig();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [modalId, setModalId] = useState(null);
+  const [activeFilm, setActiveFilm] = useState(null); // Selected film for PredictionModal
+  const [movieModalId, setMovieModalId] = useState(null); // Optional full movie modal
   const { toast, Toast } = useToast();
 
   // Voter threshold: 2+ is the scoring rule default
@@ -132,7 +134,7 @@ export default function Predictions() {
   const summary = data?.summary;
 
   return (
-    <div>
+    <div className="preds-page">
       <Toast />
 
       {/* ── Subnav between Picks & Prediction Accuracy ── */}
@@ -175,425 +177,429 @@ export default function Predictions() {
         </div>
       </div>
 
-      <div className="preds-page">
-        {/* ── Header Area ── */}
-        <div className="preds-header-row">
-          <h1 className="preds-title">
-            <span>🔮 Prediction Accuracy</span>
-          </h1>
-          <p className="preds-sub">
-            How well did our predictions anticipate actual ratings? Tested on every scored film before it was watched.
-          </p>
-        </div>
+      {/* ── Header Area ── */}
+      <div className="preds-header-row">
+        <h1 className="preds-title">
+          <span>🔮 Prediction Accuracy</span>
+        </h1>
+        <p className="preds-sub">
+          How well did our predictions anticipate actual ratings? Tested on every scored film before it was watched.
+        </p>
+      </div>
 
-        {loading ? (
-          <div className="spinner" style={{ margin: '60px auto' }} />
-        ) : !data ? (
-          <p style={{ textAlign: 'center', color: 'var(--text2)', marginTop: 40 }}>
-            Unable to load accuracy data.
-          </p>
-        ) : (
-          <>
-            {/* ── Compact Metric Tiles ── */}
-            <div className="preds-kpis">
-              <div className="preds-kpi-tile">
-                <div className="preds-kpi-top">
-                  <span>Avg Miss</span>
-                  <span>🎯</span>
-                </div>
-                <div className="preds-kpi-val">
-                  ±{summary?.maeWithDir != null ? fmt(summary.maeWithDir) : fmt(summary?.mae)}
-                </div>
-                <div className="preds-kpi-sub">
-                  Director track (overall ±{fmt(summary?.mae)})
-                </div>
+      {loading ? (
+        <div className="spinner" style={{ margin: '60px auto' }} />
+      ) : !data ? (
+        <p style={{ textAlign: 'center', color: 'var(--text2)', marginTop: 40 }}>
+          Unable to load accuracy data.
+        </p>
+      ) : (
+        <>
+          {/* ── Compact Metric Tiles ── */}
+          <div className="preds-kpis">
+            <div className="preds-kpi-tile">
+              <div className="preds-kpi-top">
+                <span>Avg Miss</span>
+                <span>🎯</span>
               </div>
-
-              <div className="preds-kpi-tile">
-                <div className="preds-kpi-top">
-                  <span>Spot-On (±0.5)</span>
-                  <span>🎯</span>
-                </div>
-                <div className="preds-kpi-val">{summary?.withinHalfPct}%</div>
-                <div className="preds-kpi-sub">
-                  {summary?.withinHalfCount} of {summary?.totalEvaluated} films
-                </div>
+              <div className="preds-kpi-val">
+                ±{summary?.maeWithDir != null ? fmt(summary.maeWithDir) : fmt(summary?.mae)}
               </div>
-
-              <div className="preds-kpi-tile">
-                <div className="preds-kpi-top">
-                  <span>In Ballpark (±1.0)</span>
-                  <span>📊</span>
-                </div>
-                <div className="preds-kpi-val">{summary?.withinOnePct}%</div>
-                <div className="preds-kpi-sub">
-                  {summary?.withinOneCount} of {summary?.totalEvaluated} films
-                </div>
-              </div>
-
-              <div className="preds-kpi-tile">
-                <div className="preds-kpi-top">
-                  <span>Films Tested</span>
-                  <span>🎬</span>
-                </div>
-                <div className="preds-kpi-val">{summary?.totalEvaluated}</div>
-                <div className="preds-kpi-sub">
-                  ≥ {minVoters} ratings ({summary?.directorTrackCount} with dir history)
-                </div>
+              <div className="preds-kpi-sub">
+                Director track (overall ±{fmt(summary?.mae)})
               </div>
             </div>
 
-            {/* ── Top 10 Highlights & Extremes ── */}
-            <div className="preds-highlights-section">
-              <div className="preds-highlights-header">
-                <h2 className="preds-section-title">
-                  <span>🏆 Top 10 Highlights</span>
-                </h2>
-
-                {/* Mobile / Tablet category switcher */}
-                <div className="preds-mobile-tabs">
-                  <button
-                    type="button"
-                    className={`preds-m-tab-btn${activeTab === 'bullseye' ? ' active' : ''}`}
-                    onClick={() => setActiveTab('bullseye')}
-                  >
-                    🎯 Spot-On
-                  </button>
-                  <button
-                    type="button"
-                    className={`preds-m-tab-btn${activeTab === 'surprise' ? ' active' : ''}`}
-                    onClick={() => setActiveTab('surprise')}
-                  >
-                    🌟 Surprises
-                  </button>
-                  <button
-                    type="button"
-                    className={`preds-m-tab-btn${activeTab === 'letdown' ? ' active' : ''}`}
-                    onClick={() => setActiveTab('letdown')}
-                  >
-                    📉 Underperformed
-                  </button>
-                </div>
+            <div className="preds-kpi-tile">
+              <div className="preds-kpi-top">
+                <span>Spot-On (±0.5)</span>
+                <span>🎯</span>
               </div>
-
-              {/* Responsive grid: on desktop all 3 are visible, on mobile only activeTab is visible */}
-              <div className="preds-podiums-grid">
-                {/* 1. Bullseyes */}
-                <div className={`preds-podium-card podium-bullseye ${activeTab === 'bullseye' ? 'is-active' : ''}`}>
-                  <div className="preds-podium-card-header">
-                    <span className="preds-podium-card-title">🎯 Top Bullseyes</span>
-                    <span className="preds-podium-badge">Spot-on (≤ ±0.5)</span>
-                  </div>
-                  <div className="preds-podium-list">
-                    {data.topBullseyes?.slice(0, 10).map((f, i) => (
-                      <div key={f.id} className="preds-podium-item" onClick={() => setModalId(f.id)}>
-                        <div className="preds-podium-item-left">
-                          <span className="preds-podium-rank">#{i + 1}</span>
-                          <div className="preds-podium-meta">
-                            <span className="preds-podium-film-title" title={f.title}>{f.title}</span>
-                            <span className="preds-podium-film-sub">{f.director} ({f.year})</span>
-                          </div>
-                        </div>
-                        <div className="preds-podium-scores">
-                          <div className="preds-score-pair">
-                            <div className="preds-score-line">
-                              <span className="preds-lbl">Actual</span>
-                              <strong className={`preds-val ${scoreClass(f.actualScore)}`}>{fmt(f.actualScore)}</strong>
-                              <span className="preds-rank-chip" title="Catalog rank">#{f.actualRank}</span>
-                            </div>
-                            <div className="preds-score-line">
-                              <span className="preds-lbl">Expected</span>
-                              <strong className="preds-val preds-val-prior">{fmt(f.predictedPrior)}</strong>
-                              <span className="preds-rank-chip" title="Expected rank">#{f.priorRank}</span>
-                            </div>
-                          </div>
-                          <span className="preds-podium-diff diff-bullseye">
-                            err: {fmt(f.absError)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 2. Pleasantly Surprised */}
-                <div className={`preds-podium-card podium-surprise ${activeTab === 'surprise' ? 'is-active' : ''}`}>
-                  <div className="preds-podium-card-header">
-                    <span className="preds-podium-card-title">🌟 Pleasantly Surprised</span>
-                    <span className="preds-podium-badge">Beat Prediction</span>
-                  </div>
-                  <div className="preds-podium-list">
-                    {data.topSurprises?.slice(0, 10).map((f, i) => (
-                      <div key={f.id} className="preds-podium-item" onClick={() => setModalId(f.id)}>
-                        <div className="preds-podium-item-left">
-                          <span className="preds-podium-rank">#{i + 1}</span>
-                          <div className="preds-podium-meta">
-                            <span className="preds-podium-film-title" title={f.title}>{f.title}</span>
-                            <span className="preds-podium-film-sub">{f.director} ({f.year})</span>
-                          </div>
-                        </div>
-                        <div className="preds-podium-scores">
-                          <div className="preds-score-pair">
-                            <div className="preds-score-line">
-                              <span className="preds-lbl">Actual</span>
-                              <strong className={`preds-val ${scoreClass(f.actualScore)}`}>{fmt(f.actualScore)}</strong>
-                              <span className="preds-rank-chip" title="Catalog rank">#{f.actualRank}</span>
-                            </div>
-                            <div className="preds-score-line">
-                              <span className="preds-lbl">Expected</span>
-                              <strong className="preds-val preds-val-prior">{fmt(f.predictedPrior)}</strong>
-                              <span className="preds-rank-chip" title="Expected rank">#{f.priorRank}</span>
-                            </div>
-                          </div>
-                          <span className="preds-podium-diff diff-over">
-                            +{fmt(f.diff)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 3. Underperformed */}
-                <div className={`preds-podium-card podium-letdown ${activeTab === 'letdown' ? 'is-active' : ''}`}>
-                  <div className="preds-podium-card-header">
-                    <span className="preds-podium-card-title">📉 Underperformed</span>
-                    <span className="preds-podium-badge">Fell Short</span>
-                  </div>
-                  <div className="preds-podium-list">
-                    {data.topDisappointments?.slice(0, 10).map((f, i) => (
-                      <div key={f.id} className="preds-podium-item" onClick={() => setModalId(f.id)}>
-                        <div className="preds-podium-item-left">
-                          <span className="preds-podium-rank">#{i + 1}</span>
-                          <div className="preds-podium-meta">
-                            <span className="preds-podium-film-title" title={f.title}>{f.title}</span>
-                            <span className="preds-podium-film-sub">{f.director} ({f.year})</span>
-                          </div>
-                        </div>
-                        <div className="preds-podium-scores">
-                          <div className="preds-score-pair">
-                            <div className="preds-score-line">
-                              <span className="preds-lbl">Actual</span>
-                              <strong className={`preds-val ${scoreClass(f.actualScore)}`}>{fmt(f.actualScore)}</strong>
-                              <span className="preds-rank-chip" title="Catalog rank">#{f.actualRank}</span>
-                            </div>
-                            <div className="preds-score-line">
-                              <span className="preds-lbl">Expected</span>
-                              <strong className="preds-val preds-val-prior">{fmt(f.predictedPrior)}</strong>
-                              <span className="preds-rank-chip" title="Expected rank">#{f.priorRank}</span>
-                            </div>
-                          </div>
-                          <span className="preds-podium-diff diff-under">
-                            {fmt(f.diff)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <div className="preds-kpi-val">{summary?.withinHalfPct}%</div>
+              <div className="preds-kpi-sub">
+                {summary?.withinHalfCount} of {summary?.totalEvaluated} films
               </div>
             </div>
 
-            {/* ── All Tested Films Directory ── */}
-            <div className="preds-toolbar">
-              <div className="preds-search-box">
-                <input
-                  className="input search-input"
-                  placeholder="Search tested films…"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                />
-                {search && <button className="search-clear" onClick={() => setSearch('')}>✕</button>}
+            <div className="preds-kpi-tile">
+              <div className="preds-kpi-top">
+                <span>In Ballpark (±1.0)</span>
+                <span>📊</span>
               </div>
+              <div className="preds-kpi-val">{summary?.withinOnePct}%</div>
+              <div className="preds-kpi-sub">
+                {summary?.withinOneCount} of {summary?.totalEvaluated} films
+              </div>
+            </div>
 
-              <div className="preds-verdicts">
+            <div className="preds-kpi-tile">
+              <div className="preds-kpi-top">
+                <span>Films Tested</span>
+                <span>🎬</span>
+              </div>
+              <div className="preds-kpi-val">{summary?.totalEvaluated}</div>
+              <div className="preds-kpi-sub">
+                ≥ {minVoters} ratings ({summary?.directorTrackCount} with dir history)
+              </div>
+            </div>
+          </div>
+
+          {/* ── Top 10 Highlights & Extremes (Minimal info: Pred, Act, Diff) ── */}
+          <div className="preds-highlights-section">
+            <div className="preds-highlights-header">
+              <h2 className="preds-section-title">
+                <span>🏆 Top 10 Highlights</span>
+              </h2>
+
+              {/* Mobile / Tablet category switcher */}
+              <div className="preds-mobile-tabs">
                 <button
                   type="button"
-                  className={`preds-verdict-btn${verdictFilter === 'all' ? ' active' : ''}`}
-                  onClick={() => setVerdictFilter('all')}
-                >
-                  All ({data.films?.length})
-                </button>
-                <button
-                  type="button"
-                  className={`preds-verdict-btn${verdictFilter === 'bullseye' ? ' active' : ''}`}
-                  onClick={() => setVerdictFilter('bullseye')}
+                  className={`preds-m-tab-btn${activeTab === 'bullseye' ? ' active' : ''}`}
+                  onClick={() => setActiveTab('bullseye')}
                 >
                   🎯 Spot-On
                 </button>
                 <button
                   type="button"
-                  className={`preds-verdict-btn${verdictFilter === 'surprise' ? ' active' : ''}`}
-                  onClick={() => setVerdictFilter('surprise')}
+                  className={`preds-m-tab-btn${activeTab === 'surprise' ? ' active' : ''}`}
+                  onClick={() => setActiveTab('surprise')}
                 >
                   🌟 Surprises
                 </button>
                 <button
                   type="button"
-                  className={`preds-verdict-btn${verdictFilter === 'disappointment' ? ' active' : ''}`}
-                  onClick={() => setVerdictFilter('disappointment')}
+                  className={`preds-m-tab-btn${activeTab === 'letdown' ? ' active' : ''}`}
+                  onClick={() => setActiveTab('letdown')}
                 >
                   📉 Underperformed
                 </button>
-                <button
-                  type="button"
-                  className={`preds-verdict-btn${verdictFilter === 'mn' ? ' active' : ''}`}
-                  onClick={() => setVerdictFilter('mn')}
-                >
-                  🎬 MN Only
-                </button>
               </div>
-
-              <select
-                className="select select-sm preds-sort-select"
-                value={sortKey}
-                onChange={e => setSortKey(e.target.value)}
-              >
-                <option value="score-desc">Sort: Best Actual Score</option>
-                <option value="score-asc">Sort: Lowest Actual Score</option>
-                <option value="prior-desc">Sort: Highest Predicted</option>
-                <option value="error-asc">Sort: Most Accurate (Bullseyes)</option>
-                <option value="diff-desc">Sort: Outperformed (Surprises)</option>
-                <option value="diff-asc">Sort: Underperformed (Drops)</option>
-              </select>
             </div>
 
-            {/* Desktop Table View (>= 768px) */}
-            <div className="preds-table-wrapper preds-desktop-only">
-              <table className="preds-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 36 }}>#</th>
-                    <th>Film</th>
-                    <th>Votes</th>
-                    <th>Predicted</th>
-                    <th>Actual</th>
-                    <th>Difference</th>
-                    <th>Verdict</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredFilms.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text2)' }}>
-                        No films match the filter criteria.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredFilms.map((f, idx) => (
-                      <tr key={f.id} className="preds-tr-clickable" onClick={() => setModalId(f.id)}>
-                        <td className="preds-cell-rank">#{idx + 1}</td>
-                        <td className="preds-cell-film">
-                          <div className="preds-film-title-row">
-                            <span className="preds-film-title">{f.title}</span>
-                            {f.mn && <span className="badge badge-mn">MN</span>}
-                            <WatchlistBadge id={f.id} watchlist={f.watchlist} onToggle={handleWatchlistToggle} />
-                            {f.imdb_rating != null && (
-                              <span className="badge-imdb-pill">
-                                <span className="imdb-logo">IMDb</span>
-                                <span className="imdb-rating">{Number.isInteger(f.imdb_rating) ? f.imdb_rating : f.imdb_rating.toFixed(1)}</span>
-                              </span>
-                            )}
-                          </div>
-                          <div className="preds-film-sub">
-                            {f.director}{f.year ? ` · ${f.year}` : ''}
-                          </div>
-                        </td>
-                        <td>
-                          <VoterPills ratings={f.ratings} voters={voters} />
-                        </td>
-                        <td>
-                          <div className="preds-prior-wrap">
-                            <div className="preds-prior-val-row">
-                              <span className="preds-prior-val">{fmt(f.predictedPrior)}</span>
-                              <span className="preds-rank-chip" title="Catalog rank if scored as expected">#{f.priorRank}</span>
-                            </div>
-                            <div className="preds-prior-decomp">
-                              {f.dirAvg != null && <span className="preds-decomp-pill" title="Director track avg">Dir {fmt(f.dirAvg)}</span>}
-                              {f.decAvg != null && <span className="preds-decomp-pill" title="Decade era avg">Dec {fmt(f.decAvg)}</span>}
-                              {f.haloBoost > 0 && <span className="preds-decomp-pill" title="Top 10 bonus">+{fmt(f.haloBoost)}</span>}
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="preds-score-with-rank">
-                            <strong className={scoreClass(f.actualScore)}>{fmt(f.actualScore)}</strong>
-                            <span className="preds-rank-chip" title="Actual catalog rank">#{f.actualRank}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <span className={`preds-diff-pill ${f.absError <= 0.5 ? 'diff-bullseye' : f.diff > 0 ? 'diff-over' : 'diff-under'}`}>
-                            {f.diff > 0 ? `+${fmt(f.diff)}` : fmt(f.diff)}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`preds-verdict-badge verdict-${f.verdict}`}>
-                            {f.verdictLabel}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Card List (< 768px) */}
-            <div className="preds-mobile-cards preds-mobile-only">
-              {filteredFilms.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text2)' }}>
-                  No films match the filter criteria.
+            {/* Responsive grid: on desktop all 3 are visible, on mobile only activeTab is visible */}
+            <div className="preds-podiums-grid">
+              {/* 1. Bullseyes */}
+              <div className={`preds-podium-card podium-bullseye ${activeTab === 'bullseye' ? 'is-active' : ''}`}>
+                <div className="preds-podium-card-header">
+                  <span className="preds-podium-card-title">🎯 Top Bullseyes</span>
+                  <span className="preds-podium-badge">Spot-on (≤ ±0.5)</span>
                 </div>
-              ) : (
-                filteredFilms.map((f, idx) => (
-                  <div key={f.id} className="preds-m-card" onClick={() => setModalId(f.id)}>
-                    <div className="preds-m-top">
-                      <span className="preds-m-rank">#{idx + 1}</span>
-                      <div className="preds-m-title-block">
-                        <div className="preds-m-title-row">
-                          <span className="preds-m-title">{f.title}</span>
-                          {f.mn && <span className="badge badge-mn">MN</span>}
-                          <WatchlistBadge id={f.id} watchlist={f.watchlist} onToggle={handleWatchlistToggle} />
+                <div className="preds-podium-list">
+                  {data.topBullseyes?.slice(0, 10).map((f, i) => (
+                    <div
+                      key={f.id}
+                      className="preds-podium-item"
+                      onClick={() => setActiveFilm(f)}
+                      title="Click to view prediction calculation details"
+                    >
+                      <div className="preds-podium-item-left">
+                        <span className="preds-podium-rank">#{i + 1}</span>
+                        <div className="preds-podium-meta">
+                          <span className="preds-podium-film-title" title={f.title}>{f.title}</span>
+                          <span className="preds-podium-film-sub">{f.director} ({f.year})</span>
                         </div>
-                        <span className="preds-m-sub">{f.director}{f.year ? ` · ${f.year}` : ''}</span>
                       </div>
-                      <div className="preds-m-scores-box">
-                        <div className="preds-m-score-row">
-                          <span className="preds-m-lbl">Act</span>
-                          <strong className={`preds-val ${scoreClass(f.actualScore)}`}>{fmt(f.actualScore)}</strong>
-                          <span className="preds-rank-chip">#{f.actualRank}</span>
+                      <div className="preds-podium-scores">
+                        <div className="preds-score-pair">
+                          <div className="preds-score-line">
+                            <span className="preds-lbl">Actual</span>
+                            <strong className={`preds-val ${scoreClass(f.actualScore)}`}>{fmt(f.actualScore)}</strong>
+                          </div>
+                          <div className="preds-score-line">
+                            <span className="preds-lbl">Expected</span>
+                            <strong className="preds-val preds-val-prior">{fmt(f.predictedPrior)}</strong>
+                          </div>
                         </div>
-                        <div className="preds-m-score-row">
-                          <span className="preds-m-lbl">Exp</span>
-                          <strong className="preds-val preds-val-prior">{fmt(f.predictedPrior)}</strong>
-                          <span className="preds-rank-chip">#{f.priorRank}</span>
-                        </div>
+                        <span className="preds-podium-diff diff-bullseye">
+                          err: {fmt(f.absError)}
+                        </span>
                       </div>
                     </div>
+                  ))}
+                </div>
+              </div>
 
-                    <div className="preds-m-bottom">
-                      <div className="preds-m-verdicts">
+              {/* 2. Pleasantly Surprised */}
+              <div className={`preds-podium-card podium-surprise ${activeTab === 'surprise' ? 'is-active' : ''}`}>
+                <div className="preds-podium-card-header">
+                  <span className="preds-podium-card-title">🌟 Pleasantly Surprised</span>
+                  <span className="preds-podium-badge">Beat Prediction</span>
+                </div>
+                <div className="preds-podium-list">
+                  {data.topSurprises?.slice(0, 10).map((f, i) => (
+                    <div
+                      key={f.id}
+                      className="preds-podium-item"
+                      onClick={() => setActiveFilm(f)}
+                      title="Click to view prediction calculation details"
+                    >
+                      <div className="preds-podium-item-left">
+                        <span className="preds-podium-rank">#{i + 1}</span>
+                        <div className="preds-podium-meta">
+                          <span className="preds-podium-film-title" title={f.title}>{f.title}</span>
+                          <span className="preds-podium-film-sub">{f.director} ({f.year})</span>
+                        </div>
+                      </div>
+                      <div className="preds-podium-scores">
+                        <div className="preds-score-pair">
+                          <div className="preds-score-line">
+                            <span className="preds-lbl">Actual</span>
+                            <strong className={`preds-val ${scoreClass(f.actualScore)}`}>{fmt(f.actualScore)}</strong>
+                          </div>
+                          <div className="preds-score-line">
+                            <span className="preds-lbl">Expected</span>
+                            <strong className="preds-val preds-val-prior">{fmt(f.predictedPrior)}</strong>
+                          </div>
+                        </div>
+                        <span className="preds-podium-diff diff-over">
+                          +{fmt(f.diff)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3. Underperformed */}
+              <div className={`preds-podium-card podium-letdown ${activeTab === 'letdown' ? 'is-active' : ''}`}>
+                <div className="preds-podium-card-header">
+                  <span className="preds-podium-card-title">📉 Underperformed</span>
+                  <span className="preds-podium-badge">Fell Short</span>
+                </div>
+                <div className="preds-podium-list">
+                  {data.topDisappointments?.slice(0, 10).map((f, i) => (
+                    <div
+                      key={f.id}
+                      className="preds-podium-item"
+                      onClick={() => setActiveFilm(f)}
+                      title="Click to view prediction calculation details"
+                    >
+                      <div className="preds-podium-item-left">
+                        <span className="preds-podium-rank">#{i + 1}</span>
+                        <div className="preds-podium-meta">
+                          <span className="preds-podium-film-title" title={f.title}>{f.title}</span>
+                          <span className="preds-podium-film-sub">{f.director} ({f.year})</span>
+                        </div>
+                      </div>
+                      <div className="preds-podium-scores">
+                        <div className="preds-score-pair">
+                          <div className="preds-score-line">
+                            <span className="preds-lbl">Actual</span>
+                            <strong className={`preds-val ${scoreClass(f.actualScore)}`}>{fmt(f.actualScore)}</strong>
+                          </div>
+                          <div className="preds-score-line">
+                            <span className="preds-lbl">Expected</span>
+                            <strong className="preds-val preds-val-prior">{fmt(f.predictedPrior)}</strong>
+                          </div>
+                        </div>
+                        <span className="preds-podium-diff diff-under">
+                          {fmt(f.diff)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── All Tested Films Directory ── */}
+          <div className="preds-toolbar">
+            <div className="preds-search-box">
+              <input
+                className="input search-input"
+                placeholder="Search tested films…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+              {search && <button className="search-clear" onClick={() => setSearch('')}>✕</button>}
+            </div>
+
+            <div className="preds-verdicts">
+              <button
+                type="button"
+                className={`preds-verdict-btn${verdictFilter === 'all' ? ' active' : ''}`}
+                onClick={() => setVerdictFilter('all')}
+              >
+                All ({data.films?.length})
+              </button>
+              <button
+                type="button"
+                className={`preds-verdict-btn${verdictFilter === 'bullseye' ? ' active' : ''}`}
+                onClick={() => setVerdictFilter('bullseye')}
+              >
+                🎯 Spot-On
+              </button>
+              <button
+                type="button"
+                className={`preds-verdict-btn${verdictFilter === 'surprise' ? ' active' : ''}`}
+                onClick={() => setVerdictFilter('surprise')}
+              >
+                🌟 Surprises
+              </button>
+              <button
+                type="button"
+                className={`preds-verdict-btn${verdictFilter === 'disappointment' ? ' active' : ''}`}
+                onClick={() => setVerdictFilter('disappointment')}
+              >
+                📉 Underperformed
+              </button>
+              <button
+                type="button"
+                className={`preds-verdict-btn${verdictFilter === 'mn' ? ' active' : ''}`}
+                onClick={() => setVerdictFilter('mn')}
+              >
+                🎬 MN Only
+              </button>
+            </div>
+
+            <select
+              className="select select-sm preds-sort-select"
+              value={sortKey}
+              onChange={e => setSortKey(e.target.value)}
+            >
+              <option value="score-desc">Sort: Best Actual Score</option>
+              <option value="score-asc">Sort: Lowest Actual Score</option>
+              <option value="prior-desc">Sort: Highest Predicted</option>
+              <option value="error-asc">Sort: Most Accurate (Bullseyes)</option>
+              <option value="diff-desc">Sort: Outperformed (Surprises)</option>
+              <option value="diff-asc">Sort: Underperformed (Drops)</option>
+            </select>
+          </div>
+
+          {/* Desktop Table View (>= 768px) - Minimal Info */}
+          <div className="preds-table-wrapper preds-desktop-only">
+            <table className="preds-table">
+              <thead>
+                <tr>
+                  <th style={{ width: 36 }}>#</th>
+                  <th>Film</th>
+                  <th>Votes</th>
+                  <th>Predicted</th>
+                  <th>Actual</th>
+                  <th>Difference</th>
+                  <th>Verdict</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredFilms.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text2)' }}>
+                      No films match the filter criteria.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredFilms.map((f, idx) => (
+                    <tr key={f.id} className="preds-tr-clickable" onClick={() => setActiveFilm(f)}>
+                      <td className="preds-cell-rank">#{idx + 1}</td>
+                      <td className="preds-cell-film">
+                        <div className="preds-film-title-row">
+                          <span className="preds-film-title">{f.title}</span>
+                          {f.mn && <span className="badge badge-mn">MN</span>}
+                          <WatchlistBadge id={f.id} watchlist={f.watchlist} onToggle={handleWatchlistToggle} />
+                          {f.imdb_rating != null && (
+                            <span className="badge-imdb-pill">
+                              <span className="imdb-logo">IMDb</span>
+                              <span className="imdb-rating">{Number.isInteger(f.imdb_rating) ? f.imdb_rating : f.imdb_rating.toFixed(1)}</span>
+                            </span>
+                          )}
+                        </div>
+                        <div className="preds-film-sub">
+                          {f.director}{f.year ? ` · ${f.year}` : ''}
+                        </div>
+                      </td>
+                      <td>
+                        <VoterPills ratings={f.ratings} voters={voters} />
+                      </td>
+                      <td>
+                        <span className="preds-table-val preds-val-prior">{fmt(f.predictedPrior)}</span>
+                      </td>
+                      <td>
+                        <strong className={`preds-table-val ${scoreClass(f.actualScore)}`}>{fmt(f.actualScore)}</strong>
+                      </td>
+                      <td>
                         <span className={`preds-diff-pill ${f.absError <= 0.5 ? 'diff-bullseye' : f.diff > 0 ? 'diff-over' : 'diff-under'}`}>
                           {f.diff > 0 ? `+${fmt(f.diff)}` : fmt(f.diff)}
                         </span>
+                      </td>
+                      <td>
                         <span className={`preds-verdict-badge verdict-${f.verdict}`}>
                           {f.verdictLabel}
                         </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card List (< 768px) - Minimal Info */}
+          <div className="preds-mobile-cards preds-mobile-only">
+            {filteredFilms.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text2)' }}>
+                No films match the filter criteria.
+              </div>
+            ) : (
+              filteredFilms.map((f, idx) => (
+                <div key={f.id} className="preds-m-card" onClick={() => setActiveFilm(f)}>
+                  <div className="preds-m-top">
+                    <span className="preds-m-rank">#{idx + 1}</span>
+                    <div className="preds-m-title-block">
+                      <div className="preds-m-title-row">
+                        <span className="preds-m-title">{f.title}</span>
+                        {f.mn && <span className="badge badge-mn">MN</span>}
+                        <WatchlistBadge id={f.id} watchlist={f.watchlist} onToggle={handleWatchlistToggle} />
                       </div>
-                      <VoterPills ratings={f.ratings} voters={voters} />
+                      <span className="preds-m-sub">{f.director}{f.year ? ` · ${f.year}` : ''}</span>
+                    </div>
+                    <div className="preds-m-scores-box">
+                      <div className="preds-m-score-row">
+                        <span className="preds-m-lbl">Actual</span>
+                        <strong className={`preds-val ${scoreClass(f.actualScore)}`}>{fmt(f.actualScore)}</strong>
+                      </div>
+                      <div className="preds-m-score-row">
+                        <span className="preds-m-lbl">Predicted</span>
+                        <span className="preds-m-prior">{fmt(f.predictedPrior)}</span>
+                      </div>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-          </>
-        )}
-      </div>
 
-      {modalId && (
+                  <div className="preds-m-bottom">
+                    <div className="preds-m-verdicts">
+                      <span className={`preds-diff-pill ${f.absError <= 0.5 ? 'diff-bullseye' : f.diff > 0 ? 'diff-over' : 'diff-under'}`}>
+                        {f.diff > 0 ? `+${fmt(f.diff)}` : fmt(f.diff)}
+                      </span>
+                      <span className={`preds-verdict-badge verdict-${f.verdict}`}>
+                        {f.verdictLabel}
+                      </span>
+                    </div>
+                    <VoterPills ratings={f.ratings} voters={voters} />
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ── Detailed Prediction Modal ── */}
+      {activeFilm && (
+        <PredictionModal
+          film={activeFilm}
+          voters={voters}
+          onClose={() => setActiveFilm(null)}
+          onToggleWatchlist={handleWatchlistToggle}
+          onOpenFullMovie={id => setMovieModalId(id)}
+        />
+      )}
+
+      {/* ── Standard MovieModal for editing / comments (if requested) ── */}
+      {movieModalId && (
         <MovieModal
-          movieId={modalId}
-          onClose={() => setModalId(null)}
+          movieId={movieModalId}
+          onClose={() => setMovieModalId(null)}
           onSaved={handleSaved}
           onDeleted={handleDeleted}
         />

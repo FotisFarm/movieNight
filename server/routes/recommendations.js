@@ -346,13 +346,18 @@ router.get('/accuracy', ah(async (req, res) => {
     const ratingsMap = {};
     for (const r of ratingRows) ratingsMap[r.voter] = r.score;
 
+    const topBonus = (top3ByMovie[m.id] || []).reduce((a, rank) => a + rankBonus(rank), 0);
+
     evaluatedFilms.push({
       id: m.id,
       title: m.title,
       director: m.director,
       year: m.year,
+      decade,
+      poster_path: m.poster_path ?? null,
       voterCount: ratingRows.length,
       ratings: ratingsMap,
+      topBonus: Math.round(topBonus * 10) / 10,
       mn: m.mn === 1,
       watchlist: m.watchlist === 1,
       imdb_id: m.imdb_id ?? null,
@@ -367,6 +372,8 @@ router.get('/accuracy', ah(async (req, res) => {
       decAvg: decAvg !== null ? Math.round(decAvg * 100) / 100 : null,
       haloBoost: Math.round(haloBoost * 100) / 100,
       hasDirectorTrack: dirAvg !== null,
+      otherDirFilmsCount: otherDirFilms.length,
+      otherDecFilmsCount: otherDecFilms.length,
     });
   }
 
