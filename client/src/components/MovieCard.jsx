@@ -115,36 +115,49 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
   );
 
   if (listView) {
+    const hasBadges = Boolean(mn || watchlist || rank_global || onWatchlistToggle);
+    const hasVoterRatings = Boolean(voters && voters.some(v => ratings?.[v] != null));
+
     return (
       <article className={cardClass} onClick={onClick} {...keyProps}>
-        <Poster path={poster_path} title={title} size="w92" />
+        <div className="card-list-main">
+          <Poster path={poster_path} title={title} size="w92" />
 
-        <div className="card-score">
           {displayScore !== null && (
-            <div className={`score-big ${scoreClass(displayScore)}`}>{fmt(displayScore)}</div>
+            <div className="card-score">
+              <div className={`score-big ${scoreClass(displayScore)}`}>{fmt(displayScore)}</div>
+            </div>
           )}
+
+          <div className="card-info">
+            <h3 className="card-title">{title}</h3>
+            <p className="card-meta">
+              <span className="card-director">{director}</span>
+              {year ? <> · <span className="card-year">{year}</span></> : null}
+              {runtime ? <> · <span className="card-runtime">{formatRuntime(runtime)}</span></> : null}
+            </p>
+          </div>
         </div>
 
-        <div className="card-info">
-          <h3 className="card-title">{title}</h3>
-          <p className="card-meta">
-            <span className="card-director">{director}</span>
-            {year ? <> · <span className="card-year">{year}</span></> : null}
-            {runtime ? <> · <span className="card-runtime">{formatRuntime(runtime)}</span></> : null}
-          </p>
-        </div>
+        {(hasBadges || hasVoterRatings || LetterboxdBadge) && (
+          <div className="card-list-aside">
+            {hasBadges && (
+              <div className="card-badges">
+                {mn          && <span className="badge badge-mn">MN{mn_rank ? ` #${mn_rank}` : ''}</span>}
+                <WatchlistBadge id={id} watchlist={watchlist} onToggle={onWatchlistToggle} />
+                {rank_global && <span className="badge badge-ranked">#{rank_global}</span>}
+              </div>
+            )}
 
-        <div className="card-badges">
-          {mn          && <span className="badge badge-mn">MN{mn_rank ? ` #${mn_rank}` : ''}</span>}
-          <WatchlistBadge id={id} watchlist={watchlist} onToggle={onWatchlistToggle} />
-          {rank_global && <span className="badge badge-ranked">#{rank_global}</span>}
-        </div>
+            {hasVoterRatings && (
+              <div className="card-ratings">
+                <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} />
+              </div>
+            )}
 
-        <div className="card-ratings">
-          <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} />
-        </div>
-
-        {LetterboxdBadge}
+            {LetterboxdBadge}
+          </div>
+        )}
       </article>
     );
   }
