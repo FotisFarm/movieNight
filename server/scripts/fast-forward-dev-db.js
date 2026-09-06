@@ -103,45 +103,137 @@ async function main() {
   const DATA_DIR = path.join(__dirname, '..', 'data');
   const localDbPath = path.join(DATA_DIR, 'movies.db');
 
+function extractJwtTokens(raw) {
+  if (!raw) return [];
+  let text = raw.trim().replace(/^['"]|['"]$/g, '');
+  text = text.replace(/^Bearer\s+/i, '');
+  const matches = text.match(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_=-]+/g);
+  if (matches && matches.length > 0) {
+    return matches.map(m => m.replace(/\.+$/, ''));
+  }
+  return [text.replace(/\.+$/, '')];
+}
+
+function parseJwtClaims(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    const decoded = Buffer.from(parts[1], 'base64url').toString('utf8');
+    return JSON.parse(decoded);
+  } catch (_) {
+    return null;
+  }
+}
+
+async function testToken(httpsUrl, token) {
+  try {
+    const resp = await fetch(`${httpsUrl}/v2/pipeline`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        requests: [
+          { type: 'execute', stmt: { sql: 'SELECT 1' } },
+          { type: 'close' }
+        ]
+      })
+    });
+    const body = await resp.text();
+    return { ok: resp.ok, status: resp.status, body };
+  } catch (err) {
+    return { ok: false, status: 0, body: err.message };
+  }
+}
+
+async function testWriteAccess(httpsUrl, token) {
+  try {
+    const resp = await fetch(`${httpsUrl}/v2/pipeline`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        requests: [
+          { type: 'execute', stmt: { sql: 'CREATE TABLE IF NOT EXISTS _turso_perm_probe (x INT)' } },
+          { type: 'execute', stmt: { sql: 'DROP TABLE IF EXISTS _turso_perm_probe' } },
+          { type: 'close' }
+        ]
+      })
+    });
+    const body = await resp.text();
+    return { ok: resp.ok, status: resp.status, body };
+  } catch (err) {
+    return { ok: false, status: 0, body: err.message };
+  }
+}
+
   if (isRemote) {
     targetUrl = (process.env.TURSO_DATABASE_URL || '').trim().replace(/^['"]|['"]$/g, '');
-    authToken = (process.env.TURSO_AUTH_TOKEN || '').trim().replace(/^['"]|['"]$/g, '');
-    if (!targetUrl || !authToken) {
+    const rawAuth = (process.env.TURSO_AUTH_TOKEN || '').trim().replace(/^['"]|['"]$/g, '');
+    if (!targetUrl || !rawAuth) {
       console.error('❌ When using --remote, TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be set in environment.');
       process.exit(1);
     }
-    const masked = authToken.length > 10
-      ? `${authToken.slice(0, 6)}...${authToken.slice(-4)} (length: ${authToken.length} chars)`
-      : `*** (length: ${authToken.length} chars)`;
-    console.log(`📡 Target DB: ${targetUrl}`);
-    console.log(`🔑 Auth Token: ${masked}`);
 
-    // Quick raw HTTP probe to reveal the exact Turso error body if any
-    try {
-      const httpsUrl = targetUrl.replace(/^libsql:\/\//, 'https://');
-      const probeResp = await fetch(`${httpsUrl}/v2/pipeline`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          requests: [
-            { type: 'execute', stmt: { sql: 'SELECT 1' } },
-            { type: 'close' }
-          ]
-        })
-      });
-      const probeBody = await probeResp.text();
-      console.log(`📡 Raw probe HTTP status: ${probeResp.status}`);
-      if (!probeResp.ok) {
-        console.error(`❌ Raw Turso HTTP error response:\n${probeBody}`);
+    console.log(`📡 Target DB: ${targetUrl}`);
+
+    const candidates = extractJwtTokens(rawAuth);
+    console.log(`🔍 Extracted ${candidates.length} candidate token(s) from TURSO_AUTH_TOKEN (raw length: ${rawAuth.length} chars).`);
+
+    const httpsUrl = targetUrl.replace(/^libsql:\/\//, 'https://');
+    let workingToken = null;
+
+    for (let i = 0; i < candidates.length; i++) {
+      const candidate = candidates[i];
+      const masked = candidate.length > 10
+        ? `${candidate.slice(0, 6)}...${candidate.slice(-4)} (${candidate.length} chars)`
+        : `*** (${candidate.length} chars)`;
+
+      const claims = parseJwtClaims(candidate);
+      const permLabel = claims?.a === 'ro' ? 'READ-ONLY' : (claims?.a ? claims.a : 'Full/Default');
+      const targetNs = claims?.id || (claims?.p ? JSON.stringify(claims.p) : 'all');
+      console.log(`\n🔑 Testing candidate #${i + 1}: ${masked} [target: ${targetNs}, perm: ${permLabel}]`);
+
+      const probe = await testToken(httpsUrl, candidate);
+      console.log(`   Read probe (SELECT 1) HTTP status: ${probe.status}`);
+      if (probe.ok) {
+        console.log(`   ✅ Candidate #${i + 1} authenticated successfully!`);
+
+        const writeProbe = await testWriteAccess(httpsUrl, candidate);
+        console.log(`   Write probe HTTP status: ${writeProbe.status}`);
+        if (writeProbe.ok) {
+          console.log(`   ✅ Candidate #${i + 1} has full READ/WRITE permissions!`);
+          workingToken = candidate;
+          break;
+        } else {
+          console.warn(`   ⚠️ Candidate #${i + 1} read probe succeeded, but write test failed (${writeProbe.status}):\n      ${writeProbe.body}`);
+          if (claims?.a === 'ro' || writeProbe.body.toLowerCase().includes('read-only') || writeProbe.body.toLowerCase().includes('permission')) {
+            console.error(`   ❌ Candidate #${i + 1} is a READ-ONLY token. Restoring requires a Full Access (read/write) token.`);
+          }
+        }
       } else {
-        console.log(`✅ Raw probe successful: endpoint is healthy and authenticated!`);
+        console.warn(`   ❌ Candidate #${i + 1} rejected by Turso (${probe.status}):\n      ${probe.body}`);
       }
-    } catch (probeErr) {
-      console.warn(`⚠️ Raw probe fetch error:`, probeErr.message);
     }
+
+    if (!workingToken) {
+      console.error('\n❌ No valid working WRITE token found for Turso target DB.');
+      console.error('💡 Troubleshooting TURSO_DEV_AUTH_TOKEN in GitHub repository secrets:');
+      console.error('  1. Go to Turso Web Dashboard: https://turso.tech/app');
+      console.error('  2. Select your database: "movies-dev"');
+      console.error('  3. Click "+ Create Token"');
+      console.error('  4. Ensure permission is "Full access" (Read & Write) - NOT "Read-only"');
+      console.error('  5. Click the copy icon to copy only the token string');
+      console.error('  6. In GitHub: Settings -> Secrets and variables -> Actions -> TURSO_DEV_AUTH_TOKEN -> Update secret');
+      process.exit(1);
+    }
+
+    authToken = workingToken;
+    process.env.TURSO_AUTH_TOKEN = workingToken;
+    console.log(`\n🎉 Verified working read/write token selected!\n`);
   } else {
     targetUrl = `file:${localDbPath}`;
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
