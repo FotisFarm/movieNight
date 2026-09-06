@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../api';
 import { useAppConfig } from '../AppConfigContext';
 import { fmtScore10 as fmt, scoreClass, extractImdbId, posterUrl } from '../utils';
+import ReorderTop10Dialog from './ReorderTop10Dialog';
 import './MovieModal.css';
 
 const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
@@ -68,14 +69,33 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   const [newListTitle, setNewListTitle] = useState('');
   const [newListOpen,  setNewListOpen]  = useState(false);
   const [listError,    setListError]    = useState('');
+  const [reorderVoter, setReorderVoter] = useState(null);
+  const [top10Reordered, setTop10Reordered] = useState(false);
+
+  function handleModalClose() {
+    if (top10Reordered) {
+      api.getMovie(movieId).then(m => {
+        onSaved?.(m);
+        onClose();
+      }).catch(() => onClose());
+    } else {
+      onClose();
+    }
+  }
 
   useEffect(() => {
     function onKey(e) {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (reorderVoter) {
+          setReorderVoter(null);
+        } else {
+          handleModalClose();
+        }
+      }
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, reorderVoter, top10Reordered, movieId]);
 
   useEffect(() => {
     api.getTop10Counts().then(setTop10Counts).catch(() => {});
@@ -259,18 +279,9 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   ) / 100;
 
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && handleModalClose()}>
+      <div className="modal movie-modal-split">
         <div className="modal-header">
-          {movie.poster_path && (
-            <img
-              className="modal-poster"
-              src={posterUrl(movie.poster_path, 'w185')}
-              alt=""
-              loading="lazy"
-              decoding="async"
-            />
-          )}
           <div className="modal-header-text">
             {editing ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -291,369 +302,420 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
             <button className="btn btn-ghost btn-sm" onClick={() => setEditing(e => !e)}>
               {editing ? 'Done' : '✎'}
             </button>
-            <button className="modal-close" onClick={onClose}>✕</button>
+            <button className="modal-close" onClick={handleModalClose}>✕</button>
           </div>
         </div>
 
-        <div className="modal-body">
-          {/* Stats */}
-          <div className="info-grid">
-            <div className="info-cell">
-              <div className={`info-val ${scoreClass(fairBoosted)}`}>{fmt(fairBoosted)}</div>
-              <div className="info-lbl">Score</div>
-            </div>
-            <div className="info-cell">
-              <div className={`info-val ${voterCountClass(voterCount, groupSize)}`}>{voterCount}/{groupSize}</div>
-              <div className="info-lbl">Voters</div>
-            </div>
-            <div className="info-cell">
-              <div className={`info-val ${tokenBoost > 0 ? 'score-mid' : 'score-none'}`}>
-                {tokenBoost > 0 ? `+${tokenBoost.toFixed(1)}` : '—'}
-              </div>
-              <div className="info-lbl">Token Bonus</div>
-            </div>
-            {rankData?.fair != null && (
-              <div className="info-cell">
-                <div className={`info-val ${rankClass(rankData.fair)}`}>#{rankData.fair}</div>
-                <div className="info-lbl">Fair Rank</div>
-              </div>
-            )}
-            {rankData?.group != null && (
-              <div className="info-cell">
-                <div className={`info-val ${rankClass(rankData.group)}`}>#{rankData.group}</div>
-                <div className="info-lbl">Group Rank</div>
-              </div>
-            )}
-            {/* Clicking the tile opens the IMDb id editor below. */}
-            <div
-              className="info-cell"
-              role="button" tabIndex={0}
-              style={{ cursor: 'pointer' }}
-              title={movie.imdb_id ? 'Click the badge to open IMDb · click here to edit the link' : 'Add IMDb link'}
-              onClick={() => setImdbOpen(o => !o)}
-              onKeyDown={e => e.key === 'Enter' && setImdbOpen(o => !o)}
-            >
-              <div className="info-val">
-                {movie.imdb_rating != null ? (
-                  // The pill links out to IMDb; clicking anywhere else in the tile opens the editor.
-                  movie.imdb_id ? (
-                    <a
-                      href={`https://www.imdb.com/title/${movie.imdb_id}/`}
-                      className="badge-imdb-pill"
-                      target="_blank" rel="noopener noreferrer"
-                      style={{ fontSize: 14 }}
-                      title="Open on IMDb"
-                      onClick={e => e.stopPropagation()}
-                    >
-                      <span className="imdb-logo" style={{ fontSize: 11 }}>IMDb</span>
-                      <span className="imdb-rating" style={{ fontSize: 14 }}>{Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}</span>
-                    </a>
-                  ) : (
-                    <span className="badge-imdb-pill" style={{ fontSize: 14 }}>
-                      <span className="imdb-logo" style={{ fontSize: 11 }}>IMDb</span>
-                      <span className="imdb-rating" style={{ fontSize: 14 }}>{Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}</span>
-                    </span>
-                  )
-                ) : (
-                  <span className="score-none">＋</span>
-                )}
-              </div>
-              <div className="info-lbl">IMDb</div>
-            </div>
-          </div>
-
-          {/* IMDb editor — opened by ✎ edit mode or by clicking the IMDb tile above */}
-          {(editing || imdbOpen) && (
-            <>
-              <div className="modal-section-label section-label" style={{ marginTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>IMDb</span>
-                {extractImdbId(editImdbId) && (
-                  <a
-                    href={`https://www.imdb.com/title/${extractImdbId(editImdbId)}/`}
-                    target="_blank" rel="noopener noreferrer"
-                    style={{ fontSize: 11, fontWeight: 400, textTransform: 'none' }}
-                  >
-                    View on IMDb ↗
-                  </a>
-                )}
-              </div>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <input
-                  className="input"
-                  placeholder="Paste IMDb link or ID (tt6751668)"
-                  value={editImdbId}
-                  onChange={e => setEditImdbId(e.target.value)}
-                  onBlur={e => { const id = extractImdbId(e.target.value); if (id) setEditImdbId(id); }}
-                  style={{ flex: 1 }}
+        <div className="modal-body movie-modal-body-split">
+          {/* ── Left Column: Poster, Scores, Flags, Lists ── */}
+          <div className="movie-modal-left">
+            <div className="movie-modal-poster-wrap">
+              {movie.poster_path ? (
+                <img
+                  className="movie-modal-poster"
+                  src={posterUrl(movie.poster_path, 'w342')}
+                  alt={movie.title || ''}
+                  loading="lazy"
+                  decoding="async"
                 />
-                <button className="btn btn-ghost btn-sm" onClick={searchImdb} disabled={imdbBusy || !editTitle.trim()}>
-                  {imdbBusy ? '…' : 'Search'}
-                </button>
-                {editImdbId.trim() && (
-                  <button className="btn btn-ghost btn-sm" onClick={() => { setEditImdbId(''); setImdbCandidates(null); }} title="Clear IMDb id">✕</button>
-                )}
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 4 }}>
-                Paste a full imdb.com link or just the id. Save re-fetches the rating; clearing removes it.
-              </div>
+              ) : (
+                <div className="movie-modal-poster-placeholder">
+                  <span>🎞</span>
+                </div>
+              )}
+            </div>
 
-              {(() => {
-                const mm = imdbMismatch(imdbDetail, editTitle, editYear);
-                if (!mm) return null;
-                return (
-                  <div style={{ marginTop: 8, padding: '8px 10px', border: '1px solid var(--gold)', borderRadius: 'var(--radius)', background: 'rgba(255,193,7,.08)' }}>
-                    <div style={{ fontSize: 12, color: 'var(--text)' }}>
-                      ⚠ IMDb says <strong>{imdbDetail.title}{imdbDetail.year ? ` (${yr(imdbDetail.year)})` : ''}</strong>
-                      {' '}— your entry is <strong>{editTitle}{editYear ? ` (${yr(editYear)})` : ''}</strong>.
+            {/* Stats */}
+            <div className="info-grid">
+              <div className="info-cell">
+                <div className={`info-val ${scoreClass(fairBoosted)}`}>{fmt(fairBoosted)}</div>
+                <div className="info-lbl">Score</div>
+              </div>
+              <div className="info-cell">
+                <div className={`info-val ${voterCountClass(voterCount, groupSize)}`}>{voterCount}/{groupSize}</div>
+                <div className="info-lbl">Voters</div>
+              </div>
+              <div className="info-cell">
+                <div className={`info-val ${tokenBoost > 0 ? 'score-mid' : 'score-none'}`}>
+                  {tokenBoost > 0 ? `+${tokenBoost.toFixed(1)}` : '—'}
+                </div>
+                <div className="info-lbl">Token Bonus</div>
+              </div>
+              {rankData?.fair != null && (
+                <div className="info-cell">
+                  <div className={`info-val ${rankClass(rankData.fair)}`}>#{rankData.fair}</div>
+                  <div className="info-lbl">Fair Rank</div>
+                </div>
+              )}
+              {rankData?.group != null && (
+                <div className="info-cell">
+                  <div className={`info-val ${rankClass(rankData.group)}`}>#{rankData.group}</div>
+                  <div className="info-lbl">Group Rank</div>
+                </div>
+              )}
+              {/* Clicking the tile opens the IMDb id editor below. */}
+              <div
+                className="info-cell"
+                role="button" tabIndex={0}
+                style={{ cursor: 'pointer' }}
+                title={movie.imdb_id ? 'Click the badge to open IMDb · click here to edit the link' : 'Add IMDb link'}
+                onClick={() => setImdbOpen(o => !o)}
+                onKeyDown={e => e.key === 'Enter' && setImdbOpen(o => !o)}
+              >
+                <div className="info-val">
+                  {movie.imdb_rating != null ? (
+                    movie.imdb_id ? (
+                      <a
+                        href={`https://www.imdb.com/title/${movie.imdb_id}/`}
+                        className="badge-imdb-pill"
+                        target="_blank" rel="noopener noreferrer"
+                        style={{ fontSize: 14 }}
+                        title="Open on IMDb"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <span className="imdb-logo" style={{ fontSize: 11 }}>IMDb</span>
+                        <span className="imdb-rating" style={{ fontSize: 14 }}>{Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}</span>
+                      </a>
+                    ) : (
+                      <span className="badge-imdb-pill" style={{ fontSize: 14 }}>
+                        <span className="imdb-logo" style={{ fontSize: 11 }}>IMDb</span>
+                        <span className="imdb-rating" style={{ fontSize: 14 }}>{Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}</span>
+                      </span>
+                    )
+                  ) : (
+                    <span className="score-none">＋</span>
+                  )}
+                </div>
+                <div className="info-lbl">IMDb</div>
+              </div>
+            </div>
+
+            {/* IMDb editor — opened by ✎ edit mode or by clicking the IMDb tile above */}
+            {(editing || imdbOpen) && (
+              <>
+                <div className="modal-section-label section-label" style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>IMDb Link</span>
+                  {extractImdbId(editImdbId) && (
+                    <a
+                      href={`https://www.imdb.com/title/${extractImdbId(editImdbId)}/`}
+                      target="_blank" rel="noopener noreferrer"
+                      style={{ fontSize: 11, fontWeight: 400, textTransform: 'none' }}
+                    >
+                      View on IMDb ↗
+                    </a>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <input
+                    className="input"
+                    placeholder="Paste IMDb link or ID (tt6751668)"
+                    value={editImdbId}
+                    onChange={e => setEditImdbId(e.target.value)}
+                    onBlur={e => { const id = extractImdbId(e.target.value); if (id) setEditImdbId(id); }}
+                    style={{ flex: 1 }}
+                  />
+                  <button className="btn btn-ghost btn-sm" onClick={searchImdb} disabled={imdbBusy || !editTitle.trim()}>
+                    {imdbBusy ? '…' : 'Search'}
+                  </button>
+                  {editImdbId.trim() && (
+                    <button className="btn btn-ghost btn-sm" onClick={() => { setEditImdbId(''); setImdbCandidates(null); }} title="Clear IMDb id">✕</button>
+                  )}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2 }}>
+                  Paste a full imdb.com link or ID.
+                </div>
+
+                {(() => {
+                  const mm = imdbMismatch(imdbDetail, editTitle, editYear);
+                  if (!mm) return null;
+                  return (
+                    <div style={{ marginTop: 8, padding: '8px 10px', border: '1px solid var(--gold)', borderRadius: 'var(--radius)', background: 'rgba(255,193,7,.08)' }}>
+                      <div style={{ fontSize: 12, color: 'var(--text)' }}>
+                        ⚠ IMDb says <strong>{imdbDetail.title}{imdbDetail.year ? ` (${yr(imdbDetail.year)})` : ''}</strong>
+                        {' '}— your entry is <strong>{editTitle}{editYear ? ` (${yr(editYear)})` : ''}</strong>.
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2 }}>
+                        Fine if you use an alternate title — otherwise this id may be the wrong film.
+                      </div>
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        style={{ marginTop: 8 }}
+                        onClick={() => {
+                          setEditTitle(imdbDetail.title);
+                          if (imdbDetail.year) setEditYear(yr(imdbDetail.year));
+                          if (imdbDetail.director) setEditDirector(imdbDetail.director);
+                        }}
+                      >
+                        Use IMDb's values
+                      </button>
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2 }}>
-                      Fine if you use an alternate title — otherwise this id may be the wrong film.
+                  );
+                })()}
+
+                {imdbCandidates !== null && (
+                  imdbCandidates.length ? (
+                    <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', marginTop: 8, overflow: 'hidden' }}>
+                      {imdbCandidates.map(c => (
+                        <div
+                          key={c.imdbId}
+                          role="button" tabIndex={0}
+                          onClick={() => { setEditImdbId(c.imdbId); setImdbCandidates(null); }}
+                          onKeyDown={e => e.key === 'Enter' && (setEditImdbId(c.imdbId), setImdbCandidates(null))}
+                          style={{ display: 'flex', gap: 10, padding: '8px 12px', cursor: 'pointer', alignItems: 'center', borderBottom: '1px solid var(--border)' }}
+                        >
+                          {c.poster && <img src={c.poster} alt="" style={{ width: 32, height: 48, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />}
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600 }}>{c.title}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text2)' }}>{c.year} · {c.imdbId}</div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
+                  ) : (
+                    <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 8 }}>No IMDb matches found.</div>
+                  )
+                )}
+              </>
+            )}
+
+            {/* Flags */}
+            <div className="modal-section-label section-label" style={{ marginTop: 6 }}>Flags</div>
+            <div className="flags-row">
+              <button className={`toggle-btn${mn ? ' active' : ''}`} onClick={() => setMn(x => !x)}>
+                🎬 Movie Night
+              </button>
+              <button className={`toggle-btn${watchlist ? ' active' : ''}`} onClick={() => setWatchlist(x => !x)}>
+                👁 Watchlist
+              </button>
+            </div>
+
+            {/* Lists */}
+            <div className="modal-section-label section-label" style={{ marginTop: 6 }}>Lists</div>
+            {lists === null ? (
+              <div style={{ fontSize: 12, color: 'var(--text2)' }}>Loading lists…</div>
+            ) : (
+              <>
+                <div className="flags-row">
+                  {lists.map(l => (
+                    <button
+                      key={l.id}
+                      className={`toggle-btn${l.has_film ? ' active' : ''}`}
+                      disabled={listBusyId === l.id}
+                      title={l.has_film ? `Remove from “${l.title}”` : `Add to “${l.title}”`}
+                      onClick={() => toggleList(l)}
+                    >
+                      {l.has_film ? '✓ ' : '+ '}{l.title}
+                    </button>
+                  ))}
+                  {!newListOpen && (
+                    <button className="toggle-btn" onClick={() => setNewListOpen(true)}>+ New list</button>
+                  )}
+                </div>
+
+                {newListOpen && (
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                    <input
+                      className="input"
+                      autoFocus
+                      maxLength={80}
+                      placeholder="New list title"
+                      value={newListTitle}
+                      onChange={e => setNewListTitle(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && createListWithFilm()}
+                      style={{ flex: 1 }}
+                    />
                     <button
                       className="btn btn-ghost btn-sm"
-                      style={{ marginTop: 8 }}
-                      onClick={() => {
-                        setEditTitle(imdbDetail.title);
-                        if (imdbDetail.year) setEditYear(yr(imdbDetail.year));
-                        if (imdbDetail.director) setEditDirector(imdbDetail.director);
-                      }}
+                      onClick={createListWithFilm}
+                      disabled={listBusyId === 'new' || !newListTitle.trim()}
                     >
-                      Use IMDb's values
+                      Create &amp; add
                     </button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => { setNewListOpen(false); setNewListTitle(''); }}>✕</button>
+                  </div>
+                )}
+
+                {lists.length === 0 && !newListOpen && (
+                  <div style={{ fontSize: 12, color: 'var(--text2)' }}>No lists yet.</div>
+                )}
+                {listError && (
+                  <div style={{ fontSize: 12, color: 'var(--red)', marginTop: 6 }}>{listError}</div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* ── Right Column: Voter Ratings & Picks ── */}
+          <div className="movie-modal-right">
+            <div className="movie-modal-right-header">
+              <div className="modal-section-label section-label" style={{ marginBottom: 0 }}>Voter Ratings &amp; Picks</div>
+              <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>
+                {voterCount} of {groupSize} rated
+              </span>
+            </div>
+
+            <div className="voter-card-list">
+              {configVoters.map(v => {
+                const val = ratings[v];
+                const isOn = val != null;
+                const canEdit = isAdmin || v === currentVoter;
+                const currentRank = top3[v] ?? null;
+                const voterCount = top10Counts[v] ?? 0;
+                const maxRank = Math.max(currentRank || 1, Math.min(10, voterCount + (currentRank != null ? 0 : 1)));
+                const opts = canEdit
+                  ? Array.from({ length: maxRank }, (_, i) => i + 1)
+                  : (currentRank != null ? [currentRank] : []);
+                const isSelf = v === currentVoter;
+
+                return (
+                  <div
+                    key={v}
+                    className={`voter-rating-card${isOn ? '' : ' rating-off'}${!canEdit ? ' rating-locked' : ''}${isSelf ? ' voter-card-self' : ''}`}
+                  >
+                    <div className="voter-card-header">
+                      <div className="voter-card-user">
+                        <div className="voter-avatar-circle">{v.slice(0, 2)}</div>
+                        <span className="voter-name-label">
+                          {v}{isSelf ? ' (You)' : ''}
+                        </span>
+                      </div>
+
+                      <div className="voter-card-controls">
+                        {isOn && (
+                          <select
+                            className="select select-sm voter-top10-select"
+                            value={currentRank ?? ''}
+                            disabled={!canEdit}
+                            title={canEdit ? "Assign to Top 10 rank" : "Top 10 Rank"}
+                            onChange={e => setTop3(t => ({ ...t, [v]: e.target.value ? parseInt(e.target.value) : null }))}
+                          >
+                            <option value="">Top 10: —</option>
+                            {opts.map(rank => (
+                              <option key={rank} value={rank}>{rankLabel(rank)}</option>
+                            ))}
+                          </select>
+                        )}
+
+                        {canEdit && isOn && (voterCount >= 1 || currentRank != null) && (
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm voter-reorder-btn"
+                            title={`Reorder ${isSelf ? 'your' : v + "'s"} Top 10`}
+                            onClick={() => setReorderVoter(v)}
+                          >
+                            <span className="reorder-icon">⠿</span> Reorder
+                          </button>
+                        )}
+
+                        {isOn && (
+                          <input
+                            type="number"
+                            key={`${movieId}-${v}-${isOn}`}
+                            className={`rating-number-input ${scoreClass(val)}`}
+                            min={0} max={10} step={0.5}
+                            defaultValue={val}
+                            onChange={e => canEdit && setScore(v, e.target.value)}
+                            readOnly={!canEdit}
+                          />
+                        )}
+
+                        {canEdit && (
+                          <button
+                            className="btn btn-sm btn-ghost rating-toggle"
+                            onClick={() => toggleVoter(v)}
+                            title={isOn ? 'Remove rating' : 'Add rating'}
+                          >
+                            {isOn ? '✕' : '+'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {isOn && (
+                      <>
+                        <div className="score-bar">
+                          <div
+                            className="score-bar-fill"
+                            style={{
+                              width: `${(val / 10) * 100}%`,
+                              background: val >= 7.5 ? 'var(--green)' : val >= 5 ? 'var(--gold)' : 'var(--red)'
+                            }}
+                          />
+                        </div>
+                        <input
+                          type="text"
+                          className="rating-comment"
+                          placeholder={canEdit ? 'Add a note or review…' : ''}
+                          maxLength={300}
+                          value={comments[v] || ''}
+                          onChange={e => canEdit && setComments(c => ({ ...c, [v]: e.target.value }))}
+                          readOnly={!canEdit}
+                        />
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+
+              {isGhost && (() => {
+                const v = currentVoter;
+                const val = ratings[v];
+                const isOn = val != null;
+                return (
+                  <div className={`voter-rating-card${isOn ? '' : ' rating-off'} voter-card-self`}>
+                    <div className="voter-card-header">
+                      <div className="voter-card-user">
+                        <div className="voter-avatar-circle">{v.slice(0, 2)}</div>
+                        <span className="voter-name-label">{v} (Guest)</span>
+                      </div>
+
+                      <div className="voter-card-controls">
+                        {isOn && (
+                          <input
+                            type="number"
+                            key={`${movieId}-${v}-${isOn}`}
+                            className={`rating-number-input ${scoreClass(val)}`}
+                            min={0} max={10} step={0.5}
+                            defaultValue={val}
+                            onChange={e => setScore(v, e.target.value)}
+                          />
+                        )}
+                        <button
+                          className="btn btn-sm btn-ghost rating-toggle"
+                          onClick={() => toggleVoter(v)}
+                          title={isOn ? 'Remove rating' : 'Add rating'}
+                        >
+                          {isOn ? '✕' : '+'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {isOn && (
+                      <>
+                        <div className="score-bar">
+                          <div
+                            className="score-bar-fill"
+                            style={{
+                              width: `${(val / 10) * 100}%`,
+                              background: val >= 7.5 ? 'var(--green)' : val >= 5 ? 'var(--gold)' : 'var(--red)'
+                            }}
+                          />
+                        </div>
+                        <input
+                          type="text"
+                          className="rating-comment"
+                          placeholder="Add a note or review…"
+                          maxLength={300}
+                          value={comments[v] || ''}
+                          onChange={e => setComments(c => ({ ...c, [v]: e.target.value }))}
+                        />
+                      </>
+                    )}
                   </div>
                 );
               })()}
-
-              {imdbCandidates !== null && (
-                imdbCandidates.length ? (
-                  <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', marginTop: 8, overflow: 'hidden' }}>
-                    {imdbCandidates.map(c => (
-                      <div
-                        key={c.imdbId}
-                        role="button" tabIndex={0}
-                        onClick={() => { setEditImdbId(c.imdbId); setImdbCandidates(null); }}
-                        onKeyDown={e => e.key === 'Enter' && (setEditImdbId(c.imdbId), setImdbCandidates(null))}
-                        style={{ display: 'flex', gap: 10, padding: '8px 12px', cursor: 'pointer', alignItems: 'center', borderBottom: '1px solid var(--border)' }}
-                      >
-                        {c.poster && <img src={c.poster} alt="" style={{ width: 32, height: 48, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />}
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600 }}>{c.title}</div>
-                          <div style={{ fontSize: 11, color: 'var(--text2)' }}>{c.year} · {c.imdbId}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 8 }}>No IMDb matches found.</div>
-                )
-              )}
-            </>
-          )}
-
-          {/* Ratings */}
-          <div className="modal-section-label section-label">Ratings</div>
-          <div className="ratings-grid">
-            {configVoters.map(v => {
-              const val = ratings[v];
-              const isOn = val != null;
-              const canEdit = isAdmin || v === currentVoter;
-              return (
-                <div key={v} className={`rating-row${isOn ? '' : ' rating-off'}${!canEdit ? ' rating-locked' : ''}`}>
-                  <div className="rating-header">
-                    <span className="rating-voter">{v}</span>
-                    <div className="rating-controls">
-                      {isOn && (
-                        <input
-                          type="number"
-                          key={`${movieId}-${v}-${isOn}`}
-                          className={`rating-number-input ${scoreClass(val)}`}
-                          min={0} max={10} step={0.5}
-                          defaultValue={val}
-                          onChange={e => canEdit && setScore(v, e.target.value)}
-                          readOnly={!canEdit}
-                        />
-                      )}
-                      {canEdit && (
-                        <button
-                          className={`btn btn-sm btn-ghost rating-toggle`}
-                          onClick={() => toggleVoter(v)}
-                          title={isOn ? 'Remove rating' : 'Add rating'}
-                        >{isOn ? '✕' : '+'}</button>
-                      )}
-                    </div>
-                  </div>
-
-                  {isOn && (
-                    <>
-                      <div className="score-bar">
-                        <div className="score-bar-fill" style={{
-                          width: `${(val / 10) * 100}%`,
-                          background: val >= 7.5 ? 'var(--green)' : val >= 5 ? 'var(--gold)' : 'var(--red)'
-                        }} />
-                      </div>
-                      <input
-                        type="text"
-                        className="rating-comment"
-                        placeholder={canEdit ? 'Add a note…' : ''}
-                        maxLength={300}
-                        value={comments[v] || ''}
-                        onChange={e => canEdit && setComments(c => ({ ...c, [v]: e.target.value }))}
-                        readOnly={!canEdit}
-                      />
-                    </>
-                  )}
-                </div>
-              );
-            })}
+            </div>
           </div>
-
-          {isGhost && (() => {
-            const v = currentVoter;
-            const val = ratings[v];
-            const isOn = val != null;
-            return (
-              <>
-                <div style={{ borderTop: '1px solid var(--border)', margin: '8px 0 4px', opacity: 0.4 }} />
-                <div className={`rating-row${isOn ? '' : ' rating-off'}`}>
-                  <div className="rating-header">
-                    <span className="rating-voter">{v}</span>
-                    <div className="rating-controls">
-                      {isOn && (
-                        <input
-                          type="number"
-                          key={`${movieId}-${v}-${isOn}`}
-                          className={`rating-number-input ${scoreClass(val)}`}
-                          min={0} max={10} step={0.5}
-                          defaultValue={val}
-                          onChange={e => setScore(v, e.target.value)}
-                        />
-                      )}
-                      <button
-                        className="btn btn-sm btn-ghost rating-toggle"
-                        onClick={() => toggleVoter(v)}
-                        title={isOn ? 'Remove rating' : 'Add rating'}
-                      >{isOn ? '✕' : '+'}</button>
-                    </div>
-                  </div>
-                  {isOn && (
-                    <>
-                      <div className="score-bar">
-                        <div className="score-bar-fill" style={{
-                          width: `${(val / 10) * 100}%`,
-                          background: val >= 7.5 ? 'var(--green)' : val >= 5 ? 'var(--gold)' : 'var(--red)'
-                        }} />
-                      </div>
-                      <input
-                        type="text"
-                        className="rating-comment"
-                        placeholder="Add a note…"
-                        maxLength={300}
-                        value={comments[v] || ''}
-                        onChange={e => setComments(c => ({ ...c, [v]: e.target.value }))}
-                      />
-                    </>
-                  )}
-                </div>
-              </>
-            );
-          })()}
-
-          {/* Top 10 */}
-          <div className="modal-section-label section-label" style={{ marginTop: 20 }}>Top 10 Picks</div>
-          <div className="top3-grid">
-            {configVoters.map(v => {
-              const canEdit = isAdmin || v === currentVoter;
-              const current = top3[v] ?? null;
-              // Append/remove only — reordering happens via drag-and-drop on the Stats page.
-              // If this film is already a pick, the only option besides "remove" is its current rank.
-              // Otherwise it can only be added to the next free slot (count + 1).
-              const nextSlot = (top10Counts[v] ?? 0) + 1;
-              const opts = current != null ? [current] : (nextSlot <= 10 ? [nextSlot] : []);
-              return (
-                <div key={v} className={`top3-voter-row${!canEdit ? ' rating-locked' : ''}`}>
-                  <span className="top3-voter-name">{v}</span>
-                  <select
-                    className="select select-sm top3-select"
-                    value={current ?? ''}
-                    disabled={!canEdit}
-                    onChange={e => setTop3(t => ({ ...t, [v]: e.target.value ? parseInt(e.target.value) : null }))}
-                  >
-                    <option value="">—</option>
-                    {opts.map(rank => (
-                      <option key={rank} value={rank}>{rankLabel(rank)}</option>
-                    ))}
-                  </select>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Flags */}
-          <div className="modal-section-label section-label" style={{ marginTop: 20 }}>Flags</div>
-          <div className="flags-row">
-            <button className={`toggle-btn${mn ? ' active' : ''}`} onClick={() => setMn(x => !x)}>
-              🎬 Movie Night
-            </button>
-            <button className={`toggle-btn${watchlist ? ' active' : ''}`} onClick={() => setWatchlist(x => !x)}>
-              👁 Watchlist
-            </button>
-          </div>
-
-          {/* Lists — saved immediately, independent of the Save button */}
-          <div className="modal-section-label section-label" style={{ marginTop: 20 }}>Lists</div>
-          {lists === null ? (
-            <div style={{ fontSize: 12, color: 'var(--text2)' }}>Loading lists…</div>
-          ) : (
-            <>
-              <div className="flags-row">
-                {lists.map(l => (
-                  <button
-                    key={l.id}
-                    className={`toggle-btn${l.has_film ? ' active' : ''}`}
-                    disabled={listBusyId === l.id}
-                    title={l.has_film ? `Remove from “${l.title}”` : `Add to “${l.title}”`}
-                    onClick={() => toggleList(l)}
-                  >
-                    {l.has_film ? '✓ ' : '+ '}{l.title}
-                  </button>
-                ))}
-                {!newListOpen && (
-                  <button className="toggle-btn" onClick={() => setNewListOpen(true)}>+ New list</button>
-                )}
-              </div>
-
-              {newListOpen && (
-                <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                  <input
-                    className="input"
-                    autoFocus
-                    maxLength={80}
-                    placeholder="New list title"
-                    value={newListTitle}
-                    onChange={e => setNewListTitle(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && createListWithFilm()}
-                    style={{ flex: 1 }}
-                  />
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={createListWithFilm}
-                    disabled={listBusyId === 'new' || !newListTitle.trim()}
-                  >
-                    Create &amp; add
-                  </button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => { setNewListOpen(false); setNewListTitle(''); }}>✕</button>
-                </div>
-              )}
-
-              {lists.length === 0 && !newListOpen && (
-                <div style={{ fontSize: 12, color: 'var(--text2)' }}>No lists yet.</div>
-              )}
-              {listError && (
-                <div style={{ fontSize: 12, color: 'var(--red)', marginTop: 6 }}>{listError}</div>
-              )}
-            </>
-          )}
-
         </div>
 
         <div className="modal-footer">
@@ -668,7 +730,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
               Delete
             </button>
           )}
-          <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          <button className="btn btn-ghost" onClick={handleModalClose}>Cancel</button>
           {saveError && (
             <span style={{ fontSize: 12, color: 'var(--red)', marginRight: 8 }}>{saveError}</span>
           )}
@@ -676,6 +738,24 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
             {saving ? 'Saving…' : 'Save'}
           </button>
         </div>
+
+        {reorderVoter && (
+          <ReorderTop10Dialog
+            voter={reorderVoter}
+            currentMovieId={movieId}
+            currentMovieTitle={editTitle}
+            currentMovieYear={editYear}
+            currentMovieDirector={editDirector}
+            currentMoviePoster={movie.poster_path}
+            onClose={() => setReorderVoter(null)}
+            onOrderUpdated={(newPicks) => {
+              setTop10Reordered(true);
+              const found = newPicks.find(p => p.id === movieId);
+              setTop3(t => ({ ...t, [reorderVoter]: found ? found.rank : null }));
+              setTop10Counts(c => ({ ...c, [reorderVoter]: newPicks.length }));
+            }}
+          />
+        )}
       </div>
     </div>
   );

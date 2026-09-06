@@ -38,7 +38,10 @@ export default function Films() {
   const [showAdd, setShowAdd]         = useState(false);
   const [viewMode, setViewMode]       = useState('list');
   const [scoreMode, setScoreMode]     = useState('fair');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [moreFiltersOpen, setMoreFiltersOpen] = useState(() =>
+    !!(searchParams.get('director') || searchParams.get('yearMin') || searchParams.get('yearMax') || searchParams.get('minVoters') || searchParams.get('maxVoters'))
+  );
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const { toast, Toast }              = useToast();
 
   const [search, setSearch]           = useState(() => searchParams.get('q') || DEFAULTS.search);
@@ -74,20 +77,28 @@ export default function Films() {
 
   const searchTimer = useRef(null);
 
-  const filtersActive = search || filterMn || filterRated || filterWl || filterVoters.length || filterDirector || filterYearMin || filterYearMax || filterMinVoters || filterMaxVoters;
+  const advancedFilterCount = [
+    !!filterDirector, !!filterYearMin, !!filterYearMax,
+    !!filterMinVoters, !!filterMaxVoters,
+  ].filter(Boolean).length;
+
+  const filtersActive = search || filterMn || filterRated || filterWl || filterVoters.length || advancedFilterCount > 0;
 
   const activeFilterCount = [
     filterMn, filterWl, filterVoters.length > 0,
-    !!filterDirector, !!filterYearMin, !!filterYearMax,
-    !!filterMinVoters, !!filterMaxVoters, !!filterRated,
+    !!filterRated, advancedFilterCount > 0,
   ].filter(Boolean).length;
 
   const setters = { search: setSearch, sortBy: setSortBy, sortVoter: setSortVoter, filterMn: setFilterMn, filterRated: setFilterRated, filterWl: setFilterWl, filterVoters: setFilterVoters, filterDirector: setFilterDirector, filterYearMin: setFilterYearMin, filterYearMax: setFilterYearMax, filterMinVoters: setFilterMinVoters, filterMaxVoters: setFilterMaxVoters };
   function resetFilters() {
     Object.entries(DEFAULTS).forEach(([k, v]) => setters[k](v));
   }
-  function toggleVoter(v) {
-    setFilterVoters(vs => vs.includes(v) ? vs.filter(x => x !== v) : [...vs, v]);
+  function toggleVoter(v, e) {
+    if (e && (e.shiftKey || e.ctrlKey || e.metaKey)) {
+      setFilterVoters(vs => vs.includes(v) ? vs.filter(x => x !== v) : [...vs, v]);
+    } else {
+      setFilterVoters(vs => (vs.length === 1 && vs[0] === v) ? [] : [v]);
+    }
   }
 
   const fetchMovies = useCallback(async (params) => {
@@ -112,6 +123,20 @@ export default function Films() {
     refreshAllMovies();
     api.getDirectors().then(setDirectors).catch(() => {});
   }, [fetchMovies]);
+
+  useEffect(() => {
+    if (mobileDrawerOpen) {
+      document.body.style.overflow = 'hidden';
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') setMobileDrawerOpen(false);
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [mobileDrawerOpen]);
 
   useEffect(() => {
     clearTimeout(searchTimer.current);
@@ -197,17 +222,32 @@ export default function Films() {
     toast(`"${movie.title}" added!`);
   }
 
-  return (
-    <div>
-      {/* Toolbar */}
-      <div className="films-toolbar">
-        <button
-          className={`btn btn-ghost filters-toggle-btn${activeFilterCount > 0 ? ' filters-toggle-active' : ''}`}
-          onClick={() => setSidebarOpen(o => !o)}
-        >
-          Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
-        </button>
+  async function handleWatchlistToggle(id, nextWl) {
+    const targetMovie = movies.find(m => m.id === id);
+    const title = targetMovie?.title ? `"${targetMovie.title}"` : 'Film';
 
+    // Optimistic update
+    setMovies(ms => ms.map(m => m.id === id ? { ...m, watchlist: nextWl } : m));
+    setAllMovies(ms => ms.map(m => m.id === id ? { ...m, watchlist: nextWl } : m));
+
+    // Instant toast feedback
+    toast(nextWl ? `Added ${title} to Watchlist` : `Removed ${title} from Watchlist`);
+
+    // Background sync to server
+    try {
+      await api.updateMovie(id, { watchlist: nextWl });
+    } catch (err) {
+      console.error(err);
+      setMovies(ms => ms.map(m => m.id === id ? { ...m, watchlist: !nextWl } : m));
+      setAllMovies(ms => ms.map(m => m.id === id ? { ...m, watchlist: !nextWl } : m));
+      toast(`Failed to update Watchlist for ${title}`);
+    }
+  }
+
+  return (
+    <div className="films-page">
+      {/* ── Top Bar: Search, Sort, Views, Add Film ── */}
+      <div className="films-top-bar">
         <div className="search-box">
           <span className="search-icon">🔍</span>
           <input
@@ -221,134 +261,312 @@ export default function Films() {
           )}
         </div>
 
+        <div className="films-sort-wrap">
+          <select
+            className="select select-sm films-sort-select"
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value)}
+            title="Sort films"
+          >
+            <option value="alpha">Sort: A → Z</option>
+            <option value="alpha-dir">Sort: By Director</option>
+            <option value="year-desc">Sort: Newest</option>
+            <option value="year-asc">Sort: Oldest</option>
+            <option value="score-desc">Sort: Fair Score ↓</option>
+            <option value="score-asc">Sort: Fair Score ↑</option>
+            <option value="group-desc">Sort: Group Score ↓</option>
+            <option value="group-asc">Sort: Group Score ↑</option>
+            <option value="voter-desc">Sort: Voter Rating ↓</option>
+            <option value="voter-asc">Sort: Voter Rating ↑</option>
+            <option value="controversial">Sort: Most Controversial</option>
+            <option value="added-desc">Sort: Recently Added</option>
+            <option value="added-asc">Sort: First Added</option>
+          </select>
+
+          {(sortBy === 'voter-desc' || sortBy === 'voter-asc') && (
+            <select
+              className="select select-sm voter-sort-select"
+              value={sortVoter}
+              onChange={e => setSortVoter(e.target.value)}
+              title="Select voter to sort by"
+            >
+              {voters.map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          )}
+        </div>
+
         <div className="view-toggle">
-          <button className={`view-btn${scoreMode === 'fair' ? ' active' : ''}`}
-            onClick={() => setScoreMode('fair')} title="Fair: per-voter average + Top 3 token bonus">
+          <button
+            className={`view-btn${scoreMode === 'fair' ? ' active' : ''}`}
+            onClick={() => setScoreMode('fair')}
+            title="Fair: per-voter average + Top 10 token bonus"
+          >
             Fair
           </button>
-          <button className={`view-btn${scoreMode === 'group' ? ' active' : ''}`}
-            onClick={() => setScoreMode('group')} title="Group: sum ÷ 5 + Top 3 token bonus (penalises films not seen by all)">
+          <button
+            className={`view-btn${scoreMode === 'group' ? ' active' : ''}`}
+            onClick={() => setScoreMode('group')}
+            title="Group: sum ÷ 5 + Top 10 token bonus"
+          >
             Group
           </button>
         </div>
 
         <div className="view-toggle">
-          <button className={`view-btn${viewMode === 'list' ? ' active' : ''}`}
-            onClick={() => setViewMode('list')} title="List view">☰</button>
-          <button className={`view-btn${viewMode === 'grid' ? ' active' : ''}`}
-            onClick={() => setViewMode('grid')} title="Grid view">⊞</button>
+          <button
+            className={`view-btn${viewMode === 'list' ? ' active' : ''}`}
+            onClick={() => setViewMode('list')}
+            title="List view"
+          >
+            ☰
+          </button>
+          <button
+            className={`view-btn${viewMode === 'grid' ? ' active' : ''}`}
+            onClick={() => setViewMode('grid')}
+            title="Grid view"
+          >
+            ⊞
+          </button>
         </div>
 
-        <button className="btn btn-primary" onClick={() => setShowAdd(true)}>+ Add Film</button>
+        <button
+          type="button"
+          className={`btn btn-sm btn-ghost mobile-filters-btn${activeFilterCount > 0 ? ' active' : ''}`}
+          onClick={() => setMobileDrawerOpen(true)}
+          title="Open filters"
+        >
+          <span>⚙️ Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</span>
+        </button>
+
+        <button className="btn btn-primary btn-add-film" onClick={() => setShowAdd(true)}>
+          + Add Film
+        </button>
       </div>
 
-      {/* Two-column layout: sidebar + content */}
-      <div className="films-layout">
+      {/* ── Active Filters Ribbon (Mobile & Compact Summary) ── */}
+      {activeFilterCount > 0 && (
+        <div className="films-mobile-active-strip">
+          {filterMn && (
+            <span className="active-chip">
+              🎬 MN
+              <button type="button" onClick={() => setFilterMn(false)} title="Remove Movie Night filter">✕</button>
+            </span>
+          )}
+          {filterWl && (
+            <span className="active-chip">
+              👁 WL
+              <button type="button" onClick={() => setFilterWl(false)} title="Remove Watchlist filter">✕</button>
+            </span>
+          )}
+          {filterVoters.length > 0 && (
+            <span className={`active-chip${filterRated === 'unvoted' ? ' active-chip-unvoted' : ''}`}>
+              👤 {filterRated === 'unvoted' ? 'Unvoted: ' : 'Voted: '}{filterVoters.join(', ')}
+              <button type="button" onClick={() => { setFilterVoters([]); setFilterRated(''); }} title="Remove voter filter">✕</button>
+            </span>
+          )}
+          {filterVoters.length === 0 && filterRated && (
+            <span className={`active-chip${filterRated === 'unvoted' ? ' active-chip-unvoted' : ''}`}>
+              {filterRated === 'unvoted' ? 'Unrated (0)' : 'Rated (≥1)'}
+              <button type="button" onClick={() => setFilterRated('')} title="Remove status filter">✕</button>
+            </span>
+          )}
+          {filterDirector && (
+            <span className="active-chip">
+              🎭 {filterDirector}
+              <button type="button" onClick={() => setFilterDirector('')} title="Remove director filter">✕</button>
+            </span>
+          )}
+          {(filterYearMin || filterYearMax) && (
+            <span className="active-chip">
+              📅 {filterYearMin || '…'}–{filterYearMax || '…'}
+              <button type="button" onClick={() => { setFilterYearMin(''); setFilterYearMax(''); }} title="Remove year filter">✕</button>
+            </span>
+          )}
+          {(filterMinVoters || filterMaxVoters) && (
+            <span className="active-chip">
+              🗳 {filterMinVoters ? `≥${filterMinVoters}` : ''}{filterMinVoters && filterMaxVoters ? ' & ' : ''}{filterMaxVoters ? `≤${filterMaxVoters}` : ''} votes
+              <button type="button" onClick={() => { setFilterMinVoters(''); setFilterMaxVoters(''); }} title="Remove vote count filter">✕</button>
+            </span>
+          )}
+          <button type="button" className="active-chip-clear" onClick={resetFilters}>
+            Clear all
+          </button>
+        </div>
+      )}
 
-        <aside className={`films-sidebar${sidebarOpen ? ' films-sidebar--open' : ''}`}>
+      {/* ── Filter Toolbar ── */}
+      <div className="films-filter-bar">
+        {/* Scope toggles: Movie Night & Watchlist */}
+        <div className="filter-scope-group">
+          <button
+            type="button"
+            className={`filter-chip filter-chip-mn${filterMn ? ' active' : ''}`}
+            onClick={() => setFilterMn(m => !m)}
+          >
+            <span className="chip-icon">🎬</span> Movie Night
+          </button>
 
-          {/* Sort */}
-          <div className="filter-group">
-            <span className="filter-group-label">Sort</span>
-            <select className="select select-sm filter-group-control" value={sortBy} onChange={e => setSortBy(e.target.value)}>
-              <option value="alpha">A → Z</option>
-              <option value="alpha-dir">By Director</option>
-              <option value="year-desc">Newest</option>
-              <option value="year-asc">Oldest</option>
-              <option value="score-desc">Fair Score ↓</option>
-              <option value="score-asc">Fair Score ↑</option>
-              <option value="group-desc">Group Score ↓</option>
-              <option value="group-asc">Group Score ↑</option>
-              <option value="voter-desc">Voter Rating ↓</option>
-              <option value="voter-asc">Voter Rating ↑</option>
-              <option value="controversial">Most Controversial</option>
-              <option value="added-desc">Recently Added</option>
-              <option value="added-asc">First Added</option>
-            </select>
-            {(sortBy === 'voter-desc' || sortBy === 'voter-asc') && (
+          <button
+            type="button"
+            className={`filter-chip filter-chip-wl${filterWl ? ' active' : ''}`}
+            onClick={() => setFilterWl(w => !w)}
+          >
+            <span className="chip-icon">👁</span> Watchlist
+          </button>
+        </div>
+
+        <div className="filter-bar-sep" />
+
+        {/* Unified Voter & Rating Status Cluster */}
+        <div className="filter-voter-cluster">
+          <span className="voter-cluster-label">Voter:</span>
+          <div className="filter-voter-pills">
+            <button
+              type="button"
+              className={`voter-pill${filterVoters.length === 0 ? ' active' : ''}`}
+              onClick={() => setFilterVoters([])}
+              title="All voters (clear voter filter)"
+            >
+              All
+            </button>
+            {voters.map(v => (
+              <button
+                key={v}
+                type="button"
+                className={`voter-pill${filterVoters.includes(v) ? ' active' : ''}`}
+                onClick={e => toggleVoter(v, e)}
+                title={`Filter films by ${v} (click to select, Shift-click to multi-select)`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+
+          <div className="filter-status-seg">
+            {filterVoters.length === 0 ? (
               <>
-                <span className="filter-group-label" style={{ marginTop: 8 }}>By voter</span>
-                <select className="select select-sm filter-group-control" value={sortVoter} onChange={e => setSortVoter(e.target.value)}>
-                  {voters.map(v => <option key={v}>{v}</option>)}
-                </select>
+                <button
+                  type="button"
+                  className={`status-seg-btn${filterRated === '' ? ' active' : ''}`}
+                  onClick={() => setFilterRated('')}
+                  title="Show all films regardless of votes"
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  className={`status-seg-btn${filterRated === 'voted' ? ' active' : ''}`}
+                  onClick={() => setFilterRated('voted')}
+                  title="Show films with at least 1 vote from anyone"
+                >
+                  Voted
+                </button>
+                <button
+                  type="button"
+                  className={`status-seg-btn status-seg-unvoted${filterRated === 'unvoted' ? ' active' : ''}`}
+                  onClick={() => setFilterRated('unvoted')}
+                  title="Show films with 0 votes across the whole group"
+                >
+                  Unvoted
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={`status-seg-btn${filterRated !== 'unvoted' ? ' active' : ''}`}
+                  onClick={() => setFilterRated('voted')}
+                  title={`Show films voted by ${filterVoters.join(', ')}`}
+                >
+                  Voted by {filterVoters.length === 1 ? filterVoters[0] : `${filterVoters.length} voters`}
+                </button>
+                <button
+                  type="button"
+                  className={`status-seg-btn status-seg-unvoted${filterRated === 'unvoted' ? ' active' : ''}`}
+                  onClick={() => setFilterRated('unvoted')}
+                  title={`Show films NOT voted by ${filterVoters.join(', ')}`}
+                >
+                  Unvoted by {filterVoters.length === 1 ? filterVoters[0] : `${filterVoters.length} voters`}
+                </button>
               </>
             )}
           </div>
+        </div>
 
-          <div className="filter-divider" />
+        <div className="filter-bar-sep" />
 
-          {/* Quick toggles */}
-          <div className="filter-group">
-            <label className="filter-check filter-check-mn">
-              <input type="checkbox" checked={filterMn} onChange={e => setFilterMn(e.target.checked)} />
-              Movie Night
-            </label>
-            <label className="filter-check" style={{ marginTop: 6 }}>
-              <input type="checkbox" checked={filterWl} onChange={e => setFilterWl(e.target.checked)} />
-              Watchlist
-            </label>
-          </div>
+        {/* More Filters Toggle */}
+        <button
+          type="button"
+          className={`btn btn-sm btn-ghost filter-more-toggle${moreFiltersOpen || advancedFilterCount > 0 ? ' active' : ''}`}
+          onClick={() => setMoreFiltersOpen(o => !o)}
+          title="Toggle advanced filters (Director, Year, Voter count)"
+        >
+          <span>Filters{advancedFilterCount > 0 ? ` (${advancedFilterCount})` : ''}</span>
+          <span className="filter-toggle-caret">{moreFiltersOpen ? '▲' : '▼'}</span>
+        </button>
 
-          <div className="filter-divider" />
+        {/* Reset & Count */}
+        <div className="films-filter-actions">
+          {filtersActive && (
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost filter-reset-active"
+              onClick={resetFilters}
+              title="Reset all active filters"
+            >
+              Reset ✕
+            </button>
+          )}
+          <span className="filter-count-badge">
+            {searchFiltered.length} / {movies.length}
+          </span>
+        </div>
+      </div>
 
-          {/* Voted */}
-          <div className="filter-group">
-            <label className="filter-group-label" htmlFor="filter-voted">Voted</label>
-            <select id="filter-voted" className="select select-sm filter-group-control"
-              value={filterRated} onChange={e => setFilterRated(e.target.value)}>
-              <option value="">Any</option>
-              <option value="voted">Voted</option>
-              <option value="unvoted">Unvoted</option>
-            </select>
-          </div>
-
-          {/* By voter */}
-          <div className="filter-group">
-            <span className="filter-group-label">By voter</span>
-            <div className="filter-voters">
-              {voters.map(v => (
-                <button
-                  key={v}
-                  type="button"
-                  className={`voter-pill${filterVoters.includes(v) ? ' active' : ''}`}
-                  onClick={() => toggleVoter(v)}
-                  title={`Films ${v} has rated`}
-                >
-                  {v}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="filter-divider" />
-
-          {/* Director */}
-          <div className="filter-group">
-            <label className="filter-group-label" htmlFor="filter-director">Director</label>
-            <select id="filter-director" className="select select-sm filter-group-control"
-              value={filterDirector} onChange={e => setFilterDirector(e.target.value)}>
-              <option value="">All</option>
+      {/* ── Advanced Filters Collapsible Drawer ── */}
+      {moreFiltersOpen && (
+        <div className="films-advanced-drawer">
+          <div className="advanced-filter-item">
+            <label className="advanced-label" htmlFor="filter-director">Director</label>
+            <select
+              id="filter-director"
+              className="select select-sm advanced-select"
+              value={filterDirector}
+              onChange={e => setFilterDirector(e.target.value)}
+            >
+              <option value="">All Directors ({directors.length})</option>
               {directors.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
 
-          {/* Year */}
-          <div className="filter-group">
-            <span className="filter-group-label">Year</span>
-            <div className="filter-range-row">
-              <input className="input input-sm" placeholder="From"
-                value={filterYearMin} onChange={e => setFilterYearMin(e.target.value)} />
-              <span className="filter-range-sep">–</span>
-              <input className="input input-sm" placeholder="To"
-                value={filterYearMax} onChange={e => setFilterYearMax(e.target.value)} />
+          <div className="advanced-filter-item">
+            <span className="advanced-label">Release Year</span>
+            <div className="advanced-range-inputs">
+              <input
+                className="input input-sm advanced-input"
+                placeholder="From"
+                value={filterYearMin}
+                onChange={e => setFilterYearMin(e.target.value)}
+              />
+              <span className="range-dash">–</span>
+              <input
+                className="input input-sm advanced-input"
+                placeholder="To"
+                value={filterYearMax}
+                onChange={e => setFilterYearMax(e.target.value)}
+              />
             </div>
           </div>
 
-          {/* Voters */}
-          <div className="filter-group">
-            <span className="filter-group-label">Voters</span>
-            <div className="filter-range-row">
-              <select className="select select-sm" value={filterMinVoters} onChange={e => setFilterMinVoters(e.target.value)}>
+          <div className="advanced-filter-item">
+            <span className="advanced-label">Votes Count</span>
+            <div className="advanced-range-inputs">
+              <select
+                className="select select-sm advanced-select-range"
+                value={filterMinVoters}
+                onChange={e => setFilterMinVoters(e.target.value)}
+              >
                 <option value="">Min</option>
                 <option value="1">≥ 1</option>
                 <option value="2">≥ 2</option>
@@ -356,8 +574,12 @@ export default function Films() {
                 <option value="4">≥ 4</option>
                 <option value="5">≥ 5</option>
               </select>
-              <span className="filter-range-sep">–</span>
-              <select className="select select-sm" value={filterMaxVoters} onChange={e => setFilterMaxVoters(e.target.value)}>
+              <span className="range-dash">–</span>
+              <select
+                className="select select-sm advanced-select-range"
+                value={filterMaxVoters}
+                onChange={e => setFilterMaxVoters(e.target.value)}
+              >
                 <option value="">Max</option>
                 <option value="0">0</option>
                 <option value="1">≤ 1</option>
@@ -369,60 +591,62 @@ export default function Films() {
             </div>
           </div>
 
-          <div className="filter-divider" />
-
-          {/* Footer */}
-          <div className="filter-footer">
+          {advancedFilterCount > 0 && (
             <button
-              className={`btn btn-sm${filtersActive ? ' btn-ghost filter-reset-active' : ' btn-ghost'}`}
-              onClick={resetFilters}
-              disabled={!filtersActive}
+              type="button"
+              className="btn btn-sm btn-ghost advanced-clear-btn"
+              onClick={() => {
+                setFilterDirector('');
+                setFilterYearMin('');
+                setFilterYearMax('');
+                setFilterMinVoters('');
+                setFilterMaxVoters('');
+              }}
+              title="Clear advanced filters"
             >
-              Reset
+              Clear advanced
             </button>
-            <span className="filter-count">{searchFiltered.length} / {movies.length}</span>
-          </div>
-
-        </aside>
-
-        {/* Main content */}
-        <div className="films-main">
-          {loading ? (
-            <div className="spinner" />
-          ) : sorted.length === 0 ? (
-            <div className="empty">
-              <div className="empty-icon">🎬</div>
-              <div className="empty-title">No films found</div>
-              <div>Try adjusting your filters</div>
-            </div>
-          ) : (
-            <>
-              <div className={viewMode === 'grid' ? 'films-grid' : 'films-list'}>
-                {visible.map((m) => (
-                  <MovieCard
-                    key={m.id}
-                    movie={{
-                      ...m,
-                      rank_global: (scoreMode === 'group' ? rankMap.group   : rankMap.fair  )[m.id] ?? null,
-                      mn_rank:     (scoreMode === 'group' ? rankMap.mnGroup : rankMap.mnFair)[m.id] ?? null,
-                    }}
-                    onClick={() => setSelectedId(m.id)}
-                    listView={viewMode === 'list'}
-                    scoreMode={scoreMode}
-                  />
-                ))}
-              </div>
-              {hasMore && (
-                <div style={{ textAlign: 'center', marginTop: 24 }}>
-                  <button className="btn btn-ghost" onClick={() => setPage(p => p + 1)}>
-                    Load more ({sorted.length - visible.length} remaining)
-                  </button>
-                </div>
-              )}
-            </>
           )}
         </div>
+      )}
 
+      {/* Main content */}
+      <div className="films-main">
+        {loading ? (
+          <div className="spinner" />
+        ) : sorted.length === 0 ? (
+          <div className="empty">
+            <div className="empty-icon">🎬</div>
+            <div className="empty-title">No films found</div>
+            <div>Try adjusting your filters</div>
+          </div>
+        ) : (
+          <>
+            <div className={viewMode === 'grid' ? 'films-grid' : 'films-list'}>
+              {visible.map((m) => (
+                <MovieCard
+                  key={m.id}
+                  movie={{
+                    ...m,
+                    rank_global: (scoreMode === 'group' ? rankMap.group   : rankMap.fair  )[m.id] ?? null,
+                    mn_rank:     (scoreMode === 'group' ? rankMap.mnGroup : rankMap.mnFair)[m.id] ?? null,
+                  }}
+                  onClick={() => setSelectedId(m.id)}
+                  listView={viewMode === 'list'}
+                  scoreMode={scoreMode}
+                  onWatchlistToggle={handleWatchlistToggle}
+                />
+              ))}
+            </div>
+            {hasMore && (
+              <div style={{ textAlign: 'center', marginTop: 24 }}>
+                <button className="btn btn-ghost" onClick={() => setPage(p => p + 1)}>
+                  Load more ({sorted.length - visible.length} remaining)
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {selectedId && (
@@ -442,6 +666,208 @@ export default function Films() {
       {showAdd && (
         <AddMovieModal onClose={() => setShowAdd(false)} onAdded={handleAdded} />
       )}
+
+      {/* ── Mobile Filter Drawer ── */}
+      {mobileDrawerOpen && (
+        <div className="mobile-drawer-overlay" onClick={() => setMobileDrawerOpen(false)}>
+          <div className="mobile-drawer-content" onClick={e => e.stopPropagation()}>
+            <div className="mobile-drawer-header">
+              <div className="mobile-drawer-title-wrap">
+                <h2 className="mobile-drawer-title">Filters</h2>
+                <span className="mobile-drawer-count">{searchFiltered.length} / {movies.length} films</span>
+              </div>
+              <div className="mobile-drawer-header-actions">
+                {filtersActive && (
+                  <button type="button" className="btn btn-sm btn-ghost mobile-drawer-reset" onClick={resetFilters}>
+                    Reset
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="mobile-drawer-close"
+                  onClick={() => setMobileDrawerOpen(false)}
+                  aria-label="Close filters"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="mobile-drawer-body">
+              {/* Scope section */}
+              <div className="mobile-drawer-section">
+                <span className="mobile-section-label">Catalog Scope</span>
+                <div className="filter-scope-group">
+                  <button
+                    type="button"
+                    className={`filter-chip filter-chip-mn${filterMn ? ' active' : ''}`}
+                    onClick={() => setFilterMn(m => !m)}
+                  >
+                    <span className="chip-icon">🎬</span> Movie Night
+                  </button>
+                  <button
+                    type="button"
+                    className={`filter-chip filter-chip-wl${filterWl ? ' active' : ''}`}
+                    onClick={() => setFilterWl(w => !w)}
+                  >
+                    <span className="chip-icon">👁</span> Watchlist
+                  </button>
+                </div>
+              </div>
+
+              {/* Voter & Status Cluster */}
+              <div className="mobile-drawer-section">
+                <span className="mobile-section-label">Voter & Rating Status</span>
+                <div className="filter-voter-cluster mobile-cluster">
+                  <div className="filter-voter-pills">
+                    <button
+                      type="button"
+                      className={`voter-pill${filterVoters.length === 0 ? ' active' : ''}`}
+                      onClick={() => setFilterVoters([])}
+                    >
+                      All
+                    </button>
+                    {voters.map(v => (
+                      <button
+                        key={v}
+                        type="button"
+                        className={`voter-pill${filterVoters.includes(v) ? ' active' : ''}`}
+                        onClick={e => toggleVoter(v, e)}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="filter-status-seg mobile-seg">
+                    {filterVoters.length === 0 ? (
+                      <>
+                        <button
+                          type="button"
+                          className={`status-seg-btn${filterRated === '' ? ' active' : ''}`}
+                          onClick={() => setFilterRated('')}
+                        >
+                          All
+                        </button>
+                        <button
+                          type="button"
+                          className={`status-seg-btn${filterRated === 'voted' ? ' active' : ''}`}
+                          onClick={() => setFilterRated('voted')}
+                        >
+                          Voted
+                        </button>
+                        <button
+                          type="button"
+                          className={`status-seg-btn status-seg-unvoted${filterRated === 'unvoted' ? ' active' : ''}`}
+                          onClick={() => setFilterRated('unvoted')}
+                        >
+                          Unvoted
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className={`status-seg-btn${filterRated !== 'unvoted' ? ' active' : ''}`}
+                          onClick={() => setFilterRated('voted')}
+                        >
+                          Voted by {filterVoters.length === 1 ? filterVoters[0] : `${filterVoters.length} voters`}
+                        </button>
+                        <button
+                          type="button"
+                          className={`status-seg-btn status-seg-unvoted${filterRated === 'unvoted' ? ' active' : ''}`}
+                          onClick={() => setFilterRated('unvoted')}
+                        >
+                          Unvoted by {filterVoters.length === 1 ? filterVoters[0] : `${filterVoters.length} voters`}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Director section */}
+              <div className="mobile-drawer-section">
+                <label className="mobile-section-label" htmlFor="mobile-filter-director">Director</label>
+                <select
+                  id="mobile-filter-director"
+                  className="select select-sm"
+                  style={{ width: '100%' }}
+                  value={filterDirector}
+                  onChange={e => setFilterDirector(e.target.value)}
+                >
+                  <option value="">All Directors ({directors.length})</option>
+                  {directors.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+
+              {/* Release Year */}
+              <div className="mobile-drawer-section">
+                <span className="mobile-section-label">Release Year</span>
+                <div className="advanced-range-inputs">
+                  <input
+                    className="input input-sm advanced-input"
+                    placeholder="From"
+                    value={filterYearMin}
+                    onChange={e => setFilterYearMin(e.target.value)}
+                  />
+                  <span className="range-dash">–</span>
+                  <input
+                    className="input input-sm advanced-input"
+                    placeholder="To"
+                    value={filterYearMax}
+                    onChange={e => setFilterYearMax(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Votes Count */}
+              <div className="mobile-drawer-section">
+                <span className="mobile-section-label">Votes Count</span>
+                <div className="advanced-range-inputs">
+                  <select
+                    className="select select-sm advanced-select-range"
+                    value={filterMinVoters}
+                    onChange={e => setFilterMinVoters(e.target.value)}
+                  >
+                    <option value="">Min</option>
+                    <option value="1">≥ 1</option>
+                    <option value="2">≥ 2</option>
+                    <option value="3">≥ 3</option>
+                    <option value="4">≥ 4</option>
+                    <option value="5">≥ 5</option>
+                  </select>
+                  <span className="range-dash">–</span>
+                  <select
+                    className="select select-sm advanced-select-range"
+                    value={filterMaxVoters}
+                    onChange={e => setFilterMaxVoters(e.target.value)}
+                  >
+                    <option value="">Max</option>
+                    <option value="0">0</option>
+                    <option value="1">≤ 1</option>
+                    <option value="2">≤ 2</option>
+                    <option value="3">≤ 3</option>
+                    <option value="4">≤ 4</option>
+                    <option value="5">≤ 5</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="mobile-drawer-footer">
+              <button
+                type="button"
+                className="btn btn-primary mobile-drawer-apply"
+                onClick={() => setMobileDrawerOpen(false)}
+              >
+                Show {searchFiltered.length} Films
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Toast />
     </div>
   );

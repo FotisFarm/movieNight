@@ -717,6 +717,12 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 
 /* ── Responsive ── */
 @media (max-width: 640px) {
-  .main-content { padding: 16px; padding-bottom: 68px; }
+  .main-content {
+    padding: 16px;
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
   .info-grid { grid-template-columns: 1fr 1fr; }
+  .toast {
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
 }

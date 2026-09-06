@@ -116,12 +116,29 @@ router.get('/top10-counts', ah(async (_req, res) => {
   res.json(counts);
 }));
 
+// GET /api/movies/top10/:voter  — voter's current Top 10 in rank order. Must be before /:id.
+router.get('/top10/:voter', ah(async (req, res) => {
+  const { voter } = req.params;
+  if (!VOTERS.includes(voter)) return res.status(404).json({ error: 'Voter not found' });
+  const rows = await db.all(`
+    SELECT m.id, m.title, m.year, m.director, m.poster_path, t.rank
+    FROM top3 t
+    JOIN movies m ON m.id = t.movie_id
+    WHERE t.voter = ?
+    ORDER BY t.rank ASC
+  `, voter);
+  res.json(rows);
+}));
+
 // PUT /api/movies/top10  — rewrite the session voter's own top picks (ranks 1..N) in order.
 // Must be before /:id. Permission is implicit: it only ever touches req.session.voter's rows.
 router.put('/top10', ah(async (req, res) => {
   const sessionVoter = req.session.voter;
   const isAdmin = sessionVoter === 'mnAdmin';
   // Admins may target any voter; everyone else can only rewrite their own.
+  if (!isAdmin && req.body.voter && req.body.voter !== sessionVoter) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
   const voter = isAdmin && req.body.voter ? req.body.voter : sessionVoter;
   const order = Array.isArray(req.body.order) ? req.body.order : null;
   if (!order || !VOTERS.includes(voter)) return res.status(400).json({ error: 'Bad request' });
@@ -338,6 +355,7 @@ router.patch('/:id', ah(async (req, res) => {
   }
 
   if (top3) {
+    const movieIdNum = Number(id);
     const touched = new Set();
 
     // Snapshot each affected voter's whole Top 10 before anything moves: the
@@ -349,44 +367,37 @@ router.patch('/:id', ah(async (req, res) => {
       if (!isAdmin && voter !== sessionVoter) continue;
       const rows = await db.all('SELECT movie_id, rank FROM top3 WHERE voter = ?', voter);
       ranksBefore.set(voter, new Map(rows.map(r => [r.movie_id, r.rank])));
+      touched.add(voter);
     }
 
-    for (const voter of VOTERS) {
-      if (voter in top3) {
-        if (!isAdmin && voter !== sessionVoter) continue;
-        const rankNum = parseInt(top3[voter]);
-        if (!rankNum) {
-          await db.run('DELETE FROM top3 WHERE movie_id = ? AND voter = ?', id, voter);
-        } else if (rankNum >= 1 && rankNum <= 10) {
-          await db.run(`
-            INSERT INTO top3 (movie_id, voter, rank) VALUES (?, ?, ?)
-            ON CONFLICT(movie_id, voter) DO UPDATE SET rank = excluded.rank
-          `, id, voter, rankNum);
-        }
-        touched.add(voter);
-      }
-    }
+    for (const voter of touched) {
+      const raw = top3[voter];
+      const targetRank = (raw != null && raw !== '') ? parseInt(raw, 10) : null;
 
-    // Re-normalise each touched voter's picks to contiguous ranks 1..N — closes the gap a removal leaves.
-    // If a voter now has more than 10 picks (this movie pushed them over), evict their lowest-priority
-    // *other* pick(s) rather than letting the rank CHECK constraint fail — the film just touched always survives.
-    for (const v of touched) {
       await db.transaction(async (tx) => {
-        let rows = await tx.all('SELECT id, movie_id, rank FROM top3 WHERE voter = ? ORDER BY rank, id', v);
-        if (rows.length > 10) {
-          const touchedIdx = rows.findIndex(r => r.movie_id === id);
-          const touchedRow = touchedIdx >= 0 ? rows[touchedIdx] : null;
-          const others = touchedRow ? rows.filter((_, i) => i !== touchedIdx) : rows;
-          const keepCount = touchedRow ? 9 : 10;
-          const evicted = others.slice(keepCount);
-          for (const e of evicted) {
-            await tx.run('DELETE FROM top3 WHERE id = ?', e.id);
-          }
-          rows = touchedRow ? [touchedRow, ...others.slice(0, keepCount)] : others.slice(0, keepCount);
-          rows.sort((a, b) => a.rank - b.rank || a.id - b.id);
+        // Fetch existing picks for this voter excluding this film, in current rank order
+        const otherRows = await tx.all(
+          'SELECT movie_id FROM top3 WHERE voter = ? AND movie_id != ? ORDER BY rank, id',
+          voter, movieIdNum
+        );
+        const otherIds = otherRows.map(r => r.movie_id);
+
+        let finalIds;
+        if (!targetRank || targetRank < 1 || targetRank > 10) {
+          // Removal from Top 10: keep only other picks
+          finalIds = otherIds.slice(0, 10);
+        } else {
+          // Ripple insertion: insert this film at (targetRank - 1), bumping existing picks down
+          const insertIdx = Math.min(otherIds.length, Math.max(0, targetRank - 1));
+          const newOrder = [...otherIds];
+          newOrder.splice(insertIdx, 0, movieIdNum);
+          finalIds = newOrder.slice(0, 10); // cap at 10, evicting any overflow past 10
         }
-        for (let i = 0; i < rows.length; i++) {
-          await tx.run('UPDATE top3 SET rank = ? WHERE id = ?', i + 1, rows[i].id);
+
+        // Rewrite top3 for this voter with contiguous ranks 1..finalIds.length
+        await tx.run('DELETE FROM top3 WHERE voter = ?', voter);
+        for (let i = 0; i < finalIds.length; i++) {
+          await tx.run('INSERT INTO top3 (movie_id, voter, rank) VALUES (?, ?, ?)', finalIds[i], voter, i + 1);
         }
       });
     }

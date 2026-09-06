@@ -31,6 +31,7 @@ export const api = {
   imdbSearch: (title, year) => request(`/movies/imdb-search?title=${encodeURIComponent(title)}&year=${encodeURIComponent(year || '')}`),
   imdbDetail: (imdbId) => request(`/movies/imdb-detail?imdbId=${encodeURIComponent(imdbId)}`),
   reorderTop10: (order, voter) => request('/movies/top10', { method: 'PUT', body: voter ? { order, voter } : { order } }),
+  getTop10: (voter) => request(`/movies/top10/${encodeURIComponent(voter)}`),
   getTop10Counts: () => request('/movies/top10-counts'),
   getRankings: (params = {}) => {
     const qs = new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([, v]) => v != null))).toString();
@@ -39,6 +40,10 @@ export const api = {
   getRecommendations: (weights = {}) => {
     const qs = new URLSearchParams(Object.fromEntries(Object.entries(weights).filter(([,v]) => v != null))).toString();
     return request(`/recommendations${qs ? `?${qs}` : ''}`);
+  },
+  getPredictionAccuracy: (params = {}) => {
+    const qs = new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([,v]) => v != null))).toString();
+    return request(`/recommendations/accuracy${qs ? `?${qs}` : ''}`);
   },
   toggleWatchlistVote: (id, targetVoter) => request(`/movies/${id}/watchlist-vote`, { method: 'POST', body: targetVoter ? { targetVoter } : undefined }),
   resetWatchlist: (mode) => request('/movies/watchlist/reset', { method: 'POST', body: { mode } }),

@@ -1,0 +1,67 @@
+/* ── Watchlist Quick-Toggle Badge ── */
+.badge-wl-toggle {
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 7px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+  user-select: none;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.badge-wl-toggle:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
+/* Active in watchlist */
+.badge-wl-toggle.active {
+  background: #5294e022;
+  color: var(--blue);
+  border: 1px solid #5294e055;
+  font-weight: 600;
+}
+
+.badge-wl-toggle.active:hover {
+  background: rgba(224, 82, 82, 0.18);
+  border-color: rgba(224, 82, 82, 0.4);
+  color: var(--red);
+}
+
+/* Ghost state (not in watchlist) */
+.badge-wl-toggle.ghost {
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--text3);
+  font-weight: 500;
+  opacity: 0.38;
+}
+
+.movie-card:hover .badge-wl-toggle.ghost,
+.rec-row:hover .badge-wl-toggle.ghost,
+.badge-wl-toggle.ghost:hover {
+  opacity: 1;
+  border-style: solid;
+  border-color: #5294e066;
+  color: var(--blue);
+  background: rgba(82, 148, 224, 0.1);
+}
+
+@media (max-width: 640px) {
+  .badge-wl-toggle.ghost {
+    opacity: 0.65;
+    border-style: solid;
+  }
+}
+
+.badge-wl-icon {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}

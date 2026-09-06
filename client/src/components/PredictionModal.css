@@ -1,0 +1,363 @@
+/* ── Prediction Details Modal ── */
+
+.pred-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 250;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.pred-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  width: 100%;
+  max-width: 640px;
+  max-height: 92vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  animation: slideUp 0.18s ease-out;
+}
+
+.pred-modal-header {
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 2;
+}
+
+.pred-modal-header-left {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+}
+
+.pred-modal-poster {
+  width: 48px;
+  height: 72px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.pred-modal-poster-placeholder {
+  width: 48px;
+  height: 72px;
+  border-radius: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.pred-modal-title-block {
+  min-width: 0;
+  flex: 1;
+}
+
+.pred-modal-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pred-modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.pred-modal-sub {
+  font-size: 12.5px;
+  color: var(--text2);
+  margin-top: 3px;
+}
+
+.pred-modal-close {
+  background: var(--surface3);
+  color: var(--text2);
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pred-modal-close:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.pred-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Hero Matchup Comparison ── */
+.pred-hero-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pred-hero-matchup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pred-hero-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.pred-hero-box.actual {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.pred-hero-lbl {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text2);
+}
+
+.pred-hero-score {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.pred-hero-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.pred-diff-pill-lg {
+  font-size: 13px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.pred-hero-verdict {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pred-hero-narrative {
+  font-size: 12.5px;
+  color: var(--text2);
+  line-height: 1.45;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── Calculation Section ── */
+.pred-calc-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pred-section-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pred-calc-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.pred-calc-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pred-calc-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pred-calc-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text2);
+  letter-spacing: 0.04em;
+}
+
+.pred-calc-weight {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(124, 106, 247, 0.12);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.pred-calc-val {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+  margin-top: 2px;
+}
+
+.pred-calc-sub {
+  font-size: 11px;
+  color: var(--text2);
+  line-height: 1.35;
+}
+
+.pred-calc-contrib {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+  margin-top: 4px;
+}
+
+.pred-formula-bar {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pred-formula-math {
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.pred-formula-result {
+  font-weight: 800;
+  color: var(--gold);
+}
+
+/* ── Actual Votes Section ── */
+.pred-votes-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pred-votes-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pred-vote-chip {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.pred-vote-name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.pred-vote-score {
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.pred-votes-summary {
+  font-size: 11.5px;
+  color: var(--text2);
+  line-height: 1.4;
+}
+
+/* ── Modal Footer ── */
+.pred-modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  position: sticky;
+  bottom: 0;
+  background: var(--surface);
+  z-index: 2;
+}
+
+.pred-modal-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

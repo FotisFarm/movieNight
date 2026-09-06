@@ -5,6 +5,7 @@ import Films from './pages/Films';
 import Rankings from './pages/Rankings';
 import Watchlist from './pages/Watchlist';
 import Recommendations from './pages/Recommendations';
+import Predictions from './pages/Predictions';
 import Controversy from './pages/Controversy';
 import Stats from './pages/Stats';
 import Compare from './pages/Compare';
@@ -74,6 +75,7 @@ function AppInner() {
           <Route path="/rankings" element={<Rankings />} />
           <Route path="/watchlist" element={<Watchlist voter={voter} />} />
           <Route path="/recommendations" element={<Recommendations />} />
+          <Route path="/predictions" element={<Predictions />} />
           <Route path="/controversy" element={<Controversy />} />
           <Route path="/stats" element={<Stats voter={voter} />} />
           <Route path="/lists" element={<Lists voter={voter} />} />
