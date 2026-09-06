@@ -2,7 +2,9 @@
 .session-page {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 24px 16px 64px;
+  padding: 0 0 48px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Header */
@@ -181,12 +183,15 @@
   grid-template-columns: 460px 1fr;
   gap: 28px;
   align-items: flex-start;
+  width: 100%;
 }
 
 /* ── Wheel column ── */
 .session-wheel-section {
   position: sticky;
   top: 76px;
+  min-width: 0;
+  width: 100%;
 }
 
 .wheel-card {
@@ -198,6 +203,10 @@
   flex-direction: column;
   align-items: center;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .wheel-header {
@@ -206,6 +215,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+  gap: 8px;
 }
 
 .wheel-heading {
@@ -224,6 +234,8 @@
   color: var(--text2);
   cursor: pointer;
   transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-sound-toggle:hover {
@@ -239,17 +251,20 @@
 .wheel-canvas-container {
   position: relative;
   width: 100%;
-  max-width: 420px;
+  max-width: 400px;
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  margin: 0 auto;
 }
 
 .wheel-canvas {
   width: 100%;
   height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   border-radius: 50%;
   display: block;
   user-select: none;
@@ -262,6 +277,8 @@
   left: 0;
   width: 100%;
   height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   pointer-events: none;
 }
 
@@ -403,6 +420,13 @@
   display: flex;
   gap: 8px;
   margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.winner-actions .btn {
+  flex: 1 1 auto;
+  text-align: center;
+  justify-content: center;
 }
 
 /* ── Contenders List Section ── */
@@ -410,6 +434,8 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+  min-width: 0;
+  width: 100%;
 }
 
 .contenders-header {
@@ -638,25 +664,54 @@
 @media (max-width: 900px) {
   .session-main-layout {
     grid-template-columns: 1fr;
+    gap: 24px;
+    width: 100%;
   }
 
   .session-wheel-section {
     position: static;
+    width: 100%;
+    display: flex;
+    justify-content: center;
   }
 
   .wheel-card {
+    width: 100%;
     max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .session-contenders-section {
+    width: 100%;
+    max-width: 580px;
     margin: 0 auto;
   }
 }
 
 @media (max-width: 640px) {
   .session-page {
-    padding: 16px 12px 90px;
+    padding: 0 0 32px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .session-header {
+    margin-bottom: 16px;
   }
 
   .session-title {
-    font-size: 24px;
+    font-size: 22px;
+  }
+
+  .session-subtitle {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .session-controls {
+    padding: 14px 12px;
+    gap: 14px;
+    margin-bottom: 18px;
   }
 
   .filter-row {
@@ -664,34 +719,146 @@
     gap: 12px;
   }
 
+  .session-wheel-section {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .wheel-card {
+    width: 100%;
+    max-width: 100%;
+    padding: 14px 10px;
+    margin: 0 auto;
+    box-sizing: border-box;
+  }
+
+  .wheel-header {
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .wheel-heading {
+    font-size: 16px;
+  }
+
+  .btn-sound-toggle {
+    font-size: 11px;
+    padding: 3px 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
   .wheel-canvas-container {
-    max-width: 320px;
+    width: 100%;
+    max-width: min(290px, 78vw);
+    margin: 0 auto;
+  }
+
+  .wheel-cta-wrap {
+    margin-top: 12px;
+    gap: 10px;
+    width: 100%;
   }
 
   .btn-spin {
     font-size: 14px;
     padding: 12px 14px;
+    width: 100%;
+  }
+
+  .wheel-selection-shortcuts {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .wheel-selection-shortcuts .btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    flex: 1 1 auto;
+    min-width: 56px;
+    text-align: center;
+  }
+
+  .winner-banner {
+    padding: 12px;
+    margin-top: 12px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .winner-title {
+    font-size: 14px;
+  }
+
+  .winner-actions {
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .winner-actions .btn {
+    width: 100%;
+  }
+
+  .session-contenders-section {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .contenders-header {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .contenders-heading {
+    font-size: 18px;
+  }
+
+  .contenders-sub {
+    font-size: 12px;
+  }
+
+  .pool-badge {
+    font-size: 10px;
+    padding: 2px 6px;
   }
 
   .contender-card {
-    padding: 10px 10px;
+    padding: 10px 8px;
     gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .contender-rank {
     min-width: 18px;
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .contender-poster {
-    width: 38px;
+    width: 36px;
   }
 
   .contender-title {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .contender-score {
     font-size: 13px;
+  }
+
+  .attendee-score-pill {
+    padding: 1px 4px;
+    font-size: 10px;
+  }
+
+  .signal-badge {
+    font-size: 9px;
+    padding: 1px 4px;
   }
 }
