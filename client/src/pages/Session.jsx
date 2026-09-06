@@ -204,7 +204,7 @@ export default function Session({ voter }) {
 
       // If watchlist is empty, auto-fallback recommendation
       if (res.meta?.isWatchlistEmpty && pool === 'watchlist') {
-        setPool('unwatched');
+        setPool('all');
         return;
       }
 
@@ -573,10 +573,10 @@ export default function Session({ voter }) {
               </button>
               <button
                 type="button"
-                className={`filter-chip ${pool === 'unwatched' ? 'active' : ''}`}
-                onClick={() => setPool('unwatched')}
+                className={`filter-chip ${pool === 'all' || pool === 'unwatched' ? 'active' : ''}`}
+                onClick={() => setPool('all')}
               >
-                Unwatched
+                All Films {meta?.totalMovies != null ? `(${meta.totalMovies})` : ''}
               </button>
               {customLists.length > 0 && (
                 <button
@@ -785,7 +785,7 @@ export default function Session({ voter }) {
             </div>
             {meta?.pool && (
               <span className="pool-badge">
-                Pool: {pool === 'watchlist' ? 'Watchlist' : (pool === 'unwatched' ? 'Unwatched' : 'Custom List')}
+                Pool: {pool === 'watchlist' ? 'Watchlist' : (pool === 'list' ? 'Custom List' : 'All Films')}
               </span>
             )}
           </div>
@@ -811,9 +811,9 @@ export default function Session({ voter }) {
                 <button
                   type="button"
                   className="btn btn-primary btn-sm"
-                  onClick={() => setPool('unwatched')}
+                  onClick={() => setPool('all')}
                 >
-                  Explore Unwatched Films
+                  Explore All Films
                 </button>
               )}
             </div>

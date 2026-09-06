@@ -119,9 +119,10 @@ router.post('/contenders', ah(async (req, res) => {
       return listMovieIds.has(m.id);
     }
     if (pool === 'unwatched') {
-      return existing.length === 0;
+      // If re-watches are allowed, don't restrict to 0 global ratings which would clash
+      return allowWatched ? true : existing.length === 0;
     }
-    // 'all' includes any film
+    // 'all' or 'catalog' includes all films
     return true;
   });
 
@@ -245,9 +246,11 @@ router.post('/contenders', ah(async (req, res) => {
     meta: {
       attendees,
       pool,
+      allowWatched: Boolean(allowWatched),
       poolCountBeforeRuntime,
       totalCandidates: scored.length,
       totalWatchlist,
+      totalMovies: allMovies.length,
       isWatchlistEmpty: totalWatchlist === 0 && pool === 'watchlist',
     },
   });
