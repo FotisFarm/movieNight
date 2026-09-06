@@ -32,6 +32,16 @@ export default function PredictionModal({ film, voters = [], onClose, onToggleWa
     narrative = `Missed expectation by ${fmt(film.diff)} pts, landing slightly below the anticipated ballpark.`;
   }
 
+  const activeTotal = (film.activeWeights?.total) || (
+    (film.dirAvg != null ? (film.activeWeights?.dw ?? 0.35) : 0) +
+    (film.letterboxd_rating != null ? (film.activeWeights?.lbw ?? 0.40) : 0) +
+    (film.decAvg != null ? (film.activeWeights?.ew ?? 0.25) : 0)
+  ) || 1;
+
+  const wDir = film.dirAvg != null ? Math.round(((film.activeWeights?.dw ?? 0.35) / activeTotal) * 100) : 0;
+  const wLb  = film.letterboxd_rating != null ? Math.round(((film.activeWeights?.lbw ?? 0.40) / activeTotal) * 100) : 0;
+  const wEra = Math.max(0, 100 - wDir - wLb);
+
   return (
     <div className="pred-modal-overlay" onClick={onClose}>
       <div className="pred-modal" onClick={e => e.stopPropagation()}>
@@ -101,7 +111,7 @@ export default function PredictionModal({ film, voters = [], onClose, onToggleWa
               <div className="pred-calc-card">
                 <div className="pred-calc-card-header">
                   <span className="pred-calc-title">Director Track</span>
-                  <span className="pred-calc-weight">{film.dirAvg != null ? '50%' : 'N/A'}</span>
+                  <span className="pred-calc-weight">{film.dirAvg != null ? `${wDir}%` : 'N/A'}</span>
                 </div>
                 <div className="pred-calc-val">
                   {film.dirAvg != null ? fmt(film.dirAvg) : '–'}
@@ -109,11 +119,32 @@ export default function PredictionModal({ film, voters = [], onClose, onToggleWa
                 <div className="pred-calc-sub">
                   {film.dirAvg != null
                     ? `Avg of ${film.otherDirFilmsCount || 1} other film(s) by ${film.director}`
-                    : `No prior films by ${film.director}; used era baseline`}
+                    : `No prior films by ${film.director}; used Letterboxd & era baseline`}
                 </div>
                 {film.dirAvg != null && (
                   <div className="pred-calc-contrib">
-                    Contribution: +{fmt(film.dirAvg * 0.5)} pts
+                    Contribution: +{fmt(film.dirAvg * (wDir / 100))} pts
+                  </div>
+                )}
+              </div>
+
+              {/* Letterboxd Consensus */}
+              <div className="pred-calc-card">
+                <div className="pred-calc-card-header">
+                  <span className="pred-calc-title">Letterboxd Consensus</span>
+                  <span className="pred-calc-weight">{film.letterboxd_rating != null ? `${wLb}%` : 'N/A'}</span>
+                </div>
+                <div className="pred-calc-val">
+                  {film.letterboxd_rating != null ? `${Number(film.letterboxd_rating).toFixed(1)} ★ (${fmt(film.letterboxd_rating * 2)}/10)` : '–'}
+                </div>
+                <div className="pred-calc-sub">
+                  {film.letterboxd_rating != null
+                    ? `Global community score scaled to 10-point prior base`
+                    : `No Letterboxd score; redistributed to Director & Era`}
+                </div>
+                {film.letterboxd_rating != null && (
+                  <div className="pred-calc-contrib">
+                    Contribution: +{fmt((film.letterboxd_rating * 2) * (wLb / 100))} pts
                   </div>
                 )}
               </div>
@@ -122,7 +153,7 @@ export default function PredictionModal({ film, voters = [], onClose, onToggleWa
               <div className="pred-calc-card">
                 <div className="pred-calc-card-header">
                   <span className="pred-calc-title">Decade Era</span>
-                  <span className="pred-calc-weight">{film.dirAvg != null ? '50%' : '100%'}</span>
+                  <span className="pred-calc-weight">{film.decAvg != null ? `${wEra}%` : 'N/A'}</span>
                 </div>
                 <div className="pred-calc-val">
                   {film.decAvg != null ? fmt(film.decAvg) : '–'}
@@ -134,7 +165,7 @@ export default function PredictionModal({ film, voters = [], onClose, onToggleWa
                 </div>
                 {film.decAvg != null && (
                   <div className="pred-calc-contrib">
-                    Contribution: +{fmt(film.decAvg * (film.dirAvg != null ? 0.5 : 1.0))} pts
+                    Contribution: +{fmt(film.decAvg * (wEra / 100))} pts
                   </div>
                 )}
               </div>
@@ -158,9 +189,15 @@ export default function PredictionModal({ film, voters = [], onClose, onToggleWa
 
             <div className="pred-formula-bar">
               <span className="pred-formula-math">
-                {film.dirAvg != null
-                  ? `(${fmt(film.dirAvg)} × 0.5) + (${fmt(film.decAvg)} × 0.5)${film.haloBoost > 0 ? ` + ${fmt(film.haloBoost)}` : ''}`
-                  : `${fmt(film.decAvg)} (decade baseline)${film.haloBoost > 0 ? ` + ${fmt(film.haloBoost)}` : ''}`}
+                {(() => {
+                  const parts = [];
+                  if (film.dirAvg != null && wDir > 0) parts.push(`(${fmt(film.dirAvg)} Dir × ${wDir}%)`);
+                  if (film.letterboxd_rating != null && wLb > 0) parts.push(`(${fmt(film.letterboxd_rating * 2)} LB × ${wLb}%)`);
+                  if (film.decAvg != null && wEra > 0) parts.push(`(${fmt(film.decAvg)} Era × ${wEra}%)`);
+                  let s = parts.join(' + ') || 'Baseline';
+                  if (film.haloBoost > 0) s += ` + ${fmt(film.haloBoost)} boost`;
+                  return s;
+                })()}
               </span>
               <span className="pred-formula-result">
                 = {fmt(film.predictedPrior)} Predicted

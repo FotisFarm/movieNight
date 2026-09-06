@@ -30,8 +30,8 @@ function VoterPills({ ratings, voters }) {
   );
 }
 
-const DEFAULTS = { search: '', filterMn: false, filterWl: false, filterDir: '', filterYear: '' };
-const DEFAULT_WEIGHTS = { dw: 0.50, ew: 0.50, tw: 0.10, maxVoters: 2, minDirFilms: 2 };
+const DEFAULTS = { search: '', filterMn: false, filterWl: false, filterDir: '', filterYear: '', filterMinLb: '', filterGems: false };
+const DEFAULT_WEIGHTS = { dw: 0.35, lbw: 0.40, ew: 0.25, tw: 0.10, maxVoters: 2, minDirFilms: 2 };
 
 export default function Recommendations() {
   const { voters } = useAppConfig();
@@ -45,10 +45,13 @@ export default function Recommendations() {
   const [filterWl,    setFilterWl]    = useState(DEFAULTS.filterWl);
   const [filterDir,   setFilterDir]   = useState(DEFAULTS.filterDir);
   const [filterYear,  setFilterYear]  = useState(DEFAULTS.filterYear);
+  const [filterMinLb, setFilterMinLb] = useState(DEFAULTS.filterMinLb);
+  const [filterGems,  setFilterGems]  = useState(DEFAULTS.filterGems);
 
-  const [dw, setDw] = useState(DEFAULT_WEIGHTS.dw);
-  const [ew, setEw] = useState(DEFAULT_WEIGHTS.ew);
-  const [tw, setTw] = useState(DEFAULT_WEIGHTS.tw);
+  const [dw, setDw]   = useState(DEFAULT_WEIGHTS.dw);
+  const [lbw, setLbw] = useState(DEFAULT_WEIGHTS.lbw);
+  const [ew, setEw]   = useState(DEFAULT_WEIGHTS.ew);
+  const [tw, setTw]   = useState(DEFAULT_WEIGHTS.tw);
   const [maxVoters, setMaxVoters] = useState(DEFAULT_WEIGHTS.maxVoters);
   const [minDirFilms, setMinDirFilms] = useState(() => parseInt(localStorage.getItem('mn_minDirFilms')) || DEFAULT_WEIGHTS.minDirFilms);
   const [unvotedBy, setUnvotedBy] = useState(new Set());
@@ -62,9 +65,9 @@ export default function Recommendations() {
     clearTimeout(weightTimer.current);
     weightTimer.current = setTimeout(() => {
       setLoading(true);
-      api.getRecommendations({ dw, ew, tw, maxVoters, minDirFilms }).then(setAllFilms).finally(() => setLoading(false));
+      api.getRecommendations({ dw, lbw, ew, tw, maxVoters, minDirFilms }).then(setAllFilms).finally(() => setLoading(false));
     }, 400);
-  }, [dw, ew, tw, maxVoters, minDirFilms]);
+  }, [dw, lbw, ew, tw, maxVoters, minDirFilms]);
 
   function changeMinDirFilms(n) {
     setMinDirFilms(n);
@@ -87,10 +90,11 @@ export default function Recommendations() {
     });
   }
 
-  // Base prior weights (Director + Era = 100%)
-  const baseTotal = dw + ew || 1;
+  // Base prior weights (Director + Letterboxd + Era = 100%)
+  const baseTotal = dw + lbw + ew || 1;
   const pDir = Math.round((dw / baseTotal) * 100);
-  const pEra = Math.round((ew / baseTotal) * 100);
+  const pLb  = Math.round((lbw / baseTotal) * 100);
+  const pEra = Math.max(0, 100 - pDir - pLb);
   // Additive Top 10 Halo Boost strength
   const boostMultiplier = (tw / 0.10).toFixed(1);
   const boostLabel = tw <= 0.001 ? 'Off (0×)' : `${boostMultiplier}×`;
@@ -103,7 +107,10 @@ export default function Recommendations() {
 
   const directors = [...new Set(allFilms.map(f => f.director).filter(Boolean))].sort();
 
-  const filtersActive = Boolean(search || filterMn || filterWl || filterDir || filterYear || unvotedBy.size > 0 || onePerDirector);
+  const filtersActive = Boolean(
+    search || filterMn || filterWl || filterDir || filterYear ||
+    filterMinLb || filterGems || unvotedBy.size > 0 || onePerDirector
+  );
 
   function resetFilters() {
     setSearch('');
@@ -111,6 +118,8 @@ export default function Recommendations() {
     setFilterWl(false);
     setFilterDir('');
     setFilterYear('');
+    setFilterMinLb('');
+    setFilterGems(false);
     setUnvotedBy(new Set());
     setOnePerDirector(false);
     localStorage.removeItem('mn_onePerDirector');
@@ -118,6 +127,7 @@ export default function Recommendations() {
 
   const weightsModified = Boolean(
     Math.abs(dw - DEFAULT_WEIGHTS.dw) > 0.001 ||
+    Math.abs(lbw - DEFAULT_WEIGHTS.lbw) > 0.001 ||
     Math.abs(ew - DEFAULT_WEIGHTS.ew) > 0.001 ||
     Math.abs(tw - DEFAULT_WEIGHTS.tw) > 0.001 ||
     maxVoters !== DEFAULT_WEIGHTS.maxVoters ||
@@ -126,6 +136,7 @@ export default function Recommendations() {
 
   function resetWeights() {
     setDw(DEFAULT_WEIGHTS.dw);
+    setLbw(DEFAULT_WEIGHTS.lbw);
     setEw(DEFAULT_WEIGHTS.ew);
     setTw(DEFAULT_WEIGHTS.tw);
     setMaxVoters(DEFAULT_WEIGHTS.maxVoters);
@@ -138,6 +149,11 @@ export default function Recommendations() {
     if (filterWl  && !f.watchlist) return false;
     if (filterDir && f.director !== filterDir) return false;
     if (filterYear && f.year !== filterYear)   return false;
+    if (filterMinLb && (f.letterboxd_rating == null || f.letterboxd_rating < parseFloat(filterMinLb))) return false;
+    if (filterGems) {
+      const hasVotes = f.voterCount > 0 || (f.ratings && Object.keys(f.ratings).length > 0);
+      if (hasVotes || f.letterboxd_rating == null || f.letterboxd_rating < 3.8) return false;
+    }
     if (unvotedBy.size > 0) {
       for (const v of unvotedBy) {
         if (f.ratings?.[v] != null) return false;
@@ -224,6 +240,10 @@ export default function Recommendations() {
             <input type="checkbox" checked={onePerDirector} onChange={toggleOnePerDirector} />
             1 per Director
           </label>
+          <label className="filter-check filter-check-gems" title="Show unvoted gems with Letterboxd rating ≥ 3.8 ★">
+            <input type="checkbox" checked={filterGems} onChange={e => setFilterGems(e.target.checked)} />
+            ✨ Gems
+          </label>
 
           <div className="filter-sep" />
 
@@ -260,6 +280,16 @@ export default function Recommendations() {
               value={filterYear} onChange={e => setFilterYear(e.target.value)} />
           </label>
 
+          <label className="filter-item-inline">
+            <span className="filter-label">Min LB</span>
+            <select className="select select-sm" value={filterMinLb} onChange={e => setFilterMinLb(e.target.value)}>
+              <option value="">Any ★</option>
+              <option value="3.5">≥ 3.5 ★</option>
+              <option value="3.8">≥ 3.8 ★</option>
+              <option value="4.0">≥ 4.0 ★</option>
+            </select>
+          </label>
+
           <div className="filter-sep" />
 
           <button
@@ -272,7 +302,7 @@ export default function Recommendations() {
           </button>
 
           <span className="filter-count">
-            {films.length} / {allFilms.length} picks{onePerDirector ? ' · 1/dir' : ''}
+            {films.length} / {allFilms.length} picks{onePerDirector ? ' · 1/dir' : ''}{filterGems ? ' · Gems' : ''}{filterMinLb ? ` · ≥${filterMinLb}★` : ''}
           </span>
         </div>
       </div>
@@ -286,6 +316,14 @@ export default function Recommendations() {
           <div className="recs-slider-wrap" style={trackStyle(dw, 1)}>
             <input type="range" min={0} max={1} step={0.05} value={dw}
               onChange={e => setDw(parseFloat(e.target.value))} />
+          </div>
+        </label>
+
+        <label className="recs-bias-item">
+          <span>Letterboxd <em>{pLb}%</em></span>
+          <div className="recs-slider-wrap" style={trackStyle(lbw, 1)}>
+            <input type="range" min={0} max={1} step={0.05} value={lbw}
+              onChange={e => setLbw(parseFloat(e.target.value))} />
           </div>
         </label>
 

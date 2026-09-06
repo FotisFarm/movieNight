@@ -101,6 +101,15 @@
   accent-color: var(--gold);
 }
 
+.filter-check-gems {
+  color: #00e054;
+  font-weight: 600;
+}
+
+.filter-check-gems input[type="checkbox"] {
+  accent-color: #00e054;
+}
+
 .filter-count {
   font-size: 12px;
   color: var(--text3);

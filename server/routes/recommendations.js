@@ -7,15 +7,11 @@ const router = express.Router();
 const { GROUP_SIZE } = require('../config');
 
 router.get('/', ah(async (req, res) => {
-  // Parse bias weights from query params (default 0.45 / 0.45 / 0.10)
-  const rawDw = Math.max(0, parseFloat(req.query.dw) ?? 0.45);
-  const rawEw = Math.max(0, parseFloat(req.query.ew) ?? 0.45);
-  const rawTw = Math.max(0, parseFloat(req.query.tw) ?? 0.10);
-
-  // Normalise baseline weights between Director and Era
-  const baseWeightTotal = rawDw + rawEw;
-  const dw = baseWeightTotal > 0 ? rawDw / baseWeightTotal : 0.5;
-  const ew = baseWeightTotal > 0 ? rawEw / baseWeightTotal : 0.5;
+  // Parse bias weights from query params (default 0.35 / 0.40 / 0.25 / 0.10)
+  const rawDw  = Math.max(0, parseFloat(req.query.dw  !== undefined ? req.query.dw  : 0.35));
+  const rawLbw = Math.max(0, parseFloat(req.query.lbw !== undefined ? req.query.lbw : 0.40));
+  const rawEw  = Math.max(0, parseFloat(req.query.ew  !== undefined ? req.query.ew  : 0.25));
+  const rawTw  = Math.max(0, parseFloat(req.query.tw  !== undefined ? req.query.tw  : 0.10));
 
   // Top 10 scaling rate (responsive to tw slider, where default 0.10 => 0.15 rate)
   const twRate = rawTw > 0 ? 0.15 * (rawTw / 0.10) : 0;
@@ -100,15 +96,18 @@ router.get('/', ah(async (req, res) => {
     const dirVals    = dirScores[m.director];
     const dirAvg     = (dirVals && dirVals.length >= minDirFilms) ? avg(dirVals) : null;
     const decAvg     = (decade && !isNaN(decade)) ? avg(decadeScores[decade]) ?? null : null;
+    const lbScore    = (m.letterboxd_rating != null && !isNaN(m.letterboxd_rating)) ? m.letterboxd_rating * 2.0 : null;
 
-    // Base prior from Director track record and Era average
+    // Base prior from dynamically weighted components (Director, Letterboxd, Decade Era)
+    const components = [];
+    if (dirAvg !== null && rawDw > 0)   components.push({ value: dirAvg,  weight: rawDw });
+    if (lbScore !== null && rawLbw > 0) components.push({ value: lbScore, weight: rawLbw });
+    if (decAvg !== null && rawEw > 0)   components.push({ value: decAvg,  weight: rawEw });
+
     let base = null;
-    if (dirAvg !== null && decAvg !== null) {
-      base = dirAvg * dw + decAvg * ew;
-    } else if (dirAvg !== null) {
-      base = dirAvg;
-    } else if (decAvg !== null) {
-      base = decAvg;
+    const totalActiveWeight = components.reduce((acc, c) => acc + c.weight, 0);
+    if (totalActiveWeight > 0) {
+      base = components.reduce((acc, c) => acc + c.value * c.weight, 0) / totalActiveWeight;
     }
 
     // Top 10 Halo Boost with Catalog Breadth Multiplier:
@@ -154,13 +153,24 @@ router.get('/', ah(async (req, res) => {
 
     // Human-readable explanation
     const parts = [];
-    if (dirAvg !== null) parts.push(`${m.director} avg ${dirAvg.toFixed(1)} (${dirVals.length} film${dirVals.length !== 1 ? 's' : ''})`);
-    if (decAvg !== null && decade) parts.push(`${decade}s avg ${decAvg.toFixed(1)}`);
+    if (m.letterboxd_rating != null && rawLbw > 0) {
+      parts.push(`LB ${m.letterboxd_rating.toFixed(1)} ★`);
+    }
+    if (dirAvg !== null && rawDw > 0) {
+      parts.push(`${m.director} avg ${dirAvg.toFixed(1)} (${dirVals.length} film${dirVals.length !== 1 ? 's' : ''})`);
+    } else if (m.director && rawDw > 0) {
+      parts.push(`${m.director} (debut)`);
+    }
+    if (decAvg !== null && decade && rawEw > 0) {
+      parts.push(`${decade}s avg ${decAvg.toFixed(1)}`);
+    }
     if (haloBoost > 0) {
       const filmText = priorUniqueFilms > 1 ? `${priorUniqueFilms} masterworks` : '1 masterwork';
       parts.push(`Top 10 boost +${haloBoost.toFixed(2)} (${filmText})`);
     }
-    if (actualScore !== null) parts.push(`${voterCount} vote${voterCount > 1 ? 's' : ''} so far`);
+    if (actualScore !== null) {
+      parts.push(`${voterCount} vote${voterCount > 1 ? 's' : ''} so far`);
+    }
     const explanation = parts.join(' · ') || null;
 
     return {
@@ -199,8 +209,9 @@ router.get('/', ah(async (req, res) => {
 router.get('/accuracy', ah(async (req, res) => {
   const minVoters = Math.max(2, parseInt(req.query.minVoters) || 2);
   const minDirFilms = Math.max(1, parseInt(req.query.minDirFilms) || 2);
-  const dw = 0.5;
-  const ew = 0.5;
+  const dw = parseFloat(req.query.dw !== undefined ? req.query.dw : 0.35);
+  const lbw = parseFloat(req.query.lbw !== undefined ? req.query.lbw : 0.40);
+  const ew = parseFloat(req.query.ew !== undefined ? req.query.ew : 0.25);
   const twRate = 0.15; // default 1.0x boost
 
   const [allMovies, allRatings, allTop3] = await Promise.all([
@@ -290,14 +301,18 @@ router.get('/accuracy', ah(async (req, res) => {
       ? otherDecFilms.reduce((a, b) => a + b.score, 0) / otherDecFilms.length
       : null;
 
-    // Base prior
+    const lbScore = (m.letterboxd_rating != null && !isNaN(m.letterboxd_rating)) ? m.letterboxd_rating * 2.0 : null;
+
+    // Base prior from dynamically weighted components (Director, Letterboxd, Decade Era)
+    const components = [];
+    if (dirAvg !== null && dw > 0)   components.push({ value: dirAvg,  weight: dw });
+    if (lbScore !== null && lbw > 0) components.push({ value: lbScore, weight: lbw });
+    if (decAvg !== null && ew > 0)   components.push({ value: decAvg,  weight: ew });
+
     let base = null;
-    if (dirAvg !== null && decAvg !== null) {
-      base = dirAvg * dw + decAvg * ew;
-    } else if (dirAvg !== null) {
-      base = dirAvg;
-    } else if (decAvg !== null) {
-      base = decAvg;
+    const totalActiveWeight = components.reduce((acc, c) => acc + c.weight, 0);
+    if (totalActiveWeight > 0) {
+      base = components.reduce((acc, c) => acc + c.value * c.weight, 0) / totalActiveWeight;
     }
 
     // Halo boost from director's OTHER films in top 10
@@ -363,6 +378,8 @@ router.get('/accuracy', ah(async (req, res) => {
       watchlist: m.watchlist === 1,
       imdb_id: m.imdb_id ?? null,
       imdb_rating: m.imdb_rating ?? null,
+      letterboxd_rating: m.letterboxd_rating ?? null,
+      lbScore: lbScore !== null ? Math.round(lbScore * 100) / 100 : null,
       actualScore: Math.round(actualScore * 100) / 100,
       predictedPrior: Math.round(prior * 100) / 100,
       diff,
@@ -375,6 +392,12 @@ router.get('/accuracy', ah(async (req, res) => {
       hasDirectorTrack: dirAvg !== null,
       otherDirFilmsCount: otherDirFilms.length,
       otherDecFilmsCount: otherDecFilms.length,
+      activeWeights: {
+        dw: dirAvg !== null ? dw : 0,
+        lbw: lbScore !== null ? lbw : 0,
+        ew: decAvg !== null ? ew : 0,
+        total: totalActiveWeight
+      },
     });
   }
 
