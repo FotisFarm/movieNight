@@ -86,7 +86,9 @@ MovieNights/
 │   ├── seed.js               # One-time seeding from data/seed.json (carries runtime)
 │   ├── omdb.js               # OMDb helpers: lookupImdb, searchImdb (fuzzy), getImdbById, extractImdbId
 │   ├── tmdb.js               # TMDB helpers: poster lookup by imdb_id, runtime fetch
+│   ├── letterboxd.js         # Letterboxd scraper & JSON-LD parser via /imdb/:imdbId/
 │   ├── initial-runtimes.json # Bundled duration dataset (1,102 films) for offline/Docker backfill
+│   ├── initial-letterboxd.json # Bundled Letterboxd ratings dataset (1,102 films) for offline/Docker backfill
 │   ├── db-readonly.js        # Second libSQL client (ideally a read-only Turso token) + runReadOnlySql
 │   ├── llm.js                # Anthropic text-to-SQL tool runner (claude-sonnet-5)
 │   ├── data/
@@ -105,6 +107,7 @@ MovieNights/
 │       ├── fast-forward-dev-db.js # Fast-forwards dev Render Turso DB from latest backups snapshot
 │       ├── backfill-runtimes.js# TMDB/OMDb duration backfill tool
 │       ├── backfill-posters.js # Fills movies.poster_path from TMDB (re-runnable)
+│       ├── backfill-letterboxd.js # Letterboxd rating backfill tool
 │       ├── backfill-rating-history.js  # Reconstructs history from the backups branch — see [Backfill](#backfill--serverscriptsbackfill-rating-historyjs)
 │       ├── fix-imdb-ids.js     # Repairs imdb_ids pointing at making-ofs/trailers
 │       ├── poster-census.js    # Poster coverage report (OMDb vs TMDB), no DB needed
@@ -124,7 +127,7 @@ MovieNights/
 ## Database schema
 ```sql
 movies  (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts,
-         imdb_id TEXT, imdb_rating REAL, poster_path TEXT, runtime INTEGER)
+         imdb_id TEXT, imdb_rating REAL, letterboxd_rating REAL, poster_path TEXT, runtime INTEGER)
 ratings (id, movie_id → movies, voter TEXT, score REAL, comment TEXT,  UNIQUE(movie_id, voter))
 top3    (id, movie_id → movies, voter TEXT, rank INT CHECK(rank>=1 AND rank<=10),  UNIQUE(movie_id, voter))  -- legacy name; now Top 10
 watchlist_votes (id, movie_id → movies, voter TEXT,  UNIQUE(movie_id, voter))
@@ -137,6 +140,7 @@ list_slug_aliases (slug TEXT PRIMARY KEY, list_id → lists)       -- slugs a li
 ```
 Seeding is idempotent — skips if `COUNT(*) > 0` in movies. `seed.json` is regenerated nightly from production, so a fresh clone seeds a local DB with **current** data, not the original 834-film spreadsheet import — see [DB backup & seed refresh](#db-backup--seed-refresh).
 `imdb_id` / `imdb_rating` are populated from OMDb on add and shown in the UI — see [IMDb integration](#imdb-integration).
+`letterboxd_rating` is scraped from Letterboxd via `imdb_id` on add/edit and backfilled from `initial-letterboxd.json` — see [Letterboxd integration](#letterboxd-integration).
 `poster_path` is a **TMDB** path (`/abc.jpg`), not a URL — see [Posters (TMDB)](#posters-tmdb).
 `runtime` is the film duration in minutes (from TMDB/OMDb), formatted across UI as `1h 45m`.
 `movie_scores` permanent view includes `poster_path` and `runtime`.
@@ -231,36 +235,46 @@ Each row has: Top 10 Films · Top Directors · Top Years · Top Decades
 Clicking a **director** or **year** row opens `DirectorYearModal` — shows all matching films as MovieCards (list view, sorted by the clicked panel's `scoreKey` desc) plus the mean score (same `scoreKey`) of films with ≥2 votes. The `scoreKey` and `mnOnly` flag travel from ROWS config → `RankingSection` prop → click callback → `selectedLabel` state → `DirectorYearModal` prop. Clicking a film card within opens the standard `MovieModal`.
 
 ## Recommendations ("Picks") — `/api/recommendations`
-Surfaces films with ≤2 votes, ranked by predicted group enjoyment using a Bayesian blend.
+Surfaces films with <= 2 votes (configurable via `maxVoters`, default 2), ranked by predicted group enjoyment using a Bayesian blend. Fully-rated films are excluded.
 **Full walkthrough with worked examples: [`PICKS.md`](PICKS.md).**
 
 ```
 confidence     = voterCount / GROUP_SIZE
-basePrior      = dirAvg * dw + decAvg * ew
+components     = [dirAvg * dw, lbScore * lbw, decAvg * ew] (active components only)
+basePrior      = sum(component values * weights) / sum(active weights)
 haloBoost      = min(0.75, priorPoints * breadthMultiplier * twRate)
 prior          = min(10.0, basePrior + haloBoost)
 predictedScore = confidence * actualFairBoosted + (1 - confidence) * prior
 ```
 
-- Default weights: `dw=0.50, ew=0.50, tw=0.10` (Director and Era normalized 50/50, Top 10 Halo Boost default 1.0× scaling rate)
-- `dirAvg`: mean `fairBoosted` of all rated films by the same director (requires `minDirFilms`, default ≥2)
-- `decAvg`: mean `fairBoosted` of all rated films from the same decade
-- **Additive Top 10 Halo Boost with Catalog Breadth Multiplier**:
-  $$\text{breadthMultiplier} = 1.0 + 0.20 \times \max(0, \text{priorUniqueFilms} - 1)$$
+- **Default weights**: `dw = 0.35` (Director), `lbw = 0.40` (Letterboxd), `ew = 0.25` (Decade Era), `tw = 0.10` (Top 10 Halo Boost rate).
+- **Letterboxd Score (`lbScore`)**: Letterboxd community rating (0.5–5.0 scale) multiplied by 2.0 to normalize to a 10-point scale. Acts as an objective quality anchor preventing obscure/low-rated films from riding high solely on broad decade averages.
+- **Director Track (`dirAvg`)**: mean `fairBoosted` of all rated films by the same director (requires `minDirFilms`, default >= 2).
+- **Decade Track (`decAvg`)**: mean `fairBoosted` of all rated films from the same decade.
+- **Top 10 Halo Boost with Catalog Breadth Multiplier**:
+  ```
+  breadthMultiplier = 1.0 + 0.20 * max(0, priorUniqueFilms - 1)
+  haloBoost = min(0.75, priorPoints * breadthMultiplier * twRate)
+  ```
   Rewards consistent master directors over one-hit wonders: +20% bonus boost for 2 distinct masterworks, +40% for 3, etc. Capped at `+0.75`. Excludes the film's own pick to avoid double counting.
-- Films with 0 votes use 100% prior; films with 2 votes use 40% actual + 60% prior
-- Bias sliders + max-voters send `?dw=&ew=&tw=&maxVoters=&minDirFilms=` to the API (debounced 400ms)
-- Human-readable explanation returned with every pick (`Sergio Leone avg 9.8 (2 films) · 1950s avg 8.5 · Top 10 boost +0.40 (2 masterworks)`)
+- Films with 0 votes use 100% prior; films with 2 votes use 40% actual + 60% prior.
+- Query controls: `?dw=&lbw=&ew=&tw=&maxVoters=&minDirFilms=&minLb=&gems=` (debounced 400ms).
+  - `minLb`: filters candidate films with Letterboxd rating >= threshold.
+  - `gems`: "Hidden Gems" mode prioritizing films with high Letterboxd ratings (>= 3.8 / 7.6) whose directors have <= 1 rated films in the club catalog.
+- Human-readable explanation returned with every pick (e.g. `LB 4.1 ★ · Sergio Leone avg 9.8 (2 films) · 1960s avg 8.5 · Top 10 boost +0.40 (2 masterworks)`).
 
 ## Prediction Accuracy & Retrospective — `/predictions`
 Backtests the Bayesian prediction model against past movie nights using **Leave-One-Out Cross-Validation (LOOCV)** with zero data leakage.
-- **Strict Isolation**: When evaluating film $X$, film $X$ is completely excluded from its director's track record, its decade's average, and voter Top 10 lists. If the director only directed film $X$, director track is null.
-- **Summary Metrics**: Mean Absolute Error (MAE), MAE with director track, Bullseyes count/pct ($|\Delta| \le 0.50$), and Within 1.0 Star count/pct ($|\Delta| \le 1.0$).
+- **Strict Isolation**: When evaluating film X, film X is completely excluded from its director's track record, its decade's average, and voter Top 10 lists. If the director only directed film X, director track is null.
+- **Letterboxd Benchmark**: Integrates the Letterboxd community score into the LOOCV prior calculation alongside the isolated director and decade priors.
+- **Summary Metrics**: Mean Absolute Error (MAE), MAE with director track, Bullseyes count/pct (|Delta| <= 0.50), and Within 1.0 Star count/pct (|Delta| <= 1.0).
 - **Categorization**:
-  - 🎯 **Bullseye**: $|\Delta| \le 0.5$ stars
-  - 🌟 **Pleasantly Surprised (Sleeper Hit)**: $\Delta \ge +1.0$ (film outperformed its historical prior)
-  - 📉 **Underperformed (Pedigree Flop)**: $\Delta \le -1.0$ (prestige director whose film flopped with the group)
-- **PredictionModal**: Interactive drill-down modal showing dual rankings (actual vs prior), voter rating breakdown, prior formula components, and director/era stats.
+  - 🎯 **Bullseye**: |Delta| <= 0.5 stars
+  - 🌟 **Pleasantly Surprised (Sleeper Hit)**: Delta >= +1.0 (film outperformed its historical prior)
+  - 📉 **Underperformed (Pedigree Flop)**: Delta <= -1.0 (prestige director whose film flopped with the group)
+  - ▲ **Beat Prior**: +0.5 < Delta < +1.0
+  - ▼ **Below Prior**: -1.0 < Delta < -0.5
+- **PredictionModal**: Interactive drill-down modal showing dual rankings (actual vs prior), voter rating breakdown, prior formula components (director, Letterboxd, decade), and director/era stats.
 
 ## Tonight's Movie Night — `/session`
 Real-time session planner and spinning roulette wheel for the specific subset of friends present on the couch tonight.
@@ -272,12 +286,18 @@ Real-time session planner and spinning roulette wheel for the specific subset of
   - `fresh`: 100% unseen by all attendees present (0 ratings among room attendees).
   - `share`: Shared favorites — at least 1 attendee has rated it, but at least 1 attendee hasn't seen it yet. Blends real ratings for voters who saw it with predicted ratings for those who haven't. No penalty.
   - `all`: All films allowed, including unanimous re-watches.
-- **Re-watch Novelty Discount**: When in `all` mode and 100% of attendees have already seen the film (`isAllSeen`), a flat `-0.60` discount is applied so 10/10 classics don't crowd out fresh discoveries. Novelty tiebreak prioritizes unseen/partially-seen films over all-seen films.
+- **Attendee Expected Score**:
+  - Rated: Uses the rater's exact historical score.
+  - Unrated: Blends voter's director average (55%) and decade average (45%), adds Top 10 director halo boost (+0.40) and personal watchlist upvote (+0.30).
 - **Anti-Veto Consensus Formula**:
-  $$\text{sessionScore} = (70\% \times \text{Avg}) + (30\% \times \text{Worst-Case}) - (8\% \times \text{Spread})$$
-  Floor protection (30% weight on lowest predicted attendee) and spread penalty prevent polarizing films from winning.
-- **Watchlist Signal**: Unanimous room watchlist interest adds `+0.35` bonus; partial interest adds pro-rated `(attendeeWl / total) * 0.20`.
-- **Classification Badges**: `Crowd Pleaser` ($\text{Spread} \le 0.8$) vs `Wildcard` ($\text{Spread} \ge 1.6$).
+  ```
+  sessionScore = (70% * Avg) + (30% * Worst-Case) - (8% * Spread) + watchlistBonus - rewatchDiscount
+  ```
+  - Floor protection (30% weight on lowest predicted attendee) and spread penalty prevent polarizing films from winning.
+  - **Watchlist Signal**: Unanimous room watchlist interest adds `+0.35` bonus; partial interest adds pro-rated `(attendeeWl / total) * 0.20`.
+  - **Re-watch Novelty Discount**: When in `all` mode and 100% of attendees have already seen the film (`isAllSeen`), a flat `-0.60` discount is applied so 10/10 classics don't crowd out fresh discoveries. Novelty tiebreak prioritizes unseen/partially-seen films over all-seen films.
+- **Classification Badges**: `Crowd Pleaser` (Spread <= 0.8) vs `Wildcard` (Spread >= 1.6).
+- **Note on Letterboxd**: Letterboxd rating is currently not factored into the `/api/session/contenders` formula, which relies purely on attendee-specific history and consensus.
 - **Canvas Spinning Wheel**: Top contenders loaded into a responsive HTML5 canvas roulette wheel with Web Audio API sound synthesis (ticks and victory fanfare), confetti particle animation, and "remove & respin" capabilities. Responsive layout centered on desktop and mobile.
 
 ## Movie Durations (`runtime`)
@@ -428,6 +448,14 @@ Two safety rules, both learned the hard way from the first dry run:
 2. **Containment title matching needs a 0.6 length ratio.** Bare containment matched "Seven" inside "Seven Sundays" and would have overwritten *Se7en*'s perfectly good id with a different film.
 
 Nothing is written without `--apply`. 12 films were repaired this way (`imdb_id`, `imdb_rating` and `poster_path` all rewritten); the rest print for manual fixing through the `MovieModal` IMDb editor.
+
+## Letterboxd integration
+- `movies.letterboxd_rating` stores the Letterboxd community aggregate rating (e.g. `4.12` on a 5-star scale).
+- **Resolver** (`server/letterboxd.js`): `fetchLetterboxdRating(imdbId)` requests `https://letterboxd.com/imdb/:imdbId/` with redirect following, extracts the JSON-LD `<script type="application/ld+json">`, and parses `aggregateRating.ratingValue`.
+- **Bundled seed dataset**: `server/initial-letterboxd.json` (and `server/data/initial-letterboxd.json`) provides offline fallback ratings for all 1,102 catalogue films, auto-backfilled on boot in `server/db.js` so Docker volume mounts never shadow it.
+- **CLI Script**: `server/scripts/backfill-letterboxd.js` for manual or batch backfilling.
+- **Card Badge**: Rendered as a green pill (`LB 4.2 ★`) on `MovieCard.jsx` (grid & list view) linking to `https://letterboxd.com/imdb/:imdbId/`. In mobile list view, anchored to the far right.
+- **Model Integration**: Scaled by 2.0 (`lbScore = letterboxd_rating * 2.0`) and blended into `/api/recommendations` and `/api/recommendations/accuracy` as an objective quality anchor. Currently not used in `/api/session/contenders`.
 
 ## Chatbot — "HAL 9000" (natural-language Q&A)
 `/chat` page lets any logged-in voter ask free-form questions about the data ("which director do we rate highest?", "what should I watch from the watchlist?"). **Read-only** — it can query the DB but never mutate it. The chatbot is branded as **HAL 9000**.

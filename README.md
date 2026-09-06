@@ -11,13 +11,13 @@ A private web app for a group of friends to rate films, track Movie Night sessio
 - **Rankings** — four leaderboard views (Fair Score / Group Score × All Films / Movie Nights only), each with Top 10 Films, Top Directors, and Top Years panels. Click a director or year to see all their films and their mean score.
 - **Watchlist** — films the group wants to watch next, with per-voter voting and a "Most Wanted" ranking.
 - **Lists** — free-form named lists ("Christmas 2026", "Noir night") that live alongside the watchlist and touch no film flags. Drag to reorder; anyone can add films, only the creator can rename or delete.
-- **Picks** (`/recommendations`) — unrated or partially-rated films ranked by predicted group enjoyment, using a Bayesian blend of director history, decade averages, and Top 10 bonuses with a Catalog Breadth Multiplier. Interactive bias weight sliders.
-- **Prediction Accuracy** (`/predictions`) — retrospective report card testing the prediction engine against past movie nights using Leave-One-Out Cross-Validation (LOOCV). Tracks Mean Absolute Error (MAE), Bullseyes, Sleeper Hits, and Pedigree Flops.
+- **Picks** (`/recommendations`) — unrated or partially-rated films ranked by predicted group enjoyment, using a Bayesian blend of director history, Letterboxd community ratings, decade averages, and Top 10 bonuses with a Catalog Breadth Multiplier. Includes interactive bias weight sliders, a "Hidden Gems" filter, and mobile-optimized filter chips and controls.
+- **Prediction Accuracy** (`/predictions`) — retrospective report card testing the prediction engine against past movie nights using Leave-One-Out Cross-Validation (LOOCV) with zero data leakage. Benchmarks priors (including Letterboxd) against actual reception, tracking Mean Absolute Error (MAE), Bullseyes, Sleeper Hits, and Pedigree Flops.
 - **Controversy** — films ranked by score standard deviation: green (consensus) → gold → red (polarising).
 - **Stats** — per-voter overview (films rated, mean score, favourite director/decade, score distribution) with a drill-down modal, plus everyone's Top 10.
 - **Compare** — head-to-head between any two films, or any two voters.
 - **Rating history** — every score change and Top 10 movement is recorded. Hover a voter pill on any film card for a stepped graph of how that rating moved over time.
-- **Posters, Runtimes, and IMDb data** — posters from TMDB, durations in minutes, IDs and ratings from OMDb, all resolved automatically and formatted cleanly.
+- **Posters, Runtimes, IMDb, and Letterboxd data** — posters from TMDB, durations in minutes, IDs and ratings from OMDb, and Letterboxd community ratings, all resolved automatically, bundled offline for container resilience, and formatted cleanly with direct links.
 - **Themes** — ten film-inspired colour schemes (The Matrix, Vertigo, Blade Runner, The Godfather, …) selectable from the header and remembered per browser.
 
 ---
@@ -29,6 +29,7 @@ A private web app for a group of friends to rate films, track Movie Night sessio
 | Fair Score | `sum of ratings / number of raters` + Top 10 boost | Default card score |
 | Group Score | `sum of ratings / group size (5)` + Top 10 boost | Penalises films not seen by everyone |
 | Top 10 boost | `(11 − rank) / 10` per voter — #1 = +1.0, #2 = +0.9 … #10 = +0.1 | Added to both scores, capped at 10 |
+| Picks Prior | `sum(component * weight) / sum(weights)` + Halo Boost | Quality prior blending Director, Letterboxd, Era |
 | Tonight Consensus | `(70% × Avg) + (30% × Worst) - (8% × Spread) + WL bonus - Re-watch discount` | Ranked contenders for the tonight wheel |
 
 Films need at least 2 ratings before an aggregate score is shown.
