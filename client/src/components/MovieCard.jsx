@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import RankIcon from './RankIcon';
 import WatchlistBadge from './WatchlistBadge';
-import { fmtScore10 as fmt, scoreClass, posterUrl } from '../utils';
+import { fmtScore10 as fmt, scoreClass, posterUrl, formatRuntime } from '../utils';
 import { useAppConfig } from '../AppConfigContext';
 import {
   useRatingHistory, useAnchor, useHoverIntent, HistoryPopover, HistoryWindow,
@@ -99,7 +99,7 @@ function Poster({ path, title, size }) {
 
 export default function MovieCard({ movie, onClick, listView = false, scoreMode = 'fair', onWatchlistToggle }) {
   const { voters, minVoters } = useAppConfig();
-  const { id, title, director, year, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, poster_path } = movie;
+  const { id, title, director, year, runtime, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, poster_path } = movie;
 
   const hasScore = voterCount >= minVoters;
   const displayScore = hasScore
@@ -146,6 +146,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
           <p className="card-meta">
             <span className="card-director">{director}</span>
             {year ? <> · <span className="card-year">{year}</span></> : null}
+            {runtime ? <> · <span className="card-runtime">{formatRuntime(runtime)}</span></> : null}
           </p>
         </div>
 
@@ -185,6 +186,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
         <p className="card-meta">
           <span className="card-director">{director}</span>
           {year ? <> · <span className="card-year">{year}</span></> : null}
+          {runtime ? <> · <span className="card-runtime">{formatRuntime(runtime)}</span></> : null}
         </p>
 
         {hasBadges && (

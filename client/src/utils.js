@@ -40,3 +40,13 @@ export function extractImdbId(input) {
   const match = String(input || '').match(/tt\d{6,}/i);
   return match ? match[0].toLowerCase() : '';
 }
+
+// Formats runtime in minutes to human-readable duration, e.g. 142 -> "2h 22m", 85 -> "1h 25m", 45 -> "45m"
+export function formatRuntime(minutes) {
+  if (!minutes || typeof minutes !== 'number' || minutes <= 0) return null;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}

@@ -10,6 +10,7 @@ import Controversy from './pages/Controversy';
 import Stats from './pages/Stats';
 import Compare from './pages/Compare';
 import Lists from './pages/Lists';
+import Session from './pages/Session';
 import Chat from './pages/Chat';
 import Login from './pages/Login';
 import { api } from './api';
@@ -74,6 +75,7 @@ function AppInner() {
           <Route path="/films" element={<Films />} />
           <Route path="/rankings" element={<Rankings />} />
           <Route path="/watchlist" element={<Watchlist voter={voter} />} />
+          <Route path="/session" element={<Session voter={voter} />} />
           <Route path="/recommendations" element={<Recommendations />} />
           <Route path="/predictions" element={<Predictions />} />
           <Route path="/controversy" element={<Controversy />} />

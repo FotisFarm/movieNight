@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
 import { useAppConfig } from '../AppConfigContext';
-import { fmtScore10 as fmt, scoreClass, extractImdbId, posterUrl } from '../utils';
+import { fmtScore10 as fmt, scoreClass, extractImdbId, posterUrl, formatRuntime } from '../utils';
 import ReorderTop10Dialog from './ReorderTop10Dialog';
 import './MovieModal.css';
 
@@ -54,6 +54,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   const [editTitle,    setEditTitle]    = useState('');
   const [editDirector, setEditDirector] = useState('');
   const [editYear,     setEditYear]     = useState('');
+  const [editRuntime,  setEditRuntime]  = useState('');
   const [editImdbId,   setEditImdbId]   = useState('');
   const [imdbCandidates, setImdbCandidates] = useState(null); // null = not searched
   const [imdbBusy,     setImdbBusy]     = useState(false);
@@ -135,6 +136,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
       setEditTitle(m.title || '');
       setEditDirector(m.director || '');
       setEditYear(m.year || '');
+      setEditRuntime(m.runtime != null ? String(m.runtime) : '');
       setEditImdbId(m.imdb_id || '');
       setImdbCandidates(null);
       setImdbDetail(null);
@@ -241,6 +243,10 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
       comments: commentPayload,
       top3: top3Payload,
     };
+    if (editRuntime !== '') {
+      const rInt = parseInt(editRuntime, 10);
+      payload.runtime = (!isNaN(rInt) && rInt > 0) ? rInt : null;
+    }
     // Only send imdb_id when it actually changed — avoids a needless OMDb re-fetch on every save.
     // Compare the extracted id so pasting a URL for the same film is not treated as a change.
     const cleanId = extractImdbId(editImdbId);
@@ -288,13 +294,18 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                 <input className="input" placeholder="Title" value={editTitle} onChange={e => setEditTitle(e.target.value)} />
                 <div style={{ display: 'flex', gap: 6 }}>
                   <input className="input" placeholder="Director" value={editDirector} onChange={e => setEditDirector(e.target.value)} />
-                  <input className="input" placeholder="Year" value={editYear} onChange={e => setEditYear(e.target.value)} style={{ maxWidth: 80 }} />
+                  <input className="input" placeholder="Year" value={editYear} onChange={e => setEditYear(e.target.value)} style={{ maxWidth: 75 }} />
+                  <input className="input" placeholder="Mins" type="number" value={editRuntime} onChange={e => setEditRuntime(e.target.value)} style={{ maxWidth: 75 }} title="Duration (minutes)" />
                 </div>
               </div>
             ) : (
               <>
                 <div className="modal-title">{editTitle}</div>
-                <div className="modal-sub">{editDirector}{editYear ? ` · ${editYear}` : ''}</div>
+                <div className="modal-sub">
+                  {editDirector}
+                  {editYear ? ` · ${editYear}` : ''}
+                  {movie.runtime ? ` · ${formatRuntime(movie.runtime)}` : ''}
+                </div>
               </>
             )}
           </div>

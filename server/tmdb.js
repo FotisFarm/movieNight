@@ -93,4 +93,37 @@ async function lookupPosterPath(imdbId, title, year) {
   return first?.posterPath || null;
 }
 
-module.exports = { findByImdbId, searchMovie, getExternalIds, lookupPosterPath };
+// Fetches full details including runtime and genres from TMDB
+async function getMovieDetails(tmdbId) {
+  if (!tmdbId) return null;
+  try {
+    const data = await tmdbFetch(`/movie/${tmdbId}`);
+    return {
+      runtime: typeof data?.runtime === 'number' && data.runtime > 0 ? data.runtime : null,
+      genres: (data?.genres || []).map(g => g.name),
+      overview: data?.overview || '',
+    };
+  } catch {
+    return null;
+  }
+}
+
+// Convenience helper to resolve runtime in minutes from TMDB
+async function lookupMovieRuntime(imdbId, title, year) {
+  if (imdbId) {
+    const byId = await findByImdbId(imdbId);
+    if (byId?.tmdbId) {
+      const details = await getMovieDetails(byId.tmdbId);
+      if (details?.runtime) return details.runtime;
+    }
+  }
+  if (!title) return null;
+  const [first] = await searchMovie(title, year);
+  if (first?.tmdbId) {
+    const details = await getMovieDetails(first.tmdbId);
+    return details?.runtime || null;
+  }
+  return null;
+}
+
+module.exports = { findByImdbId, searchMovie, getExternalIds, lookupPosterPath, getMovieDetails, lookupMovieRuntime };

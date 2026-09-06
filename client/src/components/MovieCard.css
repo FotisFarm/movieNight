@@ -127,6 +127,7 @@
 
 .card-director { color: var(--text2); }
 .card-year     { color: var(--text); font-weight: 600; }
+.card-runtime  { color: var(--text3); font-weight: 500; }
 
 .card-tokens { font-size: 12px; color: var(--text3); }
 

@@ -172,6 +172,7 @@ export default function Header({ voter, onLogout }) {
 
   // Active hub detection
   const isRankingsHubActive = (
+    pathname.startsWith('/session') ||
     pathname.startsWith('/rankings') ||
     pathname.startsWith('/recommendations') ||
     pathname.startsWith('/predictions') ||
@@ -251,6 +252,10 @@ export default function Header({ voter, onLogout }) {
               Watchlist
             </NavLink>
 
+            <NavLink to="/session" className={navClass}>
+              🍿 Tonight
+            </NavLink>
+
             {/* Rankings Hub Dropdown */}
             <div
               className={`nav-dropdown ${rankingsOpen ? 'open' : ''}`}
@@ -275,6 +280,17 @@ export default function Header({ voter, onLogout }) {
                   onMouseEnter={handleRankingsEnter}
                   onMouseLeave={handleRankingsLeave}
                 >
+                  <NavLink
+                    to="/session"
+                    className={({ isActive }) => isActive ? 'nav-dropdown-item active' : 'nav-dropdown-item'}
+                    onClick={() => setRankingsOpen(false)}
+                  >
+                    <span className="nav-item-icon">🍿</span>
+                    <div className="nav-item-text">
+                      <span className="nav-item-title">Tonight's Session</span>
+                      <span className="nav-item-desc">Consensus Planner & Spin Wheel</span>
+                    </div>
+                  </NavLink>
                   <NavLink
                     to="/rankings"
                     end
@@ -474,6 +490,19 @@ export default function Header({ voter, onLogout }) {
             </div>
 
             <div className="hub-sheet-body">
+              <NavLink
+                to="/session"
+                className={({ isActive }) => isActive ? 'hub-card active' : 'hub-card'}
+                onClick={() => setMobileRankingsOpen(false)}
+              >
+                <div className="hub-card-icon">🍿</div>
+                <div className="hub-card-text">
+                  <div className="hub-card-title">Tonight's Session</div>
+                  <div className="hub-card-desc">Consensus Planner & Spin Wheel</div>
+                </div>
+                {pathname.startsWith('/session') && <span className="hub-card-check">✓</span>}
+              </NavLink>
+
               <NavLink
                 to="/rankings"
                 end

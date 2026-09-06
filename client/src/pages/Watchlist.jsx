@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor,
   useSensor, useSensors, DragOverlay,
@@ -215,7 +216,12 @@ export default function Watchlist({ voter }) {
   return (
     <div>
       <div className="wl-header">
-        <h2 className="wl-title">Watchlist <span>{sortedMovies.length}</span></h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <h2 className="wl-title">Watchlist <span>{sortedMovies.length}</span></h2>
+          <Link to="/session" className="btn btn-ghost btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span>🍿</span> Plan Tonight's Session
+          </Link>
+        </div>
         {!isAdmin && (
           <p className="wl-desc">You have used <strong>{myVoteCount}</strong> of 3 votes.</p>
         )}

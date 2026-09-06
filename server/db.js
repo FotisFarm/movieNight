@@ -168,6 +168,8 @@ async function init() {
   // TMDB poster path (e.g. '/3bhkrj58Vtu7enYsRolD1fZdja1.jpg'), not a full
   // URL — the width is chosen at render time. See server/tmdb.js.
   try { await client.execute('ALTER TABLE movies ADD COLUMN poster_path TEXT DEFAULT NULL'); } catch (_) {}
+  // Film duration in minutes (from TMDB/OMDb)
+  try { await client.execute('ALTER TABLE movies ADD COLUMN runtime INTEGER DEFAULT NULL'); } catch (_) {}
 
   // Readable list URLs (/lists/christougenna-2026). The column is added
   // nullable — SQLite can't add a UNIQUE column — then every list without one
