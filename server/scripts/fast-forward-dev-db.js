@@ -113,8 +113,35 @@ async function main() {
     const masked = authToken.length > 10
       ? `${authToken.slice(0, 6)}...${authToken.slice(-4)} (length: ${authToken.length} chars)`
       : `*** (length: ${authToken.length} chars)`;
-    console.log(`📡 Connecting to remote DB: ${targetUrl}`);
-    console.log(`🔑 Using Auth Token: ${masked}`);
+    console.log(`📡 Target DB: ${targetUrl}`);
+    console.log(`🔑 Auth Token: ${masked}`);
+
+    // Quick raw HTTP probe to reveal the exact Turso error body if any
+    try {
+      const httpsUrl = targetUrl.replace(/^libsql:\/\//, 'https://');
+      const probeResp = await fetch(`${httpsUrl}/v2/pipeline`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requests: [
+            { type: 'execute', stmt: { sql: 'SELECT 1' } },
+            { type: 'close' }
+          ]
+        })
+      });
+      const probeBody = await probeResp.text();
+      console.log(`📡 Raw probe HTTP status: ${probeResp.status}`);
+      if (!probeResp.ok) {
+        console.error(`❌ Raw Turso HTTP error response:\n${probeBody}`);
+      } else {
+        console.log(`✅ Raw probe successful: endpoint is healthy and authenticated!`);
+      }
+    } catch (probeErr) {
+      console.warn(`⚠️ Raw probe fetch error:`, probeErr.message);
+    }
   } else {
     targetUrl = `file:${localDbPath}`;
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
