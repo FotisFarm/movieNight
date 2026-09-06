@@ -1,0 +1,39 @@
+name: Sync Dev DB
+
+# Fast-forwards the Render dev Turso database (`movies-dev`) with the latest
+# production snapshot from the `backups` branch.
+#
+# Trigger manually from GitHub: Actions -> Sync Dev DB -> Run workflow.
+#
+# Required repo secrets (add under Settings -> Secrets and variables -> Actions):
+#   TURSO_DEV_DATABASE_URL: libsql://movies-dev-xxxx.turso.io
+#   TURSO_DEV_AUTH_TOKEN:   (write token for movies-dev database)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: Sync Production Snapshot to Dev Database
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install server dependencies
+        working-directory: server
+        run: npm ci --omit=dev
+
+      - name: Fast-forward Dev Database
+        working-directory: server
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DEV_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_DEV_AUTH_TOKEN }}
+        run: node scripts/fast-forward-dev-db.js --remote

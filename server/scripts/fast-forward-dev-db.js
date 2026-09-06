@@ -15,16 +15,28 @@ async function main() {
 
   // 1. Fetch latest backups branch from origin
   console.log('📦 Fetching latest snapshots from origin/backups...');
+  let backupRef = 'origin/backups';
   try {
-    execSync('git fetch origin backups', { stdio: 'pipe' });
+    execSync('git fetch origin backups:refs/remotes/origin/backups --force', { stdio: 'pipe' });
   } catch (err) {
-    console.warn('⚠️  Could not fetch origin/backups over network, trying local git cache...');
+    try {
+      execSync('git fetch origin backups', { stdio: 'pipe' });
+      backupRef = 'FETCH_HEAD';
+    } catch (_) {
+      console.warn('⚠️  Could not fetch origin/backups over network, trying local git cache...');
+    }
   }
 
   // 2. Identify the latest snapshot file
   let backupFiles = [];
   try {
-    const lsOutput = execSync('git ls-tree origin/backups', { encoding: 'utf8' });
+    let lsOutput;
+    try {
+      lsOutput = execSync(`git ls-tree ${backupRef}`, { encoding: 'utf8' });
+    } catch (_) {
+      lsOutput = execSync('git ls-tree origin/backups', { encoding: 'utf8' });
+      backupRef = 'origin/backups';
+    }
     backupFiles = lsOutput
       .split('\n')
       .filter(line => line.includes('movies_') && line.endsWith('.sql'))
@@ -46,7 +58,7 @@ async function main() {
 
   // 3. Read the SQL content from git
   console.log('⏳ Extracting snapshot contents...');
-  const sqlDump = execSync(`git show origin/backups:${latestFile}`, {
+  const sqlDump = execSync(`git show ${backupRef}:${latestFile}`, {
     encoding: 'utf8',
     maxBuffer: 100 * 1024 * 1024,
   });
