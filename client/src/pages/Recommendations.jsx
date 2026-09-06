@@ -51,6 +51,9 @@ export default function Recommendations() {
   const [maxVoters, setMaxVoters] = useState(DEFAULT_WEIGHTS.maxVoters);
   const [minDirFilms, setMinDirFilms] = useState(() => parseInt(localStorage.getItem('mn_minDirFilms')) || DEFAULT_WEIGHTS.minDirFilms);
   const [unvotedBy, setUnvotedBy] = useState(new Set());
+  const [onePerDirector, setOnePerDirector] = useState(() => {
+    return localStorage.getItem('mn_onePerDirector') === 'true';
+  });
 
   const weightTimer = useRef(null);
 
@@ -75,6 +78,14 @@ export default function Recommendations() {
     });
   }
 
+  function toggleOnePerDirector() {
+    setOnePerDirector(prev => {
+      const next = !prev;
+      localStorage.setItem('mn_onePerDirector', String(next));
+      return next;
+    });
+  }
+
   // Base prior weights (Director + Era = 100%)
   const baseTotal = dw + ew || 1;
   const pDir = Math.round((dw / baseTotal) * 100);
@@ -91,7 +102,7 @@ export default function Recommendations() {
 
   const directors = [...new Set(allFilms.map(f => f.director).filter(Boolean))].sort();
 
-  const filtersActive = Boolean(search || filterMn || filterWl || filterDir || filterYear || unvotedBy.size > 0);
+  const filtersActive = Boolean(search || filterMn || filterWl || filterDir || filterYear || unvotedBy.size > 0 || onePerDirector);
 
   function resetFilters() {
     setSearch('');
@@ -100,6 +111,8 @@ export default function Recommendations() {
     setFilterDir('');
     setFilterYear('');
     setUnvotedBy(new Set());
+    setOnePerDirector(false);
+    localStorage.removeItem('mn_onePerDirector');
   }
 
   const weightsModified = Boolean(
@@ -118,6 +131,7 @@ export default function Recommendations() {
     changeMinDirFilms(DEFAULT_WEIGHTS.minDirFilms);
   }
 
+  const seenDirectors = new Set();
   const films = allFilms.filter(f => {
     if (filterMn  && !f.mn)        return false;
     if (filterWl  && !f.watchlist) return false;
@@ -131,6 +145,13 @@ export default function Recommendations() {
     if (search) {
       const q = search.toLowerCase();
       if (!f.title.toLowerCase().includes(q) && !f.director?.toLowerCase().includes(q)) return false;
+    }
+    if (onePerDirector) {
+      const dirKey = f.director ? f.director.trim().toLowerCase() : null;
+      if (dirKey) {
+        if (seenDirectors.has(dirKey)) return false;
+        seenDirectors.add(dirKey);
+      }
     }
     return true;
   });
@@ -198,6 +219,10 @@ export default function Recommendations() {
             <input type="checkbox" checked={filterWl} onChange={e => setFilterWl(e.target.checked)} />
             Watchlist
           </label>
+          <label className="filter-check filter-check-director" title="Show only the highest predicted film for each director to avoid clustering">
+            <input type="checkbox" checked={onePerDirector} onChange={toggleOnePerDirector} />
+            1 per Director
+          </label>
 
           <div className="filter-sep" />
 
@@ -245,7 +270,9 @@ export default function Recommendations() {
             Reset Filters
           </button>
 
-          <span className="filter-count">{films.length} / {allFilms.length} picks</span>
+          <span className="filter-count">
+            {films.length} / {allFilms.length} picks{onePerDirector ? ' · 1/dir' : ''}
+          </span>
         </div>
       </div>
 

@@ -489,6 +489,34 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
               </>
             )}
 
+            {/* Letterboxd Embed Histogram */}
+            {movie.imdb_id && (
+              <div className="movie-modal-letterboxd-wrap">
+                <div className="modal-section-label section-label" style={{ marginTop: 6, marginBottom: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Letterboxd Ratings</span>
+                  <a
+                    href={`https://letterboxd.com/imdb/${movie.imdb_id}/`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: 11, fontWeight: 400, textTransform: 'none', color: 'var(--text2)' }}
+                  >
+                    Open on Letterboxd ↗
+                  </a>
+                </div>
+                <div className="letterboxd-iframe-container">
+                  <iframe
+                    src={`https://embed.letterboxd.com/imdb/${movie.imdb_id}/embed-histogram/?theme=dark&notitle=true`}
+                    width="100%"
+                    height="100"
+                    frameBorder="0"
+                    scrolling="no"
+                    title={`Letterboxd rating for ${movie.title}`}
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Flags */}
             <div className="modal-section-label section-label" style={{ marginTop: 6 }}>Flags</div>
             <div className="flags-row">

@@ -146,6 +146,25 @@ export default function AddMovieModal({ onClose, onAdded }) {
               <label style={{ display: 'block', marginBottom: 6 }}>Year *</label>
               <input className="input" placeholder="e.g. 1957" value={year} onChange={e => setYear(e.target.value)} style={{ maxWidth: 140 }} />
             </div>
+            {!suggest && !resolvedImdbId && (
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <input
+                  className="input"
+                  placeholder="Optional: paste IMDb link or ID to preview Letterboxd"
+                  value={manualImdbId}
+                  onChange={e => setManualImdbId(e.target.value)}
+                  style={{ flex: 1, fontSize: 12 }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => onPick({ imdbId: extractImdbId(manualImdbId) })}
+                  disabled={saving || !extractImdbId(manualImdbId)}
+                >
+                  Match
+                </button>
+              </div>
+            )}
           </div>
 
           {resolvedImdbId && (
@@ -153,6 +172,33 @@ export default function AddMovieModal({ onClose, onAdded }) {
               ✓ Matched on IMDb{resolvedDetail
                 ? `: ${resolvedDetail.title}${resolvedDetail.year ? ` (${String(resolvedDetail.year).slice(0, 4)})` : ''}${resolvedDetail.imdbRating != null ? ` · ${resolvedDetail.imdbRating}` : ''}`
                 : ''} — rating will be attached.
+            </div>
+          )}
+
+          {resolvedImdbId && (
+            <div style={{ marginTop: 12 }}>
+              <div className="section-label" style={{ marginBottom: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Letterboxd Ratings</span>
+                <a
+                  href={`https://letterboxd.com/imdb/${resolvedImdbId}/`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: 11, fontWeight: 400, textTransform: 'none', color: 'var(--text2)' }}
+                >
+                  Open on Letterboxd ↗
+                </a>
+              </div>
+              <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--border)', background: '#14181c' }}>
+                <iframe
+                  src={`https://embed.letterboxd.com/imdb/${resolvedImdbId}/embed-histogram/?theme=dark&notitle=true`}
+                  width="100%"
+                  height="100"
+                  frameBorder="0"
+                  scrolling="no"
+                  title="Letterboxd Rating Preview"
+                  style={{ display: 'block', width: '100%', height: 100, border: 'none' }}
+                />
+              </div>
             </div>
           )}
 
