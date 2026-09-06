@@ -2,7 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { rankBonus } = require('../scoring');
 const { lookupImdb, searchImdb, getImdbById, extractImdbId } = require('../omdb');
-const { findByImdbId, lookupPosterPath } = require('../tmdb');
+const { findByImdbId, lookupPosterPath, getMovieDetails, lookupMovieRuntime } = require('../tmdb');
 const ah = require('../asyncHandler');
 const { enrichMovie, enrichMoviesBatch } = require('../enrich');
 
@@ -237,20 +237,30 @@ router.post('/', ah(async (req, res) => {
   // A client-supplied imdb_id (user picked a suggestion) is authoritative; otherwise fall back to title lookup.
   try {
     const imdb = imdb_id ? await getImdbById(imdb_id) : await lookupImdb(title.trim(), year.trim());
-    if (imdb?.imdbId) {
-      await db.run('UPDATE movies SET imdb_id = ?, imdb_rating = ? WHERE id = ?',
-        imdb.imdbId, imdb.imdbRating ?? null, lastInsertRowid);
-    }
-    // Poster comes from TMDB, keyed off whichever IMDb id we settled on; falls
-    // back to a title search when there is none. Separate try/catch so a TMDB
-    // outage can't cost us the IMDb data we just wrote.
+    let runtime = imdb?.runtime || null;
+    let posterPath = null;
     try {
-      const posterPath = await lookupPosterPath(imdb?.imdbId, title.trim(), year.trim());
-      if (posterPath) {
-        await db.run('UPDATE movies SET poster_path = ? WHERE id = ?', posterPath, lastInsertRowid);
+      if (imdb?.imdbId) {
+        const tmdbFound = await findByImdbId(imdb.imdbId);
+        if (tmdbFound?.posterPath) posterPath = tmdbFound.posterPath;
+        if (!runtime && tmdbFound?.tmdbId) {
+          const details = await getMovieDetails(tmdbFound.tmdbId);
+          if (details?.runtime) runtime = details.runtime;
+        }
       }
-    } catch (_) { /* no poster is not a failure */ }
-  } catch (_) { /* film is still added even if OMDb is unavailable */ }
+      if (!posterPath) {
+        posterPath = await lookupPosterPath(imdb?.imdbId, title.trim(), year.trim());
+      }
+      if (!runtime) {
+        runtime = await lookupMovieRuntime(imdb?.imdbId, title.trim(), year.trim());
+      }
+    } catch (_) { /* best effort */ }
+
+    if (imdb?.imdbId || runtime || posterPath) {
+      await db.run('UPDATE movies SET imdb_id = ?, imdb_rating = ?, poster_path = ?, runtime = ? WHERE id = ?',
+        imdb?.imdbId ?? null, imdb?.imdbRating ?? null, posterPath ?? null, runtime ?? null, lastInsertRowid);
+    }
+  } catch (_) { /* film is still added even if metadata lookup is unavailable */ }
 
   res.status(201).json(await enrichMovie(
     await db.get('SELECT * FROM movies WHERE id = ?', lastInsertRowid)
@@ -263,7 +273,7 @@ router.patch('/:id', ah(async (req, res) => {
   const movie = await db.get('SELECT * FROM movies WHERE id = ?', id);
   if (!movie) return res.status(404).json({ error: 'Not found' });
 
-  const { director, title, year, mn, watchlist, cinobo, imdb_id, ratings, comments, top3 } = req.body;
+  const { director, title, year, mn, watchlist, cinobo, imdb_id, runtime, ratings, comments, top3 } = req.body;
   const sessionVoter = req.session.voter;
   const isAdmin = sessionVoter === 'mnAdmin';
 
@@ -274,6 +284,7 @@ router.patch('/:id', ah(async (req, res) => {
   if (mn !== undefined)       updates.mn = mn ? 1 : 0;
   if (watchlist !== undefined) updates.watchlist = watchlist ? 1 : 0;
   if (cinobo !== undefined)   updates.cinobo = cinobo;
+  if (runtime !== undefined)  updates.runtime = (runtime === null || runtime === '') ? null : parseInt(runtime, 10);
   // Setting/changing the IMDb id re-fetches the rating; clearing it wipes both.
   if (imdb_id !== undefined) {
     // The client may paste a full IMDb URL — store the extracted id, never the raw string.
@@ -287,11 +298,16 @@ router.patch('/:id', ah(async (req, res) => {
       updates.imdb_id = cleanId;
       const detail = await getImdbById(cleanId);
       updates.imdb_rating = detail?.imdbRating ?? null;
+      if (detail?.runtime && updates.runtime === undefined) updates.runtime = detail.runtime;
       // Re-point the poster at the film the new id actually names. A TMDB
       // miss clears it rather than leaving the previous film's artwork.
       try {
         const found = await findByImdbId(cleanId);
         updates.poster_path = found?.posterPath ?? null;
+        if (!updates.runtime && found?.tmdbId) {
+          const tmdbDetails = await getMovieDetails(found.tmdbId);
+          if (tmdbDetails?.runtime) updates.runtime = tmdbDetails.runtime;
+        }
       } catch (_) { updates.poster_path = null; }
     }
   }

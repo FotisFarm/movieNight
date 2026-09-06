@@ -168,6 +168,9 @@ async function init() {
   // TMDB poster path (e.g. '/3bhkrj58Vtu7enYsRolD1fZdja1.jpg'), not a full
   // URL — the width is chosen at render time. See server/tmdb.js.
   try { await client.execute('ALTER TABLE movies ADD COLUMN poster_path TEXT DEFAULT NULL'); } catch (_) {}
+  // Film duration in minutes (from TMDB/OMDb)
+  try { await client.execute('ALTER TABLE movies ADD COLUMN runtime INTEGER DEFAULT NULL'); } catch (_) {}
+  await backfillInitialRuntimes();
 
   // Readable list URLs (/lists/christougenna-2026). The column is added
   // nullable — SQLite can't add a UNIQUE column — then every list without one
@@ -247,6 +250,34 @@ async function backfillListSlugs() {
   for (const row of rows) {
     const slug = await uniqueSlug({ get }, row.title, row.id);
     await run('UPDATE lists SET slug = ? WHERE id = ?', slug, row.id);
+  }
+}
+
+// Backfill initial movie runtimes from bundled dataset if not already populated.
+async function backfillInitialRuntimes() {
+  try {
+    const row = await get('SELECT COUNT(runtime) AS c FROM movies WHERE runtime IS NOT NULL');
+    if (row && Number(row.c) >= 500) return;
+
+    const runtimesPath = path.join(__dirname, 'data', 'initial-runtimes.json');
+    if (!fs.existsSync(runtimesPath)) return;
+
+    const data = JSON.parse(fs.readFileSync(runtimesPath, 'utf8'));
+    const entries = Object.entries(data);
+    console.log(`[db] Backfilling ${entries.length} movie runtimes into database...`);
+
+    const CHUNK = 100;
+    for (let i = 0; i < entries.length; i += CHUNK) {
+      const slice = entries.slice(i, i + CHUNK);
+      const stmts = slice.map(([id, rt]) => ({
+        sql: 'UPDATE movies SET runtime = ? WHERE id = ? AND (runtime IS NULL OR runtime = 0)',
+        args: [rt, parseInt(id, 10)],
+      }));
+      await client.batch(stmts, 'deferred');
+    }
+    console.log('[db] Movie runtimes backfilled successfully.');
+  } catch (err) {
+    console.warn('[db] Note: backfillInitialRuntimes notice:', err.message);
   }
 }
 

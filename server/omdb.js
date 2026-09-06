@@ -7,9 +7,11 @@ async function lookupImdb(title, year) {
     const res = await fetch(url);
     const data = await res.json();
     if (data.Response !== 'True') return null;
+    const rt = parseInt(data.Runtime, 10);
     return {
       imdbId: data.imdbID,
       imdbRating: data.imdbRating !== 'N/A' ? parseFloat(data.imdbRating) : null,
+      runtime: Number.isFinite(rt) && rt > 0 ? rt : null,
     };
   } catch {
     return null;
@@ -137,12 +139,14 @@ async function getImdbById(rawId) {
     const res = await fetch(url);
     const data = await res.json();
     if (data.Response !== 'True') return null;
+    const rt = parseInt(data.Runtime, 10);
     return {
       imdbId: data.imdbID,
       title: data.Title,
       year: data.Year,
       director: data.Director && data.Director !== 'N/A' ? data.Director : '',
       imdbRating: data.imdbRating !== 'N/A' ? parseFloat(data.imdbRating) : null,
+      runtime: Number.isFinite(rt) && rt > 0 ? rt : null,
     };
   } catch {
     return null;
