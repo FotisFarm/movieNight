@@ -3,8 +3,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 10px 16px;
+  gap: 12px;
+  padding: 8px 16px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
@@ -12,9 +12,9 @@
 
 .preds-nav-tabs {
   display: inline-flex;
-  gap: 6px;
+  gap: 4px;
   background: var(--surface2);
-  padding: 4px;
+  padding: 3px;
   border-radius: 8px;
   border: 1px solid var(--border);
 }
@@ -23,13 +23,14 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 5px 12px;
   border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
   color: var(--text2);
   text-decoration: none;
   transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
 }
 
 .preds-nav-tab:hover {

@@ -36,9 +36,12 @@ export default function Predictions() {
   const [modalId, setModalId] = useState(null);
   const { toast, Toast } = useToast();
 
-  // Default to 2 voters (like the scoring rule threshold)
+  // Voter threshold: 2+ is the scoring rule default
   const [minVoters, setMinVoters] = useState(2);
   const [minDirFilms, setMinDirFilms] = useState(2);
+
+  // Responsive Highlights Tab (bullseye | surprise | letdown)
+  const [activeTab, setActiveTab] = useState('bullseye');
 
   const [search, setSearch] = useState('');
   const [verdictFilter, setVerdictFilter] = useState('all');
@@ -136,135 +139,154 @@ export default function Predictions() {
       <div className="preds-subnav-bar">
         <div className="preds-nav-tabs">
           <NavLink to="/recommendations" className="preds-nav-tab">
-            🎯 Picks (Recommendations)
+            🎯 Picks
           </NavLink>
           <NavLink to="/predictions" className="preds-nav-tab active">
-            🔮 Prediction Accuracy & Backtest
+            🔮 Accuracy
           </NavLink>
         </div>
 
         <div className="preds-controls">
           <div className="preds-ctl-group">
-            <span className="preds-ctl-label">Cohort:</span>
+            <span className="preds-ctl-label">Min Ratings:</span>
             <select
               className="select select-sm"
               value={minVoters}
               onChange={e => setMinVoters(Number(e.target.value))}
             >
-              <option value={2}>≥ 2 voters (Scoring rule · All scored)</option>
-              <option value={3}>≥ 3 voters (Core group)</option>
-              <option value={4}>≥ 4 voters (Consensus)</option>
+              <option value={2}>2+ (All scored)</option>
+              <option value={3}>3+ votes</option>
+              <option value={4}>4+ votes</option>
             </select>
           </div>
 
           <div className="preds-ctl-group">
-            <span className="preds-ctl-label">Min Director Films:</span>
+            <span className="preds-ctl-label">Dir History:</span>
             <select
               className="select select-sm"
               value={minDirFilms}
               onChange={e => setMinDirFilms(Number(e.target.value))}
             >
-              <option value={1}>≥ 1 film</option>
-              <option value={2}>≥ 2 films (Standard)</option>
-              <option value={3}>≥ 3 films</option>
+              <option value={1}>1+ film</option>
+              <option value={2}>2+ films</option>
+              <option value={3}>3+ films</option>
             </select>
           </div>
         </div>
       </div>
 
       <div className="preds-page">
-        {/* ── Header ── */}
+        {/* ── Header Area ── */}
         <div className="preds-header-row">
-          <div className="preds-header-left">
-            <h1 className="preds-title">
-              <span>🔮 Prediction Accuracy & Retrospective</span>
-            </h1>
-            <p className="preds-sub">
-              How closely did our Bayesian prior anticipate group enjoyment before screening?
-              Evaluated on scored films using <strong>Leave-One-Out Cross-Validation</strong>.
-            </p>
-          </div>
+          <h1 className="preds-title">
+            <span>🔮 Prediction Accuracy</span>
+          </h1>
+          <p className="preds-sub">
+            How well did our predictions anticipate actual ratings? Tested on every scored film before it was watched.
+          </p>
         </div>
 
         {loading ? (
           <div className="spinner" style={{ margin: '60px auto' }} />
         ) : !data ? (
           <p style={{ textAlign: 'center', color: 'var(--text2)', marginTop: 40 }}>
-            Unable to load prediction retrospective data.
+            Unable to load accuracy data.
           </p>
         ) : (
           <>
-            {/* ── Metric Summary Cards (KPIs) ── */}
+            {/* ── Compact Metric Tiles ── */}
             <div className="preds-kpis">
-              <div className="preds-kpi-card">
-                <div className="preds-kpi-header">
-                  <span className="preds-kpi-title">Model MAE</span>
-                  <span className="preds-kpi-icon">🎯</span>
+              <div className="preds-kpi-tile">
+                <div className="preds-kpi-top">
+                  <span>Avg Miss</span>
+                  <span>🎯</span>
                 </div>
-                <div className="preds-kpi-value">
+                <div className="preds-kpi-val">
                   ±{summary?.maeWithDir != null ? fmt(summary.maeWithDir) : fmt(summary?.mae)}
                 </div>
                 <div className="preds-kpi-sub">
-                  Mean absolute error on films with director history (overall ±{fmt(summary?.mae)})
+                  Director track (overall ±{fmt(summary?.mae)})
                 </div>
               </div>
 
-              <div className="preds-kpi-card">
-                <div className="preds-kpi-header">
-                  <span className="preds-kpi-title">Bullseye Rate</span>
-                  <span className="preds-kpi-icon">🎯</span>
+              <div className="preds-kpi-tile">
+                <div className="preds-kpi-top">
+                  <span>Spot-On (±0.5)</span>
+                  <span>🎯</span>
                 </div>
-                <div className="preds-kpi-value">{summary?.withinHalfPct}%</div>
+                <div className="preds-kpi-val">{summary?.withinHalfPct}%</div>
                 <div className="preds-kpi-sub">
-                  {summary?.withinHalfCount} of {summary?.totalEvaluated} films predicted within ±0.5 pts
-                </div>
-                <div className="preds-progress-bar">
-                  <div className="preds-progress-fill" style={{ width: `${summary?.withinHalfPct}%`, background: 'var(--green)' }} />
+                  {summary?.withinHalfCount} of {summary?.totalEvaluated} films
                 </div>
               </div>
 
-              <div className="preds-kpi-card">
-                <div className="preds-kpi-header">
-                  <span className="preds-kpi-title">In Ballpark</span>
-                  <span className="preds-kpi-icon">📊</span>
+              <div className="preds-kpi-tile">
+                <div className="preds-kpi-top">
+                  <span>In Ballpark (±1.0)</span>
+                  <span>📊</span>
                 </div>
-                <div className="preds-kpi-value">{summary?.withinOnePct}%</div>
+                <div className="preds-kpi-val">{summary?.withinOnePct}%</div>
                 <div className="preds-kpi-sub">
-                  {summary?.withinOneCount} of {summary?.totalEvaluated} films predicted within ±1.0 pt
-                </div>
-                <div className="preds-progress-bar">
-                  <div className="preds-progress-fill" style={{ width: `${summary?.withinOnePct}%`, background: 'var(--accent)' }} />
+                  {summary?.withinOneCount} of {summary?.totalEvaluated} films
                 </div>
               </div>
 
-              <div className="preds-kpi-card">
-                <div className="preds-kpi-header">
-                  <span className="preds-kpi-title">Tested Cohort</span>
-                  <span className="preds-kpi-icon">🎬</span>
+              <div className="preds-kpi-tile">
+                <div className="preds-kpi-top">
+                  <span>Films Tested</span>
+                  <span>🎬</span>
                 </div>
-                <div className="preds-kpi-value">{summary?.totalEvaluated}</div>
+                <div className="preds-kpi-val">{summary?.totalEvaluated}</div>
                 <div className="preds-kpi-sub">
-                  Films with ≥ {minVoters} voters ({summary?.directorTrackCount} with director track)
+                  ≥ {minVoters} ratings ({summary?.directorTrackCount} with dir history)
                 </div>
               </div>
             </div>
 
-            {/* ── Showcase Podiums (Top 10s with Dual Actual & Prior Rankings) ── */}
-            <div className="preds-podiums-section">
-              <h2 className="preds-section-title">
-                <span>🏆 Model Highlights & Extremes (Top 10)</span>
-              </h2>
+            {/* ── Top 10 Highlights & Extremes ── */}
+            <div className="preds-highlights-section">
+              <div className="preds-highlights-header">
+                <h2 className="preds-section-title">
+                  <span>🏆 Top 10 Highlights</span>
+                </h2>
 
+                {/* Mobile / Tablet category switcher */}
+                <div className="preds-mobile-tabs">
+                  <button
+                    type="button"
+                    className={`preds-m-tab-btn${activeTab === 'bullseye' ? ' active' : ''}`}
+                    onClick={() => setActiveTab('bullseye')}
+                  >
+                    🎯 Spot-On
+                  </button>
+                  <button
+                    type="button"
+                    className={`preds-m-tab-btn${activeTab === 'surprise' ? ' active' : ''}`}
+                    onClick={() => setActiveTab('surprise')}
+                  >
+                    🌟 Surprises
+                  </button>
+                  <button
+                    type="button"
+                    className={`preds-m-tab-btn${activeTab === 'letdown' ? ' active' : ''}`}
+                    onClick={() => setActiveTab('letdown')}
+                  >
+                    📉 Underperformed
+                  </button>
+                </div>
+              </div>
+
+              {/* Responsive grid: on desktop all 3 are visible, on mobile only activeTab is visible */}
               <div className="preds-podiums-grid">
                 {/* 1. Bullseyes */}
-                <div className="preds-podium-card podium-bullseye">
-                  <div className="preds-podium-header">
-                    <span className="preds-podium-title">🎯 Top Bullseyes</span>
+                <div className={`preds-podium-card podium-bullseye ${activeTab === 'bullseye' ? 'is-active' : ''}`}>
+                  <div className="preds-podium-card-header">
+                    <span className="preds-podium-card-title">🎯 Top Bullseyes</span>
                     <span className="preds-podium-badge">Spot-on (≤ ±0.5)</span>
                   </div>
                   <div className="preds-podium-list">
                     {data.topBullseyes?.slice(0, 10).map((f, i) => (
-                      <div key={f.id} className="preds-podium-item" onClick={() => setModalId(f.id)} title="Click to view film details">
+                      <div key={f.id} className="preds-podium-item" onClick={() => setModalId(f.id)}>
                         <div className="preds-podium-item-left">
                           <span className="preds-podium-rank">#{i + 1}</span>
                           <div className="preds-podium-meta">
@@ -274,15 +296,15 @@ export default function Predictions() {
                         </div>
                         <div className="preds-podium-scores">
                           <div className="preds-score-pair">
-                            <div className="preds-score-line" title={`Actual Score: ${fmt(f.actualScore)} (Catalog Rank #${f.actualRank})`}>
-                              <span className="preds-lbl">Act</span>
+                            <div className="preds-score-line">
+                              <span className="preds-lbl">Actual</span>
                               <strong className={`preds-val ${scoreClass(f.actualScore)}`}>{fmt(f.actualScore)}</strong>
-                              <span className="preds-rank-chip" title="Catalog actual rank">#{f.actualRank}</span>
+                              <span className="preds-rank-chip" title="Catalog rank">#{f.actualRank}</span>
                             </div>
-                            <div className="preds-score-line" title={`Prior Expectation: ${fmt(f.predictedPrior)} (Catalog Rank #${f.priorRank})`}>
-                              <span className="preds-lbl">Pri</span>
+                            <div className="preds-score-line">
+                              <span className="preds-lbl">Expected</span>
                               <strong className="preds-val preds-val-prior">{fmt(f.predictedPrior)}</strong>
-                              <span className="preds-rank-chip" title="Catalog prior rank">#{f.priorRank}</span>
+                              <span className="preds-rank-chip" title="Expected rank">#{f.priorRank}</span>
                             </div>
                           </div>
                           <span className="preds-podium-diff diff-bullseye">
@@ -295,14 +317,14 @@ export default function Predictions() {
                 </div>
 
                 {/* 2. Pleasantly Surprised */}
-                <div className="preds-podium-card podium-surprise">
-                  <div className="preds-podium-header">
-                    <span className="preds-podium-title">🌟 Pleasantly Surprised</span>
-                    <span className="preds-podium-badge">Exceeded Prior</span>
+                <div className={`preds-podium-card podium-surprise ${activeTab === 'surprise' ? 'is-active' : ''}`}>
+                  <div className="preds-podium-card-header">
+                    <span className="preds-podium-card-title">🌟 Pleasantly Surprised</span>
+                    <span className="preds-podium-badge">Beat Prediction</span>
                   </div>
                   <div className="preds-podium-list">
                     {data.topSurprises?.slice(0, 10).map((f, i) => (
-                      <div key={f.id} className="preds-podium-item" onClick={() => setModalId(f.id)} title="Click to view film details">
+                      <div key={f.id} className="preds-podium-item" onClick={() => setModalId(f.id)}>
                         <div className="preds-podium-item-left">
                           <span className="preds-podium-rank">#{i + 1}</span>
                           <div className="preds-podium-meta">
@@ -312,15 +334,15 @@ export default function Predictions() {
                         </div>
                         <div className="preds-podium-scores">
                           <div className="preds-score-pair">
-                            <div className="preds-score-line" title={`Actual Score: ${fmt(f.actualScore)} (Catalog Rank #${f.actualRank})`}>
-                              <span className="preds-lbl">Act</span>
+                            <div className="preds-score-line">
+                              <span className="preds-lbl">Actual</span>
                               <strong className={`preds-val ${scoreClass(f.actualScore)}`}>{fmt(f.actualScore)}</strong>
-                              <span className="preds-rank-chip" title="Catalog actual rank">#{f.actualRank}</span>
+                              <span className="preds-rank-chip" title="Catalog rank">#{f.actualRank}</span>
                             </div>
-                            <div className="preds-score-line" title={`Prior Expectation: ${fmt(f.predictedPrior)} (Catalog Rank #${f.priorRank})`}>
-                              <span className="preds-lbl">Pri</span>
+                            <div className="preds-score-line">
+                              <span className="preds-lbl">Expected</span>
                               <strong className="preds-val preds-val-prior">{fmt(f.predictedPrior)}</strong>
-                              <span className="preds-rank-chip" title="Catalog prior rank">#{f.priorRank}</span>
+                              <span className="preds-rank-chip" title="Expected rank">#{f.priorRank}</span>
                             </div>
                           </div>
                           <span className="preds-podium-diff diff-over">
@@ -333,14 +355,14 @@ export default function Predictions() {
                 </div>
 
                 {/* 3. Underperformed */}
-                <div className="preds-podium-card podium-letdown">
-                  <div className="preds-podium-header">
-                    <span className="preds-podium-title">📉 Underperformed</span>
+                <div className={`preds-podium-card podium-letdown ${activeTab === 'letdown' ? 'is-active' : ''}`}>
+                  <div className="preds-podium-card-header">
+                    <span className="preds-podium-card-title">📉 Underperformed</span>
                     <span className="preds-podium-badge">Fell Short</span>
                   </div>
                   <div className="preds-podium-list">
                     {data.topDisappointments?.slice(0, 10).map((f, i) => (
-                      <div key={f.id} className="preds-podium-item" onClick={() => setModalId(f.id)} title="Click to view film details">
+                      <div key={f.id} className="preds-podium-item" onClick={() => setModalId(f.id)}>
                         <div className="preds-podium-item-left">
                           <span className="preds-podium-rank">#{i + 1}</span>
                           <div className="preds-podium-meta">
@@ -350,15 +372,15 @@ export default function Predictions() {
                         </div>
                         <div className="preds-podium-scores">
                           <div className="preds-score-pair">
-                            <div className="preds-score-line" title={`Actual Score: ${fmt(f.actualScore)} (Catalog Rank #${f.actualRank})`}>
-                              <span className="preds-lbl">Act</span>
+                            <div className="preds-score-line">
+                              <span className="preds-lbl">Actual</span>
                               <strong className={`preds-val ${scoreClass(f.actualScore)}`}>{fmt(f.actualScore)}</strong>
-                              <span className="preds-rank-chip" title="Catalog actual rank">#{f.actualRank}</span>
+                              <span className="preds-rank-chip" title="Catalog rank">#{f.actualRank}</span>
                             </div>
-                            <div className="preds-score-line" title={`Prior Expectation: ${fmt(f.predictedPrior)} (Catalog Rank #${f.priorRank})`}>
-                              <span className="preds-lbl">Pri</span>
+                            <div className="preds-score-line">
+                              <span className="preds-lbl">Expected</span>
                               <strong className="preds-val preds-val-prior">{fmt(f.predictedPrior)}</strong>
-                              <span className="preds-rank-chip" title="Catalog prior rank">#{f.priorRank}</span>
+                              <span className="preds-rank-chip" title="Expected rank">#{f.priorRank}</span>
                             </div>
                           </div>
                           <span className="preds-podium-diff diff-under">
@@ -372,12 +394,12 @@ export default function Predictions() {
               </div>
             </div>
 
-            {/* ── Table Toolbar ── */}
+            {/* ── All Tested Films Directory ── */}
             <div className="preds-toolbar">
               <div className="preds-search-box">
                 <input
                   className="input search-input"
-                  placeholder="Filter evaluated films…"
+                  placeholder="Search tested films…"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                 />
@@ -397,14 +419,14 @@ export default function Predictions() {
                   className={`preds-verdict-btn${verdictFilter === 'bullseye' ? ' active' : ''}`}
                   onClick={() => setVerdictFilter('bullseye')}
                 >
-                  🎯 Bullseyes (Spot-on)
+                  🎯 Spot-On
                 </button>
                 <button
                   type="button"
                   className={`preds-verdict-btn${verdictFilter === 'surprise' ? ' active' : ''}`}
                   onClick={() => setVerdictFilter('surprise')}
                 >
-                  🌟 Pleasantly Surprised
+                  🌟 Surprises
                 </button>
                 <button
                   type="button"
@@ -427,33 +449,33 @@ export default function Predictions() {
                 value={sortKey}
                 onChange={e => setSortKey(e.target.value)}
               >
-                <option value="score-desc">Sort by Actual Score (High → Low)</option>
-                <option value="score-asc">Sort by Actual Score (Low → High)</option>
-                <option value="prior-desc">Sort by Predicted Prior (High → Low)</option>
-                <option value="error-asc">Sort by Accuracy (Bullseyes first)</option>
-                <option value="diff-desc">Sort by Outperformance (Biggest Surprises)</option>
-                <option value="diff-asc">Sort by Underperformance (Biggest Drops)</option>
+                <option value="score-desc">Sort: Best Actual Score</option>
+                <option value="score-asc">Sort: Lowest Actual Score</option>
+                <option value="prior-desc">Sort: Highest Predicted</option>
+                <option value="error-asc">Sort: Most Accurate (Bullseyes)</option>
+                <option value="diff-desc">Sort: Outperformed (Surprises)</option>
+                <option value="diff-asc">Sort: Underperformed (Drops)</option>
               </select>
             </div>
 
-            {/* ── Table ── */}
-            <div className="preds-table-wrapper">
+            {/* Desktop Table View (>= 768px) */}
+            <div className="preds-table-wrapper preds-desktop-only">
               <table className="preds-table">
                 <thead>
                   <tr>
-                    <th style={{ width: 40 }}>#</th>
+                    <th style={{ width: 36 }}>#</th>
                     <th>Film</th>
-                    <th>Voters</th>
-                    <th>Predicted Prior</th>
-                    <th>Actual Score</th>
-                    <th>Δ Delta</th>
+                    <th>Votes</th>
+                    <th>Predicted</th>
+                    <th>Actual</th>
+                    <th>Difference</th>
                     <th>Verdict</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredFilms.length === 0 ? (
                     <tr>
-                      <td colSpan={7} style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--text2)' }}>
+                      <td colSpan={7} style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text2)' }}>
                         No films match the filter criteria.
                       </td>
                     </tr>
@@ -477,26 +499,26 @@ export default function Predictions() {
                             {f.director}{f.year ? ` · ${f.year}` : ''}
                           </div>
                         </td>
-                        <td className="preds-cell-voters">
+                        <td>
                           <VoterPills ratings={f.ratings} voters={voters} />
                         </td>
-                        <td className="preds-cell-prior">
+                        <td>
                           <div className="preds-prior-wrap">
                             <div className="preds-prior-val-row">
                               <span className="preds-prior-val">{fmt(f.predictedPrior)}</span>
-                              <span className="preds-rank-chip" title="Rank based on Prior expectation">#{f.priorRank}</span>
+                              <span className="preds-rank-chip" title="Catalog rank if scored as expected">#{f.priorRank}</span>
                             </div>
                             <div className="preds-prior-decomp">
                               {f.dirAvg != null && <span className="preds-decomp-pill" title="Director track avg">Dir {fmt(f.dirAvg)}</span>}
                               {f.decAvg != null && <span className="preds-decomp-pill" title="Decade era avg">Dec {fmt(f.decAvg)}</span>}
-                              {f.haloBoost > 0 && <span className="preds-decomp-pill" title="Top 10 catalog halo boost">+{fmt(f.haloBoost)}</span>}
+                              {f.haloBoost > 0 && <span className="preds-decomp-pill" title="Top 10 bonus">+{fmt(f.haloBoost)}</span>}
                             </div>
                           </div>
                         </td>
-                        <td className="preds-cell-score">
+                        <td>
                           <div className="preds-score-with-rank">
                             <strong className={scoreClass(f.actualScore)}>{fmt(f.actualScore)}</strong>
-                            <span className="preds-rank-chip" title="Rank based on Actual score">#{f.actualRank}</span>
+                            <span className="preds-rank-chip" title="Actual catalog rank">#{f.actualRank}</span>
                           </div>
                         </td>
                         <td>
@@ -514,6 +536,55 @@ export default function Predictions() {
                   )}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Card List (< 768px) */}
+            <div className="preds-mobile-cards preds-mobile-only">
+              {filteredFilms.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text2)' }}>
+                  No films match the filter criteria.
+                </div>
+              ) : (
+                filteredFilms.map((f, idx) => (
+                  <div key={f.id} className="preds-m-card" onClick={() => setModalId(f.id)}>
+                    <div className="preds-m-top">
+                      <span className="preds-m-rank">#{idx + 1}</span>
+                      <div className="preds-m-title-block">
+                        <div className="preds-m-title-row">
+                          <span className="preds-m-title">{f.title}</span>
+                          {f.mn && <span className="badge badge-mn">MN</span>}
+                          <WatchlistBadge id={f.id} watchlist={f.watchlist} onToggle={handleWatchlistToggle} />
+                        </div>
+                        <span className="preds-m-sub">{f.director}{f.year ? ` · ${f.year}` : ''}</span>
+                      </div>
+                      <div className="preds-m-scores-box">
+                        <div className="preds-m-score-row">
+                          <span className="preds-m-lbl">Act</span>
+                          <strong className={`preds-val ${scoreClass(f.actualScore)}`}>{fmt(f.actualScore)}</strong>
+                          <span className="preds-rank-chip">#{f.actualRank}</span>
+                        </div>
+                        <div className="preds-m-score-row">
+                          <span className="preds-m-lbl">Exp</span>
+                          <strong className="preds-val preds-val-prior">{fmt(f.predictedPrior)}</strong>
+                          <span className="preds-rank-chip">#{f.priorRank}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="preds-m-bottom">
+                      <div className="preds-m-verdicts">
+                        <span className={`preds-diff-pill ${f.absError <= 0.5 ? 'diff-bullseye' : f.diff > 0 ? 'diff-over' : 'diff-under'}`}>
+                          {f.diff > 0 ? `+${fmt(f.diff)}` : fmt(f.diff)}
+                        </span>
+                        <span className={`preds-verdict-badge verdict-${f.verdict}`}>
+                          {f.verdictLabel}
+                        </span>
+                      </div>
+                      <VoterPills ratings={f.ratings} voters={voters} />
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </>
         )}

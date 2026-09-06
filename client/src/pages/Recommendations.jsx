@@ -166,10 +166,10 @@ export default function Recommendations() {
       <div className="preds-subnav-bar">
         <div className="preds-nav-tabs">
           <NavLink to="/recommendations" className="preds-nav-tab active">
-            🎯 Picks (Recommendations)
+            🎯 Picks
           </NavLink>
           <NavLink to="/predictions" className="preds-nav-tab">
-            🔮 Prediction Accuracy & Backtest
+            🔮 Accuracy
           </NavLink>
         </div>
       </div>
