@@ -79,11 +79,23 @@ async function main() {
     });
   }
 
-  // Sanitize SQL dump: strip BEGIN TRANSACTION and COMMIT because executeMultiple
-  // already executes all statements atomically as a single pipeline.
-  const cleanSqlDump = sqlDump
-    .replace(/^\s*BEGIN\s+TRANSACTION\s*;/gmi, '')
-    .replace(/^\s*COMMIT\s*;/gmi, '');
+  // Parse statements from SQL dump
+  const lines = sqlDump.split('\n');
+  const statements = [];
+  let current = '';
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('--')) continue;
+    if (trimmed.toUpperCase().startsWith('BEGIN') || trimmed.toUpperCase().startsWith('COMMIT')) continue;
+    if (trimmed.toUpperCase().startsWith('PRAGMA FOREIGN_KEYS')) continue;
+
+    current += (current ? ' ' : '') + trimmed;
+    if (trimmed.endsWith(';')) {
+      statements.push(current);
+      current = '';
+    }
+  }
 
   // 4. Connect to target database
   let targetUrl;
@@ -128,9 +140,22 @@ async function main() {
     // Tables may not exist yet if fresh DB
   }
 
-  // 6. Execute SQL dump
-  console.log('⚡ Applying production snapshot (this takes 1-2 seconds)...');
-  await client.executeMultiple(cleanSqlDump);
+  // 6. Execute SQL dump in manageable batches
+  console.log(`⚡ Applying ${statements.length} statements in batches...`);
+
+  // Drop tables in reverse foreign key order to prevent dependency errors
+  const dropOrder = ['rating_history', 'list_items', 'list_slug_aliases', 'lists', 'watchlist_votes', 'top3', 'ratings', 'movies'];
+  for (const table of dropOrder) {
+    await client.execute(`DROP TABLE IF EXISTS ${table}`);
+  }
+
+  const createAndInserts = statements.filter(s => !s.toUpperCase().startsWith('DROP TABLE'));
+  const BATCH_SIZE = 100;
+  for (let i = 0; i < createAndInserts.length; i += BATCH_SIZE) {
+    const batch = createAndInserts.slice(i, i + BATCH_SIZE).join('\n');
+    await client.executeMultiple(batch);
+  }
+  console.log(`✅ All statements applied successfully!`);
 
   // 7. Recreate view and run migrations via db.init()
   console.log('🔧 Recreating derived views (movie_scores)...');
