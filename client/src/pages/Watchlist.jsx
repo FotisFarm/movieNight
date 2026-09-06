@@ -13,7 +13,7 @@ import { api } from '../api';
 import MovieModal from '../components/MovieModal';
 import { useToast } from '../hooks/useToast.jsx';
 import { useAppConfig } from '../AppConfigContext';
-import { fmtScore10 as fmt, scoreClass } from '../utils';
+import { fmtScore10 as fmt, scoreClass, formatRuntime } from '../utils';
 import './Watchlist.css';
 
 function loadManualOrder() {
@@ -60,7 +60,10 @@ function RankingRow({ m, index, draggable, onOpen }) {
       <span className="wl-ranking-pos">{index + 1}</span>
       <div className="wl-ranking-info">
         <span className="wl-ranking-name">{m.title}</span>
-        <span className="wl-ranking-meta">{m.director} · {m.year || '?'}</span>
+        <span className="wl-ranking-meta">
+          {m.director} · {m.year || '?'}
+          {m.runtime ? ` · ${formatRuntime(m.runtime)}` : ''}
+        </span>
       </div>
       <div className="wl-ranking-voters">
         {voters.map(v => m.watchlistVotes.includes(v) && (
@@ -339,7 +342,10 @@ export default function Watchlist({ voter }) {
                       )}
                     </div>
                   </div>
-                  <div className="wl-movie-meta">{m.director} · {m.year || '?'}</div>
+                  <div className="wl-movie-meta">
+                    {m.director} · {m.year || '?'}
+                    {m.runtime ? ` · ${formatRuntime(m.runtime)}` : ''}
+                  </div>
                   {m.fairScore != null && (
                     <div className="wl-score">Fair avg: <strong className={scoreClass(m.fairScore)}>{fmt(m.fairScore)}</strong></div>
                   )}

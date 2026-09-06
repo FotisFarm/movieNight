@@ -5,7 +5,7 @@ import MovieModal from '../components/MovieModal';
 import WatchlistBadge from '../components/WatchlistBadge';
 import { useToast } from '../hooks/useToast.jsx';
 import { useAppConfig } from '../AppConfigContext';
-import { fmt, scoreClass } from '../utils';
+import { fmt, scoreClass, formatRuntime } from '../utils';
 import './Recommendations.css';
 
 function VoterPills({ ratings, voters }) {
@@ -344,7 +344,11 @@ export default function Recommendations() {
                         )}
                       </div>
                     </div>
-                    <span className="rec-meta">{f.director}{f.year ? ` · ${f.year}` : ''}</span>
+                    <span className="rec-meta">
+                      {f.director}
+                      {f.year ? ` · ${f.year}` : ''}
+                      {f.runtime ? ` · ${formatRuntime(f.runtime)}` : ''}
+                    </span>
                   </div>
                   <div className={`rec-score ${scoreClass(f.predictedScore)}`}>
                     {fmt(f.predictedScore)}

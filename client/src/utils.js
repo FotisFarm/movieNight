@@ -43,9 +43,11 @@ export function extractImdbId(input) {
 
 // Formats runtime in minutes to human-readable duration, e.g. 142 -> "2h 22m", 85 -> "1h 25m", 45 -> "45m"
 export function formatRuntime(minutes) {
-  if (!minutes || typeof minutes !== 'number' || minutes <= 0) return null;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
+  if (minutes == null || minutes === '') return null;
+  const num = typeof minutes === 'number' ? minutes : parseInt(minutes, 10);
+  if (!num || isNaN(num) || num <= 0) return null;
+  const h = Math.floor(num / 60);
+  const m = num % 60;
   if (h === 0) return `${m}m`;
   if (m === 0) return `${h}h`;
   return `${h}h ${m}m`;
