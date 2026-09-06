@@ -217,7 +217,7 @@ export default function Recommendations() {
       <div className="films-filters recs-filters-bar">
         <div className="recs-filter-controls">
           {/* Search Box */}
-          <div className="search-box recs-search-box">
+          <div className="recs-search-box">
             <span className="search-icon">🔍</span>
             <input
               className="input search-input"

@@ -64,7 +64,47 @@
 }
 
 .recs-search-box {
+  position: relative;
+  width: 100%;
   max-width: 240px;
+  flex: 0 0 auto;
+}
+
+.recs-search-box .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.recs-search-box .search-input {
+  width: 100%;
+  padding-left: 36px !important;
+  padding-right: 32px !important;
+  border-radius: 20px !important;
+  box-sizing: border-box;
+}
+
+.recs-search-box .search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text3);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.recs-search-box .search-clear:hover {
+  color: var(--text);
+  background: var(--surface3);
 }
 
 .recs-chips-group {
@@ -537,7 +577,8 @@
 
   .recs-search-box {
     max-width: 100% !important;
-    width: 100%;
+    width: 100% !important;
+    flex: 0 0 auto !important;
   }
 
   .recs-chips-group {
