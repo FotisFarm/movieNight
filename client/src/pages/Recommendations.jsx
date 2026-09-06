@@ -58,6 +58,7 @@ export default function Recommendations() {
   const [onePerDirector, setOnePerDirector] = useState(() => {
     return localStorage.getItem('mn_onePerDirector') === 'true';
   });
+  const [modelOpen, setModelOpen] = useState(false);
 
   const weightTimer = useRef(null);
 
@@ -214,8 +215,9 @@ export default function Recommendations() {
 
       {/* ── Movie Discovery Filters ── */}
       <div className="films-filters recs-filters-bar">
-        <div className="filter-row">
-          <div className="search-box" style={{ maxWidth: 240 }}>
+        <div className="recs-filter-controls">
+          {/* Search Box */}
+          <div className="search-box recs-search-box">
             <span className="search-icon">🔍</span>
             <input
               className="input search-input"
@@ -228,25 +230,43 @@ export default function Recommendations() {
 
           <div className="filter-sep" />
 
-          <label className="filter-check filter-check-mn">
-            <input type="checkbox" checked={filterMn} onChange={e => setFilterMn(e.target.checked)} />
-            Movie Night
-          </label>
-          <label className="filter-check">
-            <input type="checkbox" checked={filterWl} onChange={e => setFilterWl(e.target.checked)} />
-            Watchlist
-          </label>
-          <label className="filter-check filter-check-director" title="Show only the highest predicted film for each director to avoid clustering">
-            <input type="checkbox" checked={onePerDirector} onChange={toggleOnePerDirector} />
-            1 per Director
-          </label>
-          <label className="filter-check filter-check-gems" title="Show unvoted gems with Letterboxd rating ≥ 3.8 ★">
-            <input type="checkbox" checked={filterGems} onChange={e => setFilterGems(e.target.checked)} />
-            ✨ Gems
-          </label>
+          {/* Toggle Chips */}
+          <div className="recs-chips-group">
+            <button
+              type="button"
+              className={`recs-chip recs-chip-mn${filterMn ? ' active' : ''}`}
+              onClick={() => setFilterMn(v => !v)}
+            >
+              Movie Night
+            </button>
+            <button
+              type="button"
+              className={`recs-chip recs-chip-wl${filterWl ? ' active' : ''}`}
+              onClick={() => setFilterWl(v => !v)}
+            >
+              Watchlist
+            </button>
+            <button
+              type="button"
+              className={`recs-chip recs-chip-director${onePerDirector ? ' active' : ''}`}
+              onClick={toggleOnePerDirector}
+              title="Show only the highest predicted film for each director"
+            >
+              1 per Director
+            </button>
+            <button
+              type="button"
+              className={`recs-chip recs-chip-gems${filterGems ? ' active' : ''}`}
+              onClick={() => setFilterGems(v => !v)}
+              title="Unvoted films with Letterboxd rating ≥ 3.8 ★"
+            >
+              ✨ Gems
+            </button>
+          </div>
 
           <div className="filter-sep" />
 
+          {/* Unvoted Cluster */}
           <div className="recs-unvoted-cluster">
             <span className="recs-filter-tag">Unvoted by</span>
             <div className="recs-unvoted-pills">
@@ -266,114 +286,133 @@ export default function Recommendations() {
 
           <div className="filter-sep" />
 
-          <label className="filter-item-inline">
-            <span className="filter-label">Director</span>
-            <select className="select select-sm" value={filterDir} onChange={e => setFilterDir(e.target.value)} style={{ maxWidth: 160 }}>
-              <option value="">All Directors</option>
-              {directors.map(d => <option key={d}>{d}</option>)}
-            </select>
-          </label>
+          {/* Dropdowns */}
+          <div className="recs-dropdowns-group">
+            <label className="filter-item-inline recs-filter-director">
+              <span className="filter-label">Director</span>
+              <select className="select select-sm" value={filterDir} onChange={e => setFilterDir(e.target.value)}>
+                <option value="">All Directors</option>
+                {directors.map(d => <option key={d}>{d}</option>)}
+              </select>
+            </label>
 
-          <label className="filter-item-inline">
-            <span className="filter-label">Year</span>
-            <input className="input input-sm" style={{ width: 68 }} placeholder="e.g. 1972"
-              value={filterYear} onChange={e => setFilterYear(e.target.value)} />
-          </label>
+            <label className="filter-item-inline recs-filter-year">
+              <span className="filter-label">Year</span>
+              <input className="input input-sm" placeholder="e.g. 1972"
+                value={filterYear} onChange={e => setFilterYear(e.target.value)} />
+            </label>
 
-          <label className="filter-item-inline">
-            <span className="filter-label">Min LB</span>
-            <select className="select select-sm" value={filterMinLb} onChange={e => setFilterMinLb(e.target.value)}>
-              <option value="">Any ★</option>
-              <option value="3.5">≥ 3.5 ★</option>
-              <option value="3.8">≥ 3.8 ★</option>
-              <option value="4.0">≥ 4.0 ★</option>
-            </select>
-          </label>
+            <label className="filter-item-inline recs-filter-lb">
+              <span className="filter-label">Min LB</span>
+              <select className="select select-sm" value={filterMinLb} onChange={e => setFilterMinLb(e.target.value)}>
+                <option value="">Any ★</option>
+                <option value="3.5">≥ 3.5 ★</option>
+                <option value="3.8">≥ 3.8 ★</option>
+                <option value="4.0">≥ 4.0 ★</option>
+              </select>
+            </label>
+          </div>
 
           <div className="filter-sep" />
 
-          <button
-            type="button"
-            className={`btn btn-sm${filtersActive ? ' btn-ghost filter-reset-active' : ' btn-ghost'}`}
-            onClick={resetFilters}
-            disabled={!filtersActive}
-          >
-            Reset Filters
-          </button>
+          {/* Action & Count */}
+          <div className="recs-filter-actions">
+            <button
+              type="button"
+              className={`btn btn-sm${filtersActive ? ' btn-ghost filter-reset-active' : ' btn-ghost'}`}
+              onClick={resetFilters}
+              disabled={!filtersActive}
+            >
+              Reset Filters
+            </button>
 
-          <span className="filter-count">
-            {films.length} / {allFilms.length} picks{onePerDirector ? ' · 1/dir' : ''}{filterGems ? ' · Gems' : ''}{filterMinLb ? ` · ≥${filterMinLb}★` : ''}
-          </span>
+            <span className="filter-count">
+              {films.length} / {allFilms.length} picks{onePerDirector ? ' · 1/dir' : ''}{filterGems ? ' · Gems' : ''}{filterMinLb ? ` · ≥${filterMinLb}★` : ''}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* ── Prediction Model & Weights Toolbar ── */}
-      <div className="recs-biases">
-        <div className="recs-model-badge">⚡ Model Weights</div>
-
-        <label className="recs-bias-item">
-          <span>Director Track <em>{pDir}%</em></span>
-          <div className="recs-slider-wrap" style={trackStyle(dw, 1)}>
-            <input type="range" min={0} max={1} step={0.05} value={dw}
-              onChange={e => setDw(parseFloat(e.target.value))} />
-          </div>
-        </label>
-
-        <label className="recs-bias-item">
-          <span>Letterboxd <em>{pLb}%</em></span>
-          <div className="recs-slider-wrap" style={trackStyle(lbw, 1)}>
-            <input type="range" min={0} max={1} step={0.05} value={lbw}
-              onChange={e => setLbw(parseFloat(e.target.value))} />
-          </div>
-        </label>
-
-        <label className="recs-bias-item">
-          <span>Decade Era <em>{pEra}%</em></span>
-          <div className="recs-slider-wrap" style={trackStyle(ew, 1)}>
-            <input type="range" min={0} max={1} step={0.05} value={ew}
-              onChange={e => setEw(parseFloat(e.target.value))} />
-          </div>
-        </label>
-
-        <label className="recs-bias-item" style={{ minWidth: 140 }}>
-          <span>Top 10 Boost <em className="halo-boost-val">{boostLabel}</em></span>
-          <div className="recs-slider-wrap" style={trackStyle(tw, 0.20)}>
-            <input type="range" min={0} max={0.20} step={0.02} value={tw}
-              onChange={e => setTw(parseFloat(e.target.value))} />
-          </div>
-        </label>
-
-        <div className="recs-bias-sep" />
-
-        <label className="recs-bias-item recs-bias-item--inline">
-          <span className="recs-bias-label">Candidates</span>
-          <select className="select select-sm" value={maxVoters} onChange={e => setMaxVoters(parseInt(e.target.value))}>
-            {[0, 1, 2, 3, 4].map(n => (
-              <option key={n} value={n}>≤ {n} {n === 1 ? 'vote' : 'votes'}</option>
-            ))}
-          </select>
-        </label>
-
-        <label className="recs-bias-item recs-bias-item--inline">
-          <span className="recs-bias-label">Min dir films</span>
-          <select className="select select-sm" value={minDirFilms} onChange={e => changeMinDirFilms(parseInt(e.target.value))}>
-            {[1, 2, 3, 4].map(n => (
-              <option key={n} value={n}>{n === 1 ? 'No min (1)' : `≥ ${n} films`}</option>
-            ))}
-          </select>
-        </label>
-
-        <div className="recs-bias-sep" />
-
+      {/* ── Prediction Model & Weights Toolbar (Collapsible) ── */}
+      <div className={`recs-biases${modelOpen ? ' recs-biases-open' : ''}`}>
         <button
           type="button"
-          className={`btn btn-sm btn-ghost${weightsModified ? ' filter-reset-active' : ''}`}
-          onClick={resetWeights}
-          disabled={!weightsModified}
-          title="Reset model weights to default"
+          className="recs-model-header-btn"
+          onClick={() => setModelOpen(o => !o)}
+          aria-expanded={modelOpen}
         >
-          Reset Model
+          <div className="recs-model-badge">⚡ Model Weights</div>
+          <span className="recs-model-summary">
+            Dir {pDir}% · LB {pLb}% · Era {pEra}% {tw > 0 ? `· Boost ${boostLabel}` : ''}
+          </span>
+          <span className="recs-model-chevron">{modelOpen ? '▲ Close' : '▼ Tune Model'}</span>
         </button>
+
+        <div className="recs-biases-body">
+          <label className="recs-bias-item">
+            <span>Director Track <em>{pDir}%</em></span>
+            <div className="recs-slider-wrap" style={trackStyle(dw, 1)}>
+              <input type="range" min={0} max={1} step={0.05} value={dw}
+                onChange={e => setDw(parseFloat(e.target.value))} />
+            </div>
+          </label>
+
+          <label className="recs-bias-item">
+            <span>Letterboxd <em>{pLb}%</em></span>
+            <div className="recs-slider-wrap" style={trackStyle(lbw, 1)}>
+              <input type="range" min={0} max={1} step={0.05} value={lbw}
+                onChange={e => setLbw(parseFloat(e.target.value))} />
+            </div>
+          </label>
+
+          <label className="recs-bias-item">
+            <span>Decade Era <em>{pEra}%</em></span>
+            <div className="recs-slider-wrap" style={trackStyle(ew, 1)}>
+              <input type="range" min={0} max={1} step={0.05} value={ew}
+                onChange={e => setEw(parseFloat(e.target.value))} />
+            </div>
+          </label>
+
+          <label className="recs-bias-item" style={{ minWidth: 140 }}>
+            <span>Top 10 Boost <em className="halo-boost-val">{boostLabel}</em></span>
+            <div className="recs-slider-wrap" style={trackStyle(tw, 0.20)}>
+              <input type="range" min={0} max={0.20} step={0.02} value={tw}
+                onChange={e => setTw(parseFloat(e.target.value))} />
+            </div>
+          </label>
+
+          <div className="recs-bias-sep" />
+
+          <label className="recs-bias-item recs-bias-item--inline">
+            <span className="recs-bias-label">Candidates</span>
+            <select className="select select-sm" value={maxVoters} onChange={e => setMaxVoters(parseInt(e.target.value))}>
+              {[0, 1, 2, 3, 4].map(n => (
+                <option key={n} value={n}>≤ {n} {n === 1 ? 'vote' : 'votes'}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="recs-bias-item recs-bias-item--inline">
+            <span className="recs-bias-label">Min dir films</span>
+            <select className="select select-sm" value={minDirFilms} onChange={e => changeMinDirFilms(parseInt(e.target.value))}>
+              {[1, 2, 3, 4].map(n => (
+                <option key={n} value={n}>{n === 1 ? 'No min (1)' : `≥ ${n} films`}</option>
+              ))}
+            </select>
+          </label>
+
+          <div className="recs-bias-sep" />
+
+          <button
+            type="button"
+            className={`btn btn-sm btn-ghost${weightsModified ? ' filter-reset-active' : ''}`}
+            onClick={resetWeights}
+            disabled={!weightsModified}
+            title="Reset model weights to default"
+          >
+            Reset Model
+          </button>
+        </div>
       </div>
 
       {/* List */}
