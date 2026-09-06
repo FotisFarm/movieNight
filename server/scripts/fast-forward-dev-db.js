@@ -92,12 +92,17 @@ async function main() {
   const localDbPath = path.join(DATA_DIR, 'movies.db');
 
   if (isRemote) {
-    targetUrl = process.env.TURSO_DATABASE_URL;
-    authToken = process.env.TURSO_AUTH_TOKEN;
+    targetUrl = (process.env.TURSO_DATABASE_URL || '').trim().replace(/^['"]|['"]$/g, '');
+    authToken = (process.env.TURSO_AUTH_TOKEN || '').trim().replace(/^['"]|['"]$/g, '');
     if (!targetUrl || !authToken) {
       console.error('❌ When using --remote, TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be set in environment.');
       process.exit(1);
     }
+    const masked = authToken.length > 10
+      ? `${authToken.slice(0, 6)}...${authToken.slice(-4)} (length: ${authToken.length} chars)`
+      : `*** (length: ${authToken.length} chars)`;
+    console.log(`📡 Connecting to remote DB: ${targetUrl}`);
+    console.log(`🔑 Using Auth Token: ${masked}`);
   } else {
     targetUrl = `file:${localDbPath}`;
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -151,6 +156,13 @@ async function main() {
 }
 
 main().catch(err => {
-  console.error('❌ Error during database fast-forward:', err);
+  console.error('\n❌ Error during database fast-forward:', err.message || err);
+  if (String(err).includes('401')) {
+    console.error('\n💡 HTTP 401 Unauthorized Troubleshooting:');
+    console.error('  1. Verify TURSO_DEV_DATABASE_URL points to the DEV database (e.g. libsql://movies-dev-xxxx.turso.io)');
+    console.error('  2. Verify TURSO_DEV_AUTH_TOKEN is the full, un-truncated token for movies-dev (JWT starting with eyJ...)');
+    console.error('  3. In Render dashboard, click the copy/reveal button on TURSO_AUTH_TOKEN to avoid copying truncated text.');
+    console.error('  4. Ensure the token has not expired and was minted for movies-dev (prod tokens get 401 against dev).');
+  }
   process.exit(1);
 });
