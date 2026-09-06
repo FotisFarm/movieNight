@@ -79,10 +79,10 @@ async function main() {
     });
   }
 
-  // Parse statements from SQL dump
+  // Parse statements from SQL dump preserving multi-line schemas
   const lines = sqlDump.split('\n');
   const statements = [];
-  let current = '';
+  let buffer = '';
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -90,10 +90,10 @@ async function main() {
     if (trimmed.toUpperCase().startsWith('BEGIN') || trimmed.toUpperCase().startsWith('COMMIT')) continue;
     if (trimmed.toUpperCase().startsWith('PRAGMA FOREIGN_KEYS')) continue;
 
-    current += (current ? ' ' : '') + trimmed;
+    buffer += (buffer ? '\n' : '') + trimmed;
     if (trimmed.endsWith(';')) {
-      statements.push(current);
-      current = '';
+      statements.push(buffer);
+      buffer = '';
     }
   }
 
@@ -140,22 +140,29 @@ async function main() {
     // Tables may not exist yet if fresh DB
   }
 
-  // 6. Execute SQL dump in manageable batches
-  console.log(`⚡ Applying ${statements.length} statements in batches...`);
-
-  // Drop tables in reverse foreign key order to prevent dependency errors
+  // 6. Execute restore cleanly
+  console.log(`⚡ Dropping existing tables in reverse dependency order...`);
   const dropOrder = ['rating_history', 'list_items', 'list_slug_aliases', 'lists', 'watchlist_votes', 'top3', 'ratings', 'movies'];
   for (const table of dropOrder) {
-    await client.execute(`DROP TABLE IF EXISTS ${table}`);
+    await client.execute(`DROP TABLE IF EXISTS "${table}"`);
   }
 
-  const createAndInserts = statements.filter(s => !s.toUpperCase().startsWith('DROP TABLE'));
-  const BATCH_SIZE = 100;
-  for (let i = 0; i < createAndInserts.length; i += BATCH_SIZE) {
-    const batch = createAndInserts.slice(i, i + BATCH_SIZE).join('\n');
-    await client.executeMultiple(batch);
+  const activeStmts = statements.filter(s => !s.trim().toUpperCase().startsWith('DROP TABLE'));
+  const creates = activeStmts.filter(s => s.trim().toUpperCase().startsWith('CREATE TABLE'));
+  const inserts = activeStmts.filter(s => s.trim().toUpperCase().startsWith('INSERT INTO'));
+
+  console.log(`⚡ Creating ${creates.length} tables...`);
+  for (const createStmt of creates) {
+    await client.execute(createStmt);
   }
-  console.log(`✅ All statements applied successfully!`);
+
+  console.log(`⚡ Inserting ${inserts.length} rows in batches of 50 via Turso batch API...`);
+  const BATCH_SIZE = 50;
+  for (let i = 0; i < inserts.length; i += BATCH_SIZE) {
+    const chunk = inserts.slice(i, i + BATCH_SIZE);
+    await client.batch(chunk, 'deferred');
+  }
+  console.log(`✅ All tables and rows restored successfully!`);
 
   // 7. Recreate view and run migrations via db.init()
   console.log('🔧 Recreating derived views (movie_scores)...');
