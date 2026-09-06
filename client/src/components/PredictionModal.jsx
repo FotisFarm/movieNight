@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { fmt, scoreClass, posterUrl } from '../utils';
 import WatchlistBadge from './WatchlistBadge';
+import LetterboxdPill from './LetterboxdPill';
 import './PredictionModal.css';
 
 export default function PredictionModal({ film, voters = [], onClose, onToggleWatchlist, onOpenFullMovie }) {
@@ -49,24 +50,8 @@ export default function PredictionModal({ film, voters = [], onClose, onToggleWa
                 {onToggleWatchlist && (
                   <WatchlistBadge id={film.id} watchlist={film.watchlist} onToggle={onToggleWatchlist} />
                 )}
-                {film.imdb_rating != null && (
-                  film.imdb_id ? (
-                    <a
-                      href={`https://www.imdb.com/title/${film.imdb_id}/`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="badge-imdb-pill"
-                      title="View on IMDb"
-                    >
-                      <span className="imdb-logo">IMDb</span>
-                      <span className="imdb-rating">{Number.isInteger(film.imdb_rating) ? film.imdb_rating : film.imdb_rating.toFixed(1)}</span>
-                    </a>
-                  ) : (
-                    <span className="badge-imdb-pill">
-                      <span className="imdb-logo">IMDb</span>
-                      <span className="imdb-rating">{Number.isInteger(film.imdb_rating) ? film.imdb_rating : film.imdb_rating.toFixed(1)}</span>
-                    </span>
-                  )
+                {(film.imdb_id || film.letterboxd_rating != null) && (
+                  <LetterboxdPill imdbId={film.imdb_id} score={film.letterboxd_rating} />
                 )}
               </div>
               <div className="pred-modal-sub">

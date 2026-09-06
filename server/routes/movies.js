@@ -3,6 +3,7 @@ const db = require('../db');
 const { rankBonus } = require('../scoring');
 const { lookupImdb, searchImdb, getImdbById, extractImdbId } = require('../omdb');
 const { findByImdbId, lookupPosterPath, getMovieDetails, lookupMovieRuntime } = require('../tmdb');
+const { fetchLetterboxdRating } = require('../letterboxd');
 const ah = require('../asyncHandler');
 const { enrichMovie, enrichMoviesBatch } = require('../enrich');
 
@@ -285,9 +286,16 @@ router.post('/', ah(async (req, res) => {
       }
     } catch (_) { /* best effort */ }
 
-    if (imdb?.imdbId || runtime || posterPath) {
-      await db.run('UPDATE movies SET imdb_id = ?, imdb_rating = ?, poster_path = ?, runtime = ? WHERE id = ?',
-        imdb?.imdbId ?? null, imdb?.imdbRating ?? null, posterPath ?? null, runtime ?? null, lastInsertRowid);
+    let letterboxdRating = null;
+    if (imdb?.imdbId) {
+      try {
+        letterboxdRating = await fetchLetterboxdRating(imdb.imdbId);
+      } catch (_) { /* best effort */ }
+    }
+
+    if (imdb?.imdbId || runtime || posterPath || letterboxdRating != null) {
+      await db.run('UPDATE movies SET imdb_id = ?, imdb_rating = ?, letterboxd_rating = ?, poster_path = ?, runtime = ? WHERE id = ?',
+        imdb?.imdbId ?? null, imdb?.imdbRating ?? null, letterboxdRating ?? null, posterPath ?? null, runtime ?? null, lastInsertRowid);
     }
   } catch (_) { /* film is still added even if metadata lookup is unavailable */ }
 
@@ -321,12 +329,17 @@ router.patch('/:id', ah(async (req, res) => {
     if (!cleanId) {
       updates.imdb_id = null;
       updates.imdb_rating = null;
+      updates.letterboxd_rating = null;
       // The poster was resolved from that id, so it goes too.
       updates.poster_path = null;
     } else {
       updates.imdb_id = cleanId;
-      const detail = await getImdbById(cleanId);
+      const [detail, lbRating] = await Promise.all([
+        getImdbById(cleanId),
+        fetchLetterboxdRating(cleanId).catch(() => null)
+      ]);
       updates.imdb_rating = detail?.imdbRating ?? null;
+      updates.letterboxd_rating = lbRating ?? null;
       if (detail?.runtime && updates.runtime === undefined) updates.runtime = detail.runtime;
       // Re-point the poster at the film the new id actually names. A TMDB
       // miss clears it rather than leaving the previous film's artwork.

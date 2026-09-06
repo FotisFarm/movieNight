@@ -11,6 +11,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
+import LetterboxdPill from '../components/LetterboxdPill';
 import { useToast } from '../hooks/useToast.jsx';
 import { useAppConfig } from '../AppConfigContext';
 import { fmtScore10 as fmt, scoreClass, formatRuntime } from '../utils';
@@ -328,14 +329,8 @@ export default function Watchlist({ voter }) {
                   <div className="wl-card-top">
                     <div className="wl-movie-title">{m.title}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                      {m.imdb_rating != null && (
-                        m.imdb_id ? (
-                          <a href={`https://www.imdb.com/title/${m.imdb_id}/`} className="badge-imdb-pill" target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
-                            <span className="imdb-logo">IMDb</span><span className="imdb-rating">{Number.isInteger(m.imdb_rating) ? m.imdb_rating : m.imdb_rating.toFixed(1)}</span>
-                          </a>
-                        ) : (
-                          <span className="badge-imdb-pill"><span className="imdb-logo">IMDb</span><span className="imdb-rating">{Number.isInteger(m.imdb_rating) ? m.imdb_rating : m.imdb_rating.toFixed(1)}</span></span>
-                        )
+                      {(m.imdb_id || m.letterboxd_rating != null) && (
+                        <LetterboxdPill imdbId={m.imdb_id} score={m.letterboxd_rating} />
                       )}
                       {(m.watchlistVotes?.length ?? 0) > 0 && (
                         <span className="wl-vote-badge">{m.watchlistVotes.length}</span>

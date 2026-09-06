@@ -1,0 +1,112 @@
+/* ── Letterboxd Pill & Floating Popover ── */
+.lb-pill-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.badge-letterboxd-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.badge-letterboxd-pill:hover {
+  opacity: 0.88;
+}
+
+.letterboxd-pill-badge {
+  background: #14181c;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 1px 4px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  line-height: 1.4;
+  height: 16px;
+  box-sizing: border-box;
+}
+
+.letterboxd-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.5px;
+}
+
+.lb-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.lb-dot-orange { background: #ff8000; }
+.lb-dot-green  { background: #00e054; }
+.lb-dot-blue   { background: #40bcf4; }
+
+.lb-text {
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .03em;
+}
+
+.letterboxd-rating-val {
+  font-size: 11px;
+  font-weight: 700;
+  color: #00e054;
+}
+
+/* ── Floating Popover Histogram ── */
+.lb-popover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  z-index: 1000;
+  background: #14181c;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75);
+  padding: 4px;
+  width: 258px;
+  height: 98px;
+  animation: lbFadeIn 0.15s ease-out;
+  pointer-events: auto;
+}
+
+/* Triangle indicator pointing to the pill */
+.lb-popover::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  right: 14px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #14181c transparent transparent transparent;
+}
+
+.lb-popover iframe {
+  display: block;
+  border: none;
+  width: 250px;
+  height: 90px;
+  background: #14181c;
+  border-radius: 4px;
+}
+
+@keyframes lbFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

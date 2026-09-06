@@ -6,6 +6,7 @@ import { useAppConfig } from '../AppConfigContext';
 import {
   useRatingHistory, useAnchor, useHoverIntent, HistoryPopover, HistoryWindow,
 } from './RatingHistory';
+import LetterboxdPill from './LetterboxdPill';
 import './MovieCard.css';
 
 // Each pill is the entry point to that voter's rating history: hover (or tap)
@@ -99,7 +100,7 @@ function Poster({ path, title, size }) {
 
 export default function MovieCard({ movie, onClick, listView = false, scoreMode = 'fair', onWatchlistToggle }) {
   const { voters, minVoters } = useAppConfig();
-  const { id, title, director, year, runtime, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, poster_path } = movie;
+  const { id, title, director, year, runtime, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, letterboxd_rating, poster_path } = movie;
 
   const hasScore = voterCount >= minVoters;
   const displayScore = hasScore
@@ -109,25 +110,8 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
   const cardClass = `movie-card${mn ? ' mn' : ''}${listView ? ' list-view' : ''}`;
   const keyProps = { role: 'button', tabIndex: 0, onKeyDown: e => e.key === 'Enter' && onClick() };
 
-  const ImdbBadge = imdb_rating != null && (
-    imdb_id ? (
-      <a
-        href={`https://www.imdb.com/title/${imdb_id}/`}
-        className="badge-imdb-pill"
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={e => e.stopPropagation()}
-        title="View on IMDb"
-      >
-        <span className="imdb-logo">IMDb</span>
-        <span className="imdb-rating">{Number.isInteger(imdb_rating) ? imdb_rating : imdb_rating.toFixed(1)}</span>
-      </a>
-    ) : (
-      <span className="badge-imdb-pill">
-        <span className="imdb-logo">IMDb</span>
-        <span className="imdb-rating">{Number.isInteger(imdb_rating) ? imdb_rating : imdb_rating.toFixed(1)}</span>
-      </span>
-    )
+  const LetterboxdBadge = (imdb_id || letterboxd_rating != null) && (
+    <LetterboxdPill imdbId={imdb_id} score={letterboxd_rating} />
   );
 
   if (listView) {
@@ -160,14 +144,14 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
           <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} />
         </div>
 
-        {ImdbBadge}
+        {LetterboxdBadge}
       </article>
     );
   }
 
   const hasBadges = Boolean(mn || watchlist || rank_global || onWatchlistToggle);
   const hasVoterRatings = Boolean(voters && voters.some(v => ratings?.[v] != null));
-  const hasRatingsOrImdb = Boolean(hasVoterRatings || imdb_rating != null);
+  const hasRatingsOrLb = Boolean(hasVoterRatings || imdb_id || letterboxd_rating != null);
 
   return (
     <article className={cardClass} onClick={onClick} {...keyProps}>
@@ -197,12 +181,12 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
           </div>
         )}
 
-        {hasRatingsOrImdb && (
+        {hasRatingsOrLb && (
           <div className="card-ratings">
             {hasVoterRatings && (
               <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} />
             )}
-            {ImdbBadge}
+            {LetterboxdBadge}
           </div>
         )}
       </div>

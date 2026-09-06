@@ -3,6 +3,7 @@ import { api } from '../api';
 import { useAppConfig } from '../AppConfigContext';
 import { fmtScore10 as fmt, scoreClass, extractImdbId, posterUrl, formatRuntime } from '../utils';
 import ReorderTop10Dialog from './ReorderTop10Dialog';
+import LetterboxdPill from './LetterboxdPill';
 import './MovieModal.css';
 
 const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
@@ -364,56 +365,48 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                   <div className="info-lbl">Group Rank</div>
                 </div>
               )}
-              {/* Clicking the tile opens the IMDb id editor below. */}
+              {/* Clicking the tile opens the Letterboxd/IMDb link editor below. */}
               <div
                 className="info-cell"
                 role="button" tabIndex={0}
                 style={{ cursor: 'pointer' }}
-                title={movie.imdb_id ? 'Click the badge to open IMDb · click here to edit the link' : 'Add IMDb link'}
+                title={movie.imdb_id ? 'Click the badge to open Letterboxd · click here to edit link' : 'Add Letterboxd / IMDb link'}
                 onClick={() => setImdbOpen(o => !o)}
                 onKeyDown={e => e.key === 'Enter' && setImdbOpen(o => !o)}
               >
                 <div className="info-val">
-                  {movie.imdb_rating != null ? (
-                    movie.imdb_id ? (
-                      <a
-                        href={`https://www.imdb.com/title/${movie.imdb_id}/`}
-                        className="badge-imdb-pill"
-                        target="_blank" rel="noopener noreferrer"
-                        style={{ fontSize: 14 }}
-                        title="Open on IMDb"
-                        onClick={e => e.stopPropagation()}
-                      >
-                        <span className="imdb-logo" style={{ fontSize: 11 }}>IMDb</span>
-                        <span className="imdb-rating" style={{ fontSize: 14 }}>{Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}</span>
-                      </a>
-                    ) : (
-                      <span className="badge-imdb-pill" style={{ fontSize: 14 }}>
-                        <span className="imdb-logo" style={{ fontSize: 11 }}>IMDb</span>
-                        <span className="imdb-rating" style={{ fontSize: 14 }}>{Number.isInteger(movie.imdb_rating) ? movie.imdb_rating : movie.imdb_rating.toFixed(1)}</span>
-                      </span>
-                    )
+                  {movie.letterboxd_rating != null || movie.imdb_id ? (
+                    <LetterboxdPill imdbId={movie.imdb_id} score={movie.letterboxd_rating} />
                   ) : (
                     <span className="score-none">＋</span>
                   )}
                 </div>
-                <div className="info-lbl">IMDb</div>
+                <div className="info-lbl">Letterboxd</div>
               </div>
             </div>
 
-            {/* IMDb editor — opened by ✎ edit mode or by clicking the IMDb tile above */}
+            {/* IMDb / Letterboxd editor — opened by ✎ edit mode or by clicking the Letterboxd tile above */}
             {(editing || imdbOpen) && (
               <>
                 <div className="modal-section-label section-label" style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>IMDb Link</span>
+                  <span>Letterboxd / IMDb Link</span>
                   {extractImdbId(editImdbId) && (
-                    <a
-                      href={`https://www.imdb.com/title/${extractImdbId(editImdbId)}/`}
-                      target="_blank" rel="noopener noreferrer"
-                      style={{ fontSize: 11, fontWeight: 400, textTransform: 'none' }}
-                    >
-                      View on IMDb ↗
-                    </a>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <a
+                        href={`https://letterboxd.com/imdb/${extractImdbId(editImdbId)}/`}
+                        target="_blank" rel="noopener noreferrer"
+                        style={{ fontSize: 11, fontWeight: 500, color: '#00e054', textTransform: 'none' }}
+                      >
+                        View on Letterboxd ↗
+                      </a>
+                      <a
+                        href={`https://www.imdb.com/title/${extractImdbId(editImdbId)}/`}
+                        target="_blank" rel="noopener noreferrer"
+                        style={{ fontSize: 11, fontWeight: 400, textTransform: 'none' }}
+                      >
+                        IMDb ↗
+                      </a>
+                    </div>
                   )}
                 </div>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>

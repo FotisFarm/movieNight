@@ -4,6 +4,7 @@ import { api } from '../api';
 import MovieModal from '../components/MovieModal';
 import PredictionModal from '../components/PredictionModal';
 import WatchlistBadge from '../components/WatchlistBadge';
+import LetterboxdPill from '../components/LetterboxdPill';
 import { useToast } from '../hooks/useToast.jsx';
 import { useAppConfig } from '../AppConfigContext';
 import { fmt, scoreClass } from '../utils';
@@ -498,11 +499,8 @@ export default function Predictions() {
                           <span className="preds-film-title">{f.title}</span>
                           {f.mn && <span className="badge badge-mn">MN</span>}
                           <WatchlistBadge id={f.id} watchlist={f.watchlist} onToggle={handleWatchlistToggle} />
-                          {f.imdb_rating != null && (
-                            <span className="badge-imdb-pill">
-                              <span className="imdb-logo">IMDb</span>
-                              <span className="imdb-rating">{Number.isInteger(f.imdb_rating) ? f.imdb_rating : f.imdb_rating.toFixed(1)}</span>
-                            </span>
+                          {(f.imdb_id || f.letterboxd_rating != null) && (
+                            <LetterboxdPill imdbId={f.imdb_id} score={f.letterboxd_rating} />
                           )}
                         </div>
                         <div className="preds-film-sub">

@@ -172,6 +172,7 @@ router.get('/', ah(async (req, res) => {
       watchlist: m.watchlist === 1,
       imdb_id: m.imdb_id ?? null,
       imdb_rating: m.imdb_rating ?? null,
+      letterboxd_rating: m.letterboxd_rating ?? null,
       voterCount,
       ratings: ratingsMap,
       actualScore: actualScore !== null ? Math.round(actualScore * 100) / 100 : null,

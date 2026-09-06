@@ -171,6 +171,9 @@ async function init() {
   // Film duration in minutes (from TMDB/OMDb)
   try { await client.execute('ALTER TABLE movies ADD COLUMN runtime INTEGER DEFAULT NULL'); } catch (_) {}
   await backfillInitialRuntimes();
+  // Letterboxd rating (5-star scale with 2 decimals)
+  try { await client.execute('ALTER TABLE movies ADD COLUMN letterboxd_rating REAL DEFAULT NULL'); } catch (_) {}
+  await backfillInitialLetterboxd();
 
   // Readable list URLs (/lists/christougenna-2026). The column is added
   // nullable — SQLite can't add a UNIQUE column — then every list without one
@@ -213,7 +216,7 @@ async function init() {
     SELECT
       m.id, m.director, m.title, m.year,
       m.mn, m.watchlist, m.cinobo, m.tokens, m.token_pts,
-      m.imdb_id, m.imdb_rating, m.poster_path, m.runtime,
+      m.imdb_id, m.imdb_rating, m.letterboxd_rating, m.poster_path, m.runtime,
       r.voter_count,
       r.score_sum,
       r.fair_score,
@@ -291,6 +294,41 @@ async function backfillInitialRuntimes() {
     console.log(`[db] Movie runtimes backfilled successfully. Total with runtime: ${after?.c}`);
   } catch (err) {
     console.warn('[db] Note: backfillInitialRuntimes notice:', err.message);
+  }
+}
+
+async function backfillInitialLetterboxd() {
+  try {
+    const existing = await get('SELECT COUNT(letterboxd_rating) AS c FROM movies WHERE letterboxd_rating IS NOT NULL');
+    if (existing?.c > 0) return;
+
+    let data;
+    try {
+      data = require('./data/initial-letterboxd.json');
+    } catch (_) {
+      try {
+        data = require('./initial-letterboxd.json');
+      } catch (e) {
+        return;
+      }
+    }
+
+    const entries = Object.entries(data).filter(([_, s]) => s != null && s !== '');
+    if (!entries.length) return;
+    console.log(`[db] Backfilling ${entries.length} Letterboxd ratings into database...`);
+
+    const CHUNK = 100;
+    for (let i = 0; i < entries.length; i += CHUNK) {
+      const slice = entries.slice(i, i + CHUNK);
+      const whenClauses = slice.map(([id, s]) => `WHEN ${parseInt(id, 10)} THEN ${Number(s)}`).join(' ');
+      const ids = slice.map(([id]) => parseInt(id, 10)).join(',');
+      const sql = `UPDATE movies SET letterboxd_rating = CASE id ${whenClauses} END WHERE id IN (${ids}) AND letterboxd_rating IS NULL`;
+      await run(sql);
+    }
+    const after = await get('SELECT COUNT(letterboxd_rating) AS c FROM movies WHERE letterboxd_rating IS NOT NULL');
+    console.log(`[db] Letterboxd ratings backfilled successfully. Total with letterboxd_rating: ${after?.c}`);
+  } catch (err) {
+    console.warn('[db] Note: backfillInitialLetterboxd notice:', err.message);
   }
 }
 

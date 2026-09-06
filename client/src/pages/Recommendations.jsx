@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
 import WatchlistBadge from '../components/WatchlistBadge';
+import LetterboxdPill from '../components/LetterboxdPill';
 import { useToast } from '../hooks/useToast.jsx';
 import { useAppConfig } from '../AppConfigContext';
 import { fmt, scoreClass, formatRuntime } from '../utils';
@@ -360,14 +361,8 @@ export default function Recommendations() {
                       <div className="rec-badges">
                         {f.mn        && <span className="badge badge-mn">MN</span>}
                         <WatchlistBadge id={f.id} watchlist={f.watchlist} onToggle={handleWatchlistToggle} />
-                        {f.imdb_rating != null && (
-                          f.imdb_id ? (
-                            <a href={`https://www.imdb.com/title/${f.imdb_id}/`} className="badge-imdb-pill" target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} title="View on IMDb">
-                              <span className="imdb-logo">IMDb</span><span className="imdb-rating">{Number.isInteger(f.imdb_rating) ? f.imdb_rating : f.imdb_rating.toFixed(1)}</span>
-                            </a>
-                          ) : (
-                            <span className="badge-imdb-pill"><span className="imdb-logo">IMDb</span><span className="imdb-rating">{Number.isInteger(f.imdb_rating) ? f.imdb_rating : f.imdb_rating.toFixed(1)}</span></span>
-                          )
+                        {(f.imdb_id || f.letterboxd_rating != null) && (
+                          <LetterboxdPill imdbId={f.imdb_id} score={f.letterboxd_rating} />
                         )}
                       </div>
                     </div>
