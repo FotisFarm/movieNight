@@ -304,11 +304,12 @@ async function backfillInitialLetterboxd() {
 
     let data;
     try {
-      data = require('./data/initial-letterboxd.json');
+      data = require('./initial-letterboxd.json');
     } catch (_) {
       try {
-        data = require('./initial-letterboxd.json');
+        data = require('./data/initial-letterboxd.json');
       } catch (e) {
+        console.warn('[db] Could not load initial-letterboxd.json:', e.message);
         return;
       }
     }
