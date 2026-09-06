@@ -14,11 +14,20 @@ router.post('/contenders', ah(async (req, res) => {
     pool = 'watchlist',
     listId,
     allowWatched = false,
+    historyMode,
     maxRuntime,
     minRuntime,
     decade,
     limit = 16,
   } = req.body;
+
+  // Resolve effective history mode:
+  // 'fresh': only films unseen by ALL attendees (seenCount === 0)
+  // 'share': films seen by 1+ attendees, but where at least 1 attendee has NOT seen it yet (1 <= seenCount < N)
+  // 'all': all films allowed (with a novelty discount for films where 100% of attendees have already seen it)
+  const effectiveHistoryMode = ['fresh', 'share', 'all'].includes(historyMode)
+    ? historyMode
+    : (allowWatched ? 'share' : 'fresh');
 
   // Validate and sanitize attendees (fallback to all registered voters)
   const validAttendees = Array.isArray(reqAttendees) && reqAttendees.length > 0
@@ -106,10 +115,23 @@ router.post('/contenders', ah(async (req, res) => {
   const totalWatchlist = allMovies.filter(m => m.watchlist === 1).length;
 
   let candidates = allMovies.filter(m => {
-    // 1. Exclude films that ANY attendee has already watched/rated if allowWatched is false
+    // 1. History mode filtering based on attendee ratings
     const existing = ratingsByMovie[m.id] || [];
     const attendeeRatings = existing.filter(r => attendees.includes(r.voter));
-    if (!allowWatched && attendeeRatings.length > 0) return false;
+    const seenCount = attendeeRatings.length;
+
+    if (effectiveHistoryMode === 'fresh') {
+      if (seenCount > 0) return false;
+    } else if (effectiveHistoryMode === 'share') {
+      if (attendees.length > 1) {
+        // Must be seen by at least 1 attendee, but NOT seen by all attendees
+        if (seenCount === 0 || seenCount >= attendees.length) return false;
+      } else {
+        // Solo attendee: sharing is impossible, so keep it fresh
+        if (seenCount > 0) return false;
+      }
+    }
+    // 'all' includes any film
 
     // 2. Pool filtering
     if (pool === 'watchlist') {
@@ -119,8 +141,7 @@ router.post('/contenders', ah(async (req, res) => {
       return listMovieIds.has(m.id);
     }
     if (pool === 'unwatched') {
-      // If re-watches are allowed, don't restrict to 0 global ratings which would clash
-      return allowWatched ? true : existing.length === 0;
+      return effectiveHistoryMode === 'fresh' ? existing.length === 0 : true;
     }
     // 'all' or 'catalog' includes all films
     return true;
@@ -206,6 +227,15 @@ router.post('/contenders', ah(async (req, res) => {
     if (unanimousWatchlist) sessionScore += 0.35;
     else if (attendeeWlCount > 0) sessionScore += (attendeeWlCount / attendees.length) * 0.20;
 
+    const seenCount = attendeeBreakdown.filter(a => a.isRated).length;
+    const isAllSeen = attendees.length > 1 ? (seenCount === attendees.length) : (seenCount === 1);
+
+    // In 'all' mode: apply a Re-watch Novelty Discount if 100% of attendees have already seen it,
+    // so legendary 10/10 re-watches don't completely drown out fresh or shared gems.
+    if (effectiveHistoryMode === 'all' && isAllSeen) {
+      sessionScore -= 0.6;
+    }
+
     sessionScore = Math.min(10, Math.max(1, Math.round(sessionScore * 10) / 10));
     const matchPercentage = Math.round(Math.min(100, Math.max(50, (sessionScore / 10) * 100)));
 
@@ -222,8 +252,9 @@ router.post('/contenders', ah(async (req, res) => {
       matchPercentage,
       unanimousWatchlist,
       attendeeWlCount,
-      seenCount: attendeeBreakdown.filter(a => a.isRated).length,
-      isRewatch: attendeeBreakdown.some(a => a.isRated),
+      seenCount,
+      isAllSeen,
+      isRewatch: seenCount > 0,
       crowdPleaser: spread <= 0.8,
       wildcard: spread >= 1.6,
       spread,
@@ -231,10 +262,11 @@ router.post('/contenders', ah(async (req, res) => {
     };
   });
 
-  // Sort by session match score desc, breaking ties by watchlist interest and title
+  // Sort by session match score desc, breaking ties by watchlist interest, then novelty (unseen preference), then title
   scored.sort((a, b) => {
     if (b.sessionScore !== a.sessionScore) return b.sessionScore - a.sessionScore;
     if (b.attendeeWlCount !== a.attendeeWlCount) return b.attendeeWlCount - a.attendeeWlCount;
+    if (a.isAllSeen !== b.isAllSeen) return a.isAllSeen ? 1 : -1;
     return a.title.localeCompare(b.title);
   });
 
@@ -246,7 +278,8 @@ router.post('/contenders', ah(async (req, res) => {
     meta: {
       attendees,
       pool,
-      allowWatched: Boolean(allowWatched),
+      historyMode: effectiveHistoryMode,
+      allowWatched: effectiveHistoryMode !== 'fresh',
       poolCountBeforeRuntime,
       totalCandidates: scored.length,
       totalWatchlist,

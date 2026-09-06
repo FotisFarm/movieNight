@@ -135,7 +135,7 @@ export default function Session({ voter }) {
   const [pool, setPool] = useState('watchlist'); // 'watchlist' | 'unwatched' | 'list'
   const [customLists, setCustomLists] = useState([]);
   const [selectedListId, setSelectedListId] = useState('');
-  const [allowWatched, setAllowWatched] = useState(false);
+  const [historyMode, setHistoryMode] = useState('fresh'); // 'fresh' | 'share' | 'all'
   const [durationFilter, setDurationFilter] = useState('any');
   const [soundEnabled, setSoundEnabled] = useState(true);
 
@@ -196,7 +196,7 @@ export default function Session({ voter }) {
         attendees,
         pool,
         listId: pool === 'list' ? selectedListId : undefined,
-        allowWatched,
+        historyMode,
         minRuntime: dur.min,
         maxRuntime: dur.max,
         limit: 16,
@@ -218,7 +218,7 @@ export default function Session({ voter }) {
     } finally {
       setLoading(false);
     }
-  }, [attendees, pool, selectedListId, allowWatched, durationFilter]);
+  }, [attendees, pool, selectedListId, historyMode, durationFilter]);
 
   useEffect(() => {
     fetchContenders();
@@ -623,25 +623,33 @@ export default function Session({ voter }) {
             </div>
           </div>
 
-          {/* Re-watches Toggle */}
+          {/* Previous Watches Mode */}
           <div className="filter-col">
             <span className="filter-label">🔄 Previous Watches</span>
             <div className="chip-group">
               <button
                 type="button"
-                className={`filter-chip ${!allowWatched ? 'active' : ''}`}
-                onClick={() => setAllowWatched(false)}
-                title="Only include films that none of the attendees in the room have rated"
+                className={`filter-chip ${historyMode === 'fresh' ? 'active' : ''}`}
+                onClick={() => setHistoryMode('fresh')}
+                title="Only include films that none of the attendees in the room have rated (0 seen)"
               >
-                🆕 Fresh (Unseen by All)
+                🆕 Fresh (Unseen)
               </button>
               <button
                 type="button"
-                className={`filter-chip ${allowWatched ? 'active' : ''}`}
-                onClick={() => setAllowWatched(true)}
-                title="Allow films that 1 or more attendees have already seen/rated"
+                className={`filter-chip ${historyMode === 'share' ? 'active' : ''}`}
+                onClick={() => setHistoryMode('share')}
+                title="Share favorites: 1+ attendees have seen it, but someone in the room hasn't seen it yet"
               >
-                🔄 Allow Re-watches
+                👥 Share Favorites
+              </button>
+              <button
+                type="button"
+                className={`filter-chip ${historyMode === 'all' ? 'active' : ''}`}
+                onClick={() => setHistoryMode('all')}
+                title="All films allowed (including films seen by all attendees, with a re-watch discount)"
+              >
+                🔄 All Allowed
               </button>
             </div>
           </div>
@@ -886,8 +894,11 @@ export default function Session({ voter }) {
                           </span>
                         ))}
                         {movie.isRewatch && (
-                          <span className="signal-badge rewatch-badge" title={`${movie.seenCount} of ${attendees.length} attendees have seen this before`}>
-                            🔄 Seen ({movie.seenCount}/{attendees.length})
+                          <span
+                            className={`signal-badge ${movie.isAllSeen ? 'all-seen-badge' : 'share-badge'}`}
+                            title={movie.isAllSeen ? `All ${movie.seenCount} attendees have seen this before` : `${movie.seenCount} of ${attendees.length} attendees have seen this (new to ${attendees.length - movie.seenCount})`}
+                          >
+                            {movie.isAllSeen ? `🔄 Re-watch (${movie.seenCount}/${attendees.length})` : `👥 Share (${movie.seenCount}/${attendees.length} seen)`}
                           </span>
                         )}
                         {movie.crowdPleaser && (

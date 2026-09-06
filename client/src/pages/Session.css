@@ -615,10 +615,17 @@
   color: #f1c40f;
 }
 
-.signal-badge.rewatch-badge {
+.signal-badge.rewatch-badge,
+.signal-badge.share-badge {
   background: rgba(52, 152, 219, 0.15);
   color: #3498db;
   border: 1px solid rgba(52, 152, 219, 0.35);
+}
+
+.signal-badge.all-seen-badge {
+  background: rgba(155, 89, 182, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(155, 89, 182, 0.35);
 }
 
 .signal-badge.wl-unanimous {
