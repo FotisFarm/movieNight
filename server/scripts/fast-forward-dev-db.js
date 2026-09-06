@@ -107,6 +107,27 @@ function extractJwtTokens(raw) {
   if (!raw) return [];
   let text = raw.trim().replace(/^['"]|['"]$/g, '');
   text = text.replace(/^Bearer\s+/i, '');
+
+  const indices = [];
+  let idx = text.indexOf('eyJhbGciOi');
+  while (idx !== -1) {
+    indices.push(idx);
+    idx = text.indexOf('eyJhbGciOi', idx + 1);
+  }
+
+  const found = [];
+  for (let i = 0; i < indices.length; i++) {
+    const start = indices[i];
+    const end = (i + 1 < indices.length) ? indices[i + 1] : text.length;
+    let candidate = text.slice(start, end).trim();
+    candidate = candidate.replace(/^['"]|['"]$/g, '').replace(/[\s\r\n,;]+$/, '').replace(/\.+$/, '');
+    if (candidate.split('.').length === 3) {
+      found.push(candidate);
+    }
+  }
+
+  if (found.length > 0) return found;
+
   const matches = text.match(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_=-]+/g);
   if (matches && matches.length > 0) {
     return matches.map(m => m.replace(/\.+$/, ''));
