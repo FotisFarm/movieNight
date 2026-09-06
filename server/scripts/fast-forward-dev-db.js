@@ -13,55 +13,77 @@ async function main() {
   const isRemote = process.argv.includes('--remote');
   console.log(`\n🚀 Fast-forwarding ${isRemote ? 'REMOTE Turso' : 'LOCAL dev'} database from production...\n`);
 
-  // 1. Fetch latest backups branch from origin
-  console.log('📦 Fetching latest snapshots from origin/backups...');
-  let backupRef = 'origin/backups';
-  try {
-    execSync('git fetch origin backups:refs/remotes/origin/backups --force', { stdio: 'pipe' });
-  } catch (err) {
-    try {
-      execSync('git fetch origin backups', { stdio: 'pipe' });
-      backupRef = 'FETCH_HEAD';
-    } catch (_) {
-      console.warn('⚠️  Could not fetch origin/backups over network, trying local git cache...');
-    }
-  }
+  // 1. Identify the latest snapshot file
+  let latestFile = null;
+  let sqlDump = null;
 
-  // 2. Identify the latest snapshot file
-  let backupFiles = [];
-  try {
-    let lsOutput;
-    try {
-      lsOutput = execSync(`git ls-tree ${backupRef}`, { encoding: 'utf8' });
-    } catch (_) {
-      lsOutput = execSync('git ls-tree origin/backups', { encoding: 'utf8' });
-      backupRef = 'origin/backups';
-    }
-    backupFiles = lsOutput
-      .split('\n')
-      .filter(line => line.includes('movies_') && line.endsWith('.sql'))
-      .map(line => line.split('\t')[1])
-      .filter(Boolean)
+  const backupsDir = process.env.BACKUPS_DIR || path.join(__dirname, '..', '..', 'backups-branch');
+  if (fs.existsSync(backupsDir)) {
+    console.log(`📂 Reading snapshots from folder: ${backupsDir}...`);
+    const files = fs.readdirSync(backupsDir)
+      .filter(f => f.startsWith('movies_') && f.endsWith('.sql'))
       .sort();
-  } catch (err) {
-    console.error('❌ Failed to list files from origin/backups:', err.message);
-    process.exit(1);
+    if (files.length > 0) {
+      latestFile = files[files.length - 1];
+      console.log(`📄 Found latest snapshot: ${latestFile}`);
+      sqlDump = fs.readFileSync(path.join(backupsDir, latestFile), 'utf8');
+    }
   }
 
-  if (backupFiles.length === 0) {
-    console.error('❌ No SQL snapshots found on origin/backups branch.');
-    process.exit(1);
+  if (!sqlDump) {
+    console.log('📦 Fetching latest snapshots from git origin/backups...');
+    let backupRef = 'origin/backups';
+    try {
+      execSync('git fetch origin backups:refs/remotes/origin/backups --force', { stdio: 'pipe' });
+    } catch (err) {
+      try {
+        execSync('git fetch origin backups', { stdio: 'pipe' });
+        backupRef = 'FETCH_HEAD';
+      } catch (_) {
+        console.warn('⚠️  Could not fetch origin/backups over network, trying local git cache...');
+      }
+    }
+
+    let backupFiles = [];
+    try {
+      let lsOutput;
+      try {
+        lsOutput = execSync(`git ls-tree ${backupRef}`, { encoding: 'utf8' });
+      } catch (_) {
+        lsOutput = execSync('git ls-tree origin/backups', { encoding: 'utf8' });
+        backupRef = 'origin/backups';
+      }
+      backupFiles = lsOutput
+        .split('\n')
+        .filter(line => line.includes('movies_') && line.endsWith('.sql'))
+        .map(line => line.split('\t')[1])
+        .filter(Boolean)
+        .sort();
+    } catch (err) {
+      console.error('❌ Failed to list files from origin/backups:', err.message);
+      process.exit(1);
+    }
+
+    if (backupFiles.length === 0) {
+      console.error('❌ No SQL snapshots found on origin/backups branch.');
+      process.exit(1);
+    }
+
+    latestFile = backupFiles[backupFiles.length - 1];
+    console.log(`📄 Found latest snapshot: ${latestFile}`);
+
+    console.log('⏳ Extracting snapshot contents...');
+    sqlDump = execSync(`git show ${backupRef}:${latestFile}`, {
+      encoding: 'utf8',
+      maxBuffer: 100 * 1024 * 1024,
+    });
   }
 
-  const latestFile = backupFiles[backupFiles.length - 1];
-  console.log(`📄 Found latest snapshot: ${latestFile}`);
-
-  // 3. Read the SQL content from git
-  console.log('⏳ Extracting snapshot contents...');
-  const sqlDump = execSync(`git show ${backupRef}:${latestFile}`, {
-    encoding: 'utf8',
-    maxBuffer: 100 * 1024 * 1024,
-  });
+  // Sanitize SQL dump: strip BEGIN TRANSACTION and COMMIT because executeMultiple
+  // already executes all statements atomically as a single pipeline.
+  const cleanSqlDump = sqlDump
+    .replace(/^\s*BEGIN\s+TRANSACTION\s*;/gmi, '')
+    .replace(/^\s*COMMIT\s*;/gmi, '');
 
   // 4. Connect to target database
   let targetUrl;
@@ -103,7 +125,7 @@ async function main() {
 
   // 6. Execute SQL dump
   console.log('⚡ Applying production snapshot (this takes 1-2 seconds)...');
-  await client.executeMultiple(sqlDump);
+  await client.executeMultiple(cleanSqlDump);
 
   // 7. Recreate view and run migrations via db.init()
   console.log('🔧 Recreating derived views (movie_scores)...');

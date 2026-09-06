@@ -19,8 +19,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Checkout backups branch
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          ref: backups
+          path: backups-branch
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -36,4 +40,5 @@ jobs:
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DEV_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_DEV_AUTH_TOKEN }}
+          BACKUPS_DIR: ${{ github.workspace }}/backups-branch
         run: node scripts/fast-forward-dev-db.js --remote
