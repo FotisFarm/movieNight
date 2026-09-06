@@ -559,21 +559,21 @@ export default function Session({ voter }) {
         </div>
 
         {/* Pool & Duration Filters */}
-        <div className="filter-row">
+        <div className="session-filter-row">
           {/* Candidate Pool */}
-          <div className="filter-col">
-            <span className="filter-label">🎬 Candidate Pool</span>
-            <div className="chip-group">
+          <div className="session-filter-col">
+            <span className="session-filter-label">🎬 Candidate Pool</span>
+            <div className="session-chip-group">
               <button
                 type="button"
-                className={`filter-chip ${pool === 'watchlist' ? 'active' : ''}`}
+                className={`session-filter-chip ${pool === 'watchlist' ? 'active' : ''}`}
                 onClick={() => setPool('watchlist')}
               >
                 Watchlist {meta?.totalWatchlist != null ? `(${meta.totalWatchlist})` : ''}
               </button>
               <button
                 type="button"
-                className={`filter-chip ${pool === 'all' || pool === 'unwatched' ? 'active' : ''}`}
+                className={`session-filter-chip ${pool === 'all' || pool === 'unwatched' ? 'active' : ''}`}
                 onClick={() => setPool('all')}
               >
                 All Films {meta?.totalMovies != null ? `(${meta.totalMovies})` : ''}
@@ -581,7 +581,7 @@ export default function Session({ voter }) {
               {customLists.length > 0 && (
                 <button
                   type="button"
-                  className={`filter-chip ${pool === 'list' ? 'active' : ''}`}
+                  className={`session-filter-chip ${pool === 'list' ? 'active' : ''}`}
                   onClick={() => setPool('list')}
                 >
                   Custom List
@@ -607,14 +607,14 @@ export default function Session({ voter }) {
           </div>
 
           {/* Duration Chips */}
-          <div className="filter-col">
-            <span className="filter-label">⏱️ Duration / Runtime</span>
-            <div className="chip-group">
+          <div className="session-filter-col">
+            <span className="session-filter-label">⏱️ Duration / Runtime</span>
+            <div className="session-chip-group">
               {DURATION_OPTIONS.map(opt => (
                 <button
                   key={opt.id}
                   type="button"
-                  className={`filter-chip ${durationFilter === opt.id ? 'active' : ''}`}
+                  className={`session-filter-chip ${durationFilter === opt.id ? 'active' : ''}`}
                   onClick={() => setDurationFilter(opt.id)}
                 >
                   {opt.label}
@@ -624,12 +624,12 @@ export default function Session({ voter }) {
           </div>
 
           {/* Previous Watches Mode */}
-          <div className="filter-col">
-            <span className="filter-label">🔄 Previous Watches</span>
-            <div className="chip-group">
+          <div className="session-filter-col">
+            <span className="session-filter-label">🔄 Previous Watches</span>
+            <div className="session-chip-group">
               <button
                 type="button"
-                className={`filter-chip ${historyMode === 'fresh' ? 'active' : ''}`}
+                className={`session-filter-chip ${historyMode === 'fresh' ? 'active' : ''}`}
                 onClick={() => setHistoryMode('fresh')}
                 title="Only include films that none of the attendees in the room have rated (0 seen)"
               >
@@ -637,7 +637,7 @@ export default function Session({ voter }) {
               </button>
               <button
                 type="button"
-                className={`filter-chip ${historyMode === 'share' ? 'active' : ''}`}
+                className={`session-filter-chip ${historyMode === 'share' ? 'active' : ''}`}
                 onClick={() => setHistoryMode('share')}
                 title="Share favorites: 1+ attendees have seen it, but someone in the room hasn't seen it yet"
               >
@@ -645,7 +645,7 @@ export default function Session({ voter }) {
               </button>
               <button
                 type="button"
-                className={`filter-chip ${historyMode === 'all' ? 'active' : ''}`}
+                className={`session-filter-chip ${historyMode === 'all' ? 'active' : ''}`}
                 onClick={() => setHistoryMode('all')}
                 title="All films allowed (including films seen by all attendees, with a re-watch discount)"
               >
