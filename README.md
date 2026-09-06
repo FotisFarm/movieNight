@@ -6,16 +6,18 @@ A private web app for a group of friends to rate films, track Movie Night sessio
 
 ## Features
 
-- **Films** — browse and search the full catalogue, filtered by voter, director, year, or MN status. Rate films, leave comments, assign Top 10 picks, and edit title/director/year inline. Sort by score, controversy, or date added. Live rank badges update as scores change.
+- **Tonight's Movie Night** (`/session`) — real-time session planner and spinning wheel tailored for whoever is in the room tonight. Dynamically adapts predictions to present attendees, applies runtime constraints (<90m, <105m, etc.), offers 3 history modes (Fresh unseen, Share favorites, All allowed with re-watch discount), and uses an anti-veto consensus algorithm with a canvas roulette wheel, sound effects, and confetti.
+- **Films** — browse and search the full catalogue with a responsive horizontal filter bar, mobile filter drawer with 1-tap active chips, voter/status pairing, and inline 1-click watchlist toggling. View durations, rate films, leave comments, and manage Top 10 picks via a two-column modal with drag-and-drop and ripple reordering.
 - **Rankings** — four leaderboard views (Fair Score / Group Score × All Films / Movie Nights only), each with Top 10 Films, Top Directors, and Top Years panels. Click a director or year to see all their films and their mean score.
 - **Watchlist** — films the group wants to watch next, with per-voter voting and a "Most Wanted" ranking.
 - **Lists** — free-form named lists ("Christmas 2026", "Noir night") that live alongside the watchlist and touch no film flags. Drag to reorder; anyone can add films, only the creator can rename or delete.
-- **Picks** — unrated or partially-rated films ranked by predicted group enjoyment, using a Bayesian blend of director history, decade averages, and Top 10 bonuses. Adjustable bias sliders.
+- **Picks** (`/recommendations`) — unrated or partially-rated films ranked by predicted group enjoyment, using a Bayesian blend of director history, decade averages, and Top 10 bonuses with a Catalog Breadth Multiplier. Interactive bias weight sliders.
+- **Prediction Accuracy** (`/predictions`) — retrospective report card testing the prediction engine against past movie nights using Leave-One-Out Cross-Validation (LOOCV). Tracks Mean Absolute Error (MAE), Bullseyes, Sleeper Hits, and Pedigree Flops.
 - **Controversy** — films ranked by score standard deviation: green (consensus) → gold → red (polarising).
 - **Stats** — per-voter overview (films rated, mean score, favourite director/decade, score distribution) with a drill-down modal, plus everyone's Top 10.
 - **Compare** — head-to-head between any two films, or any two voters.
 - **Rating history** — every score change and Top 10 movement is recorded. Hover a voter pill on any film card for a stepped graph of how that rating moved over time.
-- **Posters and IMDb data** — posters from TMDB, IDs and ratings from OMDb, both resolved automatically when a film is added.
+- **Posters, Runtimes, and IMDb data** — posters from TMDB, durations in minutes, IDs and ratings from OMDb, all resolved automatically and formatted cleanly.
 - **Themes** — ten film-inspired colour schemes (The Matrix, Vertigo, Blade Runner, The Godfather, …) selectable from the header and remembered per browser.
 
 ---
@@ -27,6 +29,7 @@ A private web app for a group of friends to rate films, track Movie Night sessio
 | Fair Score | `sum of ratings / number of raters` + Top 10 boost | Default card score |
 | Group Score | `sum of ratings / group size (5)` + Top 10 boost | Penalises films not seen by everyone |
 | Top 10 boost | `(11 − rank) / 10` per voter — #1 = +1.0, #2 = +0.9 … #10 = +0.1 | Added to both scores, capped at 10 |
+| Tonight Consensus | `(70% × Avg) + (30% × Worst) - (8% × Spread) + WL bonus - Re-watch discount` | Ranked contenders for the tonight wheel |
 
 Films need at least 2 ratings before an aggregate score is shown.
 
@@ -137,6 +140,8 @@ The database is seeded automatically on first start from `server/data/seed.json`
 | Deploy | `Deploy to prod` GitHub Action (manual dispatch), or `git pull && docker compose up -d --build` on the box | auto-deploys on push to `dev` |
 
 Work on `dev`, verify on Render, then merge to `main` and deploy. The two databases have separate tokens, so neither environment can reach the other's data.
+
+The dev database can be fast-forwarded to a fresh production snapshot at any time via the **`Sync Dev DB`** GitHub Action (`.github/workflows/sync-dev-db.yml`) or locally via `npm run db:sync-prod`.
 
 ---
 

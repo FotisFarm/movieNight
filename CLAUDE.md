@@ -43,31 +43,34 @@ MovieNights/
 ├── client/                   # React + Vite frontend
 │   └── src/
 │       ├── api.js            # fetch wrapper (getMovies, getRankings, getRecommendations, etc.)
-│       ├── App.jsx           # Router: /films, /rankings, /watchlist, /lists, /recommendations, /controversy, /stats, /compare, /chat
+│       ├── App.jsx           # Router: /films, /session, /rankings, /watchlist, /lists, /recommendations, /predictions, /controversy, /stats, /compare, /chat
 │       ├── constants.js      # VOTERS fallback for components that render before /api/config lands
-│       ├── utils.js          # fmt, scoreClass, posterUrl, extractImdbId (client-side convenience copy)
+│       ├── utils.js          # fmt, scoreClass, formatRuntime, posterUrl, extractImdbId
 │       ├── AppConfigContext.jsx  # Fetches GET /api/config → { voters, groupSize, minVoters } — see [Configurable voters](#configurable-voters--group-size)
 │       ├── ThemeContext.jsx  # Theme state + localStorage persistence — see [Themes](#themes)
 │       ├── index.css         # Global styles, CSS variables, shared classes, all theme palettes
 │       ├── components/
 │       │   ├── MovieCard.jsx / .css          # Film card (grid + list view)
-│       │   ├── MovieModal.jsx / .css         # Edit ratings, top10, flags, title/director/year
-│       │   ├── AddMovieModal.jsx             # Add new film
+│       │   ├── MovieModal.jsx / .css         # Edit ratings, top10, flags, title/director/year, list toggles
+│       │   ├── AddMovieModal.jsx             # Add new film with OMDb autocomplete
 │       │   ├── DirectorYearModal.jsx / .css  # Click director/year in Rankings → films + mean score
+│       │   ├── PredictionModal.jsx / .css    # Detailed math breakdown on accuracy retrospective
 │       │   ├── RatingHistory.jsx / .css      # Voter-pill hover popover + StepChart — see [Rating history](#rating-history)
 │       │   ├── RankIcon.jsx                  # Top 10 rank badge (🥇🥈🥉 for 1–3, number badge for 4–10)
 │       │   ├── RankingSection.jsx / .css
-│       │   └── Header.jsx / .css             # Nav + theme dropdown + mobile footer
+│       │   └── Header.jsx / .css             # Nav hubs + theme dropdown + mobile drawer / bottom bar
 │       ├── hooks/
 │       │   ├── useToast.jsx
 │       │   └── useRankMap.js # Live fair/group/mnFair/mnGroup rank positions from the full film list
 │       ├── stories/          # MovieCard + RankingSection Storybook stories — ⚠️ no storybook dep or script; orphaned
 │       └── pages/
 │           ├── Login.jsx                # Voter-name buttons + shared password
-│           ├── Films.jsx / .css         # Main film browser
+│           ├── Session.jsx / .css       # "Tonight's Movie Night" — attendee dynamic planner & interactive wheel
+│           ├── Films.jsx / .css         # Main film browser with responsive horizontal filter bar & mobile drawer
 │           ├── Rankings.jsx / .css      # 4-row rankings layout
 │           ├── Watchlist.jsx / .css
-│           ├── Recommendations.jsx / .css  # "Picks" page — ranked unrated/partially-rated films
+│           ├── Recommendations.jsx / .css  # "Picks" page — Bayesian predicted enjoyment with bias sliders
+│           ├── Predictions.jsx / .css   # "Accuracy" page — Leave-One-Out retrospective report card
 │           ├── Controversy.jsx / .css   # Films ranked by score std deviation
 │           ├── Stats.jsx / .css         # Per-voter overview + drill-down + everyone's Top 10
 │           ├── Compare.jsx / .css       # Two modes: film-vs-film and voter-vs-voter head-to-head
@@ -80,9 +83,10 @@ MovieNights/
 │   ├── asyncHandler.js       # Wraps async route handlers so rejections reach the error middleware
 │   ├── db.js                 # libSQL client (Turso/local file), async get/all/run/transaction helpers, schema+migrations
 │   ├── enrich.js             # enrichMovie / enrichMoviesBatch — shared by the movies and lists routes
-│   ├── seed.js               # One-time seeding from data/seed.json
+│   ├── seed.js               # One-time seeding from data/seed.json (carries runtime)
 │   ├── omdb.js               # OMDb helpers: lookupImdb, searchImdb (fuzzy), getImdbById, extractImdbId
-│   ├── tmdb.js               # TMDB helpers: poster lookup by imdb_id (see [Posters](#posters-tmdb))
+│   ├── tmdb.js               # TMDB helpers: poster lookup by imdb_id, runtime fetch
+│   ├── initial-runtimes.json # Bundled duration dataset (1,102 films) for offline/Docker backfill
 │   ├── db-readonly.js        # Second libSQL client (ideally a read-only Turso token) + runReadOnlySql
 │   ├── llm.js                # Anthropic text-to-SQL tool runner (claude-sonnet-5)
 │   ├── data/
@@ -90,13 +94,16 @@ MovieNights/
 │   │   └── movies.db         # local-file DB fallback (gitignored) — only used when TURSO_DATABASE_URL is unset
 │   ├── routes/
 │   │   ├── auth.js           # /api/auth — login/logout/me; VOTERS + mnAdmin + the Σάκιας guest
-│   │   ├── movies.js         # CRUD (scores/ratings/comments come from enrich.js)
+│   │   ├── movies.js         # CRUD (scores/ratings/comments come from enrich.js), /backfill-runtimes
+│   │   ├── session.js        # GET /api/session/contenders — attendee anti-veto consensus scoring & wheel candidates
 │   │   ├── rankings.js       # 12 ranking panels across 4 row groups
-│   │   ├── recommendations.js  # GET /api/recommendations — Bayesian ranked picks
+│   │   ├── recommendations.js  # GET /api/recommendations (Picks) + GET /api/recommendations/retrospective (Accuracy)
 │   │   ├── lists.js          # /api/lists — custom named film lists
 │   │   └── chat.js           # POST /api/chat — natural-language Q&A (read-only)
 │   └── scripts/
 │       ├── backup-and-seed.js  # Nightly SQL dump + seed.json regeneration (async API, current)
+│       ├── fast-forward-dev-db.js # Fast-forwards dev Render Turso DB from latest backups snapshot
+│       ├── backfill-runtimes.js# TMDB/OMDb duration backfill tool
 │       ├── backfill-posters.js # Fills movies.poster_path from TMDB (re-runnable)
 │       ├── backfill-rating-history.js  # Reconstructs history from the backups branch — see [Backfill](#backfill--serverscriptsbackfill-rating-historyjs)
 │       ├── fix-imdb-ids.js     # Repairs imdb_ids pointing at making-ofs/trailers
@@ -105,6 +112,7 @@ MovieNights/
 ├── .github/
 │   └── workflows/
 │       ├── db-backup.yml     # Daily 02:00 UTC: SQL snapshot → backups branch + seed.json refresh → main
+│       ├── sync-dev-db.yml   # Manual dispatch: fast-forwards dev DB from latest backups snapshot
 │       └── deploy.yml        # Manual dispatch: SSH deploy to the Oracle prod box — see [Environments](#environments-prod--dev)
 ├── Dockerfile                # Multi-stage: Vite build → lean Node runtime
 ├── docker-compose.yml
@@ -116,7 +124,7 @@ MovieNights/
 ## Database schema
 ```sql
 movies  (id, director, title, year, rank_global, mn, watchlist, cinobo, tokens, token_pts,
-         imdb_id TEXT, imdb_rating REAL, poster_path TEXT)
+         imdb_id TEXT, imdb_rating REAL, poster_path TEXT, runtime INTEGER)
 ratings (id, movie_id → movies, voter TEXT, score REAL, comment TEXT,  UNIQUE(movie_id, voter))
 top3    (id, movie_id → movies, voter TEXT, rank INT CHECK(rank>=1 AND rank<=10),  UNIQUE(movie_id, voter))  -- legacy name; now Top 10
 watchlist_votes (id, movie_id → movies, voter TEXT,  UNIQUE(movie_id, voter))
@@ -130,6 +138,8 @@ list_slug_aliases (slug TEXT PRIMARY KEY, list_id → lists)       -- slugs a li
 Seeding is idempotent — skips if `COUNT(*) > 0` in movies. `seed.json` is regenerated nightly from production, so a fresh clone seeds a local DB with **current** data, not the original 834-film spreadsheet import — see [DB backup & seed refresh](#db-backup--seed-refresh).
 `imdb_id` / `imdb_rating` are populated from OMDb on add and shown in the UI — see [IMDb integration](#imdb-integration).
 `poster_path` is a **TMDB** path (`/abc.jpg`), not a URL — see [Posters (TMDB)](#posters-tmdb).
+`runtime` is the film duration in minutes (from TMDB/OMDb), formatted across UI as `1h 45m`.
+`movie_scores` permanent view includes `poster_path` and `runtime`.
 `watchlist_votes` rows are deleted when a film leaves the watchlist (and cascade on film delete).
 
 ## Database / persistence (Turso)
@@ -226,30 +236,56 @@ Surfaces films with ≤2 votes, ranked by predicted group enjoyment using a Baye
 
 ```
 confidence     = voterCount / GROUP_SIZE
-prior          = dirAvg * dw + decAvg * ew + top10Bonus * tw   (weights user-adjustable via sliders)
+basePrior      = dirAvg * dw + decAvg * ew
+haloBoost      = min(0.75, priorPoints * breadthMultiplier * twRate)
+prior          = min(10.0, basePrior + haloBoost)
 predictedScore = confidence * actualFairBoosted + (1 - confidence) * prior
 ```
 
-- Default weights: `dw=0.45, ew=0.45, tw=0.10` — director and decade weighted equally
-- Weights are normalised server-side so they always sum to 1
-- `dirAvg`: mean `fairBoosted` of all rated films by the same director
+- Default weights: `dw=0.50, ew=0.50, tw=0.10` (Director and Era normalized 50/50, Top 10 Halo Boost default 1.0× scaling rate)
+- `dirAvg`: mean `fairBoosted` of all rated films by the same director (requires `minDirFilms`, default ≥2)
 - `decAvg`: mean `fairBoosted` of all rated films from the same decade
-- `top10Bonus`: min(5.0, Σ `rankBonus(rank)` of all top-pick entries for that director, across voters) — rank-weighted so a #1 pick counts more than a #10
-- When only one signal is available, the missing weight is split between the remaining two
+- **Additive Top 10 Halo Boost with Catalog Breadth Multiplier**:
+  $$\text{breadthMultiplier} = 1.0 + 0.20 \times \max(0, \text{priorUniqueFilms} - 1)$$
+  Rewards consistent master directors over one-hit wonders: +20% bonus boost for 2 distinct masterworks, +40% for 3, etc. Capped at `+0.75`. Excludes the film's own pick to avoid double counting.
 - Films with 0 votes use 100% prior; films with 2 votes use 40% actual + 60% prior
-- Returns up to 200 results; client-side filters trim the visible list
-- Frontend filters (MN, WL, voter, director, year, search, unvoted-by) applied client-side
-- Bias sliders + max-voters send `?dw=&ew=&tw=&maxVoters=` to the API (debounced 400ms)
+- Bias sliders + max-voters send `?dw=&ew=&tw=&maxVoters=&minDirFilms=` to the API (debounced 400ms)
+- Human-readable explanation returned with every pick (`Sergio Leone avg 9.8 (2 films) · 1950s avg 8.5 · Top 10 boost +0.40 (2 masterworks)`)
 
-### Picks page controls
-| Control | Type | Where | Effect |
-|---|---|---|---|
-| Director / Era / Top10 bias | Sliders | Bias bar | Re-weight prior formula, triggers refetch |
-| Max voters | Select (0–4) | Bias bar | Sets server-side candidacy threshold (`voterCount <= maxVoters`); default 2 |
-| Unvoted by | Voter pill toggles | Bias bar | Client-side: hides films a selected voter has already rated (intersection when multiple active) |
-| MN / WL / Voter / Director / Year / Search | Filters bar | Top | Client-side display filters |
+## Prediction Accuracy & Retrospective — `/predictions`
+Backtests the Bayesian prediction model against past movie nights using **Leave-One-Out Cross-Validation (LOOCV)** with zero data leakage.
+- **Strict Isolation**: When evaluating film $X$, film $X$ is completely excluded from its director's track record, its decade's average, and voter Top 10 lists. If the director only directed film $X$, director track is null.
+- **Summary Metrics**: Mean Absolute Error (MAE), MAE with director track, Bullseyes count/pct ($|\Delta| \le 0.50$), and Within 1.0 Star count/pct ($|\Delta| \le 1.0$).
+- **Categorization**:
+  - 🎯 **Bullseye**: $|\Delta| \le 0.5$ stars
+  - 🌟 **Pleasantly Surprised (Sleeper Hit)**: $\Delta \ge +1.0$ (film outperformed its historical prior)
+  - 📉 **Underperformed (Pedigree Flop)**: $\Delta \le -1.0$ (prestige director whose film flopped with the group)
+- **PredictionModal**: Interactive drill-down modal showing dual rankings (actual vs prior), voter rating breakdown, prior formula components, and director/era stats.
 
-**Server caveat**: `maxVoters=0` requires explicit undefined-check (`req.query.maxVoters !== undefined`) because `parseInt('0') || 2` would incorrectly default to 2.
+## Tonight's Movie Night — `/session`
+Real-time session planner and spinning roulette wheel for the specific subset of friends present on the couch tonight.
+- **Dynamic Attendees**: Select who is in the room tonight (e.g. 3 of 5). Predictions and candidate pools adjust dynamically to the room.
+- **Constraints**:
+  - **Runtime filter**: `<90m (Brisk)`, `<105m`, `<120m`, `120m+ (Epic)`.
+  - **Candidate Pool**: `Watchlist`, `All Films`, or `Custom List`.
+- **Three History Modes**:
+  - `fresh`: 100% unseen by all attendees present (0 ratings among room attendees).
+  - `share`: Shared favorites — at least 1 attendee has rated it, but at least 1 attendee hasn't seen it yet. Blends real ratings for voters who saw it with predicted ratings for those who haven't. No penalty.
+  - `all`: All films allowed, including unanimous re-watches.
+- **Re-watch Novelty Discount**: When in `all` mode and 100% of attendees have already seen the film (`isAllSeen`), a flat `-0.60` discount is applied so 10/10 classics don't crowd out fresh discoveries. Novelty tiebreak prioritizes unseen/partially-seen films over all-seen films.
+- **Anti-Veto Consensus Formula**:
+  $$\text{sessionScore} = (70\% \times \text{Avg}) + (30\% \times \text{Worst-Case}) - (8\% \times \text{Spread})$$
+  Floor protection (30% weight on lowest predicted attendee) and spread penalty prevent polarizing films from winning.
+- **Watchlist Signal**: Unanimous room watchlist interest adds `+0.35` bonus; partial interest adds pro-rated `(attendeeWl / total) * 0.20`.
+- **Classification Badges**: `Crowd Pleaser` ($\text{Spread} \le 0.8$) vs `Wildcard` ($\text{Spread} \ge 1.6$).
+- **Canvas Spinning Wheel**: Top contenders loaded into a responsive HTML5 canvas roulette wheel with Web Audio API sound synthesis (ticks and victory fanfare), confetti particle animation, and "remove & respin" capabilities. Responsive layout centered on desktop and mobile.
+
+## Movie Durations (`runtime`)
+- `movies.runtime` stores film duration in minutes (integer).
+- Added to the permanent `movie_scores` view and serialized into `seed.json`.
+- `formatRuntime()` renders as `1h 45m` across film cards, contender cards, and modals.
+- Bundled offline dataset `server/initial-runtimes.json` (1,102 films) auto-backfilled into database on boot without relying on external API quotas. Placed in `server/` (outside `/app/data`) to prevent Docker volume mount shadowing.
+- Manual endpoint `POST /api/movies/backfill-runtimes` and CLI script `server/scripts/backfill-runtimes.js`.
 
 ## Key implementation notes
 - `/api/movies/directors` route **must** be declared before `/:id` in Express to avoid being caught as an ID lookup
@@ -454,6 +490,16 @@ Two environments, each on its own branch and its own Turso database. Roles were 
 
 ### Getting a DB into Turso
 There's no "SSH into the instance and copy a file" step anymore — data is imported into Turso directly; see [Database / persistence](#database--persistence-turso). Recoverable starting points: any `.sql` snapshot on the `backups` branch, the legacy `movies_*.db` files there, or `main`'s history at commit `6956940` for the 2026-08-08 pre-migration snapshot.
+
+### Dev DB fast-forward — `.github/workflows/sync-dev-db.yml`
+Fast-forwards the Render `movies-dev` database directly from the latest production snapshot on the `backups` branch without manual SQL dumps or copy-pasting.
+- **Trigger**: Manual `workflow_dispatch` via GitHub Actions or local CLI `npm run db:sync-prod`.
+- **Script**: `server/scripts/fast-forward-dev-db.js`
+  - Fetches the newest `movies_*.sql` snapshot from `backups`.
+  - Drops existing views (`movie_scores`), tables, and indexes in dependency order.
+  - Re-executes the schema and batch-inserts table data in chunks of 100 statements to respect Turso's payload limits.
+  - Automatically reconstructs views and verifies row counts across all 8 tables.
+- **Secrets**: Requires `TURSO_DEV_DATABASE_URL` and `TURSO_DEV_AUTH_TOKEN` (handles glued or raw JWT strings robustly).
 
 ## Color scheme (score thresholds)
 - ≥ 7.5 → green (`score-high`)
