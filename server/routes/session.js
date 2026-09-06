@@ -13,10 +13,11 @@ router.post('/contenders', ah(async (req, res) => {
     attendees: reqAttendees,
     pool = 'watchlist',
     listId,
+    allowWatched = false,
     maxRuntime,
     minRuntime,
     decade,
-    limit = 8,
+    limit = 16,
   } = req.body;
 
   // Validate and sanitize attendees (fallback to all registered voters)
@@ -105,10 +106,10 @@ router.post('/contenders', ah(async (req, res) => {
   const totalWatchlist = allMovies.filter(m => m.watchlist === 1).length;
 
   let candidates = allMovies.filter(m => {
-    // 1. Exclude films that ANY attendee has already watched/rated
+    // 1. Exclude films that ANY attendee has already watched/rated if allowWatched is false
     const existing = ratingsByMovie[m.id] || [];
     const attendeeRatings = existing.filter(r => attendees.includes(r.voter));
-    if (attendeeRatings.length > 0) return false;
+    if (!allowWatched && attendeeRatings.length > 0) return false;
 
     // 2. Pool filtering
     if (pool === 'watchlist') {
@@ -120,8 +121,8 @@ router.post('/contenders', ah(async (req, res) => {
     if (pool === 'unwatched') {
       return existing.length === 0;
     }
-    // 'all' includes anything with <= 1 global votes
-    return existing.length <= 1;
+    // 'all' includes any film
+    return true;
   });
 
   const poolCountBeforeRuntime = candidates.length;
@@ -148,8 +149,20 @@ router.post('/contenders', ah(async (req, res) => {
   const scored = candidates.map(m => {
     const mDecade = m.year ? Math.floor(parseInt(m.year, 10) / 10) * 10 : null;
     const wlVoters = wlVotesByMovie[m.id] || new Set();
+    const existingRatingsMap = new Map((ratingsByMovie[m.id] || []).map(r => [r.voter, r.score]));
 
     const attendeeBreakdown = attendees.map(voter => {
+      const actualScore = existingRatingsMap.get(voter);
+      if (actualScore != null) {
+        return {
+          voter,
+          predictedScore: actualScore,
+          isRated: true,
+          onWatchlist: wlVoters.has(voter),
+          hasTop10: voterTopDirs[voter]?.has(m.director) || false,
+        };
+      }
+
       const vMean = voterMean[voter] || 7.0;
       const vDec = (mDecade && voterDecadeAvg[voter]?.[mDecade]) ?? vMean;
       const vDir = (m.director && voterDirAvg[voter]?.[m.director]) ?? null;
@@ -169,6 +182,7 @@ router.post('/contenders', ah(async (req, res) => {
       return {
         voter,
         predictedScore: Math.round(pred * 10) / 10,
+        isRated: false,
         onWatchlist,
         hasTop10,
       };
@@ -207,6 +221,8 @@ router.post('/contenders', ah(async (req, res) => {
       matchPercentage,
       unanimousWatchlist,
       attendeeWlCount,
+      seenCount: attendeeBreakdown.filter(a => a.isRated).length,
+      isRewatch: attendeeBreakdown.some(a => a.isRated),
       crowdPleaser: spread <= 0.8,
       wildcard: spread >= 1.6,
       spread,

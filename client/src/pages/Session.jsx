@@ -135,6 +135,7 @@ export default function Session({ voter }) {
   const [pool, setPool] = useState('watchlist'); // 'watchlist' | 'unwatched' | 'list'
   const [customLists, setCustomLists] = useState([]);
   const [selectedListId, setSelectedListId] = useState('');
+  const [allowWatched, setAllowWatched] = useState(false);
   const [durationFilter, setDurationFilter] = useState('any');
   const [soundEnabled, setSoundEnabled] = useState(true);
 
@@ -195,6 +196,7 @@ export default function Session({ voter }) {
         attendees,
         pool,
         listId: pool === 'list' ? selectedListId : undefined,
+        allowWatched,
         minRuntime: dur.min,
         maxRuntime: dur.max,
         limit: 16,
@@ -216,7 +218,7 @@ export default function Session({ voter }) {
     } finally {
       setLoading(false);
     }
-  }, [attendees, pool, selectedListId, durationFilter]);
+  }, [attendees, pool, selectedListId, allowWatched, durationFilter]);
 
   useEffect(() => {
     fetchContenders();
@@ -620,6 +622,29 @@ export default function Session({ voter }) {
               ))}
             </div>
           </div>
+
+          {/* Re-watches Toggle */}
+          <div className="filter-col">
+            <span className="filter-label">🔄 Previous Watches</span>
+            <div className="chip-group">
+              <button
+                type="button"
+                className={`filter-chip ${!allowWatched ? 'active' : ''}`}
+                onClick={() => setAllowWatched(false)}
+                title="Only include films that none of the attendees in the room have rated"
+              >
+                🆕 Fresh (Unseen by All)
+              </button>
+              <button
+                type="button"
+                className={`filter-chip ${allowWatched ? 'active' : ''}`}
+                onClick={() => setAllowWatched(true)}
+                title="Allow films that 1 or more attendees have already seen/rated"
+              >
+                🔄 Allow Re-watches
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -853,13 +878,18 @@ export default function Session({ voter }) {
                         {movie.attendeeBreakdown?.map(a => (
                           <span
                             key={a.voter}
-                            className={`attendee-score-pill ${scoreClass(a.predictedScore)}`}
-                            title={`${a.voter} predicted: ${a.predictedScore}${a.onWatchlist ? ' (on watchlist)' : ''}${a.hasTop10 ? ' (favorite director)' : ''}`}
+                            className={`attendee-score-pill ${scoreClass(a.predictedScore)}${a.isRated ? ' is-rated' : ''}`}
+                            title={`${a.voter} ${a.isRated ? 'already rated' : 'predicted'}: ${a.predictedScore}${a.onWatchlist ? ' (on watchlist)' : ''}${a.hasTop10 ? ' (favorite director)' : ''}`}
                           >
                             <span className="pill-name">{a.voter.slice(0, 3)}</span>
-                            <span className="pill-val">{a.predictedScore}</span>
+                            <span className="pill-val">{a.isRated ? `★ ${a.predictedScore}` : a.predictedScore}</span>
                           </span>
                         ))}
+                        {movie.isRewatch && (
+                          <span className="signal-badge rewatch-badge" title={`${movie.seenCount} of ${attendees.length} attendees have seen this before`}>
+                            🔄 Seen ({movie.seenCount}/{attendees.length})
+                          </span>
+                        )}
                         {movie.crowdPleaser && (
                           <span className="signal-badge" title="Very close ratings predicted across all attendees">
                             🤝 Harmony
