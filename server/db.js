@@ -213,7 +213,7 @@ async function init() {
     SELECT
       m.id, m.director, m.title, m.year,
       m.mn, m.watchlist, m.cinobo, m.tokens, m.token_pts,
-      m.imdb_id, m.imdb_rating,
+      m.imdb_id, m.imdb_rating, m.poster_path, m.runtime,
       r.voter_count,
       r.score_sum,
       r.fair_score,
@@ -257,25 +257,38 @@ async function backfillListSlugs() {
 async function backfillInitialRuntimes() {
   try {
     const row = await get('SELECT COUNT(runtime) AS c FROM movies WHERE runtime IS NOT NULL');
-    if (row && Number(row.c) >= 500) return;
+    if (row && Number(row.c) >= 500) {
+      console.log(`[db] Movie runtimes already populated (${row.c} films).`);
+      return;
+    }
 
-    const runtimesPath = path.join(__dirname, 'data', 'initial-runtimes.json');
-    if (!fs.existsSync(runtimesPath)) return;
+    // Require directly so Docker volume mounts on /app/data never shadow this file
+    let data;
+    try {
+      data = require('./initial-runtimes.json');
+    } catch (_) {
+      try {
+        data = require('./data/initial-runtimes.json');
+      } catch (e) {
+        console.warn('[db] Could not load initial-runtimes.json:', e.message);
+        return;
+      }
+    }
 
-    const data = JSON.parse(fs.readFileSync(runtimesPath, 'utf8'));
     const entries = Object.entries(data);
     console.log(`[db] Backfilling ${entries.length} movie runtimes into database...`);
 
+    // Use CASE statements in chunks of 100 for maximum speed and compatibility
     const CHUNK = 100;
     for (let i = 0; i < entries.length; i += CHUNK) {
       const slice = entries.slice(i, i + CHUNK);
-      const stmts = slice.map(([id, rt]) => ({
-        sql: 'UPDATE movies SET runtime = ? WHERE id = ? AND (runtime IS NULL OR runtime = 0)',
-        args: [rt, parseInt(id, 10)],
-      }));
-      await client.batch(stmts, 'deferred');
+      const whenClauses = slice.map(([id, rt]) => `WHEN ${parseInt(id, 10)} THEN ${parseInt(rt, 10)}`).join(' ');
+      const ids = slice.map(([id]) => parseInt(id, 10)).join(',');
+      const sql = `UPDATE movies SET runtime = CASE id ${whenClauses} END WHERE id IN (${ids}) AND (runtime IS NULL OR runtime = 0)`;
+      await run(sql);
     }
-    console.log('[db] Movie runtimes backfilled successfully.');
+    const after = await get('SELECT COUNT(runtime) AS c FROM movies WHERE runtime IS NOT NULL');
+    console.log(`[db] Movie runtimes backfilled successfully. Total with runtime: ${after?.c}`);
   } catch (err) {
     console.warn('[db] Note: backfillInitialRuntimes notice:', err.message);
   }

@@ -216,6 +216,35 @@ router.get('/imdb-detail', ah(async (req, res) => {
   res.json(detail);
 }));
 
+// POST /api/movies/backfill-runtimes — manually trigger runtime backfill if needed
+router.post('/backfill-runtimes', ah(async (req, res) => {
+  const { force = false } = req.body || {};
+  let data;
+  try {
+    data = require('../initial-runtimes.json');
+  } catch (_) {
+    try {
+      data = require('../data/initial-runtimes.json');
+    } catch (e) {
+      return res.status(500).json({ error: 'initial-runtimes.json not found: ' + e.message });
+    }
+  }
+
+  const entries = Object.entries(data);
+  const CHUNK = 100;
+  for (let i = 0; i < entries.length; i += CHUNK) {
+    const slice = entries.slice(i, i + CHUNK);
+    const whenClauses = slice.map(([id, rt]) => `WHEN ${parseInt(id, 10)} THEN ${parseInt(rt, 10)}`).join(' ');
+    const ids = slice.map(([id]) => parseInt(id, 10)).join(',');
+    const whereCond = force ? '' : 'AND (runtime IS NULL OR runtime = 0)';
+    const sql = `UPDATE movies SET runtime = CASE id ${whenClauses} END WHERE id IN (${ids}) ${whereCond}`;
+    await db.run(sql);
+  }
+
+  const stats = await db.get('SELECT COUNT(*) AS total, COUNT(runtime) AS with_runtime FROM movies');
+  res.json({ success: true, updated: entries.length, stats });
+}));
+
 // GET /api/movies/:id
 router.get('/:id', ah(async (req, res) => {
   const movie = await db.get('SELECT * FROM movies WHERE id = ?', req.params.id);
