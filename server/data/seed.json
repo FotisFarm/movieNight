@@ -2456,23 +2456,6 @@
   },
   {
     "director": "Francis Ford Coppola",
-    "movie": "One From The Heart",
-    "year": "1982",
-    "rank": null,
-    "mn": "",
-    "watchlist": "",
-    "tokens": "",
-    "tokenPts": 0,
-    "imdb_id": "tt0456525",
-    "imdb_rating": 6.5,
-    "poster_path": "/6hTRcswwR2jzyXTjTP3A7han26b.jpg",
-    "runtime": 23,
-    "ratings": {},
-    "top3": {},
-    "watchlistVotes": []
-  },
-  {
-    "director": "Francis Ford Coppola",
     "movie": "Peggy Sue Got Married",
     "year": "1986",
     "rank": null,
@@ -6709,7 +6692,7 @@
     "year": "1988",
     "rank": 56,
     "mn": "Y",
-    "watchlist": "",
+    "watchlist": "Y",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0095468",
@@ -10060,7 +10043,7 @@
     "runtime": 148,
     "ratings": {
       "Μητσέας": "3",
-      "Παντελής": "8.3",
+      "Παντελής": "8.4",
       "Στέλιας": "8.3",
       "Φώτης": "8"
     },
@@ -14525,23 +14508,6 @@
     "imdb_rating": 8.1,
     "poster_path": "/g2YbTYKpY7N2yDSk7BfXZ18I5QV.jpg",
     "runtime": 137,
-    "ratings": {},
-    "top3": {},
-    "watchlistVotes": []
-  },
-  {
-    "director": "Θόδωρος Αγγελόπουλος",
-    "movie": "Forminx Story",
-    "year": "1965",
-    "rank": null,
-    "mn": "",
-    "watchlist": "",
-    "tokens": "",
-    "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
-    "poster_path": null,
-    "runtime": null,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -19921,6 +19887,7 @@
     "poster_path": "/5rhTDKUhPYvpdQIijFIs5VoWsON.jpg",
     "runtime": 173,
     "ratings": {
+      "Παντελής": "9",
       "Φώτης": "6.5"
     },
     "top3": {},
