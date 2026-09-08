@@ -981,7 +981,7 @@
     "runtime": 93,
     "ratings": {
       "Παντελής": "10",
-      "Στέλιας": "9.7",
+      "Στέλιας": "10",
       "Φώτης": "10"
     },
     "top3": {
@@ -1474,7 +1474,7 @@
     "ratings": {
       "Μητσέας": "10",
       "Παντελής": "10",
-      "Στέλιας": "9.5",
+      "Στέλιας": "10",
       "Φώτης": "7"
     },
     "top3": {},
@@ -6133,7 +6133,7 @@
       "Φώτης": "10"
     },
     "top3": {
-      "Στέλιας": 7
+      "Στέλιας": 6
     },
     "watchlistVotes": []
   },
@@ -6297,7 +6297,7 @@
     "year": "2004",
     "rank": null,
     "mn": "",
-    "watchlist": "",
+    "watchlist": "Y",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0407467",
@@ -6306,7 +6306,9 @@
     "runtime": 88,
     "ratings": {},
     "top3": {},
-    "watchlistVotes": []
+    "watchlistVotes": [
+      "Φώτης"
+    ]
   },
   {
     "director": "Abbas Kiarostami",
@@ -6692,7 +6694,7 @@
     "year": "1988",
     "rank": 56,
     "mn": "Y",
-    "watchlist": "Y",
+    "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0095468",
@@ -6892,7 +6894,7 @@
     "movie": "Three Colours: Blue",
     "year": "1993",
     "rank": 69,
-    "mn": "",
+    "mn": "Y",
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
@@ -6901,10 +6903,14 @@
     "poster_path": "/33wsWxzsNstI8N7dvuwzFmj1qBd.jpg",
     "runtime": 98,
     "ratings": {
+      "Μητσέας": "9",
       "Παντελής": "9.5",
-      "Φώτης": "9"
+      "Στέλιας": "9.5",
+      "Φώτης": "10"
     },
-    "top3": {},
+    "top3": {
+      "Φώτης": 7
+    },
     "watchlistVotes": []
   },
   {
@@ -7257,7 +7263,7 @@
     "year": "1963",
     "rank": null,
     "mn": "",
-    "watchlist": "",
+    "watchlist": "Y",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0057565",
@@ -7291,7 +7297,7 @@
     "year": "1952",
     "rank": null,
     "mn": "",
-    "watchlist": "",
+    "watchlist": "Y",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0044741",
@@ -7384,7 +7390,7 @@
     "poster_path": "/dGgiXMWDcS5aJTBEFu7bmaQPNox.jpg",
     "runtime": 160,
     "ratings": {
-      "Στέλιας": "9.9",
+      "Στέλιας": "10",
       "Φώτης": "9"
     },
     "top3": {},
@@ -7396,7 +7402,7 @@
     "year": "1950",
     "rank": null,
     "mn": "",
-    "watchlist": "",
+    "watchlist": "Y",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0042876",
@@ -7856,7 +7862,7 @@
     "imdb_id": "tt0087843",
     "imdb_rating": 8.3,
     "poster_path": "/i0enkzsL5dPeneWnjl1fCWm6L7k.jpg",
-    "runtime": 139,
+    "runtime": 256,
     "ratings": {
       "Παντελής": "10",
       "Στέλιας": "9.6",
@@ -7966,7 +7972,7 @@
     "year": "1957",
     "rank": 64,
     "mn": "",
-    "watchlist": "",
+    "watchlist": "Y",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0050083",
@@ -7978,7 +7984,11 @@
       "Φώτης": "9"
     },
     "top3": {},
-    "watchlistVotes": []
+    "watchlistVotes": [
+      "Λεόντιος",
+      "Παντελής",
+      "Φώτης"
+    ]
   },
   {
     "director": "Sidney Lumet",
@@ -11353,7 +11363,7 @@
     "year": "1992",
     "rank": null,
     "mn": "",
-    "watchlist": "",
+    "watchlist": "Y",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0103594",
@@ -11503,7 +11513,7 @@
       "Φώτης": "10"
     },
     "top3": {
-      "Φώτης": 9
+      "Φώτης": 10
     },
     "watchlistVotes": []
   },
@@ -11572,7 +11582,7 @@
     "poster_path": "/wN2xWp1eIwCKOD0BHTcErTBv1Uq.jpg",
     "runtime": 155,
     "ratings": {
-      "Στέλιας": "7",
+      "Στέλιας": "6",
       "Φώτης": "8"
     },
     "top3": {},
@@ -14937,7 +14947,7 @@
       "Λεόντιος": "9.2"
     },
     "top3": {
-      "Φώτης": 7
+      "Φώτης": 9
     },
     "watchlistVotes": []
   },
@@ -15043,7 +15053,7 @@
       "Φώτης": "9"
     },
     "top3": {
-      "Στέλιας": 6
+      "Στέλιας": 8
     },
     "watchlistVotes": []
   },
@@ -15545,7 +15555,7 @@
       "Φώτης": "9.5"
     },
     "top3": {
-      "Στέλιας": 8
+      "Στέλιας": 7
     },
     "watchlistVotes": []
   },
@@ -16707,9 +16717,7 @@
       "Παντελής": "8.5",
       "Φώτης": "10"
     },
-    "top3": {
-      "Φώτης": 10
-    },
+    "top3": {},
     "watchlistVotes": []
   },
   {
@@ -17039,7 +17047,7 @@
       "Μητσέας": "7.5",
       "Παντελής": "7.8",
       "Στέλιας": "9.5",
-      "Φώτης": "7.5"
+      "Φώτης": "8.5"
     },
     "top3": {},
     "watchlistVotes": []
@@ -19888,6 +19896,7 @@
     "runtime": 173,
     "ratings": {
       "Παντελής": "9",
+      "Στέλιας": "7",
       "Φώτης": "6.5"
     },
     "top3": {},
@@ -20355,6 +20364,61 @@
     "imdb_rating": 7.7,
     "poster_path": "/2kSElneXSKmMsGL55k0CbPGqLbu.jpg",
     "runtime": null,
+    "ratings": {},
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Charlotte Wells",
+    "movie": "Aftersun",
+    "year": "2022",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt19770238",
+    "imdb_rating": 7.6,
+    "poster_path": "/evKz85EKouVbIr51zy5fOtpNRPg.jpg",
+    "runtime": 102,
+    "ratings": {},
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Hhhdhd",
+    "movie": "Donnie Darko",
+    "year": "2001",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0246578",
+    "imdb_rating": 8,
+    "poster_path": "/j2AtZFsflxiluaNtajMTI0Avm8C.jpg",
+    "runtime": 113,
+    "ratings": {
+      "Μητσέας": "10"
+    },
+    "top3": {
+      "Μητσέας": 5
+    },
+    "watchlistVotes": []
+  },
+  {
+    "director": "Edward Yang",
+    "movie": "Yi yi",
+    "year": "2000",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0244316",
+    "imdb_rating": 8.1,
+    "poster_path": "/mR8dSQZI8X6Z1NClJhFrtJp636z.jpg",
+    "runtime": 173,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
