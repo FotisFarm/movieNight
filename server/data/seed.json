@@ -6297,7 +6297,7 @@
     "year": "2004",
     "rank": null,
     "mn": "",
-    "watchlist": "Y",
+    "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0407467",
@@ -6306,9 +6306,7 @@
     "runtime": 88,
     "ratings": {},
     "top3": {},
-    "watchlistVotes": [
-      "Φώτης"
-    ]
+    "watchlistVotes": []
   },
   {
     "director": "Abbas Kiarostami",
@@ -7972,7 +7970,7 @@
     "year": "1957",
     "rank": 64,
     "mn": "",
-    "watchlist": "Y",
+    "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0050083",
@@ -7984,11 +7982,7 @@
       "Φώτης": "9"
     },
     "top3": {},
-    "watchlistVotes": [
-      "Λεόντιος",
-      "Παντελής",
-      "Φώτης"
-    ]
+    "watchlistVotes": []
   },
   {
     "director": "Sidney Lumet",
@@ -11363,7 +11357,7 @@
     "year": "1992",
     "rank": null,
     "mn": "",
-    "watchlist": "Y",
+    "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0103594",
@@ -20386,7 +20380,7 @@
     "watchlistVotes": []
   },
   {
-    "director": "Hhhdhd",
+    "director": "Richard Kelly",
     "movie": "Donnie Darko",
     "year": "2001",
     "rank": null,
@@ -20408,7 +20402,7 @@
   },
   {
     "director": "Edward Yang",
-    "movie": "Yi yi",
+    "movie": "Yi Yi",
     "year": "2000",
     "rank": null,
     "mn": "",
