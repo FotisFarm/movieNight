@@ -7270,7 +7270,9 @@
     "runtime": 142,
     "ratings": {},
     "top3": {},
-    "watchlistVotes": []
+    "watchlistVotes": [
+      "Φώτης"
+    ]
   },
   {
     "director": "Akira Kurosawa",
@@ -7304,7 +7306,9 @@
     "runtime": 143,
     "ratings": {},
     "top3": {},
-    "watchlistVotes": []
+    "watchlistVotes": [
+      "Φώτης"
+    ]
   },
   {
     "director": "Akira Kurosawa",
@@ -20406,7 +20410,7 @@
     "year": "2000",
     "rank": null,
     "mn": "",
-    "watchlist": "",
+    "watchlist": "Y",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0244316",
@@ -20414,6 +20418,46 @@
     "poster_path": "/mR8dSQZI8X6Z1NClJhFrtJp636z.jpg",
     "runtime": 173,
     "ratings": {},
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Satoshi Kon",
+    "movie": "Perfect Blue",
+    "year": "1997",
+    "rank": null,
+    "mn": "",
+    "watchlist": "Y",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0156887",
+    "imdb_rating": 8,
+    "poster_path": "/6WTiOCfDPP8XV4jqfloiVWf7KHq.jpg",
+    "runtime": 82,
+    "ratings": {
+      "Στέλιας": "8.9"
+    },
+    "top3": {},
+    "watchlistVotes": [
+      "Φώτης"
+    ]
+  },
+  {
+    "director": "Bernardo Bertolucci",
+    "movie": "The Conformist",
+    "year": "1970",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0065571",
+    "imdb_rating": 7.9,
+    "poster_path": "/nLJjFRqIJAK8qz0OKYnpKCblZNK.jpg",
+    "runtime": 113,
+    "ratings": {
+      "Φώτης": "7.5"
+    },
     "top3": {},
     "watchlistVotes": []
   }
