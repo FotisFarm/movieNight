@@ -11,6 +11,7 @@ const GROUP_SIZE = parseInt(process.env.GROUP_SIZE || defaultGroupSize, 10);
 const MIN_VOTERS = Math.min(2, GROUP_SIZE);
 
 const HIDE_HAL = process.env.HIDE_HAL === 'true' || process.env.ENABLE_HAL === 'false';
+const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || (SANDBOX_MODE ? 'mn_v6_sid' : 'mn_sid');
 
 module.exports = {
   VOTERS,
@@ -19,5 +20,6 @@ module.exports = {
   SANDBOX_MODE,
   SANDBOX_VOTER,
   HIDE_HAL,
+  SESSION_COOKIE_NAME,
 };
 

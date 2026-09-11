@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { VOTERS } = require('../config');
+const { VOTERS, SESSION_COOKIE_NAME } = require('../config');
 const VALID_USERS = [...VOTERS, 'mnAdmin'];
 const PASSWORD = process.env.MN_PASSWORD || 'changeme';
 const GHOST_VOTER = 'Σάκιας';
@@ -21,7 +21,10 @@ router.post('/login', (req, res) => {
 });
 
 router.post('/logout', (req, res) => {
-  req.session.destroy(() => res.json({ ok: true }));
+  req.session.destroy(() => {
+    res.clearCookie(SESSION_COOKIE_NAME);
+    res.json({ ok: true });
+  });
 });
 
 router.get('/me', (req, res) => {

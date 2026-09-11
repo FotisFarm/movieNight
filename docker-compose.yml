@@ -25,6 +25,7 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GEMINI_MODEL=${GEMINI_MODEL:-}
       - HIDE_HAL=${HIDE_HAL:-false}
+      - SESSION_COOKIE_NAME=${SESSION_COOKIE_NAME:-mn_sid}
     restart: unless-stopped
 
   # 6th-member sandbox environment (Κλαίρη)
@@ -49,6 +50,7 @@ services:
       - TURSO_READONLY_AUTH_TOKEN=${TURSO_READONLY_AUTH_TOKEN:-}
       - MN_PASSWORD=${V6_MN_PASSWORD:-${MN_PASSWORD:-changeme}}
       - SESSION_SECRET=${V6_SESSION_SECRET:-change-this-secret-v6}
+      - SESSION_COOKIE_NAME=${V6_SESSION_COOKIE_NAME:-mn_v6_sid}
       - GUEST_PASSWORD=${GUEST_PASSWORD:-}
       - OMDB_API_KEY=${OMDB_API_KEY:-}
       - TMDB_API_KEY=${TMDB_API_KEY:-}

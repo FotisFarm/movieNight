@@ -10,9 +10,12 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const IS_PROD = process.env.NODE_ENV === 'production';
 
+const { SESSION_COOKIE_NAME } = require('./config');
+
 app.use(express.json());
 app.use(cors({ origin: IS_PROD ? false : 'http://localhost:5173', credentials: true }));
 app.use(session({
+  name: SESSION_COOKIE_NAME,
   secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
   resave: false,
   saveUninitialized: false,
