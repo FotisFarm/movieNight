@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useTheme } from '../ThemeContext';
 import { useHal } from '../HalContext';
+import { useAppConfig } from '../AppConfigContext';
 import HalEye from './HalEye';
 import './Header.css';
 
@@ -125,6 +126,7 @@ function ThemeDropdown({ up = false }) {
 }
 
 export default function Header({ voter, onLogout }) {
+  const { sandboxMode } = useAppConfig();
   const location = useLocation();
   const pathname = location.pathname;
   const { isUnlocked, isOpen, toggleHal } = useHal() || {};
@@ -262,6 +264,7 @@ export default function Header({ voter, onLogout }) {
           <NavLink to="/films" className="logo" onClick={handleLogoClick}>
             <span className="logo-icon">🎬</span>
             <span className="logo-text">Movie Night</span>
+            {sandboxMode && <span className="sandbox-badge">6 voters</span>}
           </NavLink>
 
           {/* Desktop Navigation Hubs (hidden on mobile <= 640px) */}

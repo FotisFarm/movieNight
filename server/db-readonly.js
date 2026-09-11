@@ -9,6 +9,7 @@
 // the only line of defense — still enforced, just not engine-backed.
 const { createClient } = require('@libsql/client');
 const path = require('path');
+const { rewriteSql } = require('./db');
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const url = process.env.TURSO_DATABASE_URL || `file:${path.join(DATA_DIR, 'movies.db')}`;
@@ -48,7 +49,8 @@ async function runReadOnlySql(rawSql) {
   try {
     // client.execute() rejects multi-statement strings; a read-only auth
     // token (when configured) rejects any write at the engine level too.
-    const rs = await roClient.execute(sql);
+    const effectiveSql = rewriteSql(sql);
+    const rs = await roClient.execute(effectiveSql);
     const rows = rs.rows;
     const truncated = rows.length > MAX_ROWS;
     return {

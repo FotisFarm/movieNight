@@ -26,5 +26,35 @@ services:
       - GEMINI_MODEL=${GEMINI_MODEL:-}
     restart: unless-stopped
 
+  # 6th-member sandbox environment (Κλαίρη)
+  # Reads live catalog and production data in real-time, but isolates all ratings,
+  # Top 10 picks, watchlist votes, and rating history into sandbox tables/views
+  # with GROUP_SIZE=6, ensuring zero data pollution to the 5-member prod environment.
+  app-v6:
+    build: .
+    ports:
+      - "${V6_PORT:-3002}:3000"
+    volumes:
+      - sqlite_data_v6:/app/data
+    environment:
+      - NODE_ENV=production
+      - DATA_DIR=/app/data
+      - SANDBOX_MODE=true
+      - SANDBOX_VOTER=${V6_VOTER:-Κλαίρη}
+      - VOTERS=${V6_VOTERS:-Μητσέας,Παντελής,Στέλιας,Φώτης,Λεόντιος,Κλαίρη}
+      - GROUP_SIZE=${V6_GROUP_SIZE:-6}
+      - TURSO_DATABASE_URL=${TURSO_DATABASE_URL:-}
+      - TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN:-}
+      - TURSO_READONLY_AUTH_TOKEN=${TURSO_READONLY_AUTH_TOKEN:-}
+      - MN_PASSWORD=${V6_MN_PASSWORD:-${MN_PASSWORD:-changeme}}
+      - SESSION_SECRET=${V6_SESSION_SECRET:-change-this-secret-v6}
+      - GUEST_PASSWORD=${GUEST_PASSWORD:-}
+      - OMDB_API_KEY=${OMDB_API_KEY:-}
+      - TMDB_API_KEY=${TMDB_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-}
+    restart: unless-stopped
+
 volumes:
   sqlite_data:
+  sqlite_data_v6:

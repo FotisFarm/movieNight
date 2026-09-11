@@ -1,5 +1,20 @@
-const VOTERS = (process.env.VOTERS || 'Μητσέας,Παντελής,Στέλιας,Φώτης,Λεόντιος')
+const SANDBOX_MODE = process.env.SANDBOX_MODE === 'true';
+const SANDBOX_VOTER = process.env.SANDBOX_VOTER || (SANDBOX_MODE ? 'Κλαίρη' : '');
+const defaultVoters = SANDBOX_MODE
+  ? 'Μητσέας,Παντελής,Στέλιας,Φώτης,Λεόντιος,Κλαίρη'
+  : 'Μητσέας,Παντελής,Στέλιας,Φώτης,Λεόντιος';
+const defaultGroupSize = SANDBOX_MODE ? '6' : '5';
+
+const VOTERS = (process.env.VOTERS || defaultVoters)
   .split(',').map(v => v.trim()).filter(Boolean);
-const GROUP_SIZE = parseInt(process.env.GROUP_SIZE || '5', 10);
+const GROUP_SIZE = parseInt(process.env.GROUP_SIZE || defaultGroupSize, 10);
 const MIN_VOTERS = Math.min(2, GROUP_SIZE);
-module.exports = { VOTERS, GROUP_SIZE, MIN_VOTERS };
+
+module.exports = {
+  VOTERS,
+  GROUP_SIZE,
+  MIN_VOTERS,
+  SANDBOX_MODE,
+  SANDBOX_VOTER,
+};
+

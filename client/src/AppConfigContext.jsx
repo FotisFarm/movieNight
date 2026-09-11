@@ -4,6 +4,8 @@ const DEFAULTS = {
   voters: ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'],
   groupSize: 5,
   minVoters: 2,
+  sandboxMode: false,
+  sandboxVoter: '',
 };
 
 const AppConfigContext = createContext(DEFAULTS);

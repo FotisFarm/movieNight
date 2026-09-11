@@ -9,7 +9,7 @@ const { enrichMovie, enrichMoviesBatch } = require('../enrich');
 
 const router = express.Router();
 
-const { VOTERS, GROUP_SIZE } = require('../config');
+const { VOTERS, GROUP_SIZE, SANDBOX_MODE } = require('../config');
 
 // GET /api/movies
 router.get('/', ah(async (req, res) => {
@@ -181,6 +181,9 @@ router.post('/watchlist/reset', ah(async (req, res) => {
   if (req.session.voter !== 'mnAdmin') return res.status(403).json({ error: 'Admin only' });
   const mode = req.body?.mode;
   if (mode !== 'votes' && mode !== 'all') return res.status(400).json({ error: 'mode must be "votes" or "all"' });
+  if (SANDBOX_MODE && mode === 'all') {
+    return res.status(403).json({ error: 'Resetting live watchlist movies is disabled in sandbox mode (mode "votes" is allowed).' });
+  }
 
   const result = await db.transaction(async (tx) => {
     const { changes: votes } = await tx.run('DELETE FROM watchlist_votes');
@@ -483,6 +486,9 @@ router.patch('/:id', ah(async (req, res) => {
 
 // DELETE /api/movies/:id
 router.delete('/:id', ah(async (req, res) => {
+  if (SANDBOX_MODE) {
+    return res.status(403).json({ error: 'Deleting live movies is disabled in sandbox mode.' });
+  }
   const result = await db.run('DELETE FROM movies WHERE id = ?', req.params.id);
   if (result.changes === 0) return res.status(404).json({ error: 'Not found' });
   res.status(204).end();

@@ -16,22 +16,62 @@ const authToken = process.env.TURSO_AUTH_TOKEN; // unused/undefined for local fi
 
 const client = createClient({ url, authToken });
 
+const { SANDBOX_MODE, GROUP_SIZE } = require('./config');
+
+const SANDBOX_PREFIX = 'sandbox_';
+const EFFECTIVE_PREFIX = 'v6_effective_';
+
+// Rewrites table names when operating in sandbox mode:
+// - Write queries (INSERT, UPDATE, DELETE) targeting ratings/top3/watchlist_votes/rating_history
+//   are routed to sandbox_* tables, leaving production data completely immutable.
+// - Read queries (SELECT, WITH, subqueries) targeting ratings/top3/watchlist_votes/rating_history/movie_scores
+//   are routed to v6_effective_* views, unioning live prod data with sandbox data.
+function rewriteSql(sql) {
+  if (!SANDBOX_MODE || typeof sql !== 'string') return sql;
+  const trimmed = sql.trim();
+
+  // If this is a write query (INSERT, UPDATE, DELETE) targeting ratings, top3, watchlist_votes, rating_history:
+  if (/^(INSERT|UPDATE|DELETE)\b/i.test(trimmed)) {
+    return sql
+      .replace(/\bINSERT\s+(OR\s+\w+\s+)?INTO\s+["']?ratings["']?\b/gi, `INSERT $1INTO ${SANDBOX_PREFIX}ratings`)
+      .replace(/\bINSERT\s+(OR\s+\w+\s+)?INTO\s+["']?top3["']?\b/gi, `INSERT $1INTO ${SANDBOX_PREFIX}top3`)
+      .replace(/\bINSERT\s+(OR\s+\w+\s+)?INTO\s+["']?watchlist_votes["']?\b/gi, `INSERT $1INTO ${SANDBOX_PREFIX}watchlist_votes`)
+      .replace(/\bINSERT\s+(OR\s+\w+\s+)?INTO\s+["']?rating_history["']?\b/gi, `INSERT $1INTO ${SANDBOX_PREFIX}rating_history`)
+      .replace(/\bUPDATE\s+["']?ratings["']?\b/gi, `UPDATE ${SANDBOX_PREFIX}ratings`)
+      .replace(/\bUPDATE\s+["']?top3["']?\b/gi, `UPDATE ${SANDBOX_PREFIX}top3`)
+      .replace(/\bUPDATE\s+["']?watchlist_votes["']?\b/gi, `UPDATE ${SANDBOX_PREFIX}watchlist_votes`)
+      .replace(/\bUPDATE\s+["']?rating_history["']?\b/gi, `UPDATE ${SANDBOX_PREFIX}rating_history`)
+      .replace(/\bDELETE\s+FROM\s+["']?ratings["']?\b/gi, `DELETE FROM ${SANDBOX_PREFIX}ratings`)
+      .replace(/\bDELETE\s+FROM\s+["']?top3["']?\b/gi, `DELETE FROM ${SANDBOX_PREFIX}top3`)
+      .replace(/\bDELETE\s+FROM\s+["']?watchlist_votes["']?\b/gi, `DELETE FROM ${SANDBOX_PREFIX}watchlist_votes`)
+      .replace(/\bDELETE\s+FROM\s+["']?rating_history["']?\b/gi, `DELETE FROM ${SANDBOX_PREFIX}rating_history`);
+  }
+
+  // Read queries (SELECT, WITH, PRAGMA, subqueries):
+  return sql
+    .replace(/\b(FROM|JOIN)\s+["']?ratings["']?\b/gi, `$1 ${EFFECTIVE_PREFIX}ratings`)
+    .replace(/\b(FROM|JOIN)\s+["']?top3["']?\b/gi, `$1 ${EFFECTIVE_PREFIX}top3`)
+    .replace(/\b(FROM|JOIN)\s+["']?watchlist_votes["']?\b/gi, `$1 ${EFFECTIVE_PREFIX}watchlist_votes`)
+    .replace(/\b(FROM|JOIN)\s+["']?rating_history["']?\b/gi, `$1 ${EFFECTIVE_PREFIX}rating_history`)
+    .replace(/\b(FROM|JOIN)\s+["']?movie_scores["']?\b/gi, `$1 v6_movie_scores`);
+}
+
 // --- thin async helpers, mirroring the old better-sqlite3 .prepare().get/all/run shape ---
 // libSQL is a network client, so every call site that used to be synchronous
 // now needs `await` — these keep the call shape close to the original
 // (`db.prepare(sql).get(...params)` -> `await db.get(sql, ...params)`).
 async function get(sql, ...params) {
-  const rs = await client.execute({ sql, args: params });
+  const rs = await client.execute({ sql: rewriteSql(sql), args: params });
   return rs.rows[0];
 }
 
 async function all(sql, ...params) {
-  const rs = await client.execute({ sql, args: params });
+  const rs = await client.execute({ sql: rewriteSql(sql), args: params });
   return rs.rows;
 }
 
 async function run(sql, ...params) {
-  const rs = await client.execute({ sql, args: params });
+  const rs = await client.execute({ sql: rewriteSql(sql), args: params });
   return {
     changes: rs.rowsAffected,
     lastInsertRowid: rs.lastInsertRowid != null ? Number(rs.lastInsertRowid) : undefined,
@@ -43,10 +83,10 @@ async function run(sql, ...params) {
 async function transaction(fn) {
   const t = await client.transaction('write');
   const tx = {
-    get: async (sql, ...params) => (await t.execute({ sql, args: params })).rows[0],
-    all: async (sql, ...params) => (await t.execute({ sql, args: params })).rows,
+    get: async (sql, ...params) => (await t.execute({ sql: rewriteSql(sql), args: params })).rows[0],
+    all: async (sql, ...params) => (await t.execute({ sql: rewriteSql(sql), args: params })).rows,
     run: async (sql, ...params) => {
-      const rs = await t.execute({ sql, args: params });
+      const rs = await t.execute({ sql: rewriteSql(sql), args: params });
       return {
         changes: rs.rowsAffected,
         lastInsertRowid: rs.lastInsertRowid != null ? Number(rs.lastInsertRowid) : undefined,
@@ -203,47 +243,165 @@ async function init() {
     }
   } catch (_) {}
 
-  // Permanent (not TEMP) view — a remote libSQL connection isn't guaranteed to
-  // reuse the same session between separate .execute() calls the way a local
-  // SQLite file handle did, so TEMP VIEW (session-scoped) is unsafe here.
-  // rank_bonus is inlined as plain arithmetic (was a registered JS callback
-  // via better-sqlite3's db.function(), which a remote engine can't invoke).
-  // Dropped and recreated on every boot (not IF NOT EXISTS) so a changed
-  // GROUP_SIZE is always picked up instead of baking in a stale value forever.
-  await client.execute('DROP VIEW IF EXISTS movie_scores');
-  await client.execute(`
-    CREATE VIEW movie_scores AS
-    SELECT
-      m.id, m.director, m.title, m.year,
-      m.mn, m.watchlist, m.cinobo, m.tokens, m.token_pts,
-      m.imdb_id, m.imdb_rating, m.letterboxd_rating, m.poster_path, m.runtime,
-      r.voter_count,
-      r.score_sum,
-      r.fair_score,
-      COALESCE(t.boost, 0)                                       AS boost,
-      CASE WHEN r.voter_count >= 2
-           THEN MIN(10.0, r.fair_score + COALESCE(t.boost, 0)) END        AS fair_boosted,
-      CASE WHEN r.voter_count >= 2
-           THEN MIN(10.0, r.score_sum / ${require('./config').GROUP_SIZE}.0 + COALESCE(t.boost, 0)) END AS boosted_score,
-      r.std_dev
-    FROM movies m
-    LEFT JOIN (
-      SELECT movie_id,
-             COUNT(*)          AS voter_count,
-             SUM(score)        AS score_sum,
-             ROUND(AVG(score), 2) AS fair_score,
-             CASE WHEN COUNT(*) >= 2
-                  THEN ROUND(SQRT(AVG(score * score) - AVG(score) * AVG(score)), 2)
-                  END          AS std_dev
-      FROM ratings
-      GROUP BY movie_id
-    ) r ON r.movie_id = m.id
-    LEFT JOIN (
-      SELECT movie_id, SUM((11 - rank) / 10.0) AS boost
-      FROM top3
-      GROUP BY movie_id
-    ) t ON t.movie_id = m.id
-  `);
+  if (SANDBOX_MODE) {
+    // In sandbox mode: ensure sandbox tables exist and update effective union views.
+    // Base production tables (ratings, top3, etc.) and view (movie_scores) are completely untouched.
+    await client.executeMultiple(`
+      CREATE TABLE IF NOT EXISTS sandbox_ratings (
+        id       INTEGER PRIMARY KEY AUTOINCREMENT,
+        movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+        voter    TEXT    NOT NULL,
+        score    REAL    NOT NULL,
+        comment  TEXT    NOT NULL DEFAULT '',
+        UNIQUE(movie_id, voter)
+      );
+
+      CREATE TABLE IF NOT EXISTS sandbox_top3 (
+        id       INTEGER PRIMARY KEY AUTOINCREMENT,
+        movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+        voter    TEXT    NOT NULL,
+        rank     INTEGER NOT NULL CHECK(rank >= 1 AND rank <= 10),
+        UNIQUE(movie_id, voter)
+      );
+
+      CREATE TABLE IF NOT EXISTS sandbox_watchlist_votes (
+        id       INTEGER PRIMARY KEY,
+        movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+        voter    TEXT    NOT NULL,
+        UNIQUE(movie_id, voter)
+      );
+
+      CREATE TABLE IF NOT EXISTS sandbox_rating_history (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        movie_id   INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+        voter      TEXT    NOT NULL,
+        kind       TEXT    NOT NULL DEFAULT 'score',
+        score      REAL,
+        rank       INTEGER,
+        changed_by TEXT    NOT NULL DEFAULT '',
+        source     TEXT    NOT NULL DEFAULT 'user',
+        changed_at TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_sandbox_rating_history ON sandbox_rating_history(movie_id, voter, changed_at);
+
+      DROP VIEW IF EXISTS v6_effective_ratings;
+      CREATE VIEW v6_effective_ratings AS
+      SELECT r.id, r.movie_id, r.voter, r.score, r.comment
+      FROM ratings r
+      WHERE NOT EXISTS (
+        SELECT 1 FROM sandbox_ratings s WHERE s.movie_id = r.movie_id AND s.voter = r.voter
+      )
+      UNION ALL
+      SELECT s.id, s.movie_id, s.voter, s.score, s.comment
+      FROM sandbox_ratings s;
+
+      DROP VIEW IF EXISTS v6_effective_top3;
+      CREATE VIEW v6_effective_top3 AS
+      SELECT t.id, t.movie_id, t.voter, t.rank
+      FROM top3 t
+      WHERE NOT EXISTS (
+        SELECT 1 FROM sandbox_top3 s WHERE s.movie_id = t.movie_id AND s.voter = t.voter
+      )
+      UNION ALL
+      SELECT s.id, s.movie_id, s.voter, s.rank
+      FROM sandbox_top3 s;
+
+      DROP VIEW IF EXISTS v6_effective_watchlist_votes;
+      CREATE VIEW v6_effective_watchlist_votes AS
+      SELECT w.id, w.movie_id, w.voter
+      FROM watchlist_votes w
+      WHERE NOT EXISTS (
+        SELECT 1 FROM sandbox_watchlist_votes s WHERE s.movie_id = w.movie_id AND s.voter = w.voter
+      )
+      UNION ALL
+      SELECT s.id, s.movie_id, s.voter
+      FROM sandbox_watchlist_votes s;
+
+      DROP VIEW IF EXISTS v6_effective_rating_history;
+      CREATE VIEW v6_effective_rating_history AS
+      SELECT id, movie_id, voter, kind, score, rank, changed_by, source, changed_at
+      FROM rating_history
+      UNION ALL
+      SELECT id, movie_id, voter, kind, score, rank, changed_by, source, changed_at
+      FROM sandbox_rating_history;
+
+      DROP VIEW IF EXISTS v6_movie_scores;
+      CREATE VIEW v6_movie_scores AS
+      SELECT
+        m.id, m.director, m.title, m.year,
+        m.mn, m.watchlist, m.cinobo, m.tokens, m.token_pts,
+        m.imdb_id, m.imdb_rating, m.letterboxd_rating, m.poster_path, m.runtime,
+        r.voter_count,
+        r.score_sum,
+        r.fair_score,
+        COALESCE(t.boost, 0)                                       AS boost,
+        CASE WHEN r.voter_count >= 2
+             THEN MIN(10.0, r.fair_score + COALESCE(t.boost, 0)) END        AS fair_boosted,
+        CASE WHEN r.voter_count >= 2
+             THEN MIN(10.0, r.score_sum / ${GROUP_SIZE}.0 + COALESCE(t.boost, 0)) END AS boosted_score,
+        r.std_dev
+      FROM movies m
+      LEFT JOIN (
+        SELECT movie_id,
+               COUNT(*)          AS voter_count,
+               SUM(score)        AS score_sum,
+               ROUND(AVG(score), 2) AS fair_score,
+               CASE WHEN COUNT(*) >= 2
+                    THEN ROUND(SQRT(AVG(score * score) - AVG(score) * AVG(score)), 2)
+                    END          AS std_dev
+        FROM v6_effective_ratings
+        GROUP BY movie_id
+      ) r ON r.movie_id = m.id
+      LEFT JOIN (
+        SELECT movie_id, SUM((11 - rank) / 10.0) AS boost
+        FROM v6_effective_top3
+        GROUP BY movie_id
+      ) t ON t.movie_id = m.id;
+    `);
+  } else {
+    // Permanent (not TEMP) view — a remote libSQL connection isn't guaranteed to
+    // reuse the same session between separate .execute() calls the way a local
+    // SQLite file handle did, so TEMP VIEW (session-scoped) is unsafe here.
+    // rank_bonus is inlined as plain arithmetic (was a registered JS callback
+    // via better-sqlite3's db.function(), which a remote engine can't invoke).
+    // Dropped and recreated on every boot (not IF NOT EXISTS) so a changed
+    // GROUP_SIZE is always picked up instead of baking in a stale value forever.
+    await client.execute('DROP VIEW IF EXISTS movie_scores');
+    await client.execute(`
+      CREATE VIEW movie_scores AS
+      SELECT
+        m.id, m.director, m.title, m.year,
+        m.mn, m.watchlist, m.cinobo, m.tokens, m.token_pts,
+        m.imdb_id, m.imdb_rating, m.letterboxd_rating, m.poster_path, m.runtime,
+        r.voter_count,
+        r.score_sum,
+        r.fair_score,
+        COALESCE(t.boost, 0)                                       AS boost,
+        CASE WHEN r.voter_count >= 2
+             THEN MIN(10.0, r.fair_score + COALESCE(t.boost, 0)) END        AS fair_boosted,
+        CASE WHEN r.voter_count >= 2
+             THEN MIN(10.0, r.score_sum / ${GROUP_SIZE}.0 + COALESCE(t.boost, 0)) END AS boosted_score,
+        r.std_dev
+      FROM movies m
+      LEFT JOIN (
+        SELECT movie_id,
+               COUNT(*)          AS voter_count,
+               SUM(score)        AS score_sum,
+               ROUND(AVG(score), 2) AS fair_score,
+               CASE WHEN COUNT(*) >= 2
+                    THEN ROUND(SQRT(AVG(score * score) - AVG(score) * AVG(score)), 2)
+                    END          AS std_dev
+        FROM ratings
+        GROUP BY movie_id
+      ) r ON r.movie_id = m.id
+      LEFT JOIN (
+        SELECT movie_id, SUM((11 - rank) / 10.0) AS boost
+        FROM top3
+        GROUP BY movie_id
+      ) t ON t.movie_id = m.id
+    `);
+  }
 }
 
 // Give every list a slug — lists created before the slug column existed have
@@ -333,4 +491,4 @@ async function backfillInitialLetterboxd() {
   }
 }
 
-module.exports = { client, get, all, run, transaction, init };
+module.exports = { client, get, all, run, transaction, init, rewriteSql };

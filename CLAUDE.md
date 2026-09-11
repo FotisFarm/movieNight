@@ -176,6 +176,18 @@ The client learns them at runtime: **`GET /api/config`** (declared in `server/in
 
 Practical consequence: **don't hardcode voter names or `5` in new code** — read `useAppConfig()` on the client and `require('./config')` on the server. This is what lets the single-voter "Σάκιας" deployment work off the same codebase.
 
+### 6th-Member Sandbox Environment (Κλαίρη)
+A dedicated environment on the Oracle VM (`http://130.110.13.27:3002`, service `app-v6` in `docker-compose.yml`) allowing a 6th member (**Κλαίρη**) to realistically use the app, vote, manage watchlist, pick Top 10, and see all group scores computed with `GROUP_SIZE=6`, while reading live production data with **zero data pollution** to the 5-member production environment.
+- **Strict Isolation Architecture**:
+  - `SANDBOX_MODE=true` in `server/config.js`.
+  - Database queries are automatically rewritten via `server/db.js`'s `rewriteSql`:
+    - Writes (`INSERT`, `UPDATE`, `DELETE`) for ratings, Top 10, watchlist votes, and rating history are routed to dedicated sandbox tables: `sandbox_ratings`, `sandbox_top3`, `sandbox_watchlist_votes`, `sandbox_rating_history`.
+    - Reads (`SELECT`, `WITH`, subqueries) are routed to effective union views: `v6_effective_ratings`, `v6_effective_top3`, `v6_effective_watchlist_votes`, `v6_effective_rating_history`, and `v6_movie_scores`.
+  - **Live Prod Reads**: Views query the live production tables in real-time, unioning them with sandbox rows so any film, rating, or metadata added on prod is instantly visible to Κλαίρη without delay or sync jobs.
+  - **Zero Prod Pollution**: The production container (port 3000) queries only base tables (`ratings`, `top3`, `movie_scores`), keeping `GROUP_SIZE=5` and remaining completely unaffected by sandbox activity. Nightly backups and `seed.json` ignore `sandbox_*` tables.
+  - **Live Movie Protection**: In sandbox mode, `DELETE /api/movies/:id` and `POST /api/movies/watchlist/reset` (mode `all`) are blocked (403 Forbidden) so live catalogue entries cannot be accidentally removed. Adding new movies is permitted and writes to the shared catalogue.
+  - **Reset Script**: `npm run db:reset-sandbox` (`server/scripts/reset-sandbox.js --force`) clears all sandbox tables without touching production.
+
 ## Themes
 Ten film-inspired colour schemes, selectable from a dropdown in `Header.jsx` (and the mobile footer). `THEMES` there is the list; the palettes live in `client/src/index.css` as `[data-theme="..."]` blocks overriding the CSS variables.
 

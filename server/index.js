@@ -22,8 +22,14 @@ app.use(session({
 app.use('/api/auth', require('./routes/auth'));
 
 app.get('/api/config', (_req, res) => {
-  const { VOTERS, GROUP_SIZE, MIN_VOTERS } = require('./config');
-  res.json({ voters: VOTERS, groupSize: GROUP_SIZE, minVoters: MIN_VOTERS });
+  const { VOTERS, GROUP_SIZE, MIN_VOTERS, SANDBOX_MODE, SANDBOX_VOTER } = require('./config');
+  res.json({
+    voters: VOTERS,
+    groupSize: GROUP_SIZE,
+    minVoters: MIN_VOTERS,
+    sandboxMode: SANDBOX_MODE,
+    sandboxVoter: SANDBOX_VOTER,
+  });
 });
 
 function requireAuth(req, res, next) {
