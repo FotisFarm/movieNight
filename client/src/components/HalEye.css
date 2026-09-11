@@ -1,0 +1,70 @@
+.hal-eye-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.hal-eye-svg {
+  display: block;
+  border-radius: 50%;
+  filter: drop-shadow(0 0 4px rgba(220, 30, 30, 0.45));
+  transition: filter 0.25s ease, transform 0.25s ease;
+}
+
+.hal-eye-wrap:hover .hal-eye-svg {
+  filter: drop-shadow(0 0 8px rgba(255, 60, 40, 0.85));
+  transform: scale(1.05);
+}
+
+.hal-eye-active .hal-eye-svg {
+  filter: drop-shadow(0 0 14px rgba(255, 60, 40, 0.95)) drop-shadow(0 0 4px rgba(255, 230, 150, 0.7));
+  animation: hal-active-pulse 1.4s infinite ease-in-out;
+}
+
+.hal-eye-active .hal-eye-radiance {
+  animation: hal-radiance-pulse 1.4s infinite ease-in-out;
+  transform-origin: center;
+}
+
+.hal-eye-active .hal-eye-core {
+  animation: hal-core-flicker 0.8s infinite alternate ease-in-out;
+  transform-origin: center;
+}
+
+@keyframes hal-active-pulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 8px rgba(255, 50, 30, 0.8));
+  }
+  50% {
+    transform: scale(1.06);
+    filter: drop-shadow(0 0 18px rgba(255, 70, 40, 1)) drop-shadow(0 0 6px rgba(255, 240, 180, 0.9));
+  }
+}
+
+@keyframes hal-radiance-pulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes hal-core-flicker {
+  0% {
+    opacity: 0.75;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}

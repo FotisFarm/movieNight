@@ -1,14 +1,14 @@
-// Anthropic-backed chatbot: answers natural-language questions about the Movie
+// Gemini-backed chatbot: answers natural-language questions about the Movie
 // Nights data by writing read-only SQL. Mirrors the guard/try-catch/no-throw
 // shape of omdb.js so a missing key or API failure degrades gracefully.
-const Anthropic = require('@anthropic-ai/sdk');
-const { betaTool } = require('@anthropic-ai/sdk/helpers/beta/json-schema');
+const { GoogleGenAI } = require('@google/genai');
 const { runReadOnlySql } = require('./db-readonly');
 const { VOTERS, GROUP_SIZE } = require('./config');
 
-const MODEL = 'claude-sonnet-5';
-const HAS_KEY = !!process.env.ANTHROPIC_API_KEY;
-const client = HAS_KEY ? new Anthropic() : null;
+const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+const HAS_KEY = !!API_KEY;
+const ai = HAS_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
 
 const SYSTEM_PROMPT = `You are HAL 9000, the calm, precise onboard assistant for the Movie Nights group — five friends who rate films together. You answer questions about their film catalogue by querying a read-only SQLite database with the run_sql tool. You can ONLY read; you never change anything. Keep an unflappable, articulate tone, but always be genuinely helpful and never refuse a reasonable request.
 
@@ -53,53 +53,115 @@ Your three highest-rated Kubrick films:
 [{"type":"movie","id":42,"title":"2001: A Space Odyssey","meta":"Stanley Kubrick · 1968","score":9.1,"scoreLabel":"Fair"}]
 \`\`\``;
 
-const runSqlTool = betaTool({
-  name: 'run_sql',
-  description:
-    'Run a single read-only SQL SELECT (or WITH) query against the Movie Nights SQLite database and get the resulting rows back as JSON. Only SELECT/WITH is permitted.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      sql: {
-        type: 'string',
-        description: 'A single SQLite SELECT or WITH query. No trailing semicolon needed.',
+const RUN_SQL_TOOL = {
+  functionDeclarations: [
+    {
+      name: 'run_sql',
+      description:
+        'Run a single read-only SQL SELECT (or WITH) query against the Movie Nights SQLite database and get the resulting rows back as JSON. Only SELECT/WITH is permitted.',
+      parameters: {
+        type: 'OBJECT',
+        properties: {
+          sql: {
+            type: 'STRING',
+            description: 'A single SQLite SELECT or WITH query. No trailing semicolon needed.',
+          },
+        },
+        required: ['sql'],
       },
     },
-    required: ['sql'],
-    additionalProperties: false,
-  },
-  run: async ({ sql }) => JSON.stringify(await runReadOnlySql(sql)),
-});
+  ],
+};
 
 // messages: [{ role: 'user' | 'assistant', content: string }, ...]
 // voter: the logged-in voter's name (for "what should I watch" style questions)
 async function chat({ messages, voter }) {
-  if (!client) {
-    return { reply: 'The chatbot is unavailable — no ANTHROPIC_API_KEY is configured on the server.' };
+  if (!ai) {
+    return { reply: 'The chatbot is unavailable — no GEMINI_API_KEY is configured on the server.' };
   }
+
   try {
-    const system = voter
+    const systemInstruction = voter
       ? `${SYSTEM_PROMPT}\n\n## Current user\nYou are talking to ${voter}. When they say "I"/"me"/"my", they mean the voter ${voter}.`
       : SYSTEM_PROMPT;
 
-    const finalMessage = await client.beta.messages.toolRunner({
-      model: MODEL,
-      max_tokens: 2000,
-      thinking: { type: 'disabled' }, // keep chat responses snappy (Sonnet 5 runs adaptive thinking by default)
-      system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
-      tools: [runSqlTool],
-      messages,
-      max_iterations: 8,
-    });
+    // Convert chat history to Gemini's content format
+    const contents = messages.map((m) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    }));
 
-    const reply = (finalMessage.content || [])
-      .filter((b) => b.type === 'text')
-      .map((b) => b.text)
-      .join('\n')
-      .trim();
+    const maxIterations = 8;
+    let iteration = 0;
 
-    return { reply: reply || 'I could not come up with an answer for that.' };
+    while (iteration < maxIterations) {
+      iteration++;
+
+      const response = await ai.models.generateContent({
+        model: MODEL,
+        contents,
+        config: {
+          systemInstruction,
+          tools: [RUN_SQL_TOOL],
+          thinkingConfig: {
+            thinkingBudget: 0, // keep chat responses snappy
+          },
+        },
+      });
+
+      const functionCalls = response.functionCalls;
+      if (!functionCalls || functionCalls.length === 0) {
+        const reply = response.text ? response.text.trim() : '';
+        return { reply: reply || 'I could not come up with an answer for that.' };
+      }
+
+      // Add the model's tool request to contents
+      const candidateContent = response.candidates?.[0]?.content;
+      if (candidateContent) {
+        contents.push(candidateContent);
+      } else {
+        contents.push({
+          role: 'model',
+          parts: functionCalls.map((fc) => ({
+            functionCall: { name: fc.name, args: fc.args, id: fc.id },
+          })),
+        });
+      }
+
+      // Execute each function call and gather responses
+      const functionResponseParts = [];
+      for (const call of functionCalls) {
+        if (call.name === 'run_sql') {
+          const sql = call.args?.sql || '';
+          const result = await runReadOnlySql(sql);
+          functionResponseParts.push({
+            functionResponse: {
+              name: call.name,
+              id: call.id,
+              response: { output: result },
+            },
+          });
+        } else {
+          functionResponseParts.push({
+            functionResponse: {
+              name: call.name,
+              id: call.id,
+              response: { error: `Unknown function: ${call.name}` },
+            },
+          });
+        }
+      }
+
+      // Append function execution results to contents
+      contents.push({
+        role: 'user',
+        parts: functionResponseParts,
+      });
+    }
+
+    return { reply: 'I exceeded the maximum query steps while formulating an answer.' };
   } catch (err) {
+    console.error('Gemini chat error:', err);
     return { reply: `Sorry — something went wrong answering that (${err.message}).` };
   }
 }

@@ -191,6 +191,27 @@ button.nav-link {
   flex-shrink: 0;
 }
 
+.hal-link-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  transition: transform 0.15s ease;
+}
+
+.hal-link-btn:hover {
+  transform: scale(1.1);
+}
+
+.hal-link-btn.active {
+  transform: scale(1.1);
+}
+
 .header-voter {
   font-size: 12px;
   color: var(--text2);

@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useTheme } from '../ThemeContext';
+import { useHal } from '../HalContext';
+import HalEye from './HalEye';
 import './Header.css';
 
 const THEMES = [
@@ -125,6 +127,26 @@ function ThemeDropdown({ up = false }) {
 export default function Header({ voter, onLogout }) {
   const location = useLocation();
   const pathname = location.pathname;
+  const { isUnlocked, isOpen, toggleHal } = useHal() || {};
+
+  // Secret Easter Egg: rapid triple click on the logo reveals/toggles HAL
+  const logoClickCountRef = useRef(0);
+  const logoClickTimerRef = useRef(null);
+  const handleLogoClick = (e) => {
+    logoClickCountRef.current += 1;
+    if (logoClickTimerRef.current) clearTimeout(logoClickTimerRef.current);
+
+    if (logoClickCountRef.current >= 3) {
+      logoClickCountRef.current = 0;
+      e.preventDefault();
+      if (toggleHal) toggleHal();
+      return;
+    }
+
+    logoClickTimerRef.current = setTimeout(() => {
+      logoClickCountRef.current = 0;
+    }, 1200);
+  };
 
   // Desktop dropdown state
   const [rankingsOpen, setRankingsOpen] = useState(false);
@@ -237,7 +259,7 @@ export default function Header({ voter, onLogout }) {
     <>
       <header className="header">
         <div className="header-inner">
-          <NavLink to="/films" className="logo">
+          <NavLink to="/films" className="logo" onClick={handleLogoClick}>
             <span className="logo-icon">🎬</span>
             <span className="logo-text">Movie Night</span>
           </NavLink>
@@ -398,6 +420,17 @@ export default function Header({ voter, onLogout }) {
 
           {/* Header Right: Themes, Voter & Sign Out (Unified across desktop & mobile) */}
           <div className="header-right">
+            {isUnlocked && toggleHal && (
+              <button
+                type="button"
+                className={`hal-link-btn ${isOpen ? 'active' : ''}`}
+                onClick={toggleHal}
+                title="Ask HAL (Ctrl+K)"
+                aria-label="Ask HAL"
+              >
+                <HalEye size={24} active={isOpen} />
+              </button>
+            )}
             <ThemeDropdown />
             {voter && <span className="header-voter">{voter}</span>}
             {onLogout && (

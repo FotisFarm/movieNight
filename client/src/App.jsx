@@ -16,6 +16,8 @@ import Login from './pages/Login';
 import { api } from './api';
 import { ThemeProvider } from './ThemeContext';
 import { AppConfigProvider } from './AppConfigContext';
+import { HalProvider } from './HalContext';
+import HalDrawer from './components/HalDrawer';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -45,7 +47,9 @@ export default function App() {
     <ErrorBoundary>
       <ThemeProvider>
         <AppConfigProvider>
-          <AppInner />
+          <HalProvider>
+            <AppInner />
+          </HalProvider>
         </AppConfigProvider>
       </ThemeProvider>
     </ErrorBoundary>
@@ -88,6 +92,7 @@ function AppInner() {
           <Route path="/chat" element={<Chat voter={voter} />} />
         </Routes>
       </main>
+      <HalDrawer voter={voter} />
     </div>
   );
 }

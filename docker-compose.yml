@@ -22,7 +22,8 @@ services:
       - GUEST_PASSWORD=${GUEST_PASSWORD:-}
       - OMDB_API_KEY=${OMDB_API_KEY:-}
       - TMDB_API_KEY=${TMDB_API_KEY:-}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-}
     restart: unless-stopped
 
 volumes:

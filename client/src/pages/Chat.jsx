@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
-import { api } from '../api';
-import { fmt, scoreClass } from '../utils';
+import React, { useState, useRef, useEffect } from 'react';
+import { useHal } from '../HalContext';
+import HalEye from '../components/HalEye';
 import MovieModal from '../components/MovieModal';
 import DirectorYearModal from '../components/DirectorYearModal';
+import { fmt, scoreClass } from '../utils';
 import './Chat.css';
 
 const EXAMPLES = [
@@ -10,24 +11,9 @@ const EXAMPLES = [
   'Show me our 5 most controversial films',
   'Best films of the 1990s',
   'What should I watch from the watchlist?',
+  'Which films have all 5 of us rated?',
 ];
 
-// Pull an optional ```cards JSON block out of a reply. Returns { text, cards }.
-function parseReply(raw) {
-  const m = String(raw || '').match(/```cards\s*([\s\S]*?)```/i);
-  if (!m) return { text: String(raw || '').trim(), cards: null };
-  let cards = null;
-  try {
-    const parsed = JSON.parse(m[1].trim());
-    if (Array.isArray(parsed) && parsed.length) cards = parsed;
-  } catch { /* malformed block — fall back to text only */ }
-  return { text: raw.replace(m[0], '').trim(), cards };
-}
-
-// Map a card to what clicking it opens: a single film (MovieModal) or a
-// director/year/decade group (DirectorYearModal). null = not clickable.
-// Value types mirror the Rankings page: director = name, year = String,
-// decade = number (start year).
 function cardTarget(c) {
   if (c.type === 'movie') return c.id != null ? { kind: 'movie', id: c.id } : null;
   if (c.type === 'director') {
@@ -45,6 +31,58 @@ function cardTarget(c) {
   return null;
 }
 
+function formatInline(text) {
+  const parts = [];
+  let remaining = text;
+  let key = 0;
+  const regex = /(\*\*([^*]+)\*\*|\*([^*]+)\*|`([^`]+)`)/;
+
+  while (remaining) {
+    const match = remaining.match(regex);
+    if (!match) {
+      parts.push(remaining);
+      break;
+    }
+    const idx = match.index;
+    if (idx > 0) {
+      parts.push(remaining.slice(0, idx));
+    }
+    const full = match[0];
+    if (full.startsWith('**')) {
+      parts.push(<strong key={key++} className="hal-text-bold">{match[2]}</strong>);
+    } else if (full.startsWith('*')) {
+      parts.push(<em key={key++} className="hal-text-italic">{match[3]}</em>);
+    } else if (full.startsWith('`')) {
+      parts.push(<code key={key++} className="hal-code-inline">{match[4]}</code>);
+    }
+    remaining = remaining.slice(idx + full.length);
+  }
+  return parts;
+}
+
+function HalFormattedText({ content }) {
+  if (!content) return null;
+  const paragraphs = content.split(/\n\n+/);
+
+  return (
+    <div className="hal-prose">
+      {paragraphs.map((p, i) => {
+        const lines = p.split('\n');
+        return (
+          <p key={i} className="hal-prose-p">
+            {lines.map((line, li) => (
+              <React.Fragment key={li}>
+                {li > 0 && <br />}
+                {formatInline(line)}
+              </React.Fragment>
+            ))}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 function HalCards({ cards, onOpen }) {
   return (
     <div className="hal-cards">
@@ -56,16 +94,20 @@ function HalCards({ cards, onOpen }) {
             className={`hal-card${target ? ' hal-card-click' : ''}`}
             onClick={target ? () => onOpen(target) : undefined}
             role={target ? 'button' : undefined}
+            tabIndex={target ? 0 : undefined}
+            onKeyDown={target ? (e) => e.key === 'Enter' && onOpen(target) : undefined}
           >
-            <div className="hal-card-label">{c.type}</div>
+            <div className="hal-card-top">
+              <span className="hal-card-label">{c.type}</span>
+              {c.score != null && (
+                <div className={`hal-card-score ${scoreClass(c.score)}`}>
+                  {fmt(c.score)}
+                  {c.scoreLabel && <span className="hal-card-score-lbl"> {c.scoreLabel}</span>}
+                </div>
+              )}
+            </div>
             <div className="hal-card-title">{c.title}</div>
             {c.meta && <div className="hal-card-meta">{c.meta}</div>}
-            {c.score != null && (
-              <div className={`hal-card-score ${scoreClass(c.score)}`}>
-                {fmt(c.score)}
-                {c.scoreLabel && <span className="hal-card-score-lbl"> {c.scoreLabel}</span>}
-              </div>
-            )}
           </div>
         );
       })}
@@ -74,61 +116,101 @@ function HalCards({ cards, onOpen }) {
 }
 
 export default function Chat({ voter }) {
-  const [messages, setMessages] = useState([]); // { role, text, cards? }
+  const {
+    unlockHal,
+    messages,
+    sending,
+    sendMessage,
+    clearMessages,
+    modal,
+    setModal,
+    openHal,
+  } = useHal();
+
   const [input, setInput] = useState('');
-  const [sending, setSending] = useState(false);
-  const [modal, setModal] = useState(null); // { kind: 'movie', id } | { kind: 'dy', type, value }
   const scrollRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // Navigating to /chat unlocks HAL
+  useEffect(() => {
+    unlockHal();
+  }, [unlockHal]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, sending]);
 
-  async function send(text) {
-    const content = (text ?? input).trim();
-    if (!content || sending) return;
-
-    const next = [...messages, { role: 'user', text: content }];
-    setMessages(next);
+  const handleSend = (text) => {
+    const q = text ?? input;
+    if (!q.trim() || sending) return;
+    sendMessage(q);
     setInput('');
-    setSending(true);
-    // The API expects role/content string messages — flatten our display shape.
-    const history = next.map((m) => ({ role: m.role, content: m.text }));
-    try {
-      const { reply } = await api.askChat(history);
-      const { text: replyText, cards } = parseReply(reply);
-      setMessages([...next, { role: 'assistant', text: replyText, cards }]);
-    } catch (err) {
-      setMessages([...next, { role: 'assistant', text: `⚠️ ${err.message}` }]);
-    } finally {
-      setSending(false);
-    }
-  }
+  };
 
-  function onKeyDown(e) {
+  const onKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      send();
+      handleSend();
     }
-  }
+  };
 
   return (
     <div className="chat-page">
       <div className="chat-header">
-        <h1 className="chat-title">HAL 9000</h1>
-        <p className="chat-sub">Ask anything about the films, ratings, and rankings · read-only</p>
+        <div className="chat-header-main">
+          <HalEye size={36} active={sending} />
+          <div>
+            <div className="chat-title-row">
+              <h1 className="chat-title">HAL 9000</h1>
+              <span className="chat-badge">Gemini 2.5 Flash</span>
+            </div>
+            <p className="chat-sub">Ask anything about the films, ratings, and rankings · read-only</p>
+          </div>
+        </div>
+
+        <div className="chat-header-actions">
+          {messages.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={clearMessages}
+              title="Clear conversation"
+            >
+              Clear
+            </button>
+          )}
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={openHal}
+            title="Open in floating slide-over drawer"
+          >
+            Floating Console (Ctrl+K)
+          </button>
+        </div>
       </div>
 
       <div className="chat-window" ref={scrollRef}>
         {messages.length === 0 ? (
           <div className="chat-empty">
-            <div className="chat-empty-icon">🔴</div>
+            <div className="chat-empty-icon">
+              <HalEye size={64} active={false} />
+            </div>
+            <h2 className="chat-empty-greeting">
+              {voter ? `Good evening, ${voter}.` : 'Good evening.'}
+            </h2>
             <p className="chat-empty-text">
-              {voter ? `Good evening, ${voter}. ` : ''}Ask me about the group's films. Try one of these:
+              I am a HAL 9000 computer. I am completely operational, and all my circuits are functioning perfectly. Ask me anything about the group's film catalogue:
             </p>
             <div className="chat-examples">
               {EXAMPLES.map((q) => (
-                <button key={q} className="chat-example" onClick={() => send(q)} disabled={sending}>
+                <button
+                  key={q}
+                  type="button"
+                  className="chat-example"
+                  onClick={() => handleSend(q)}
+                  disabled={sending}
+                >
                   {q}
                 </button>
               ))}
@@ -137,8 +219,17 @@ export default function Chat({ voter }) {
         ) : (
           messages.map((m, i) => (
             <div key={i} className={`chat-msg chat-msg-${m.role}`}>
+              {m.role === 'assistant' && (
+                <div className="chat-avatar">
+                  <HalEye size={20} />
+                </div>
+              )}
               <div className="chat-msg-inner">
-                {m.text && <div className="chat-bubble">{m.text}</div>}
+                {m.text && (
+                  <div className="chat-bubble">
+                    <HalFormattedText content={m.text} />
+                  </div>
+                )}
                 {m.cards && <HalCards cards={m.cards} onOpen={setModal} />}
               </div>
             </div>
@@ -146,10 +237,16 @@ export default function Chat({ voter }) {
         )}
         {sending && (
           <div className="chat-msg chat-msg-assistant">
-            <div className="chat-bubble chat-bubble-typing">
-              <span className="chat-dot" />
-              <span className="chat-dot" />
-              <span className="chat-dot" />
+            <div className="chat-avatar">
+              <HalEye size={20} active={true} />
+            </div>
+            <div className="chat-msg-inner">
+              <div className="chat-bubble chat-bubble-typing">
+                <span className="chat-dot" />
+                <span className="chat-dot" />
+                <span className="chat-dot" />
+                <span className="chat-typing-status">Analyzing film database…</span>
+              </div>
             </div>
           </div>
         )}
@@ -157,15 +254,21 @@ export default function Chat({ voter }) {
 
       <div className="chat-input-row">
         <textarea
+          ref={inputRef}
           className="input chat-input"
           rows={1}
-          placeholder="Ask about the films…"
+          placeholder="Ask HAL about the films (e.g. 'Which director do we rate highest?')"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={onKeyDown}
           disabled={sending}
         />
-        <button className="btn chat-send" onClick={() => send()} disabled={sending || !input.trim()}>
+        <button
+          type="button"
+          className="btn chat-send"
+          onClick={() => handleSend()}
+          disabled={sending || !input.trim()}
+        >
           Send
         </button>
       </div>
