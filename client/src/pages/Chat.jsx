@@ -162,7 +162,7 @@ export default function Chat({ voter }) {
           <div>
             <div className="chat-title-row">
               <h1 className="chat-title">HAL 9000</h1>
-              <span className="chat-badge">Gemini 2.5 Flash</span>
+              <span className="chat-badge">Gemini 3.6 Flash</span>
             </div>
             <p className="chat-sub">Ask anything about the films, ratings, and rankings · read-only</p>
           </div>

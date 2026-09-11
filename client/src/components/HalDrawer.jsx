@@ -177,7 +177,7 @@ export default function HalDrawer({ voter }) {
             <div className="hal-drawer-title-group">
               <div className="hal-drawer-title-row">
                 <span className="hal-drawer-title">HAL 9000</span>
-                <span className="hal-drawer-badge">Gemini 2.5 Flash</span>
+                <span className="hal-drawer-badge">Gemini 3.6 Flash</span>
               </div>
               <span className="hal-drawer-subtitle">Onboard Heuristic Computer · Read-Only</span>
             </div>

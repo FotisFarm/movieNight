@@ -5,7 +5,7 @@ const { GoogleGenAI } = require('@google/genai');
 const { runReadOnlySql } = require('./db-readonly');
 const { VOTERS, GROUP_SIZE } = require('./config');
 
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 const API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 const HAS_KEY = !!API_KEY;
 const ai = HAS_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
@@ -103,9 +103,6 @@ async function chat({ messages, voter }) {
         config: {
           systemInstruction,
           tools: [RUN_SQL_TOOL],
-          thinkingConfig: {
-            thinkingBudget: 0, // keep chat responses snappy
-          },
         },
       });
 
