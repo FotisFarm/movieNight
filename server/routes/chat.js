@@ -20,8 +20,8 @@ router.post('/', ah(async (req, res) => {
   }
 
   // Errors are returned as a normal reply bubble so the UI renders them inline.
-  const { reply } = await llm.chat({ messages: clean, voter: req.session.voter });
-  res.json({ reply });
+  const { reply, queries } = await llm.chat({ messages: clean, voter: req.session.voter });
+  res.json({ reply, queries: queries || [] });
 }));
 
 module.exports = router;

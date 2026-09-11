@@ -1,5 +1,5 @@
 .chat-page {
-  max-width: 860px;
+  max-width: 880px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -66,7 +66,7 @@
   padding: 8px 4px 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 /* Empty state */
@@ -74,18 +74,19 @@
   margin: auto;
   text-align: center;
   color: var(--text2);
-  max-width: 540px;
-  padding: 24px 0;
+  max-width: 580px;
+  padding: 20px 0;
 }
 
 .chat-empty-icon {
   margin-bottom: 16px;
   display: flex;
   justify-content: center;
+  filter: drop-shadow(0 0 24px rgba(220, 40, 30, 0.4));
 }
 
 .chat-empty-greeting {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--text);
   margin-bottom: 8px;
@@ -94,32 +95,67 @@
 .chat-empty-text {
   font-size: 14px;
   line-height: 1.6;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
   color: var(--text2);
+}
+
+/* Categories Bar */
+.hal-categories-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.hal-category-tab {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.hal-category-tab:hover {
+  color: var(--text);
+  background: var(--surface3);
+}
+
+.hal-category-tab.active {
+  background: rgba(224, 60, 40, 0.15);
+  color: #ff6045;
+  border-color: rgba(224, 60, 40, 0.4);
 }
 
 .chat-examples {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
-  justify-content: center;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
 }
 
 .chat-example {
   background: var(--surface2);
   border: 1px solid var(--border);
   color: var(--text);
-  border-radius: 999px;
-  padding: 8px 14px;
+  border-radius: var(--radius);
+  padding: 10px 14px;
   font-size: 13px;
   cursor: pointer;
+  text-align: left;
   transition: all 0.15s ease;
 }
 
 .chat-example:hover:not(:disabled) {
   background: var(--surface3);
   border-color: rgba(220, 50, 40, 0.4);
-  transform: translateY(-1px);
+  transform: translateX(3px);
 }
 
 .chat-example:disabled {
@@ -151,7 +187,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-width: 80%;
+  max-width: 82%;
 }
 
 .chat-msg-user .chat-msg-inner {
@@ -170,10 +206,10 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 12px 14px;
+  padding: 10px 14px;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  gap: 12px;
+  align-items: center;
 }
 
 .hal-card-click {
@@ -185,6 +221,25 @@
   border-color: var(--accent);
   background: var(--surface2);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.hal-card-poster {
+  width: 44px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  background: var(--surface3);
+}
+
+.hal-card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .hal-card-top {
@@ -193,12 +248,36 @@
   justify-content: space-between;
 }
 
+.hal-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
 .hal-card-label {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
   color: #ff6045;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.hal-badge-runtime {
+  font-size: 10.5px;
+  color: var(--text3);
+  font-weight: 500;
+}
+
+.hal-badge-lb {
+  font-size: 10px;
+  font-weight: 700;
+  color: #00e054;
+  background: rgba(0, 224, 84, 0.12);
+  border: 1px solid rgba(0, 224, 84, 0.25);
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
 }
 
 .hal-card-title {
@@ -214,7 +293,7 @@
 }
 
 .hal-card-score {
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 700;
 }
 
@@ -235,10 +314,10 @@
 .chat-bubble {
   width: fit-content;
   max-width: 100%;
-  padding: 11px 16px;
+  padding: 12px 16px;
   border-radius: var(--radius-lg);
   font-size: 14px;
-  line-height: 1.55;
+  line-height: 1.6;
   word-break: break-word;
 }
 
@@ -246,7 +325,7 @@
   background: var(--accent);
   color: #ffffff;
   border-bottom-right-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .chat-msg-assistant .chat-bubble {
@@ -254,6 +333,28 @@
   color: var(--text);
   border: 1px solid var(--border);
   border-bottom-left-radius: 4px;
+}
+
+.chat-msg-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.chat-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text3);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.chat-action-btn:hover {
+  color: var(--text);
+  background: var(--surface3);
 }
 
 /* Prose */
@@ -282,17 +383,148 @@
   color: var(--gold);
 }
 
+/* SQL Telemetry */
+.hal-telemetry {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  font-size: 12px;
+  width: 100%;
+}
+
+.hal-telemetry-summary {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text2);
+  font-weight: 500;
+  user-select: none;
+  list-style: none;
+  transition: background 0.15s ease;
+}
+
+.hal-telemetry-summary::-webkit-details-marker {
+  display: none;
+}
+
+.hal-telemetry-summary:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.hal-telemetry-icon {
+  color: var(--gold);
+}
+
+.hal-telemetry-caret {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--text3);
+  transition: transform 0.15s ease;
+}
+
+.hal-telemetry[open] .hal-telemetry-caret {
+  transform: rotate(180deg);
+}
+
+.hal-telemetry-content {
+  padding: 12px;
+  background: #090a0d;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hal-telemetry-query {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hal-telemetry-query-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  color: var(--text3);
+  font-family: ui-monospace, monospace;
+}
+
+.hal-telemetry-code {
+  margin: 0;
+  padding: 8px 10px;
+  background: #111218;
+  border: 1px solid #1c1d26;
+  border-radius: 4px;
+  color: #72dec2;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.hal-telemetry-err {
+  color: var(--red);
+  font-size: 11px;
+}
+
+/* Follow-up suggestions */
+.hal-followups {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+  width: 100%;
+}
+
+.hal-followups-label {
+  font-size: 10.5px;
+  color: var(--text3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hal-followups-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hal-followup-pill {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.hal-followup-pill:hover:not(:disabled) {
+  background: var(--surface3);
+  color: var(--text);
+  border-color: rgba(220, 50, 40, 0.4);
+  transform: translateY(-1px);
+}
+
 /* Typing indicator */
 .chat-bubble-typing {
   display: inline-flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
   padding: 10px 14px;
 }
 
 .chat-dot {
-  width: 7px;
-  height: 7px;
+  width: 6.5px;
+  height: 6.5px;
   border-radius: 50%;
   background: #ff5240;
   animation: chat-bounce 1.2s infinite ease-in-out;
@@ -304,7 +536,6 @@
 .chat-typing-status {
   font-size: 12px;
   color: var(--text3);
-  margin-left: 6px;
   font-style: italic;
 }
 

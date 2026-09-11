@@ -3,18 +3,35 @@ import { api } from './api';
 
 const HalContext = createContext(null);
 
-// Pull an optional ```cards JSON block out of an assistant reply. Returns { text, cards }.
+// Pull optional ```cards and ```suggestions JSON blocks out of an assistant reply.
 export function parseHalReply(raw) {
-  const m = String(raw || '').match(/```cards\s*([\s\S]*?)```/i);
-  if (!m) return { text: String(raw || '').trim(), cards: null };
+  let text = String(raw || '').trim();
   let cards = null;
-  try {
-    const parsed = JSON.parse(m[1].trim());
-    if (Array.isArray(parsed) && parsed.length) cards = parsed;
-  } catch {
-    /* malformed block — fallback to plain text */
+  let suggestions = null;
+
+  const cardsMatch = text.match(/```cards\s*([\s\S]*?)```/i);
+  if (cardsMatch) {
+    try {
+      const parsed = JSON.parse(cardsMatch[1].trim());
+      if (Array.isArray(parsed) && parsed.length) cards = parsed;
+    } catch {
+      /* malformed block */
+    }
+    text = text.replace(cardsMatch[0], '').trim();
   }
-  return { text: raw.replace(m[0], '').trim(), cards };
+
+  const suggMatch = text.match(/```suggestions\s*([\s\S]*?)```/i);
+  if (suggMatch) {
+    try {
+      const parsed = JSON.parse(suggMatch[1].trim());
+      if (Array.isArray(parsed) && parsed.length) suggestions = parsed;
+    } catch {
+      /* malformed block */
+    }
+    text = text.replace(suggMatch[0], '').trim();
+  }
+
+  return { text, cards, suggestions };
 }
 
 export function HalProvider({ children }) {
@@ -73,9 +90,18 @@ export function HalProvider({ children }) {
       }));
 
       try {
-        const { reply } = await api.askChat(history);
-        const { text: replyText, cards } = parseHalReply(reply);
-        setMessages([...next, { role: 'assistant', text: replyText, cards }]);
+        const res = await api.askChat(history);
+        const { text: replyText, cards, suggestions } = parseHalReply(res?.reply);
+        setMessages([
+          ...next,
+          {
+            role: 'assistant',
+            text: replyText,
+            cards,
+            suggestions,
+            queries: res?.queries || [],
+          },
+        ]);
       } catch (err) {
         setMessages([
           ...next,
