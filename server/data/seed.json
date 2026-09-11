@@ -981,7 +981,7 @@
     "runtime": 93,
     "ratings": {
       "Παντελής": "10",
-      "Στέλιας": "9.7",
+      "Στέλιας": "10",
       "Φώτης": "10"
     },
     "top3": {
@@ -1474,7 +1474,7 @@
     "ratings": {
       "Μητσέας": "10",
       "Παντελής": "10",
-      "Στέλιας": "9.5",
+      "Στέλιας": "10",
       "Φώτης": "7"
     },
     "top3": {},
@@ -2450,23 +2450,6 @@
     "imdb_rating": 6.4,
     "poster_path": "/mViGEH5dfsAnUgJmce1RJkFycAi.jpg",
     "runtime": 124,
-    "ratings": {},
-    "top3": {},
-    "watchlistVotes": []
-  },
-  {
-    "director": "Francis Ford Coppola",
-    "movie": "One From The Heart",
-    "year": "1982",
-    "rank": null,
-    "mn": "",
-    "watchlist": "",
-    "tokens": "",
-    "tokenPts": 0,
-    "imdb_id": "tt0456525",
-    "imdb_rating": 6.5,
-    "poster_path": "/6hTRcswwR2jzyXTjTP3A7han26b.jpg",
-    "runtime": 23,
     "ratings": {},
     "top3": {},
     "watchlistVotes": []
@@ -6150,7 +6133,7 @@
       "Φώτης": "10"
     },
     "top3": {
-      "Στέλιας": 7
+      "Στέλιας": 6
     },
     "watchlistVotes": []
   },
@@ -6909,7 +6892,7 @@
     "movie": "Three Colours: Blue",
     "year": "1993",
     "rank": 69,
-    "mn": "",
+    "mn": "Y",
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
@@ -6918,10 +6901,14 @@
     "poster_path": "/33wsWxzsNstI8N7dvuwzFmj1qBd.jpg",
     "runtime": 98,
     "ratings": {
+      "Μητσέας": "9",
       "Παντελής": "9.5",
-      "Φώτης": "9"
+      "Στέλιας": "9.5",
+      "Φώτης": "10"
     },
-    "top3": {},
+    "top3": {
+      "Φώτης": 7
+    },
     "watchlistVotes": []
   },
   {
@@ -7274,7 +7261,7 @@
     "year": "1963",
     "rank": null,
     "mn": "",
-    "watchlist": "",
+    "watchlist": "Y",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0057565",
@@ -7283,7 +7270,9 @@
     "runtime": 142,
     "ratings": {},
     "top3": {},
-    "watchlistVotes": []
+    "watchlistVotes": [
+      "Φώτης"
+    ]
   },
   {
     "director": "Akira Kurosawa",
@@ -7308,7 +7297,7 @@
     "year": "1952",
     "rank": null,
     "mn": "",
-    "watchlist": "",
+    "watchlist": "Y",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0044741",
@@ -7317,7 +7306,9 @@
     "runtime": 143,
     "ratings": {},
     "top3": {},
-    "watchlistVotes": []
+    "watchlistVotes": [
+      "Φώτης"
+    ]
   },
   {
     "director": "Akira Kurosawa",
@@ -7401,7 +7392,7 @@
     "poster_path": "/dGgiXMWDcS5aJTBEFu7bmaQPNox.jpg",
     "runtime": 160,
     "ratings": {
-      "Στέλιας": "9.9",
+      "Στέλιας": "10",
       "Φώτης": "9"
     },
     "top3": {},
@@ -7413,7 +7404,7 @@
     "year": "1950",
     "rank": null,
     "mn": "",
-    "watchlist": "",
+    "watchlist": "Y",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0042876",
@@ -7873,7 +7864,7 @@
     "imdb_id": "tt0087843",
     "imdb_rating": 8.3,
     "poster_path": "/i0enkzsL5dPeneWnjl1fCWm6L7k.jpg",
-    "runtime": 139,
+    "runtime": 256,
     "ratings": {
       "Παντελής": "10",
       "Στέλιας": "9.6",
@@ -10060,7 +10051,7 @@
     "runtime": 148,
     "ratings": {
       "Μητσέας": "3",
-      "Παντελής": "8.3",
+      "Παντελής": "8.4",
       "Στέλιας": "8.3",
       "Φώτης": "8"
     },
@@ -11520,7 +11511,7 @@
       "Φώτης": "10"
     },
     "top3": {
-      "Φώτης": 9
+      "Φώτης": 10
     },
     "watchlistVotes": []
   },
@@ -11589,7 +11580,7 @@
     "poster_path": "/wN2xWp1eIwCKOD0BHTcErTBv1Uq.jpg",
     "runtime": 155,
     "ratings": {
-      "Στέλιας": "7",
+      "Στέλιας": "6",
       "Φώτης": "8"
     },
     "top3": {},
@@ -14531,23 +14522,6 @@
   },
   {
     "director": "Θόδωρος Αγγελόπουλος",
-    "movie": "Forminx Story",
-    "year": "1965",
-    "rank": null,
-    "mn": "",
-    "watchlist": "",
-    "tokens": "",
-    "tokenPts": 0,
-    "imdb_id": null,
-    "imdb_rating": null,
-    "poster_path": null,
-    "runtime": null,
-    "ratings": {},
-    "top3": {},
-    "watchlistVotes": []
-  },
-  {
-    "director": "Θόδωρος Αγγελόπουλος",
     "movie": "Αθήνα, επιστροφή στην Ακρόπολη",
     "year": "1983",
     "rank": null,
@@ -14971,7 +14945,7 @@
       "Λεόντιος": "9.2"
     },
     "top3": {
-      "Φώτης": 7
+      "Φώτης": 9
     },
     "watchlistVotes": []
   },
@@ -15077,7 +15051,7 @@
       "Φώτης": "9"
     },
     "top3": {
-      "Στέλιας": 6
+      "Στέλιας": 8
     },
     "watchlistVotes": []
   },
@@ -15579,7 +15553,7 @@
       "Φώτης": "9.5"
     },
     "top3": {
-      "Στέλιας": 8
+      "Στέλιας": 7
     },
     "watchlistVotes": []
   },
@@ -16741,9 +16715,7 @@
       "Παντελής": "8.5",
       "Φώτης": "10"
     },
-    "top3": {
-      "Φώτης": 10
-    },
+    "top3": {},
     "watchlistVotes": []
   },
   {
@@ -17073,7 +17045,7 @@
       "Μητσέας": "7.5",
       "Παντελής": "7.8",
       "Στέλιας": "9.5",
-      "Φώτης": "7.5"
+      "Φώτης": "8.5"
     },
     "top3": {},
     "watchlistVotes": []
@@ -19921,6 +19893,8 @@
     "poster_path": "/5rhTDKUhPYvpdQIijFIs5VoWsON.jpg",
     "runtime": 173,
     "ratings": {
+      "Παντελής": "9",
+      "Στέλιας": "7",
       "Φώτης": "6.5"
     },
     "top3": {},
@@ -20389,6 +20363,101 @@
     "poster_path": "/2kSElneXSKmMsGL55k0CbPGqLbu.jpg",
     "runtime": null,
     "ratings": {},
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Charlotte Wells",
+    "movie": "Aftersun",
+    "year": "2022",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt19770238",
+    "imdb_rating": 7.6,
+    "poster_path": "/evKz85EKouVbIr51zy5fOtpNRPg.jpg",
+    "runtime": 102,
+    "ratings": {},
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Richard Kelly",
+    "movie": "Donnie Darko",
+    "year": "2001",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0246578",
+    "imdb_rating": 8,
+    "poster_path": "/j2AtZFsflxiluaNtajMTI0Avm8C.jpg",
+    "runtime": 113,
+    "ratings": {
+      "Μητσέας": "10"
+    },
+    "top3": {
+      "Μητσέας": 5
+    },
+    "watchlistVotes": []
+  },
+  {
+    "director": "Edward Yang",
+    "movie": "Yi Yi",
+    "year": "2000",
+    "rank": null,
+    "mn": "",
+    "watchlist": "Y",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0244316",
+    "imdb_rating": 8.1,
+    "poster_path": "/mR8dSQZI8X6Z1NClJhFrtJp636z.jpg",
+    "runtime": 173,
+    "ratings": {},
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Satoshi Kon",
+    "movie": "Perfect Blue",
+    "year": "1997",
+    "rank": null,
+    "mn": "",
+    "watchlist": "Y",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0156887",
+    "imdb_rating": 8,
+    "poster_path": "/6WTiOCfDPP8XV4jqfloiVWf7KHq.jpg",
+    "runtime": 82,
+    "ratings": {
+      "Στέλιας": "8.9"
+    },
+    "top3": {},
+    "watchlistVotes": [
+      "Φώτης"
+    ]
+  },
+  {
+    "director": "Bernardo Bertolucci",
+    "movie": "The Conformist",
+    "year": "1970",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0065571",
+    "imdb_rating": 7.9,
+    "poster_path": "/nLJjFRqIJAK8qz0OKYnpKCblZNK.jpg",
+    "runtime": 113,
+    "ratings": {
+      "Φώτης": "7.5"
+    },
     "top3": {},
     "watchlistVotes": []
   }
