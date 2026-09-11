@@ -24,6 +24,7 @@ services:
       - TMDB_API_KEY=${TMDB_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GEMINI_MODEL=${GEMINI_MODEL:-}
+      - HIDE_HAL=${HIDE_HAL:-false}
     restart: unless-stopped
 
   # 6th-member sandbox environment (Κλαίρη)
@@ -53,6 +54,7 @@ services:
       - TMDB_API_KEY=${TMDB_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GEMINI_MODEL=${GEMINI_MODEL:-}
+      - HIDE_HAL=${HIDE_HAL:-false}
     restart: unless-stopped
 
 volumes:

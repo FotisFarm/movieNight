@@ -15,7 +15,7 @@ import Chat from './pages/Chat';
 import Login from './pages/Login';
 import { api } from './api';
 import { ThemeProvider } from './ThemeContext';
-import { AppConfigProvider } from './AppConfigContext';
+import { AppConfigProvider, useAppConfig } from './AppConfigContext';
 import { HalProvider } from './HalContext';
 import HalDrawer from './components/HalDrawer';
 
@@ -57,6 +57,7 @@ export default function App() {
 }
 
 function AppInner() {
+  const { hideHal } = useAppConfig() || {};
   const [voter, setVoter] = useState(null); // null = checking, '' = not logged in
 
   useEffect(() => {
@@ -89,10 +90,13 @@ function AppInner() {
               still resolves server-side and redirects to the canonical URL. */}
           <Route path="/lists/:key" element={<Lists voter={voter} />} />
           <Route path="/compare" element={<Compare />} />
-          <Route path="/chat" element={<Chat voter={voter} />} />
+          <Route
+            path="/chat"
+            element={hideHal ? <Navigate to="/films" replace /> : <Chat voter={voter} />}
+          />
         </Routes>
       </main>
-      <HalDrawer voter={voter} />
+      {!hideHal && <HalDrawer voter={voter} />}
     </div>
   );
 }

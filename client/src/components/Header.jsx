@@ -83,6 +83,8 @@ function IconStats() {
 
 function ThemeDropdown({ up = false }) {
   const { theme, setTheme } = useTheme();
+  const { isUnlocked, lockHal } = useHal() || {};
+  const { hideHal } = useAppConfig() || {};
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -119,6 +121,22 @@ function ThemeDropdown({ up = false }) {
               {t.label}
             </button>
           ))}
+          {!hideHal && isUnlocked && (
+            <>
+              <div style={{ height: 1, backgroundColor: 'var(--border)', margin: '4px 0' }} />
+              <button
+                type="button"
+                className="theme-drop-item"
+                style={{ color: 'var(--text2)' }}
+                onClick={() => {
+                  lockHal?.();
+                  setOpen(false);
+                }}
+              >
+                🔒 Hide HAL Eye
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -126,15 +144,16 @@ function ThemeDropdown({ up = false }) {
 }
 
 export default function Header({ voter, onLogout }) {
-  const { sandboxMode } = useAppConfig();
+  const { sandboxMode, hideHal } = useAppConfig() || {};
   const location = useLocation();
   const pathname = location.pathname;
-  const { isUnlocked, isOpen, toggleHal } = useHal() || {};
+  const { isUnlocked, isOpen, toggleHal, lockHal } = useHal() || {};
 
   // Secret Easter Egg: rapid triple click on the logo reveals/toggles HAL
   const logoClickCountRef = useRef(0);
   const logoClickTimerRef = useRef(null);
   const handleLogoClick = (e) => {
+    if (hideHal) return;
     logoClickCountRef.current += 1;
     if (logoClickTimerRef.current) clearTimeout(logoClickTimerRef.current);
 
@@ -423,13 +442,17 @@ export default function Header({ voter, onLogout }) {
 
           {/* Header Right: Themes, Voter & Sign Out (Unified across desktop & mobile) */}
           <div className="header-right">
-            {isUnlocked && toggleHal && (
+            {!hideHal && isUnlocked && toggleHal && (
               <button
                 type="button"
                 className={`hal-link-btn ${isOpen ? 'active' : ''}`}
                 onClick={toggleHal}
-                title="Ask HAL (Ctrl+K)"
-                aria-label="Ask HAL"
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  if (lockHal) lockHal();
+                }}
+                title="Ask HAL (Ctrl+K) · Right-click to hide"
+                aria-label="Ask HAL (Right-click to hide)"
               >
                 <HalEye size={24} active={isOpen} />
               </button>

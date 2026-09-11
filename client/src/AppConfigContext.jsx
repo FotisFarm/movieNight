@@ -6,6 +6,7 @@ const DEFAULTS = {
   minVoters: 2,
   sandboxMode: false,
   sandboxVoter: '',
+  hideHal: false,
 };
 
 const AppConfigContext = createContext(DEFAULTS);

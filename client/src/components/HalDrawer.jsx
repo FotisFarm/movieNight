@@ -314,13 +314,9 @@ export default function HalDrawer({ voter }) {
             <button
               type="button"
               className="hal-drawer-icon-btn hal-drawer-lock-btn"
-              onClick={() => {
-                if (window.confirm('Hide HAL from the header? You can summon HAL anytime by pressing Ctrl+K.')) {
-                  lockHal();
-                }
-              }}
-              title="Hide HAL from header (Ctrl+K still works)"
-              aria-label="Hide HAL from header"
+              onClick={lockHal}
+              title="Hide HAL eye from header (re-summon anytime with Ctrl+K)"
+              aria-label="Hide HAL eye from header"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />

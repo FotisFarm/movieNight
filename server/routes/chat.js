@@ -2,10 +2,15 @@ const express = require('express');
 const router = express.Router();
 const llm = require('../llm');
 const ah = require('../asyncHandler');
+const { HIDE_HAL } = require('../config');
 
 // POST /api/chat  { messages: [{ role, content }] }  ->  { reply }
 // Mounted behind requireAuth, so req.session.voter is always set.
 router.post('/', ah(async (req, res) => {
+  if (HIDE_HAL) {
+    return res.status(404).json({ error: 'Chat is currently disabled.' });
+  }
+
   const { messages } = req.body || {};
   if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'messages must be a non-empty array' });

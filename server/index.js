@@ -22,13 +22,14 @@ app.use(session({
 app.use('/api/auth', require('./routes/auth'));
 
 app.get('/api/config', (_req, res) => {
-  const { VOTERS, GROUP_SIZE, MIN_VOTERS, SANDBOX_MODE, SANDBOX_VOTER } = require('./config');
+  const { VOTERS, GROUP_SIZE, MIN_VOTERS, SANDBOX_MODE, SANDBOX_VOTER, HIDE_HAL } = require('./config');
   res.json({
     voters: VOTERS,
     groupSize: GROUP_SIZE,
     minVoters: MIN_VOTERS,
     sandboxMode: SANDBOX_MODE,
     sandboxVoter: SANDBOX_VOTER,
+    hideHal: HIDE_HAL,
   });
 });
 

@@ -10,11 +10,14 @@ const VOTERS = (process.env.VOTERS || defaultVoters)
 const GROUP_SIZE = parseInt(process.env.GROUP_SIZE || defaultGroupSize, 10);
 const MIN_VOTERS = Math.min(2, GROUP_SIZE);
 
+const HIDE_HAL = process.env.HIDE_HAL === 'true' || process.env.ENABLE_HAL === 'false';
+
 module.exports = {
   VOTERS,
   GROUP_SIZE,
   MIN_VOTERS,
   SANDBOX_MODE,
   SANDBOX_VOTER,
+  HIDE_HAL,
 };
 

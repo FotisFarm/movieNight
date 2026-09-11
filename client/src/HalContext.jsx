@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api } from './api';
+import { useAppConfig } from './AppConfigContext';
 
 const HalContext = createContext(null);
 
@@ -35,18 +36,20 @@ export function parseHalReply(raw) {
 }
 
 export function HalProvider({ children }) {
+  const { hideHal } = useAppConfig() || {};
   const [isOpen, setIsOpen] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(
-    () => localStorage.getItem('mn-hal-unlocked') === '1'
+    () => !hideHal && localStorage.getItem('mn-hal-unlocked') === '1'
   );
   const [messages, setMessages] = useState([]);
   const [sending, setSending] = useState(false);
   const [modal, setModal] = useState(null); // { kind: 'movie', id } | { kind: 'dy', type, value }
 
   const unlockHal = useCallback(() => {
+    if (hideHal) return;
     setIsUnlocked(true);
     localStorage.setItem('mn-hal-unlocked', '1');
-  }, []);
+  }, [hideHal]);
 
   const lockHal = useCallback(() => {
     setIsUnlocked(false);
@@ -55,21 +58,23 @@ export function HalProvider({ children }) {
   }, []);
 
   const openHal = useCallback(() => {
+    if (hideHal) return;
     unlockHal();
     setIsOpen(true);
-  }, [unlockHal]);
+  }, [hideHal, unlockHal]);
 
   const closeHal = useCallback(() => {
     setIsOpen(false);
   }, []);
 
   const toggleHal = useCallback(() => {
+    if (hideHal) return;
     setIsOpen((prev) => {
       const next = !prev;
       if (next) unlockHal();
       return next;
     });
-  }, [unlockHal]);
+  }, [hideHal, unlockHal]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);
@@ -119,6 +124,8 @@ export function HalProvider({ children }) {
 
   // Global hotkeys: Ctrl+K / Cmd+K or Ctrl+Shift+H to summon HAL
   useEffect(() => {
+    if (hideHal) return;
+
     function onKeyDown(e) {
       // Don't intercept Ctrl+K if user is inside a contentEditable or special editor,
       // but standard inputs can still open HAL via Ctrl+K command shortcut
@@ -145,10 +152,12 @@ export function HalProvider({ children }) {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isOpen, modal, toggleHal, closeHal]);
+  }, [hideHal, isOpen, modal, toggleHal, closeHal]);
 
   // URL query parameter unlock check: ?hal=1 or ?hal=true
   useEffect(() => {
+    if (hideHal) return;
+
     try {
       const params = new URLSearchParams(window.location.search);
       if (params.get('hal') === '1' || params.get('hal') === 'true') {
@@ -161,13 +170,14 @@ export function HalProvider({ children }) {
     } catch {
       // ignore in non-browser envs
     }
-  }, [openHal]);
+  }, [hideHal, openHal]);
 
   return (
     <HalContext.Provider
       value={{
-        isOpen,
-        isUnlocked,
+        isOpen: !hideHal && isOpen,
+        isUnlocked: !hideHal && isUnlocked,
+        hideHal: Boolean(hideHal),
         openHal,
         closeHal,
         toggleHal,
