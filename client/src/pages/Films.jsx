@@ -27,7 +27,7 @@ const DEFAULTS = {
 };
 
 export default function Films() {
-  const { voters, minVoters } = useAppConfig();
+  const { voters, minVoters, sandboxMode } = useAppConfig();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [movies, setMovies]           = useState([]);
@@ -338,9 +338,11 @@ export default function Films() {
           <span>⚙️ Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</span>
         </button>
 
-        <button className="btn btn-primary btn-add-film" onClick={() => setShowAdd(true)}>
-          + Add Film
-        </button>
+        {!sandboxMode && (
+          <button className="btn btn-primary btn-add-film" onClick={() => setShowAdd(true)}>
+            + Add Film
+          </button>
+        )}
       </div>
 
       {/* ── Active Filters Ribbon (Mobile & Compact Summary) ── */}

@@ -181,8 +181,23 @@ router.post('/watchlist/reset', ah(async (req, res) => {
   if (req.session.voter !== 'mnAdmin') return res.status(403).json({ error: 'Admin only' });
   const mode = req.body?.mode;
   if (mode !== 'votes' && mode !== 'all') return res.status(400).json({ error: 'mode must be "votes" or "all"' });
-  if (SANDBOX_MODE && mode === 'all') {
-    return res.status(403).json({ error: 'Resetting live watchlist movies is disabled in sandbox mode (mode "votes" is allowed).' });
+
+  if (SANDBOX_MODE) {
+    const result = await db.transaction(async (tx) => {
+      const { changes: votes } = await tx.run('DELETE FROM watchlist_votes');
+      let cleared = 0;
+      if (mode === 'all') {
+        await tx.run(`
+          INSERT INTO sandbox_watchlist_overrides (movie_id, watchlist)
+          SELECT id, 0 FROM movies WHERE watchlist = 1
+          ON CONFLICT(movie_id) DO UPDATE SET watchlist = 0
+        `);
+        const res = await tx.run('UPDATE sandbox_watchlist_overrides SET watchlist = 0');
+        cleared = res.changes;
+      }
+      return { votesCleared: votes, filmsCleared: cleared };
+    });
+    return res.json(result);
   }
 
   const result = await db.transaction(async (tx) => {
@@ -222,6 +237,9 @@ router.get('/imdb-detail', ah(async (req, res) => {
 
 // POST /api/movies/backfill-runtimes — manually trigger runtime backfill if needed
 router.post('/backfill-runtimes', ah(async (req, res) => {
+  if (SANDBOX_MODE) {
+    return res.status(403).json({ error: 'Backfilling runtimes is disabled in sandbox mode.' });
+  }
   const { force = false } = req.body || {};
   let data;
   try {
@@ -258,6 +276,9 @@ router.get('/:id', ah(async (req, res) => {
 
 // POST /api/movies
 router.post('/', ah(async (req, res) => {
+  if (SANDBOX_MODE) {
+    return res.status(403).json({ error: 'Adding new films to the shared catalog is disabled in sandbox mode.' });
+  }
   const { director = '', title, year = '', mn = false, watchlist = false, imdb_id } = req.body;
   if (!title?.trim()) return res.status(400).json({ error: 'title is required' });
 
@@ -318,53 +339,69 @@ router.patch('/:id', ah(async (req, res) => {
   const isAdmin = sessionVoter === 'mnAdmin';
 
   const updates = {};
-  if (director !== undefined) updates.director = director;
-  if (title !== undefined)    updates.title = title;
-  if (year !== undefined)     updates.year = year;
-  if (mn !== undefined)       updates.mn = mn ? 1 : 0;
-  if (watchlist !== undefined) updates.watchlist = watchlist ? 1 : 0;
-  if (cinobo !== undefined)   updates.cinobo = cinobo;
-  if (runtime !== undefined)  updates.runtime = (runtime === null || runtime === '') ? null : parseInt(runtime, 10);
-  // Setting/changing the IMDb id re-fetches the rating; clearing it wipes both.
-  if (imdb_id !== undefined) {
-    // The client may paste a full IMDb URL — store the extracted id, never the raw string.
-    const cleanId = extractImdbId(imdb_id);
-    if (!cleanId) {
-      updates.imdb_id = null;
-      updates.imdb_rating = null;
-      updates.letterboxd_rating = null;
-      // The poster was resolved from that id, so it goes too.
-      updates.poster_path = null;
-    } else {
-      updates.imdb_id = cleanId;
-      const [detail, lbRating] = await Promise.all([
-        getImdbById(cleanId),
-        fetchLetterboxdRating(cleanId).catch(() => null)
-      ]);
-      updates.imdb_rating = detail?.imdbRating ?? null;
-      updates.letterboxd_rating = lbRating ?? null;
-      if (detail?.runtime && updates.runtime === undefined) updates.runtime = detail.runtime;
-      // Re-point the poster at the film the new id actually names. A TMDB
-      // miss clears it rather than leaving the previous film's artwork.
-      try {
-        const found = await findByImdbId(cleanId);
-        updates.poster_path = found?.posterPath ?? null;
-        if (!updates.runtime && found?.tmdbId) {
-          const tmdbDetails = await getMovieDetails(found.tmdbId);
-          if (tmdbDetails?.runtime) updates.runtime = tmdbDetails.runtime;
-        }
-      } catch (_) { updates.poster_path = null; }
+  if (SANDBOX_MODE) {
+    // In sandbox mode, catalog metadata (title, director, year, runtime, poster, mn, cinobo) is immutable.
+    // Watchlist additions/removals are isolated into sandbox_watchlist_overrides.
+    if (watchlist !== undefined) {
+      const nextWl = watchlist ? 1 : 0;
+      await db.run(`
+        INSERT INTO sandbox_watchlist_overrides (movie_id, watchlist)
+        VALUES (?, ?)
+        ON CONFLICT(movie_id) DO UPDATE SET watchlist = excluded.watchlist
+      `, id, nextWl);
+      if (nextWl === 0) {
+        await db.run('DELETE FROM watchlist_votes WHERE movie_id = ?', id);
+      }
     }
-  }
+  } else {
+    if (director !== undefined) updates.director = director;
+    if (title !== undefined)    updates.title = title;
+    if (year !== undefined)     updates.year = year;
+    if (mn !== undefined)       updates.mn = mn ? 1 : 0;
+    if (watchlist !== undefined) updates.watchlist = watchlist ? 1 : 0;
+    if (cinobo !== undefined)   updates.cinobo = cinobo;
+    if (runtime !== undefined)  updates.runtime = (runtime === null || runtime === '') ? null : parseInt(runtime, 10);
+    // Setting/changing the IMDb id re-fetches the rating; clearing it wipes both.
+    if (imdb_id !== undefined) {
+      // The client may paste a full IMDb URL — store the extracted id, never the raw string.
+      const cleanId = extractImdbId(imdb_id);
+      if (!cleanId) {
+        updates.imdb_id = null;
+        updates.imdb_rating = null;
+        updates.letterboxd_rating = null;
+        // The poster was resolved from that id, so it goes too.
+        updates.poster_path = null;
+      } else {
+        updates.imdb_id = cleanId;
+        const [detail, lbRating] = await Promise.all([
+          getImdbById(cleanId),
+          fetchLetterboxdRating(cleanId).catch(() => null)
+        ]);
+        updates.imdb_rating = detail?.imdbRating ?? null;
+        updates.letterboxd_rating = lbRating ?? null;
+        if (detail?.runtime && updates.runtime === undefined) updates.runtime = detail.runtime;
+        // Re-point the poster at the film the new id actually names. A TMDB
+        // miss clears it rather than leaving the previous film's artwork.
+        try {
+          const found = await findByImdbId(cleanId);
+          updates.poster_path = found?.posterPath ?? null;
+          if (!updates.runtime && found?.tmdbId) {
+            const tmdbDetails = await getMovieDetails(found.tmdbId);
+            if (tmdbDetails?.runtime) updates.runtime = tmdbDetails.runtime;
+          }
+        } catch (_) { updates.poster_path = null; }
+      }
+    }
 
-  if (Object.keys(updates).length > 0) {
-    const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');
-    await db.run(`UPDATE movies SET ${setClause} WHERE id = ?`, ...Object.values(updates), id);
-  }
+    if (Object.keys(updates).length > 0) {
+      const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');
+      await db.run(`UPDATE movies SET ${setClause} WHERE id = ?`, ...Object.values(updates), id);
+    }
 
-  // Leaving the watchlist discards the film's votes — a film re-added later starts fresh.
-  if (watchlist !== undefined && !watchlist && movie.watchlist) {
-    await db.run('DELETE FROM watchlist_votes WHERE movie_id = ?', id);
+    // Leaving the watchlist discards the film's votes — a film re-added later starts fresh.
+    if (watchlist !== undefined && !watchlist && movie.watchlist) {
+      await db.run('DELETE FROM watchlist_votes WHERE movie_id = ?', id);
+    }
   }
 
   if (ratings) {

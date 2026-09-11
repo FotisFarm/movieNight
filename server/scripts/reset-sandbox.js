@@ -19,7 +19,13 @@ async function main() {
   console.log(`\n🧹 Connecting to database: ${url.replace(/\/\/.*@/, '//***@')}`);
   const client = createClient({ url, authToken });
 
-  const tables = ['sandbox_ratings', 'sandbox_top3', 'sandbox_watchlist_votes', 'sandbox_rating_history'];
+  const tables = [
+    'sandbox_ratings',
+    'sandbox_top3',
+    'sandbox_watchlist_votes',
+    'sandbox_rating_history',
+    'sandbox_watchlist_overrides',
+  ];
 
   console.log('\n📊 Current sandbox table counts:');
   const counts = {};

@@ -37,7 +37,7 @@ function rankClass(r) {
 }
 
 export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankData }) {
-  const { voters: configVoters, groupSize } = useAppConfig();
+  const { voters: configVoters, groupSize, sandboxMode } = useAppConfig();
   const currentVoter = sessionStorage.getItem('voter');
   const isAdmin = currentVoter === 'mnAdmin';
   const isGhost = !configVoters.includes(currentVoter) && currentVoter !== 'mnAdmin' && !!currentVoter;
@@ -311,9 +311,11 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
             )}
           </div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-            <button className="btn btn-ghost btn-sm" onClick={() => setEditing(e => !e)}>
-              {editing ? 'Done' : '✎'}
-            </button>
+            {!sandboxMode && (
+              <button className="btn btn-ghost btn-sm" onClick={() => setEditing(e => !e)}>
+                {editing ? 'Done' : '✎'}
+              </button>
+            )}
             <button className="modal-close" onClick={handleModalClose}>✕</button>
           </div>
         </div>
@@ -513,7 +515,12 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
             {/* Flags */}
             <div className="modal-section-label section-label" style={{ marginTop: 6 }}>Flags</div>
             <div className="flags-row">
-              <button className={`toggle-btn${mn ? ' active' : ''}`} onClick={() => setMn(x => !x)}>
+              <button
+                className={`toggle-btn${mn ? ' active' : ''}`}
+                onClick={() => !sandboxMode && setMn(x => !x)}
+                disabled={sandboxMode}
+                title={sandboxMode ? 'Official Movie Night flag can only be set in production' : ''}
+              >
                 🎬 Movie Night
               </button>
               <button className={`toggle-btn${watchlist ? ' active' : ''}`} onClick={() => setWatchlist(x => !x)}>
@@ -532,14 +539,14 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                     <button
                       key={l.id}
                       className={`toggle-btn${l.has_film ? ' active' : ''}`}
-                      disabled={listBusyId === l.id}
-                      title={l.has_film ? `Remove from “${l.title}”` : `Add to “${l.title}”`}
-                      onClick={() => toggleList(l)}
+                      disabled={sandboxMode || listBusyId === l.id}
+                      title={sandboxMode ? 'Lists cannot be modified in sandbox mode' : (l.has_film ? `Remove from “${l.title}”` : `Add to “${l.title}”`)}
+                      onClick={() => !sandboxMode && toggleList(l)}
                     >
                       {l.has_film ? '✓ ' : '+ '}{l.title}
                     </button>
                   ))}
-                  {!newListOpen && (
+                  {!sandboxMode && !newListOpen && (
                     <button className="toggle-btn" onClick={() => setNewListOpen(true)}>+ New list</button>
                   )}
                 </div>
@@ -751,16 +758,18 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
         </div>
 
         <div className="modal-footer">
-          {confirmDelete ? (
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginRight: 'auto' }}>
-              <span style={{ fontSize: 12, color: 'var(--red)' }}>Delete "{movie?.title}"?</span>
-              <button className="btn btn-danger btn-sm" onClick={handleDelete}>Yes, delete</button>
-              <button className="btn btn-ghost btn-sm" onClick={() => setConfirmDelete(false)}>Cancel</button>
-            </div>
-          ) : (
-            <button className="btn btn-danger btn-sm" style={{ marginRight: 'auto' }} onClick={handleDelete}>
-              Delete
-            </button>
+          {!sandboxMode && (
+            confirmDelete ? (
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginRight: 'auto' }}>
+                <span style={{ fontSize: 12, color: 'var(--red)' }}>Delete "{movie?.title}"?</span>
+                <button className="btn btn-danger btn-sm" onClick={handleDelete}>Yes, delete</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => setConfirmDelete(false)}>Cancel</button>
+              </div>
+            ) : (
+              <button className="btn btn-danger btn-sm" style={{ marginRight: 'auto' }} onClick={handleDelete}>
+                Delete
+              </button>
+            )
           )}
           <button className="btn btn-ghost" onClick={handleModalClose}>Cancel</button>
           {saveError && (

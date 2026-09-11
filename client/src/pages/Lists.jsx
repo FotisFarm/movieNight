@@ -13,6 +13,7 @@ import { api } from '../api';
 import MovieCard from '../components/MovieCard';
 import MovieModal from '../components/MovieModal';
 import { useToast } from '../hooks/useToast.jsx';
+import { useAppConfig } from '../AppConfigContext';
 import { posterUrl } from '../utils';
 import './Lists.css';
 
@@ -59,13 +60,15 @@ function ListFilmRow({ movie, editable, onOpen, onRemove }) {
       <div className="list-film-card">
         <MovieCard movie={movie} listView scoreMode="fair" onClick={() => onOpen(movie.id)} />
       </div>
-      <button
-        className="list-remove-btn"
-        title="Remove from list"
-        onClick={() => onRemove(movie)}
-      >
-        ✕
-      </button>
+      {editable && (
+        <button
+          className="list-remove-btn"
+          title="Remove from list"
+          onClick={() => onRemove(movie)}
+        >
+          ✕
+        </button>
+      )}
     </div>
   );
 }
@@ -162,7 +165,8 @@ function ListDetail({ listKey, voter }) {
   if (loading) return <div className="spinner" />;
   if (error || !list) return <div className="lists-empty">{error || "List not found"}</div>;
 
-  const canEdit = voter === 'mnAdmin' || voter === list.created_by;
+  const { sandboxMode } = useAppConfig();
+  const canEdit = !sandboxMode && (voter === 'mnAdmin' || voter === list.created_by);
   const films = list.films || [];
   const existingIds = new Set(films.map(f => f.id));
 
@@ -268,7 +272,7 @@ function ListDetail({ listKey, voter }) {
         {canEdit && films.length > 1 ? ' · drag to reorder' : ''}
       </div>
 
-      <AddFilmBox existingIds={existingIds} onAdd={addFilm} />
+      {!sandboxMode && <AddFilmBox existingIds={existingIds} onAdd={addFilm} />}
 
       {films.length === 0 ? (
         <div className="lists-empty">Nothing here yet — search above to add the first film.</div>
@@ -329,6 +333,7 @@ function ListDetail({ listKey, voter }) {
 
 // ── List index (/lists) ──
 function ListIndex({ voter }) {
+  const { sandboxMode } = useAppConfig();
   const navigate = useNavigate();
   const [lists, setLists]     = useState([]);
   const [loading, setLoading] = useState(true);
@@ -358,7 +363,7 @@ function ListIndex({ voter }) {
     <div className="lists-page">
       <div className="lists-head">
         <h1 className="lists-title">Lists</h1>
-        {!creating && (
+        {!sandboxMode && !creating && (
           <button className="btn btn-primary btn-sm" onClick={() => setCreating(true)}>+ New list</button>
         )}
       </div>

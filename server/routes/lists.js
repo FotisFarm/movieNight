@@ -3,6 +3,7 @@ const db = require('../db');
 const ah = require('../asyncHandler');
 const { enrichMoviesBatch } = require('../enrich');
 const { uniqueSlug } = require('../listSlugs');
+const { SANDBOX_MODE } = require('../config');
 
 const router = express.Router();
 
@@ -104,6 +105,9 @@ router.get('/:key', ah(async (req, res) => {
 
 // POST /api/lists
 router.post('/', ah(async (req, res) => {
+  if (SANDBOX_MODE) {
+    return res.status(403).json({ error: 'Creating custom lists is disabled in sandbox mode.' });
+  }
   const title = cleanTitle(req.body.title);
   if (!title) return res.status(400).json({ error: 'Title is required' });
 
@@ -117,6 +121,9 @@ router.post('/', ah(async (req, res) => {
 
 // PATCH /api/lists/:key — rename / re-describe
 router.patch('/:key', ah(async (req, res) => {
+  if (SANDBOX_MODE) {
+    return res.status(403).json({ error: 'Editing custom lists is disabled in sandbox mode.' });
+  }
   const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
   if (!canEditList(req, list)) return res.status(403).json({ error: 'Only the list creator can edit this list' });
@@ -152,6 +159,9 @@ router.patch('/:key', ah(async (req, res) => {
 
 // DELETE /api/lists/:key — items and slug aliases cascade, films themselves are never touched
 router.delete('/:key', ah(async (req, res) => {
+  if (SANDBOX_MODE) {
+    return res.status(403).json({ error: 'Deleting custom lists is disabled in sandbox mode.' });
+  }
   const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
   if (!canEditList(req, list)) return res.status(403).json({ error: 'Only the list creator can delete this list' });
@@ -162,6 +172,9 @@ router.delete('/:key', ah(async (req, res) => {
 
 // POST /api/lists/:key/items { movie_id } — append (idempotent)
 router.post('/:key/items', ah(async (req, res) => {
+  if (SANDBOX_MODE) {
+    return res.status(403).json({ error: 'Modifying custom lists is disabled in sandbox mode.' });
+  }
   const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
 
@@ -182,6 +195,9 @@ router.post('/:key/items', ah(async (req, res) => {
 
 // DELETE /api/lists/:key/items/:movieId
 router.delete('/:key/items/:movieId', ah(async (req, res) => {
+  if (SANDBOX_MODE) {
+    return res.status(403).json({ error: 'Modifying custom lists is disabled in sandbox mode.' });
+  }
   const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
   const result = await db.run(
@@ -194,6 +210,9 @@ router.delete('/:key/items/:movieId', ah(async (req, res) => {
 
 // PUT /api/lists/:key/items { order: [movieId, ...] } — manual reorder
 router.put('/:key/items', ah(async (req, res) => {
+  if (SANDBOX_MODE) {
+    return res.status(403).json({ error: 'Modifying custom lists is disabled in sandbox mode.' });
+  }
   const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
 

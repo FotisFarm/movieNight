@@ -49,6 +49,7 @@ function rewriteSql(sql) {
 
   // Read queries (SELECT, WITH, PRAGMA, subqueries):
   return sql
+    .replace(/\b(FROM|JOIN)\s+["']?movies["']?\b/gi, `$1 ${EFFECTIVE_PREFIX}movies`)
     .replace(/\b(FROM|JOIN)\s+["']?ratings["']?\b/gi, `$1 ${EFFECTIVE_PREFIX}ratings`)
     .replace(/\b(FROM|JOIN)\s+["']?top3["']?\b/gi, `$1 ${EFFECTIVE_PREFIX}top3`)
     .replace(/\b(FROM|JOIN)\s+["']?watchlist_votes["']?\b/gi, `$1 ${EFFECTIVE_PREFIX}watchlist_votes`)
@@ -271,6 +272,11 @@ async function init() {
         UNIQUE(movie_id, voter)
       );
 
+      CREATE TABLE IF NOT EXISTS sandbox_watchlist_overrides (
+        movie_id  INTEGER PRIMARY KEY REFERENCES movies(id) ON DELETE CASCADE,
+        watchlist INTEGER NOT NULL
+      );
+
       CREATE TABLE IF NOT EXISTS sandbox_rating_history (
         id         INTEGER PRIMARY KEY AUTOINCREMENT,
         movie_id   INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
@@ -284,6 +290,17 @@ async function init() {
       );
 
       CREATE INDEX IF NOT EXISTS idx_sandbox_rating_history ON sandbox_rating_history(movie_id, voter, changed_at);
+
+      DROP VIEW IF EXISTS v6_effective_movies;
+      CREATE VIEW v6_effective_movies AS
+      SELECT
+        m.id, m.director, m.title, m.year,
+        m.rank_global, m.mn,
+        COALESCE(s.watchlist, m.watchlist) AS watchlist,
+        m.cinobo, m.tokens, m.token_pts,
+        m.imdb_id, m.imdb_rating, m.letterboxd_rating, m.poster_path, m.runtime
+      FROM movies m
+      LEFT JOIN sandbox_watchlist_overrides s ON s.movie_id = m.id;
 
       DROP VIEW IF EXISTS v6_effective_ratings;
       CREATE VIEW v6_effective_ratings AS
@@ -341,7 +358,7 @@ async function init() {
         CASE WHEN r.voter_count >= 2
              THEN MIN(10.0, r.score_sum / ${GROUP_SIZE}.0 + COALESCE(t.boost, 0)) END AS boosted_score,
         r.std_dev
-      FROM movies m
+      FROM v6_effective_movies m
       LEFT JOIN (
         SELECT movie_id,
                COUNT(*)          AS voter_count,
