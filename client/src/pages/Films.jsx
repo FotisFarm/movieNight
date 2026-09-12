@@ -338,11 +338,9 @@ export default function Films() {
           <span>⚙️ Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</span>
         </button>
 
-        {!sandboxMode && (
-          <button className="btn btn-primary btn-add-film" onClick={() => setShowAdd(true)}>
-            + Add Film
-          </button>
-        )}
+        <button className="btn btn-primary btn-add-film" onClick={() => setShowAdd(true)}>
+          + Add Film
+        </button>
       </div>
 
       {/* ── Active Filters Ribbon (Mobile & Compact Summary) ── */}

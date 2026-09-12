@@ -166,7 +166,9 @@ function ListDetail({ listKey, voter }) {
   if (error || !list) return <div className="lists-empty">{error || "List not found"}</div>;
 
   const { sandboxMode } = useAppConfig();
-  const canEdit = !sandboxMode && (voter === 'mnAdmin' || voter === list.created_by);
+  const isSandboxList = sandboxMode && (list.id >= 1000000);
+  const canEdit = isSandboxList || (!sandboxMode && (voter === 'mnAdmin' || voter === list.created_by));
+  const canModifyItems = isSandboxList || !sandboxMode;
   const films = list.films || [];
   const existingIds = new Set(films.map(f => f.id));
 
@@ -272,7 +274,7 @@ function ListDetail({ listKey, voter }) {
         {canEdit && films.length > 1 ? ' · drag to reorder' : ''}
       </div>
 
-      {!sandboxMode && <AddFilmBox existingIds={existingIds} onAdd={addFilm} />}
+      {canModifyItems && <AddFilmBox existingIds={existingIds} onAdd={addFilm} />}
 
       {films.length === 0 ? (
         <div className="lists-empty">Nothing here yet — search above to add the first film.</div>
@@ -363,7 +365,7 @@ function ListIndex({ voter }) {
     <div className="lists-page">
       <div className="lists-head">
         <h1 className="lists-title">Lists</h1>
-        {!sandboxMode && !creating && (
+        {!creating && (
           <button className="btn btn-primary btn-sm" onClick={() => setCreating(true)}>+ New list</button>
         )}
       </div>

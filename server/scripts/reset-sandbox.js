@@ -25,6 +25,10 @@ async function main() {
     'sandbox_watchlist_votes',
     'sandbox_rating_history',
     'sandbox_watchlist_overrides',
+    'sandbox_list_items',
+    'sandbox_list_slug_aliases',
+    'sandbox_lists',
+    'sandbox_movies',
   ];
 
   console.log('\n📊 Current sandbox table counts:');
@@ -62,6 +66,11 @@ async function main() {
       console.warn(`  Note: could not clear ${t}:`, err.message);
     }
   }
+
+  try {
+    await client.execute("UPDATE sqlite_sequence SET seq = 1000000 WHERE name IN ('sandbox_movies', 'sandbox_lists')");
+    console.log('  ✅ Reset ID sequence generators to 1,000,000');
+  } catch (_) {}
 
   console.log('\n🎉 Sandbox data reset successfully! Production data remains 100% untouched.\n');
   client.close();

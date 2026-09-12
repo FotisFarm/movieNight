@@ -311,7 +311,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
             )}
           </div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-            {!sandboxMode && (
+            {(!sandboxMode || (movie && movie.id >= 1000000)) && (
               <button className="btn btn-ghost btn-sm" onClick={() => setEditing(e => !e)}>
                 {editing ? 'Done' : '✎'}
               </button>
@@ -517,9 +517,9 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
             <div className="flags-row">
               <button
                 className={`toggle-btn${mn ? ' active' : ''}`}
-                onClick={() => !sandboxMode && setMn(x => !x)}
-                disabled={sandboxMode}
-                title={sandboxMode ? 'Official Movie Night flag can only be set in production' : ''}
+                onClick={() => (!sandboxMode || (movie && movie.id >= 1000000)) && setMn(x => !x)}
+                disabled={sandboxMode && !(movie && movie.id >= 1000000)}
+                title={sandboxMode && !(movie && movie.id >= 1000000) ? 'Official Movie Night flag can only be set in production' : ''}
               >
                 🎬 Movie Night
               </button>
@@ -535,18 +535,21 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
             ) : (
               <>
                 <div className="flags-row">
-                  {lists.map(l => (
-                    <button
-                      key={l.id}
-                      className={`toggle-btn${l.has_film ? ' active' : ''}`}
-                      disabled={sandboxMode || listBusyId === l.id}
-                      title={sandboxMode ? 'Lists cannot be modified in sandbox mode' : (l.has_film ? `Remove from “${l.title}”` : `Add to “${l.title}”`)}
-                      onClick={() => !sandboxMode && toggleList(l)}
-                    >
-                      {l.has_film ? '✓ ' : '+ '}{l.title}
-                    </button>
-                  ))}
-                  {!sandboxMode && !newListOpen && (
+                  {lists.map(l => {
+                    const canModifyList = !sandboxMode || (l.id >= 1000000);
+                    return (
+                      <button
+                        key={l.id}
+                        className={`toggle-btn${l.has_film ? ' active' : ''}`}
+                        disabled={!canModifyList || listBusyId === l.id}
+                        title={!canModifyList ? 'Production lists cannot be modified in sandbox mode' : (l.has_film ? `Remove from “${l.title}”` : `Add to “${l.title}”`)}
+                        onClick={() => canModifyList && toggleList(l)}
+                      >
+                        {l.has_film ? '✓ ' : '+ '}{l.title}
+                      </button>
+                    );
+                  })}
+                  {!newListOpen && (
                     <button className="toggle-btn" onClick={() => setNewListOpen(true)}>+ New list</button>
                   )}
                 </div>
@@ -758,7 +761,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
         </div>
 
         <div className="modal-footer">
-          {!sandboxMode && (
+          {(!sandboxMode || (movie && movie.id >= 1000000)) && (
             confirmDelete ? (
               <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginRight: 'auto' }}>
                 <span style={{ fontSize: 12, color: 'var(--red)' }}>Delete "{movie?.title}"?</span>

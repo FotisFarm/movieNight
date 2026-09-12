@@ -53,8 +53,10 @@ function rewriteSql(sql) {
     .replace(/\b(FROM|JOIN)\s+["']?ratings["']?\b/gi, `$1 ${EFFECTIVE_PREFIX}ratings`)
     .replace(/\b(FROM|JOIN)\s+["']?top3["']?\b/gi, `$1 ${EFFECTIVE_PREFIX}top3`)
     .replace(/\b(FROM|JOIN)\s+["']?watchlist_votes["']?\b/gi, `$1 ${EFFECTIVE_PREFIX}watchlist_votes`)
-    .replace(/\b(FROM|JOIN)\s+["']?rating_history["']?\b/gi, `$1 ${EFFECTIVE_PREFIX}rating_history`)
-    .replace(/\b(FROM|JOIN)\s+["']?movie_scores["']?\b/gi, `$1 v6_movie_scores`);
+    .replace(/\b(FROM|JOIN)\s+["']?movie_scores["']?\b/gi, `$1 v6_movie_scores`)
+    .replace(/\b(FROM|JOIN)\s+["']?lists["']?\b/gi, `$1 ${EFFECTIVE_PREFIX}lists`)
+    .replace(/\b(FROM|JOIN)\s+["']?list_items["']?\b/gi, `$1 ${EFFECTIVE_PREFIX}list_items`)
+    .replace(/\b(FROM|JOIN)\s+["']?list_slug_aliases["']?\b/gi, `$1 ${EFFECTIVE_PREFIX}list_slug_aliases`);
 }
 
 // --- thin async helpers, mirroring the old better-sqlite3 .prepare().get/all/run shape ---
@@ -211,17 +213,20 @@ async function init() {
   try { await client.execute('ALTER TABLE movies ADD COLUMN poster_path TEXT DEFAULT NULL'); } catch (_) {}
   // Film duration in minutes (from TMDB/OMDb)
   try { await client.execute('ALTER TABLE movies ADD COLUMN runtime INTEGER DEFAULT NULL'); } catch (_) {}
-  await backfillInitialRuntimes();
   // Letterboxd rating (5-star scale with 2 decimals)
   try { await client.execute('ALTER TABLE movies ADD COLUMN letterboxd_rating REAL DEFAULT NULL'); } catch (_) {}
-  await backfillInitialLetterboxd();
 
   // Readable list URLs (/lists/christougenna-2026). The column is added
   // nullable — SQLite can't add a UNIQUE column — then every list without one
   // is slugged below, so lists created before this migration keep working.
   try { await client.execute('ALTER TABLE lists ADD COLUMN slug TEXT DEFAULT NULL'); } catch (_) {}
   await client.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_lists_slug ON lists(slug)');
-  await backfillListSlugs();
+
+  if (!SANDBOX_MODE) {
+    await backfillInitialRuntimes();
+    await backfillInitialLetterboxd();
+    await backfillListSlugs();
+  }
 
   // Widen top3 rank constraint 1-3 -> 1-10 (SQLite can't ALTER a CHECK, so rebuild). Idempotent.
   try {
@@ -246,11 +251,83 @@ async function init() {
 
   if (SANDBOX_MODE) {
     // In sandbox mode: ensure sandbox tables exist and update effective union views.
-    // Base production tables (ratings, top3, etc.) and view (movie_scores) are completely untouched.
+    // Base production tables (movies, ratings, lists, etc.) are completely untouched.
+
+    // Ensure sandbox tables don't enforce foreign keys against the live movies table
+    // (so sandbox movies with id >= 1,000,000 can have ratings, comments, top3, etc.).
+    try {
+      const t = await client.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='sandbox_ratings'");
+      if (t?.rows?.[0]?.sql && t.rows[0].sql.includes('REFERENCES movies')) {
+        await client.executeMultiple(`
+          PRAGMA foreign_keys=OFF;
+          CREATE TABLE IF NOT EXISTS sandbox_ratings_new (
+            id       INTEGER PRIMARY KEY AUTOINCREMENT,
+            movie_id INTEGER NOT NULL,
+            voter    TEXT    NOT NULL,
+            score    REAL    NOT NULL,
+            comment  TEXT    NOT NULL DEFAULT '',
+            UNIQUE(movie_id, voter)
+          );
+          INSERT INTO sandbox_ratings_new SELECT * FROM sandbox_ratings;
+          DROP TABLE sandbox_ratings;
+          ALTER TABLE sandbox_ratings_new RENAME TO sandbox_ratings;
+
+          CREATE TABLE IF NOT EXISTS sandbox_top3_new (
+            id       INTEGER PRIMARY KEY AUTOINCREMENT,
+            movie_id INTEGER NOT NULL,
+            voter    TEXT    NOT NULL,
+            rank     INTEGER NOT NULL CHECK(rank >= 1 AND rank <= 10),
+            UNIQUE(movie_id, voter)
+          );
+          INSERT INTO sandbox_top3_new SELECT * FROM sandbox_top3;
+          DROP TABLE sandbox_top3;
+          ALTER TABLE sandbox_top3_new RENAME TO sandbox_top3;
+
+          CREATE TABLE IF NOT EXISTS sandbox_watchlist_votes_new (
+            id       INTEGER PRIMARY KEY,
+            movie_id INTEGER NOT NULL,
+            voter    TEXT    NOT NULL,
+            UNIQUE(movie_id, voter)
+          );
+          INSERT INTO sandbox_watchlist_votes_new SELECT * FROM sandbox_watchlist_votes;
+          DROP TABLE sandbox_watchlist_votes;
+          ALTER TABLE sandbox_watchlist_votes_new RENAME TO sandbox_watchlist_votes;
+
+          CREATE TABLE IF NOT EXISTS sandbox_rating_history_new (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            movie_id   INTEGER NOT NULL,
+            voter      TEXT    NOT NULL,
+            kind       TEXT    NOT NULL DEFAULT 'score',
+            score      REAL,
+            rank       INTEGER,
+            changed_by TEXT    NOT NULL DEFAULT '',
+            source     TEXT    NOT NULL DEFAULT 'user',
+            changed_at TEXT    NOT NULL DEFAULT (datetime('now'))
+          );
+          INSERT INTO sandbox_rating_history_new SELECT * FROM sandbox_rating_history;
+          DROP TABLE sandbox_rating_history;
+          ALTER TABLE sandbox_rating_history_new RENAME TO sandbox_rating_history;
+          CREATE INDEX IF NOT EXISTS idx_sandbox_rating_history ON sandbox_rating_history(movie_id, voter, changed_at);
+
+          CREATE TABLE IF NOT EXISTS sandbox_watchlist_overrides_new (
+            movie_id  INTEGER PRIMARY KEY,
+            watchlist INTEGER NOT NULL
+          );
+          INSERT INTO sandbox_watchlist_overrides_new SELECT * FROM sandbox_watchlist_overrides;
+          DROP TABLE sandbox_watchlist_overrides;
+          ALTER TABLE sandbox_watchlist_overrides_new RENAME TO sandbox_watchlist_overrides;
+
+          PRAGMA foreign_keys=ON;
+        `);
+      }
+    } catch (e) {
+      console.warn('[db] FK migration warning:', e.message);
+    }
+
     await client.executeMultiple(`
       CREATE TABLE IF NOT EXISTS sandbox_ratings (
         id       INTEGER PRIMARY KEY AUTOINCREMENT,
-        movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+        movie_id INTEGER NOT NULL,
         voter    TEXT    NOT NULL,
         score    REAL    NOT NULL,
         comment  TEXT    NOT NULL DEFAULT '',
@@ -259,7 +336,7 @@ async function init() {
 
       CREATE TABLE IF NOT EXISTS sandbox_top3 (
         id       INTEGER PRIMARY KEY AUTOINCREMENT,
-        movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+        movie_id INTEGER NOT NULL,
         voter    TEXT    NOT NULL,
         rank     INTEGER NOT NULL CHECK(rank >= 1 AND rank <= 10),
         UNIQUE(movie_id, voter)
@@ -267,19 +344,19 @@ async function init() {
 
       CREATE TABLE IF NOT EXISTS sandbox_watchlist_votes (
         id       INTEGER PRIMARY KEY,
-        movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+        movie_id INTEGER NOT NULL,
         voter    TEXT    NOT NULL,
         UNIQUE(movie_id, voter)
       );
 
       CREATE TABLE IF NOT EXISTS sandbox_watchlist_overrides (
-        movie_id  INTEGER PRIMARY KEY REFERENCES movies(id) ON DELETE CASCADE,
+        movie_id  INTEGER PRIMARY KEY,
         watchlist INTEGER NOT NULL
       );
 
       CREATE TABLE IF NOT EXISTS sandbox_rating_history (
         id         INTEGER PRIMARY KEY AUTOINCREMENT,
-        movie_id   INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+        movie_id   INTEGER NOT NULL,
         voter      TEXT    NOT NULL,
         kind       TEXT    NOT NULL DEFAULT 'score',
         score      REAL,
@@ -291,6 +368,56 @@ async function init() {
 
       CREATE INDEX IF NOT EXISTS idx_sandbox_rating_history ON sandbox_rating_history(movie_id, voter, changed_at);
 
+      CREATE TABLE IF NOT EXISTS sandbox_movies (
+        id                INTEGER PRIMARY KEY AUTOINCREMENT,
+        director          TEXT    NOT NULL DEFAULT '',
+        title             TEXT    NOT NULL,
+        year              TEXT    DEFAULT '',
+        rank_global       INTEGER,
+        mn                INTEGER NOT NULL DEFAULT 0,
+        watchlist         INTEGER NOT NULL DEFAULT 0,
+        cinobo            TEXT    DEFAULT '',
+        tokens            TEXT    DEFAULT '',
+        token_pts         INTEGER NOT NULL DEFAULT 0,
+        imdb_id           TEXT    DEFAULT NULL,
+        imdb_rating       REAL    DEFAULT NULL,
+        poster_path       TEXT    DEFAULT NULL,
+        runtime           INTEGER DEFAULT NULL,
+        letterboxd_rating REAL    DEFAULT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS sandbox_lists (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        title       TEXT    NOT NULL,
+        description TEXT    NOT NULL DEFAULT '',
+        created_by  TEXT    NOT NULL DEFAULT '',
+        created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+        slug        TEXT    DEFAULT NULL
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_sandbox_lists_slug ON sandbox_lists(slug);
+
+      CREATE TABLE IF NOT EXISTS sandbox_list_items (
+        id       INTEGER PRIMARY KEY AUTOINCREMENT,
+        list_id  INTEGER NOT NULL REFERENCES sandbox_lists(id) ON DELETE CASCADE,
+        movie_id INTEGER NOT NULL,
+        position INTEGER NOT NULL DEFAULT 0,
+        UNIQUE(list_id, movie_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_sandbox_list_items_list ON sandbox_list_items(list_id, position);
+
+      CREATE TABLE IF NOT EXISTS sandbox_list_slug_aliases (
+        slug    TEXT    PRIMARY KEY,
+        list_id INTEGER NOT NULL REFERENCES sandbox_lists(id) ON DELETE CASCADE
+      );
+
+      INSERT INTO sqlite_sequence (name, seq)
+      SELECT 'sandbox_movies', 1000000
+      WHERE NOT EXISTS (SELECT 1 FROM sqlite_sequence WHERE name = 'sandbox_movies');
+
+      INSERT INTO sqlite_sequence (name, seq)
+      SELECT 'sandbox_lists', 1000000
+      WHERE NOT EXISTS (SELECT 1 FROM sqlite_sequence WHERE name = 'sandbox_lists');
+
       DROP VIEW IF EXISTS v6_effective_movies;
       CREATE VIEW v6_effective_movies AS
       SELECT
@@ -300,7 +427,16 @@ async function init() {
         m.cinobo, m.tokens, m.token_pts,
         m.imdb_id, m.imdb_rating, m.letterboxd_rating, m.poster_path, m.runtime
       FROM movies m
-      LEFT JOIN sandbox_watchlist_overrides s ON s.movie_id = m.id;
+      LEFT JOIN sandbox_watchlist_overrides s ON s.movie_id = m.id
+      UNION ALL
+      SELECT
+        sm.id, sm.director, sm.title, sm.year,
+        sm.rank_global, sm.mn,
+        COALESCE(s.watchlist, sm.watchlist) AS watchlist,
+        sm.cinobo, sm.tokens, sm.token_pts,
+        sm.imdb_id, sm.imdb_rating, sm.letterboxd_rating, sm.poster_path, sm.runtime
+      FROM sandbox_movies sm
+      LEFT JOIN sandbox_watchlist_overrides s ON s.movie_id = sm.id;
 
       DROP VIEW IF EXISTS v6_effective_ratings;
       CREATE VIEW v6_effective_ratings AS
@@ -342,6 +478,30 @@ async function init() {
       UNION ALL
       SELECT id, movie_id, voter, kind, score, rank, changed_by, source, changed_at
       FROM sandbox_rating_history;
+
+      DROP VIEW IF EXISTS v6_effective_lists;
+      CREATE VIEW v6_effective_lists AS
+      SELECT id, title, description, created_by, created_at, slug
+      FROM lists
+      UNION ALL
+      SELECT id, title, description, created_by, created_at, slug
+      FROM sandbox_lists;
+
+      DROP VIEW IF EXISTS v6_effective_list_items;
+      CREATE VIEW v6_effective_list_items AS
+      SELECT id, list_id, movie_id, position
+      FROM list_items
+      UNION ALL
+      SELECT id, list_id, movie_id, position
+      FROM sandbox_list_items;
+
+      DROP VIEW IF EXISTS v6_effective_list_slug_aliases;
+      CREATE VIEW v6_effective_list_slug_aliases AS
+      SELECT slug, list_id
+      FROM list_slug_aliases
+      UNION ALL
+      SELECT slug, list_id
+      FROM sandbox_list_slug_aliases;
 
       DROP VIEW IF EXISTS v6_movie_scores;
       CREATE VIEW v6_movie_scores AS

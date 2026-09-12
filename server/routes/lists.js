@@ -29,6 +29,7 @@ async function findList(key) {
 // films from any list. Renaming and deleting a list is restricted to whoever
 // created it (and mnAdmin), so nobody can wipe someone else's list by accident.
 function canEditList(req, list) {
+  if (SANDBOX_MODE && list.id >= 1000000) return true;
   return req.session.voter === 'mnAdmin' || req.session.voter === list.created_by;
 }
 
@@ -105,14 +106,12 @@ router.get('/:key', ah(async (req, res) => {
 
 // POST /api/lists
 router.post('/', ah(async (req, res) => {
-  if (SANDBOX_MODE) {
-    return res.status(403).json({ error: 'Creating custom lists is disabled in sandbox mode.' });
-  }
   const title = cleanTitle(req.body.title);
   if (!title) return res.status(400).json({ error: 'Title is required' });
 
+  const targetTable = SANDBOX_MODE ? 'sandbox_lists' : 'lists';
   const result = await db.run(
-    'INSERT INTO lists (title, description, created_by, slug) VALUES (?, ?, ?, ?)',
+    `INSERT INTO ${targetTable} (title, description, created_by, slug) VALUES (?, ?, ?, ?)`,
     title, cleanDescription(req.body.description), req.session.voter, await uniqueSlug(db, title)
   );
   const list = await db.get('SELECT * FROM lists WHERE id = ?', result.lastInsertRowid);
@@ -121,11 +120,11 @@ router.post('/', ah(async (req, res) => {
 
 // PATCH /api/lists/:key — rename / re-describe
 router.patch('/:key', ah(async (req, res) => {
-  if (SANDBOX_MODE) {
-    return res.status(403).json({ error: 'Editing custom lists is disabled in sandbox mode.' });
-  }
   const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
+  if (SANDBOX_MODE && list.id < 1000000) {
+    return res.status(403).json({ error: 'Editing production lists is disabled in sandbox mode.' });
+  }
   if (!canEditList(req, list)) return res.status(403).json({ error: 'Only the list creator can edit this list' });
 
   const title = req.body.title !== undefined ? cleanTitle(req.body.title) : list.title;
@@ -133,6 +132,10 @@ router.patch('/:key', ah(async (req, res) => {
   const description = req.body.description !== undefined
     ? cleanDescription(req.body.description)
     : list.description;
+
+  const isSandboxList = SANDBOX_MODE && (list.id >= 1000000);
+  const listsTable = isSandboxList ? 'sandbox_lists' : 'lists';
+  const aliasTable = isSandboxList ? 'sandbox_list_slug_aliases' : 'list_slug_aliases';
 
   // A rename re-slugs the list so the URL keeps matching the name on screen,
   // and parks the outgoing slug as an alias so links already shared still land
@@ -144,64 +147,75 @@ router.patch('/:key', ah(async (req, res) => {
     if (slug !== list.slug) {
       await db.transaction(async tx => {
         // This list may be reclaiming a slug it parked in an earlier rename.
-        await tx.run('DELETE FROM list_slug_aliases WHERE slug = ?', slug);
+        await tx.run(`DELETE FROM ${aliasTable} WHERE slug = ?`, slug);
         if (list.slug) {
-          await tx.run('INSERT OR REPLACE INTO list_slug_aliases (slug, list_id) VALUES (?, ?)', list.slug, list.id);
+          await tx.run(`INSERT OR REPLACE INTO ${aliasTable} (slug, list_id) VALUES (?, ?)`, list.slug, list.id);
         }
-        await tx.run('UPDATE lists SET slug = ? WHERE id = ?', slug, list.id);
+        await tx.run(`UPDATE ${listsTable} SET slug = ? WHERE id = ?`, slug, list.id);
       });
     }
   }
 
-  await db.run('UPDATE lists SET title = ?, description = ? WHERE id = ?', title, description, list.id);
+  await db.run(`UPDATE ${listsTable} SET title = ?, description = ? WHERE id = ?`, title, description, list.id);
   res.json(await db.get('SELECT * FROM lists WHERE id = ?', list.id));
 }));
 
 // DELETE /api/lists/:key — items and slug aliases cascade, films themselves are never touched
 router.delete('/:key', ah(async (req, res) => {
-  if (SANDBOX_MODE) {
-    return res.status(403).json({ error: 'Deleting custom lists is disabled in sandbox mode.' });
-  }
   const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
+  if (SANDBOX_MODE && list.id < 1000000) {
+    return res.status(403).json({ error: 'Deleting production lists is disabled in sandbox mode.' });
+  }
   if (!canEditList(req, list)) return res.status(403).json({ error: 'Only the list creator can delete this list' });
 
-  await db.run('DELETE FROM lists WHERE id = ?', list.id);
+  if (SANDBOX_MODE && list.id >= 1000000) {
+    await db.transaction(async tx => {
+      await tx.run('DELETE FROM sandbox_list_items WHERE list_id = ?', list.id);
+      await tx.run('DELETE FROM sandbox_list_slug_aliases WHERE list_id = ?', list.id);
+      await tx.run('DELETE FROM sandbox_lists WHERE id = ?', list.id);
+    });
+  } else {
+    await db.run('DELETE FROM lists WHERE id = ?', list.id);
+  }
   res.status(204).end();
 }));
 
 // POST /api/lists/:key/items { movie_id } — append (idempotent)
 router.post('/:key/items', ah(async (req, res) => {
-  if (SANDBOX_MODE) {
-    return res.status(403).json({ error: 'Modifying custom lists is disabled in sandbox mode.' });
-  }
   const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
+  if (SANDBOX_MODE && list.id < 1000000) {
+    return res.status(403).json({ error: 'Modifying production lists is disabled in sandbox mode.' });
+  }
 
   const movieId = parseInt(req.body.movie_id, 10);
   if (!Number.isInteger(movieId)) return res.status(400).json({ error: 'movie_id is required' });
   const movie = await db.get('SELECT id FROM movies WHERE id = ?', movieId);
   if (!movie) return res.status(404).json({ error: 'Film not found' });
 
-  const last = await db.get('SELECT MAX(position) AS pos FROM list_items WHERE list_id = ?', list.id);
+  const itemsTable = (SANDBOX_MODE && list.id >= 1000000) ? 'sandbox_list_items' : 'list_items';
+  const last = await db.get(`SELECT MAX(position) AS pos FROM ${itemsTable} WHERE list_id = ?`, list.id);
   await db.run(
-    'INSERT OR IGNORE INTO list_items (list_id, movie_id, position) VALUES (?, ?, ?)',
+    `INSERT OR IGNORE INTO ${itemsTable} (list_id, movie_id, position) VALUES (?, ?, ?)`,
     list.id, movieId, (last?.pos ?? -1) + 1
   );
 
-  const count = await db.get('SELECT COUNT(*) AS n FROM list_items WHERE list_id = ?', list.id);
+  const count = await db.get(`SELECT COUNT(*) AS n FROM ${itemsTable} WHERE list_id = ?`, list.id);
   res.status(201).json({ film_count: Number(count.n) });
 }));
 
 // DELETE /api/lists/:key/items/:movieId
 router.delete('/:key/items/:movieId', ah(async (req, res) => {
-  if (SANDBOX_MODE) {
-    return res.status(403).json({ error: 'Modifying custom lists is disabled in sandbox mode.' });
-  }
   const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
+  if (SANDBOX_MODE && list.id < 1000000) {
+    return res.status(403).json({ error: 'Modifying production lists is disabled in sandbox mode.' });
+  }
+
+  const itemsTable = (SANDBOX_MODE && list.id >= 1000000) ? 'sandbox_list_items' : 'list_items';
   const result = await db.run(
-    'DELETE FROM list_items WHERE list_id = ? AND movie_id = ?',
+    `DELETE FROM ${itemsTable} WHERE list_id = ? AND movie_id = ?`,
     list.id, req.params.movieId
   );
   if (result.changes === 0) return res.status(404).json({ error: 'Not on this list' });
@@ -210,19 +224,20 @@ router.delete('/:key/items/:movieId', ah(async (req, res) => {
 
 // PUT /api/lists/:key/items { order: [movieId, ...] } — manual reorder
 router.put('/:key/items', ah(async (req, res) => {
-  if (SANDBOX_MODE) {
-    return res.status(403).json({ error: 'Modifying custom lists is disabled in sandbox mode.' });
-  }
   const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
+  if (SANDBOX_MODE && list.id < 1000000) {
+    return res.status(403).json({ error: 'Modifying production lists is disabled in sandbox mode.' });
+  }
 
   const order = Array.isArray(req.body.order) ? req.body.order : null;
   if (!order) return res.status(400).json({ error: 'order must be an array of movie ids' });
 
+  const itemsTable = (SANDBOX_MODE && list.id >= 1000000) ? 'sandbox_list_items' : 'list_items';
   await db.transaction(async tx => {
     for (let i = 0; i < order.length; i++) {
       await tx.run(
-        'UPDATE list_items SET position = ? WHERE list_id = ? AND movie_id = ?',
+        `UPDATE ${itemsTable} SET position = ? WHERE list_id = ? AND movie_id = ?`,
         i, list.id, order[i]
       );
     }

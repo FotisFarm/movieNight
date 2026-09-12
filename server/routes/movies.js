@@ -276,14 +276,12 @@ router.get('/:id', ah(async (req, res) => {
 
 // POST /api/movies
 router.post('/', ah(async (req, res) => {
-  if (SANDBOX_MODE) {
-    return res.status(403).json({ error: 'Adding new films to the shared catalog is disabled in sandbox mode.' });
-  }
   const { director = '', title, year = '', mn = false, watchlist = false, imdb_id } = req.body;
   if (!title?.trim()) return res.status(400).json({ error: 'title is required' });
 
+  const targetTable = SANDBOX_MODE ? 'sandbox_movies' : 'movies';
   const { lastInsertRowid } = await db.run(`
-    INSERT INTO movies (director, title, year, mn, watchlist)
+    INSERT INTO ${targetTable} (director, title, year, mn, watchlist)
     VALUES (?, ?, ?, ?, ?)
   `, director.trim(), title.trim(), year.trim(), mn ? 1 : 0, watchlist ? 1 : 0);
 
@@ -318,7 +316,7 @@ router.post('/', ah(async (req, res) => {
     }
 
     if (imdb?.imdbId || runtime || posterPath || letterboxdRating != null) {
-      await db.run('UPDATE movies SET imdb_id = ?, imdb_rating = ?, letterboxd_rating = ?, poster_path = ?, runtime = ? WHERE id = ?',
+      await db.run(`UPDATE ${targetTable} SET imdb_id = ?, imdb_rating = ?, letterboxd_rating = ?, poster_path = ?, runtime = ? WHERE id = ?`,
         imdb?.imdbId ?? null, imdb?.imdbRating ?? null, letterboxdRating ?? null, posterPath ?? null, runtime ?? null, lastInsertRowid);
     }
   } catch (_) { /* film is still added even if metadata lookup is unavailable */ }
@@ -339,8 +337,10 @@ router.patch('/:id', ah(async (req, res) => {
   const isAdmin = sessionVoter === 'mnAdmin';
 
   const updates = {};
-  if (SANDBOX_MODE) {
-    // In sandbox mode, catalog metadata (title, director, year, runtime, poster, mn, cinobo) is immutable.
+  const isSandboxMovie = SANDBOX_MODE && (id >= 1000000);
+
+  if (SANDBOX_MODE && !isSandboxMovie) {
+    // In sandbox mode for shared live movies: catalog metadata is immutable.
     // Watchlist additions/removals are isolated into sandbox_watchlist_overrides.
     if (watchlist !== undefined) {
       const nextWl = watchlist ? 1 : 0;
@@ -354,6 +354,8 @@ router.patch('/:id', ah(async (req, res) => {
       }
     }
   } else {
+    // Shared live mode OR sandbox film (id >= 1,000,000):
+    const targetTable = isSandboxMovie ? 'sandbox_movies' : 'movies';
     if (director !== undefined) updates.director = director;
     if (title !== undefined)    updates.title = title;
     if (year !== undefined)     updates.year = year;
@@ -395,7 +397,7 @@ router.patch('/:id', ah(async (req, res) => {
 
     if (Object.keys(updates).length > 0) {
       const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');
-      await db.run(`UPDATE movies SET ${setClause} WHERE id = ?`, ...Object.values(updates), id);
+      await db.run(`UPDATE ${targetTable} SET ${setClause} WHERE id = ?`, ...Object.values(updates), id);
     }
 
     // Leaving the watchlist discards the film's votes — a film re-added later starts fresh.
@@ -523,10 +525,23 @@ router.patch('/:id', ah(async (req, res) => {
 
 // DELETE /api/movies/:id
 router.delete('/:id', ah(async (req, res) => {
+  const id = parseInt(req.params.id, 10);
   if (SANDBOX_MODE) {
-    return res.status(403).json({ error: 'Deleting live movies is disabled in sandbox mode.' });
+    if (id < 1000000) {
+      return res.status(403).json({ error: 'Deleting live movies is disabled in sandbox mode.' });
+    }
+    await db.transaction(async tx => {
+      await tx.run('DELETE FROM sandbox_ratings WHERE movie_id = ?', id);
+      await tx.run('DELETE FROM sandbox_top3 WHERE movie_id = ?', id);
+      await tx.run('DELETE FROM sandbox_watchlist_votes WHERE movie_id = ?', id);
+      await tx.run('DELETE FROM sandbox_watchlist_overrides WHERE movie_id = ?', id);
+      await tx.run('DELETE FROM sandbox_rating_history WHERE movie_id = ?', id);
+      await tx.run('DELETE FROM sandbox_list_items WHERE movie_id = ?', id);
+      await tx.run('DELETE FROM sandbox_movies WHERE id = ?', id);
+    });
+    return res.status(204).end();
   }
-  const result = await db.run('DELETE FROM movies WHERE id = ?', req.params.id);
+  const result = await db.run('DELETE FROM movies WHERE id = ?', id);
   if (result.changes === 0) return res.status(404).json({ error: 'Not found' });
   res.status(204).end();
 }));
