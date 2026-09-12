@@ -708,3 +708,90 @@ button.nav-link {
     margin-left: auto;
   }
 }
+
+/* ── Multi-Group Switcher & Profile ── */
+.group-switcher-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.group-badge-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold);
+  cursor: pointer;
+  transition: all .15s ease;
+  white-space: nowrap;
+}
+
+.group-badge-btn:hover {
+  background: var(--surface3);
+  border-color: var(--border2);
+  color: var(--gold);
+}
+
+.group-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  padding: 6px;
+  min-width: 180px;
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.group-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background .15s, color .15s;
+}
+
+.group-dropdown-item:hover {
+  background: var(--surface3);
+  color: var(--text);
+}
+
+.group-dropdown-item.active {
+  color: var(--gold);
+  background: rgba(234, 179, 8, 0.12);
+}
+
+.header-user-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.header-user-btn:hover .header-voter {
+  color: var(--green);
+}

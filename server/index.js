@@ -22,14 +22,22 @@ app.use(session({
   cookie: { httpOnly: true, secure: false, maxAge: 7 * 24 * 60 * 60 * 1000 },
 }));
 
+const { attachGroupContext, getAllVoters } = require('./groupContext');
+
+app.use(attachGroupContext);
+
 app.use('/api/auth', require('./routes/auth'));
 
-app.get('/api/config', (_req, res) => {
-  const { VOTERS, GROUP_SIZE, MIN_VOTERS, SANDBOX_MODE, SANDBOX_VOTER, HIDE_HAL } = require('./config');
+app.get('/api/config', async (req, res) => {
+  const { SANDBOX_MODE, SANDBOX_VOTER, HIDE_HAL } = require('./config');
+  const group = req.group;
+  const allVoters = await getAllVoters();
   res.json({
-    voters: VOTERS,
-    groupSize: GROUP_SIZE,
-    minVoters: MIN_VOTERS,
+    voters: group.voters,
+    groupSize: group.groupSize,
+    minVoters: group.minVoters,
+    activeGroup: { id: group.id, name: group.name, slug: group.slug },
+    allVoters: allVoters.map(u => u.display_name),
     sandboxMode: SANDBOX_MODE,
     sandboxVoter: SANDBOX_VOTER,
     hideHal: HIDE_HAL,
@@ -37,7 +45,7 @@ app.get('/api/config', (_req, res) => {
 });
 
 function requireAuth(req, res, next) {
-  if (req.session.voter) return next();
+  if (req.session.voter || req.session.userId) return next();
   res.status(401).json({ error: 'Unauthorized' });
 }
 

@@ -48,13 +48,15 @@ const POSTER_PREVIEW_COUNT = 6;
 // index cards. `?movieId=` additionally flags which lists already hold that film,
 // which is what the MovieModal's list picker toggles against.
 router.get('/', ah(async (req, res) => {
+  const groupId = req.group?.id || 1;
   const rows = await db.all(`
     SELECT l.*, COUNT(li.id) AS film_count
     FROM lists l
     LEFT JOIN list_items li ON li.list_id = l.id
+    WHERE l.group_id = ? OR l.group_id IS NULL OR ? = 1
     GROUP BY l.id
     ORDER BY l.created_at DESC, l.id DESC
-  `);
+  `, groupId, groupId);
 
   // One pass over every list's films, in list order, keeping the first few posters
   // per list — cheaper than a correlated subquery per list.
@@ -101,7 +103,7 @@ router.get('/:key', ah(async (req, res) => {
     ORDER BY li.position, li.id
   `, list.id);
 
-  res.json({ ...list, films: await enrichMoviesBatch(movies) });
+  res.json({ ...list, films: await enrichMoviesBatch(movies, { group: req.group }) });
 }));
 
 // POST /api/lists
@@ -110,9 +112,10 @@ router.post('/', ah(async (req, res) => {
   if (!title) return res.status(400).json({ error: 'Title is required' });
 
   const targetTable = SANDBOX_MODE ? 'sandbox_lists' : 'lists';
+  const groupId = req.group?.id || 1;
   const result = await db.run(
-    `INSERT INTO ${targetTable} (title, description, created_by, slug) VALUES (?, ?, ?, ?)`,
-    title, cleanDescription(req.body.description), req.session.voter, await uniqueSlug(db, title)
+    `INSERT INTO ${targetTable} (title, description, created_by, slug, group_id) VALUES (?, ?, ?, ?, ?)`,
+    title, cleanDescription(req.body.description), req.session.voter, await uniqueSlug(db, title), groupId
   );
   const list = await db.get('SELECT * FROM lists WHERE id = ?', result.lastInsertRowid);
   res.status(201).json({ ...list, film_count: 0 });

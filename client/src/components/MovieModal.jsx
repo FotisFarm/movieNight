@@ -37,7 +37,7 @@ function rankClass(r) {
 }
 
 export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankData }) {
-  const { voters: configVoters, groupSize, sandboxMode } = useAppConfig();
+  const { voters: configVoters, groupSize, sandboxMode, activeGroup } = useAppConfig();
   const currentVoter = sessionStorage.getItem('voter');
   const isAdmin = currentVoter === 'mnAdmin';
   const isGhost = !configVoters.includes(currentVoter) && currentVoter !== 'mnAdmin' && !!currentVoter;
@@ -367,6 +367,12 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                   <div className="info-lbl">Group Rank</div>
                 </div>
               )}
+              {movie?.networkScore != null && (
+                <div className="info-cell" title={`Network score across all clubs (${movie.networkVoterCount} voter${movie.networkVoterCount > 1 ? 's' : ''})`}>
+                  <div className={`info-val ${scoreClass(movie.networkScore)}`}>{fmt(movie.networkScore)}</div>
+                  <div className="info-lbl">Network Score</div>
+                </div>
+              )}
               {/* Clicking the tile opens the Letterboxd/IMDb link editor below. */}
               <div
                 className="info-cell"
@@ -590,7 +596,9 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
           {/* ── Right Column: Voter Ratings & Picks ── */}
           <div className="movie-modal-right">
             <div className="movie-modal-right-header">
-              <div className="modal-section-label section-label" style={{ marginBottom: 0 }}>Voter Ratings &amp; Picks</div>
+              <div className="modal-section-label section-label" style={{ marginBottom: 0 }}>
+                {activeGroup?.name ? `${activeGroup.name} Ratings` : 'Group Ratings & Picks'}
+              </div>
               <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>
                 {voterCount} of {groupSize} rated
               </span>
@@ -757,6 +765,47 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                 );
               })()}
             </div>
+
+            {movie?.otherRatings && Object.keys(movie.otherRatings).length > 0 && (
+              <div className="community-ratings-section">
+                <div className="community-ratings-header">
+                  <div className="modal-section-label section-label" style={{ marginBottom: 0 }}>
+                    <span className="community-globe-icon">🌐</span> Community Ratings ({Object.keys(movie.otherRatings).length})
+                  </div>
+                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                    From other movie clubs
+                  </span>
+                </div>
+
+                <div className="community-ratings-list">
+                  {Object.entries(movie.otherRatings).map(([v, r]) => (
+                    <div key={v} className="community-rating-card">
+                      <div className="community-card-header">
+                        <div className="voter-card-user">
+                          <div className="voter-avatar-circle community-avatar">{v.slice(0, 2)}</div>
+                          <span className="voter-name-label">{v}</span>
+                        </div>
+                        <div className="community-card-controls">
+                          {r.rank && (
+                            <span className="voter-top10-tag" title={`Top 10 Pick: #${r.rank}`}>
+                              {rankLabel(r.rank)}
+                            </span>
+                          )}
+                          <span className={`community-score-badge ${scoreClass(r.score)}`}>
+                            {Number.isInteger(r.score) ? r.score : r.score.toFixed(1)}
+                          </span>
+                        </div>
+                      </div>
+                      {r.comment && (
+                        <div className="community-comment">
+                          "{r.comment}"
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

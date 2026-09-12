@@ -24,8 +24,17 @@ router.get('/', ah(async (req, res) => {
   if (year)     { query += ' AND year = ?';     params.push(year); }
   if (yearMin)  { query += ' AND CAST(year AS INTEGER) >= ?'; params.push(parseInt(yearMin)); }
   if (yearMax)  { query += ' AND CAST(year AS INTEGER) <= ?'; params.push(parseInt(yearMax)); }
-  if (mn === '1')        { query += ' AND mn = 1'; }
-  if (watchlist === '1') { query += ' AND watchlist = 1'; }
+  const groupId = req.group?.id || 1;
+  if (mn === '1') {
+    query += ' AND (EXISTS (SELECT 1 FROM group_movie_status gms WHERE gms.group_id = ? AND gms.movie_id = movies.id AND gms.mn = 1) ' +
+             (groupId === 1 ? 'OR movies.mn = 1)' : ')');
+    params.push(groupId);
+  }
+  if (watchlist === '1') {
+    query += ' AND (EXISTS (SELECT 1 FROM group_movie_status gms WHERE gms.group_id = ? AND gms.movie_id = movies.id AND gms.watchlist = 1) ' +
+             (groupId === 1 ? 'OR movies.watchlist = 1)' : ')');
+    params.push(groupId);
+  }
 
   const voterList = (voters ? voters.split(',') : voter ? [voter] : []).map(v => v.trim()).filter(Boolean);
   if (voterList.length) {
@@ -43,18 +52,22 @@ router.get('/', ah(async (req, res) => {
   }
 
   if (minVoters) {
-    query += ' AND (SELECT COUNT(*) FROM ratings WHERE movie_id = movies.id) >= ?';
-    params.push(parseInt(minVoters));
+    const vList = req.group?.voters || VOTERS;
+    const vPh = vList.map(() => '?').join(',');
+    query += ` AND (SELECT COUNT(*) FROM ratings WHERE movie_id = movies.id AND voter IN (${vPh})) >= ?`;
+    params.push(...vList, parseInt(minVoters));
   }
   if (maxVoters !== undefined && maxVoters !== '') {
-    query += ' AND (SELECT COUNT(*) FROM ratings WHERE movie_id = movies.id) <= ?';
-    params.push(parseInt(maxVoters));
+    const vList = req.group?.voters || VOTERS;
+    const vPh = vList.map(() => '?').join(',');
+    query += ` AND (SELECT COUNT(*) FROM ratings WHERE movie_id = movies.id AND voter IN (${vPh})) <= ?`;
+    params.push(...vList, parseInt(maxVoters));
   }
 
   query += ' ORDER BY title COLLATE NOCASE ASC';
 
   const movies = await db.all(query, ...params);
-  res.json(await enrichMoviesBatch(movies));
+  res.json(await enrichMoviesBatch(movies, { group: req.group }));
 }));
 
 // GET /api/movies/:id/history  — every voter's score and Top 10 trail for one
@@ -89,15 +102,41 @@ router.post('/:id/watchlist-vote', ah(async (req, res) => {
   const id = Number(req.params.id);
   const sessionVoter = req.session.voter;
   const voter = (sessionVoter === 'mnAdmin' && req.body.targetVoter) ? req.body.targetVoter : sessionVoter;
-  const exists = await db.get('SELECT 1 FROM watchlist_votes WHERE movie_id=? AND voter=?', id, voter);
+  const groupId = req.group?.id || 1;
+
+  let user = await db.get('SELECT id FROM users WHERE display_name = ? OR username = ?', voter, voter);
+  const userId = user ? user.id : req.session.userId;
+
+  if (!userId) return res.status(400).json({ error: 'User not found' });
+
+  const exists = await db.get(
+    'SELECT 1 FROM group_watchlist_votes WHERE group_id = ? AND movie_id = ? AND user_id = ?',
+    groupId, id, userId
+  );
+
   if (exists) {
-    await db.run('DELETE FROM watchlist_votes WHERE movie_id=? AND voter=?', id, voter);
+    await db.run(
+      'DELETE FROM group_watchlist_votes WHERE group_id = ? AND movie_id = ? AND user_id = ?',
+      groupId, id, userId
+    );
+    if (groupId === 1) {
+      await db.run('DELETE FROM watchlist_votes WHERE movie_id = ? AND voter = ?', id, voter);
+    }
   } else {
     if (sessionVoter !== 'mnAdmin') {
-      const { c: count } = await db.get('SELECT COUNT(*) as c FROM watchlist_votes WHERE voter=?', voter);
+      const { c: count } = await db.get(
+        'SELECT COUNT(*) as c FROM group_watchlist_votes WHERE group_id = ? AND user_id = ?',
+        groupId, userId
+      );
       if (count >= 3) return res.status(400).json({ error: 'vote_limit' });
     }
-    await db.run('INSERT INTO watchlist_votes (movie_id, voter) VALUES (?,?)', id, voter);
+    await db.run(
+      'INSERT INTO group_watchlist_votes (group_id, movie_id, user_id) VALUES (?, ?, ?)',
+      groupId, id, userId
+    );
+    if (groupId === 1) {
+      await db.run('INSERT OR IGNORE INTO watchlist_votes (movie_id, voter) VALUES (?, ?)', id, voter);
+    }
   }
   res.json({ ok: true });
 }));
@@ -109,18 +148,22 @@ router.get('/directors', ah(async (_req, res) => {
 }));
 
 // GET /api/movies/top10-counts  — { voter: number of top picks }. Must be before /:id.
-router.get('/top10-counts', ah(async (_req, res) => {
+router.get('/top10-counts', ah(async (req, res) => {
   const rows = await db.all('SELECT voter, COUNT(*) AS n FROM top3 GROUP BY voter');
   const counts = {};
-  for (const v of VOTERS) counts[v] = 0;
-  for (const r of rows) counts[r.voter] = r.n;
+  const voterList = req.group?.voters || VOTERS;
+  for (const v of voterList) counts[v] = 0;
+  for (const r of rows) {
+    if (voterList.includes(r.voter)) counts[r.voter] = r.n;
+  }
   res.json(counts);
 }));
 
 // GET /api/movies/top10/:voter  — voter's current Top 10 in rank order. Must be before /:id.
 router.get('/top10/:voter', ah(async (req, res) => {
   const { voter } = req.params;
-  if (!VOTERS.includes(voter)) return res.status(404).json({ error: 'Voter not found' });
+  const user = await db.get('SELECT id FROM users WHERE display_name = ? OR username = ?', voter, voter);
+  if (!VOTERS.includes(voter) && !user) return res.status(404).json({ error: 'Voter not found' });
   const rows = await db.all(`
     SELECT m.id, m.title, m.year, m.director, m.poster_path, t.rank
     FROM top3 t
@@ -142,25 +185,26 @@ router.put('/top10', ah(async (req, res) => {
   }
   const voter = isAdmin && req.body.voter ? req.body.voter : sessionVoter;
   const order = Array.isArray(req.body.order) ? req.body.order : null;
-  if (!order || !VOTERS.includes(voter)) return res.status(400).json({ error: 'Bad request' });
+  const allVoterRows = await db.all('SELECT display_name FROM users');
+  const allKnownVoters = new Set([...VOTERS, ...allVoterRows.map(u => u.display_name)]);
+  if (!order || !allKnownVoters.has(voter)) return res.status(400).json({ error: 'Bad request' });
   const ids = order.map(Number).filter(Boolean).slice(0, 10);
 
   // Snapshot before the rewrite so the trail can record what actually moved.
-  // This is a delete-and-reinsert, so without the diff every drag would either
-  // log nothing (as it used to) or log all ten picks as changed.
   const rowsBefore = await db.all('SELECT movie_id, rank FROM top3 WHERE voter = ?', voter);
   const ranksBefore = new Map(rowsBefore.map(r => [r.movie_id, r.rank]));
+
+  const u = await db.get('SELECT id FROM users WHERE display_name = ? OR username = ?', voter, voter);
+  const userId = u ? u.id : req.session.userId;
 
   await db.transaction(async (tx) => {
     await tx.run('DELETE FROM top3 WHERE voter = ?', voter);
     for (let i = 0; i < ids.length; i++) {
-      await tx.run('INSERT INTO top3 (movie_id, voter, rank) VALUES (?, ?, ?)', ids[i], voter, i + 1);
+      await tx.run('INSERT INTO top3 (movie_id, voter, rank, user_id) VALUES (?, ?, ?, ?)', ids[i], voter, i + 1, userId);
     }
   });
 
-  // Same shape as the PATCH /:id path: one row per film whose position changed,
-  // rank NULL meaning it left this voter's Top 10. changed_by is the session
-  // voter, so an admin reordering someone else's picks is attributed correctly.
+  // Diff positions
   const ranksAfter = new Map(ids.map((movieId, index) => [movieId, index + 1]));
   for (const movieId of new Set([...ranksBefore.keys(), ...ranksAfter.keys()])) {
     const previous = ranksBefore.has(movieId) ? ranksBefore.get(movieId) : null;
@@ -178,9 +222,13 @@ router.put('/top10', ah(async (req, res) => {
 // POST /api/movies/watchlist/reset  — admin only. Must be before /:id.
 // mode 'votes' clears every watchlist vote; mode 'all' also empties the watchlist itself.
 router.post('/watchlist/reset', ah(async (req, res) => {
-  if (req.session.voter !== 'mnAdmin') return res.status(403).json({ error: 'Admin only' });
+  const isSiteAdmin = req.session.isAdmin || req.session.voter === 'mnAdmin';
+  const isGroupAdmin = req.group?.members?.some(m => m.id === req.session.userId && m.role === 'admin');
+  if (!isSiteAdmin && !isGroupAdmin) return res.status(403).json({ error: 'Admin only' });
   const mode = req.body?.mode;
   if (mode !== 'votes' && mode !== 'all') return res.status(400).json({ error: 'mode must be "votes" or "all"' });
+
+  const groupId = req.group?.id || 1;
 
   if (SANDBOX_MODE) {
     const result = await db.transaction(async (tx) => {
@@ -201,10 +249,17 @@ router.post('/watchlist/reset', ah(async (req, res) => {
   }
 
   const result = await db.transaction(async (tx) => {
-    const { changes: votes } = await tx.run('DELETE FROM watchlist_votes');
+    const { changes: votes } = await tx.run('DELETE FROM group_watchlist_votes WHERE group_id = ?', groupId);
     let cleared = 0;
     if (mode === 'all') {
-      ({ changes: cleared } = await tx.run('UPDATE movies SET watchlist = 0 WHERE watchlist = 1'));
+      const res = await tx.run('UPDATE group_movie_status SET watchlist = 0 WHERE group_id = ? AND watchlist = 1', groupId);
+      cleared = res.changes;
+      if (groupId === 1) {
+        await tx.run('UPDATE movies SET watchlist = 0 WHERE watchlist = 1');
+        await tx.run('DELETE FROM watchlist_votes');
+      }
+    } else if (groupId === 1) {
+      await tx.run('DELETE FROM watchlist_votes');
     }
     return { votesCleared: votes, filmsCleared: cleared };
   });
@@ -271,7 +326,7 @@ router.post('/backfill-runtimes', ah(async (req, res) => {
 router.get('/:id', ah(async (req, res) => {
   const movie = await db.get('SELECT * FROM movies WHERE id = ?', req.params.id);
   if (!movie) return res.status(404).json({ error: 'Not found' });
-  res.json(await enrichMovie(movie));
+  res.json(await enrichMovie(movie, { group: req.group }));
 }));
 
 // POST /api/movies
@@ -284,6 +339,16 @@ router.post('/', ah(async (req, res) => {
     INSERT INTO ${targetTable} (director, title, year, mn, watchlist)
     VALUES (?, ?, ?, ?, ?)
   `, director.trim(), title.trim(), year.trim(), mn ? 1 : 0, watchlist ? 1 : 0);
+
+  const groupId = req.group?.id || 1;
+  if (mn || watchlist) {
+    try {
+      await db.run(
+        'INSERT OR REPLACE INTO group_movie_status (group_id, movie_id, mn, watchlist) VALUES (?, ?, ?, ?)',
+        groupId, lastInsertRowid, mn ? 1 : 0, watchlist ? 1 : 0
+      );
+    } catch (_) {}
+  }
 
   // Best-effort IMDb enrichment — a failed/absent lookup must never block the add.
   // A client-supplied imdb_id (user picked a suggestion) is authoritative; otherwise fall back to title lookup.
@@ -322,7 +387,8 @@ router.post('/', ah(async (req, res) => {
   } catch (_) { /* film is still added even if metadata lookup is unavailable */ }
 
   res.status(201).json(await enrichMovie(
-    await db.get('SELECT * FROM movies WHERE id = ?', lastInsertRowid)
+    await db.get('SELECT * FROM movies WHERE id = ?', lastInsertRowid),
+    { group: req.group }
   ));
 }));
 
@@ -400,6 +466,23 @@ router.patch('/:id', ah(async (req, res) => {
       await db.run(`UPDATE ${targetTable} SET ${setClause} WHERE id = ?`, ...Object.values(updates), id);
     }
 
+    const groupId = req.group?.id || 1;
+    if (mn !== undefined || watchlist !== undefined) {
+      const nextMn = mn !== undefined ? (mn ? 1 : 0) : null;
+      const nextWl = watchlist !== undefined ? (watchlist ? 1 : 0) : null;
+      await db.run(`
+        INSERT INTO group_movie_status (group_id, movie_id, mn, watchlist)
+        VALUES (?, ?, COALESCE(?, 0), COALESCE(?, 0))
+        ON CONFLICT(group_id, movie_id) DO UPDATE SET
+          mn = CASE WHEN ? IS NOT NULL THEN ? ELSE group_movie_status.mn END,
+          watchlist = CASE WHEN ? IS NOT NULL THEN ? ELSE group_movie_status.watchlist END
+      `, groupId, id, nextMn, nextWl, nextMn, nextMn, nextWl, nextWl);
+
+      if (watchlist === false) {
+        await db.run('DELETE FROM group_watchlist_votes WHERE group_id = ? AND movie_id = ?', groupId, id);
+      }
+    }
+
     // Leaving the watchlist discards the film's votes — a film re-added later starts fresh.
     if (watchlist !== undefined && !watchlist && movie.watchlist) {
       await db.run('DELETE FROM watchlist_votes WHERE movie_id = ?', id);
@@ -407,7 +490,8 @@ router.patch('/:id', ah(async (req, res) => {
   }
 
   if (ratings) {
-    const votersToRate = (isAdmin || VOTERS.includes(sessionVoter)) ? VOTERS : [sessionVoter];
+    const activeVoters = req.group?.voters || VOTERS;
+    const votersToRate = (isAdmin || activeVoters.includes(sessionVoter)) ? activeVoters : [sessionVoter];
     // One transaction so `ratings` and its history can't disagree — the history
     // is append-only, so a half-applied write here would never self-heal.
     await db.transaction(async (tx) => {
@@ -425,10 +509,12 @@ router.patch('/:id', ah(async (req, res) => {
           if (score === null) {
             await tx.run('DELETE FROM ratings WHERE movie_id = ? AND voter = ?', id, voter);
           } else {
+            const u = await tx.get('SELECT id FROM users WHERE display_name = ? OR username = ?', voter, voter);
+            const uid = u ? u.id : (voter === sessionVoter ? req.session.userId : null);
             await tx.run(`
-              INSERT INTO ratings (movie_id, voter, score) VALUES (?, ?, ?)
-              ON CONFLICT(movie_id, voter) DO UPDATE SET score = excluded.score
-            `, id, voter, score);
+              INSERT INTO ratings (movie_id, voter, score, user_id) VALUES (?, ?, ?, ?)
+              ON CONFLICT(movie_id, voter) DO UPDATE SET score = excluded.score, user_id = COALESCE(excluded.user_id, ratings.user_id)
+            `, id, voter, score, uid);
           }
           const previous = before.has(voter) ? before.get(voter) : null;
           if (previous !== score) {
@@ -445,7 +531,8 @@ router.patch('/:id', ah(async (req, res) => {
   }
 
   if (comments) {
-    const votersToComment = (isAdmin || VOTERS.includes(sessionVoter)) ? VOTERS : [sessionVoter];
+    const activeVoters = req.group?.voters || VOTERS;
+    const votersToComment = (isAdmin || activeVoters.includes(sessionVoter)) ? activeVoters : [sessionVoter];
     for (const voter of votersToComment) {
       if (voter in comments) {
         if (!isAdmin && voter !== sessionVoter) continue;
@@ -455,6 +542,7 @@ router.patch('/:id', ah(async (req, res) => {
   }
 
   if (top3) {
+    const activeVoters = req.group?.voters || VOTERS;
     const movieIdNum = Number(id);
     const touched = new Set();
 
@@ -462,7 +550,7 @@ router.patch('/:id', ah(async (req, res) => {
     // renumber/eviction step below can change the rank of films other than
     // this one, and those movements belong in the history too.
     const ranksBefore = new Map();
-    for (const voter of VOTERS) {
+    for (const voter of activeVoters) {
       if (!(voter in top3)) continue;
       if (!isAdmin && voter !== sessionVoter) continue;
       const rows = await db.all('SELECT movie_id, rank FROM top3 WHERE voter = ?', voter);
@@ -473,6 +561,9 @@ router.patch('/:id', ah(async (req, res) => {
     for (const voter of touched) {
       const raw = top3[voter];
       const targetRank = (raw != null && raw !== '') ? parseInt(raw, 10) : null;
+
+      const u = await db.get('SELECT id FROM users WHERE display_name = ? OR username = ?', voter, voter);
+      const uid = u ? u.id : (voter === sessionVoter ? req.session.userId : null);
 
       await db.transaction(async (tx) => {
         // Fetch existing picks for this voter excluding this film, in current rank order
@@ -497,7 +588,7 @@ router.patch('/:id', ah(async (req, res) => {
         // Rewrite top3 for this voter with contiguous ranks 1..finalIds.length
         await tx.run('DELETE FROM top3 WHERE voter = ?', voter);
         for (let i = 0; i < finalIds.length; i++) {
-          await tx.run('INSERT INTO top3 (movie_id, voter, rank) VALUES (?, ?, ?)', finalIds[i], voter, i + 1);
+          await tx.run('INSERT INTO top3 (movie_id, voter, rank, user_id) VALUES (?, ?, ?, ?)', finalIds[i], voter, i + 1, uid);
         }
       });
     }
@@ -520,7 +611,7 @@ router.patch('/:id', ah(async (req, res) => {
     }
   }
 
-  res.json(await enrichMovie(await db.get('SELECT * FROM movies WHERE id = ?', id)));
+  res.json(await enrichMovie(await db.get('SELECT * FROM movies WHERE id = ?', id), { group: req.group }));
 }));
 
 // DELETE /api/movies/:id

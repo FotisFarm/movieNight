@@ -438,3 +438,52 @@
     flex-shrink: 0;
   }
 }
+
+/* ── Other Group / Community Voter Pills ── */
+.voter-pill.other-group-pill {
+  background: var(--surface2);
+  border: 1px dashed var(--border);
+  opacity: 0.85;
+  gap: 2px;
+  cursor: default;
+}
+
+.voter-pill.other-group-pill:hover {
+  opacity: 1;
+  border-color: var(--accent);
+}
+
+.other-pill-icon {
+  font-size: 9px;
+  line-height: 1;
+  margin-right: 1px;
+}
+
+.voter-pill.other-group-more-pill {
+  background: var(--surface2);
+  border: 1px dotted var(--border);
+  opacity: 0.8;
+  cursor: default;
+  gap: 2px;
+}
+
+.other-pill-more-text {
+  color: var(--text2);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.score-big.score-network,
+.card-grid-score.score-network {
+  font-size: 14px;
+  color: var(--text2);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 600;
+}
+
+.score-network .network-score-icon {
+  font-size: 11px;
+  opacity: 0.85;
+}

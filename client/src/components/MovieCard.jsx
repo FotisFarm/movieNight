@@ -85,6 +85,47 @@ function VoterPills({ movieId, title, ratings, top3, voters }) {
   );
 }
 
+function OtherRatingsPills({ otherRatings, activeCount = 0 }) {
+  if (!otherRatings) return null;
+  const entries = Object.entries(otherRatings).filter(([, r]) => r && r.score != null);
+  if (entries.length === 0) return null;
+
+  const maxToShow = activeCount > 2 ? 1 : 2;
+  const showList = entries.slice(0, maxToShow);
+  const overflow = entries.slice(maxToShow);
+
+  return (
+    <>
+      {showList.map(([v, r]) => {
+        const score = r.score;
+        const titleText = `${v} (Other Club): ${score}${r.rank ? ` · Top 10 #${r.rank}` : ''}${r.comment ? ` — "${r.comment}"` : ''}`;
+        return (
+          <span
+            key={v}
+            className="voter-pill other-group-pill"
+            title={titleText}
+          >
+            <span className="other-pill-icon">🌐</span>
+            <span className="voter-abbr">{v.slice(0, 3)}</span>
+            <span className={`voter-score ${scoreClass(score)}`}>
+              {Number.isInteger(score) ? score : score.toFixed(1)}
+            </span>
+          </span>
+        );
+      })}
+      {overflow.length > 0 && (
+        <span
+          className="voter-pill other-group-more-pill"
+          title={overflow.map(([v, r]) => `${v}: ${r.score}${r.comment ? ` ("${r.comment}")` : ''}`).join('\n')}
+        >
+          <span className="other-pill-icon">🌐</span>
+          <span className="other-pill-more-text">+{overflow.length}</span>
+        </span>
+      )}
+    </>
+  );
+}
+
 // Fixed 2:3 box so the row height never changes as images stream in, and the
 // films with no poster (a wrong or missing imdb_id) still line up with the rest.
 function Poster({ path, title, size }) {
@@ -100,7 +141,7 @@ function Poster({ path, title, size }) {
 
 export default function MovieCard({ movie, onClick, listView = false, scoreMode = 'fair', onWatchlistToggle }) {
   const { voters, minVoters } = useAppConfig();
-  const { id, title, director, year, runtime, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, letterboxd_rating, poster_path } = movie;
+  const { id, title, director, year, runtime, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, letterboxd_rating, poster_path, otherRatings, networkScore, networkVoterCount } = movie;
 
   const hasScore = voterCount >= minVoters;
   const displayScore = hasScore
@@ -119,11 +160,17 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
       <article className={cardClass} onClick={onClick} {...keyProps}>
         <Poster path={poster_path} title={title} size="w92" />
 
-        {displayScore !== null && (
+        {displayScore !== null ? (
           <div className="card-score">
             <div className={`score-big ${scoreClass(displayScore)}`}>{fmt(displayScore)}</div>
           </div>
-        )}
+        ) : networkScore != null ? (
+          <div className="card-score">
+            <div className="score-big score-network" title={`Network score (${networkVoterCount} ratings across clubs)`}>
+              <span className="network-score-icon">🌐</span>{fmt(networkScore)}
+            </div>
+          </div>
+        ) : null}
 
         <div className="card-info">
           <h3 className="card-title">{title}</h3>
@@ -142,6 +189,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
 
         <div className="card-ratings">
           <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} />
+          <OtherRatingsPills otherRatings={otherRatings} activeCount={voterCount} />
         </div>
 
         {LetterboxdBadge}
@@ -150,8 +198,9 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
   }
 
   const hasBadges = Boolean(mn || watchlist || rank_global || onWatchlistToggle);
+  const hasOtherRatings = Boolean(otherRatings && Object.keys(otherRatings).length > 0);
   const hasVoterRatings = Boolean(voters && voters.some(v => ratings?.[v] != null));
-  const hasRatingsOrLb = Boolean(hasVoterRatings || imdb_id || letterboxd_rating != null);
+  const hasRatingsOrLb = Boolean(hasVoterRatings || hasOtherRatings || imdb_id || letterboxd_rating != null);
 
   return (
     <article className={cardClass} onClick={onClick} {...keyProps}>
@@ -160,11 +209,15 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
       <div className="card-body">
         <div className="card-header-row">
           <h3 className="card-title" title={title}>{title}</h3>
-          {displayScore !== null && (
+          {displayScore !== null ? (
             <div className={`score-big ${scoreClass(displayScore)} card-grid-score`}>
               {fmt(displayScore)}
             </div>
-          )}
+          ) : networkScore != null ? (
+            <div className="score-big score-network card-grid-score" title={`Network score (${networkVoterCount} ratings across clubs)`}>
+              <span className="network-score-icon">🌐</span>{fmt(networkScore)}
+            </div>
+          ) : null}
         </div>
 
         <p className="card-meta">
@@ -186,6 +239,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
             {hasVoterRatings && (
               <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} />
             )}
+            <OtherRatingsPills otherRatings={otherRatings} activeCount={voterCount} />
             {LetterboxdBadge}
           </div>
         )}

@@ -57,23 +57,68 @@ export default function App() {
 }
 
 function AppInner() {
-  const { hideHal } = useAppConfig() || {};
+  const { hideHal, refreshConfig, activeGroup } = useAppConfig() || {};
+  const [user, setUser] = useState(null);
   const [voter, setVoter] = useState(null); // null = checking, '' = not logged in
+  const [groups, setGroups] = useState([]);
 
   useEffect(() => {
     api.me().then(d => {
       const v = d.voter || '';
       if (v) sessionStorage.setItem('voter', v);
       setVoter(v);
-    }).catch(() => setVoter(''));
-  }, []);
+      setUser(d.user || null);
+      setGroups(d.groups || []);
+      if (v) refreshConfig?.();
+    }).catch(() => {
+      setVoter('');
+      setUser(null);
+      setGroups([]);
+    });
+  }, [refreshConfig]);
+
+  const handleLogin = (data) => {
+    const v = data?.voter || data;
+    sessionStorage.setItem('voter', v);
+    setVoter(v);
+    setUser(data?.user || null);
+    setGroups(data?.groups || []);
+    refreshConfig?.();
+  };
+
+  const handleLogout = () => {
+    api.logout();
+    sessionStorage.removeItem('voter');
+    setVoter('');
+    setUser(null);
+    setGroups([]);
+  };
+
+  const handleSwitchGroup = async (groupId) => {
+    try {
+      const res = await api.switchGroup(groupId);
+      if (res?.ok) {
+        await refreshConfig?.();
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error('Failed to switch group:', err);
+    }
+  };
 
   if (voter === null) return null;
-  if (!voter) return <Login onLogin={v => { sessionStorage.setItem('voter', v); setVoter(v); }} />;
+  if (!voter) return <Login onLogin={handleLogin} />;
 
   return (
     <div className="app">
-      <Header voter={voter} onLogout={() => { api.logout(); sessionStorage.removeItem('voter'); setVoter(''); }} />
+      <Header
+        voter={voter}
+        user={user}
+        activeGroup={activeGroup}
+        groups={groups}
+        onSwitchGroup={handleSwitchGroup}
+        onLogout={handleLogout}
+      />
       <main className="main-content">
         <Routes>
           <Route path="/" element={<Navigate to="/films" replace />} />

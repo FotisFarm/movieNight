@@ -16,6 +16,8 @@ const authToken = process.env.TURSO_AUTH_TOKEN; // unused/undefined for local fi
 
 const client = createClient({ url, authToken });
 
+const { hashPassword } = require('./auth-crypto');
+
 const { SANDBOX_MODE, GROUP_SIZE } = require('./config');
 
 const SANDBOX_PREFIX = 'sandbox_';
@@ -202,10 +204,54 @@ async function init() {
 
     CREATE INDEX IF NOT EXISTS idx_rating_history ON rating_history(movie_id, voter, changed_at);
     CREATE INDEX IF NOT EXISTS idx_rating_history_when ON rating_history(changed_at);
+
+    CREATE TABLE IF NOT EXISTS users (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      username      TEXT    NOT NULL COLLATE NOCASE UNIQUE,
+      display_name  TEXT    NOT NULL,
+      password_hash TEXT    NOT NULL,
+      is_admin      INTEGER NOT NULL DEFAULT 0,
+      created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS groups (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      name       TEXT    NOT NULL,
+      slug       TEXT    NOT NULL COLLATE NOCASE UNIQUE,
+      created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS group_members (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      group_id   INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+      user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      role       TEXT    NOT NULL DEFAULT 'member',
+      created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(group_id, user_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS group_movie_status (
+      group_id  INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+      movie_id  INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+      mn        INTEGER NOT NULL DEFAULT 0,
+      watchlist INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (group_id, movie_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS group_watchlist_votes (
+      id        INTEGER PRIMARY KEY AUTOINCREMENT,
+      group_id  INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+      movie_id  INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+      user_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      UNIQUE(group_id, movie_id, user_id)
+    );
   `);
 
   // Migrations
   try { await client.execute("ALTER TABLE ratings ADD COLUMN comment TEXT NOT NULL DEFAULT ''"); } catch (_) {}
+  try { await client.execute('ALTER TABLE ratings ADD COLUMN user_id INTEGER REFERENCES users(id)'); } catch (_) {}
+  try { await client.execute('ALTER TABLE top3 ADD COLUMN user_id INTEGER REFERENCES users(id)'); } catch (_) {}
+  try { await client.execute('ALTER TABLE lists ADD COLUMN group_id INTEGER REFERENCES groups(id)'); } catch (_) {}
   try { await client.execute('ALTER TABLE movies ADD COLUMN imdb_id TEXT DEFAULT NULL'); } catch (_) {}
   try { await client.execute('ALTER TABLE movies ADD COLUMN imdb_rating REAL DEFAULT NULL'); } catch (_) {}
   // TMDB poster path (e.g. '/3bhkrj58Vtu7enYsRolD1fZdja1.jpg'), not a full
@@ -221,6 +267,8 @@ async function init() {
   // is slugged below, so lists created before this migration keep working.
   try { await client.execute('ALTER TABLE lists ADD COLUMN slug TEXT DEFAULT NULL'); } catch (_) {}
   await client.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_lists_slug ON lists(slug)');
+
+  await initMultiGroup();
 
   if (!SANDBOX_MODE) {
     await backfillInitialRuntimes();
@@ -665,6 +713,107 @@ async function backfillInitialLetterboxd() {
     console.log(`[db] Letterboxd ratings backfilled successfully. Total with letterboxd_rating: ${after?.c}`);
   } catch (err) {
     console.warn('[db] Note: backfillInitialLetterboxd notice:', err.message);
+  }
+}
+
+async function initMultiGroup() {
+  try {
+    const userCountRow = await get('SELECT COUNT(*) AS c FROM users');
+    if (!userCountRow || Number(userCountRow.c) === 0) {
+      console.log('[db] Initializing multi-group schema and migrating existing voters...');
+      const defaultPass = process.env.MN_PASSWORD || 'changeme';
+      const defaultHash = hashPassword(defaultPass);
+
+      const initialUsers = [
+        { username: 'Φώτης', displayName: 'Φώτης', isAdmin: 1 },
+        { username: 'Μητσέας', displayName: 'Μητσέας', isAdmin: 0 },
+        { username: 'Παντελής', displayName: 'Παντελής', isAdmin: 0 },
+        { username: 'Στέλιας', displayName: 'Στέλιας', isAdmin: 0 },
+        { username: 'Λεόντιος', displayName: 'Λεόντιος', isAdmin: 0 },
+        { username: 'Κλαίρη', displayName: 'Κλαίρη', isAdmin: 0 },
+        { username: 'mnAdmin', displayName: 'Admin', isAdmin: 1 },
+      ];
+
+      if (process.env.GUEST_PASSWORD) {
+        initialUsers.push({
+          username: 'Σάκιας',
+          displayName: 'Σάκιας',
+          isAdmin: 0,
+          hash: hashPassword(process.env.GUEST_PASSWORD),
+        });
+      }
+
+      for (const u of initialUsers) {
+        const pHash = u.hash || defaultHash;
+        await run(
+          'INSERT OR IGNORE INTO users (username, display_name, password_hash, is_admin) VALUES (?, ?, ?, ?)',
+          u.username, u.displayName, pHash, u.isAdmin
+        );
+      }
+
+      // Ensure Group 1 ("The Originals") and Group 2 ("Movie Nights II") exist
+      await run("INSERT OR IGNORE INTO groups (id, name, slug) VALUES (1, 'The Originals', 'the-originals')");
+      await run("INSERT OR IGNORE INTO groups (id, name, slug) VALUES (2, 'Movie Nights II', 'group-2')");
+
+      // Add Group 1 members
+      const g1Voters = ['Φώτης', 'Μητσέας', 'Παντελής', 'Στέλιας', 'Λεόντιος', 'Κλαίρη'];
+      for (const v of g1Voters) {
+        const user = await get('SELECT id FROM users WHERE username = ?', v);
+        if (user) {
+          const role = (v === 'Φώτης') ? 'admin' : 'member';
+          await run(
+            'INSERT OR IGNORE INTO group_members (group_id, user_id, role) VALUES (1, ?, ?)',
+            user.id, role
+          );
+        }
+      }
+
+      // Add Φώτης to Group 2 as initial admin
+      const fotis = await get("SELECT id FROM users WHERE username = 'Φώτης'");
+      if (fotis) {
+        await run('INSERT OR IGNORE INTO group_members (group_id, user_id, role) VALUES (2, ?, ?)', fotis.id, 'admin');
+      }
+
+      // Backfill Group 1 movie status from movies.mn and movies.watchlist
+      await run(`
+        INSERT OR IGNORE INTO group_movie_status (group_id, movie_id, mn, watchlist)
+        SELECT 1, id, mn, watchlist
+        FROM movies
+        WHERE mn = 1 OR watchlist = 1
+      `);
+
+      // Backfill Group 1 watchlist votes
+      await run(`
+        INSERT OR IGNORE INTO group_watchlist_votes (group_id, movie_id, user_id)
+        SELECT 1, wv.movie_id, u.id
+        FROM watchlist_votes wv
+        JOIN users u ON (u.display_name = wv.voter OR u.username = wv.voter)
+      `);
+
+      // Backfill user_id on ratings and top3
+      await run(`
+        UPDATE ratings
+        SET user_id = (
+          SELECT u.id FROM users u
+          WHERE u.display_name = ratings.voter OR u.username = ratings.voter
+        )
+        WHERE user_id IS NULL
+      `);
+
+      await run(`
+        UPDATE top3
+        SET user_id = (
+          SELECT u.id FROM users u
+          WHERE u.display_name = top3.voter OR u.username = top3.voter
+        )
+        WHERE user_id IS NULL
+      `);
+
+      await run('UPDATE lists SET group_id = 1 WHERE group_id IS NULL');
+      console.log('[db] Multi-group migration completed successfully.');
+    }
+  } catch (err) {
+    console.warn('[db] Multi-group migration warning:', err.message);
   }
 }
 

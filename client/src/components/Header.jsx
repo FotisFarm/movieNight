@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useTheme } from '../ThemeContext';
 import { useHal } from '../HalContext';
 import { useAppConfig } from '../AppConfigContext';
+import { api } from '../api';
 import HalEye from './HalEye';
 import './Header.css';
 
@@ -143,7 +144,156 @@ function ThemeDropdown({ up = false }) {
   );
 }
 
-export default function Header({ voter, onLogout }) {
+function GroupDropdown({ activeGroup, groups = [], onSwitchGroup }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function onDown(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, []);
+
+  if (!activeGroup) return null;
+  const canSwitch = groups && groups.length > 1;
+
+  return (
+    <div className="group-switcher-wrap" ref={ref}>
+      <button
+        type="button"
+        className="group-badge-btn"
+        onClick={() => canSwitch && setOpen(o => !o)}
+        title={canSwitch ? 'Switch Movie Club' : activeGroup.name}
+        style={{ cursor: canSwitch ? 'pointer' : 'default' }}
+      >
+        <span>🎬</span>
+        <span>{activeGroup.name}</span>
+        {canSwitch && <span style={{ fontSize: 9, opacity: 0.7 }}>▾</span>}
+      </button>
+
+      {open && canSwitch && (
+        <div className="group-dropdown-menu">
+          <div style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', padding: '4px 8px', fontWeight: 700 }}>
+            Switch Club
+          </div>
+          {groups.map(g => (
+            <button
+              key={g.id}
+              type="button"
+              className={`group-dropdown-item${g.id === activeGroup.id ? ' active' : ''}`}
+              onClick={() => {
+                setOpen(false);
+                if (g.id !== activeGroup.id) onSwitchGroup?.(g.id);
+              }}
+            >
+              <span>{g.name}</span>
+              {g.id === activeGroup.id && <span>✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChangePasswordModal({ onClose }) {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!currentPassword) {
+      setError('Enter your current password.');
+      return;
+    }
+    if (newPassword.length < 4) {
+      setError('New password must be at least 4 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError('New passwords do not match.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      await api.changePassword(currentPassword, newPassword);
+      setSuccess(true);
+      setTimeout(() => onClose(), 1200);
+    } catch (err) {
+      setError(err.message || 'Failed to update password.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1100 }}>
+      <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 360, padding: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Change Password</h3>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+        </div>
+
+        {success ? (
+          <div style={{ color: 'var(--green)', padding: '16px 0', textAlign: 'center', fontWeight: 600 }}>
+            ✓ Password updated successfully!
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {error && <div style={{ color: 'var(--red)', fontSize: 12 }}>{error}</div>}
+            <div>
+              <label style={{ display: 'block', fontSize: 11, color: 'var(--text2)', marginBottom: 4 }}>Current Password</label>
+              <input
+                type="password"
+                className="input"
+                autoFocus
+                value={currentPassword}
+                onChange={e => setCurrentPassword(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, color: 'var(--text2)', marginBottom: 4 }}>New Password</label>
+              <input
+                type="password"
+                className="input"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, color: 'var(--text2)', marginBottom: 4 }}>Confirm New Password</label>
+              <input
+                type="password"
+                className="input"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+              <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+              <button type="submit" className="btn btn-gold" disabled={loading}>
+                {loading ? 'Saving…' : 'Update'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function Header({ voter, user, activeGroup, groups = [], onSwitchGroup, onLogout }) {
   const { sandboxMode, hideHal } = useAppConfig() || {};
   const location = useLocation();
   const pathname = location.pathname;
@@ -176,6 +326,7 @@ export default function Header({ voter, onLogout }) {
   // Mobile hub sheet state (mirroring desktop hub dropdowns)
   const [mobileRankingsOpen, setMobileRankingsOpen] = useState(false);
   const [mobileStatsOpen, setMobileStatsOpen] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   const rankingsRef = useRef(null);
   const statsRef = useRef(null);
@@ -457,8 +608,19 @@ export default function Header({ voter, onLogout }) {
                 <HalEye size={24} active={isOpen} />
               </button>
             )}
+            <GroupDropdown activeGroup={activeGroup} groups={groups} onSwitchGroup={onSwitchGroup} />
             <ThemeDropdown />
-            {voter && <span className="header-voter">{voter}</span>}
+            {voter && (
+              <button
+                type="button"
+                className="header-user-btn"
+                onClick={() => setShowPasswordModal(true)}
+                title="Account: Click to change password"
+              >
+                <span className="header-voter">{voter}</span>
+                <span style={{ fontSize: 11, opacity: 0.65 }}>🔑</span>
+              </button>
+            )}
             {onLogout && (
               <button
                 type="button"
@@ -472,6 +634,8 @@ export default function Header({ voter, onLogout }) {
           </div>
         </div>
       </header>
+
+      {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
 
       {/* Mobile 5-Tab Bottom Navigation Bar (Mirroring desktop 1-to-1) */}
       <nav className="mobile-bottom-bar" aria-label="Mobile Bottom Navigation">
