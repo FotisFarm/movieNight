@@ -29,19 +29,36 @@ router.post('/contenders', ah(async (req, res) => {
     ? historyMode
     : (allowWatched ? 'share' : 'fresh');
 
-  // Validate and sanitize attendees (fallback to all registered voters)
+  const groupVoters = req.group?.voters || VOTERS;
+  const groupId = req.group?.id || 1;
+
+  // Validate and sanitize attendees (fallback to all registered group voters)
   const validAttendees = Array.isArray(reqAttendees) && reqAttendees.length > 0
-    ? reqAttendees.filter(v => VOTERS.includes(v))
-    : VOTERS;
-  const attendees = validAttendees.length > 0 ? validAttendees : VOTERS;
+    ? reqAttendees.filter(v => groupVoters.includes(v))
+    : groupVoters;
+  const attendees = validAttendees.length > 0 ? validAttendees : groupVoters;
 
   // Independent full-table reads in one concurrent round-trip
-  const [allMovies, allRatings, allTop3, allWlVotes] = await Promise.all([
+  const [allMovies, allRatings, allTop3, allGroupStatus, allGroupWlVotes, legacyWlVotes] = await Promise.all([
     db.all('SELECT id, title, year, director, runtime, poster_path, watchlist, mn, cinobo FROM movies'),
     db.all('SELECT movie_id, voter, score FROM ratings'),
     db.all('SELECT movie_id, voter, rank FROM top3'),
-    db.all('SELECT movie_id, voter FROM watchlist_votes'),
+    db.all('SELECT movie_id, mn, watchlist FROM group_movie_status WHERE group_id = ?', groupId),
+    db.all(`
+      SELECT gwv.movie_id, u.display_name AS voter
+      FROM group_watchlist_votes gwv
+      JOIN users u ON u.id = gwv.user_id
+      WHERE gwv.group_id = ?
+    `, groupId),
+    groupId === 1 ? db.all('SELECT movie_id, voter FROM watchlist_votes') : Promise.resolve([]),
   ]);
+
+  const statusByMovie = new Map(allGroupStatus.map(s => [s.movie_id, s]));
+  for (const m of allMovies) {
+    const st = statusByMovie.get(m.id);
+    m.watchlist = st ? st.watchlist : (groupId === 1 ? m.watchlist : 0);
+    m.mn = st ? st.mn : (groupId === 1 ? m.mn : 0);
+  }
 
   const movieById = new Map(allMovies.map(m => [m.id, m]));
 
@@ -51,7 +68,7 @@ router.post('/contenders', ah(async (req, res) => {
   const voterDecadeAvg = {};
   const voterDirAvg = {};
 
-  for (const v of VOTERS) {
+  for (const v of groupVoters) {
     voterRatings[v] = [];
     voterDecadeAvg[v] = {};
     voterDirAvg[v] = {};
@@ -76,7 +93,7 @@ router.post('/contenders', ah(async (req, res) => {
 
   // Voter baselines & means
   const voterMean = {};
-  for (const v of VOTERS) {
+  for (const v of groupVoters) {
     const scores = voterRatings[v].map(r => r.score);
     voterMean[v] = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 7.0;
     for (const dec in voterDecadeAvg[v]) {
@@ -100,7 +117,8 @@ router.post('/contenders', ah(async (req, res) => {
 
   // Index watchlist votes per movie
   const wlVotesByMovie = {};
-  for (const w of allWlVotes) {
+  const effectiveWlVotes = allGroupWlVotes.length > 0 || groupId !== 1 ? allGroupWlVotes : legacyWlVotes;
+  for (const w of effectiveWlVotes) {
     (wlVotesByMovie[w.movie_id] ||= new Set()).add(w.voter);
   }
 

@@ -434,7 +434,38 @@
   }
 
   .movie-card.list-view .lb-pill-wrapper {
-    margin-left: auto;
     flex-shrink: 0;
   }
+}
+
+/* ── Option C: Other Club Companion Benchmark Pill ── */
+.companion-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 1px 7px;
+  font-size: 11px;
+  line-height: 1.4;
+  cursor: default;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  white-space: nowrap;
+}
+
+.companion-pill:hover {
+  border-color: var(--accent);
+  background: var(--surface3);
+}
+
+.companion-label {
+  color: var(--text2);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.companion-score {
+  font-weight: 700;
 }

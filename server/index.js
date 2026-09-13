@@ -14,22 +14,51 @@ const { SESSION_COOKIE_NAME } = require('./config');
 
 app.use(express.json());
 app.use(cors({ origin: IS_PROD ? false : 'http://localhost:5173', credentials: true }));
+const TursoSessionStore = require('./sessionStore');
+const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+
 app.use(session({
   name: SESSION_COOKIE_NAME,
   secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
+  store: new TursoSessionStore({ ttl: THIRTY_DAYS }),
   resave: false,
   saveUninitialized: false,
-  cookie: { httpOnly: true, secure: false, maxAge: 7 * 24 * 60 * 60 * 1000 },
+  cookie: {
+    httpOnly: true,
+    secure: false,
+    maxAge: THIRTY_DAYS,
+    sameSite: 'lax',
+  },
 }));
+
+const { attachGroupContext, getAllVoters } = require('./groupContext');
+
+app.use(attachGroupContext);
 
 app.use('/api/auth', require('./routes/auth'));
 
-app.get('/api/config', (_req, res) => {
-  const { VOTERS, GROUP_SIZE, MIN_VOTERS, SANDBOX_MODE, SANDBOX_VOTER, HIDE_HAL } = require('./config');
+app.get('/api/config', async (req, res) => {
+  const { SANDBOX_MODE, SANDBOX_VOTER, HIDE_HAL } = require('./config');
+  const isLoggedIn = Boolean(req.session.voter || req.session.userId);
+  if (!isLoggedIn) {
+    return res.json({
+      voters: [],
+      groupSize: 5,
+      minVoters: 2,
+      activeGroup: null,
+      allVoters: [],
+      sandboxMode: SANDBOX_MODE,
+      sandboxVoter: SANDBOX_VOTER,
+      hideHal: HIDE_HAL,
+    });
+  }
+  const group = req.group;
   res.json({
-    voters: VOTERS,
-    groupSize: GROUP_SIZE,
-    minVoters: MIN_VOTERS,
+    voters: group.voters,
+    groupSize: group.groupSize,
+    minVoters: group.minVoters,
+    activeGroup: { id: group.id, name: group.name, slug: group.slug },
+    allVoters: group.voters,
     sandboxMode: SANDBOX_MODE,
     sandboxVoter: SANDBOX_VOTER,
     hideHal: HIDE_HAL,
@@ -37,10 +66,17 @@ app.get('/api/config', (_req, res) => {
 });
 
 function requireAuth(req, res, next) {
-  if (req.session.voter) return next();
+  if (req.session.voter || req.session.userId) return next();
   res.status(401).json({ error: 'Unauthorized' });
 }
 
+function requireAdmin(req, res, next) {
+  const isAdmin = Boolean(req.session?.isAdmin || req.session?.voter === 'mnAdmin');
+  if (isAdmin) return next();
+  res.status(403).json({ error: 'Forbidden: Administrator privileges required' });
+}
+
+app.use('/api/admin', requireAuth, requireAdmin, require('./routes/admin'));
 app.use('/api/movies', requireAuth, require('./routes/movies'));
 app.use('/api/rankings', requireAuth, require('./routes/rankings'));
 app.use('/api/recommendations', requireAuth, require('./routes/recommendations'));

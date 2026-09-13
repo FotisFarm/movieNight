@@ -575,3 +575,91 @@
   height: 100px;
   border: none;
 }
+
+/* ── Community / Other Clubs Ratings Section ── */
+.community-ratings-section {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.community-ratings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.community-globe-icon {
+  margin-right: 4px;
+}
+
+.community-ratings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.community-rating-card {
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  opacity: 0.92;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+
+.community-rating-card:hover {
+  opacity: 1;
+  border-color: var(--accent);
+}
+
+.community-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.community-avatar {
+  background: var(--surface3);
+  color: var(--text2);
+  border-color: var(--border);
+}
+
+.community-card-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.community-score-badge {
+  font-size: 14px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--surface3);
+}
+
+.voter-top10-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold);
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.25);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.community-comment {
+  font-size: 12px;
+  color: var(--text2);
+  font-style: italic;
+  padding-left: 34px;
+  line-height: 1.4;
+}

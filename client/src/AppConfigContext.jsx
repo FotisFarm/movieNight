@@ -1,28 +1,40 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const DEFAULTS = {
-  voters: ['Μητσέας', 'Παντελής', 'Στέλιας', 'Φώτης', 'Λεόντιος'],
-  groupSize: 5,
+  voters: ['Φώτης', 'Μητσέας', 'Παντελής', 'Στέλιας', 'Λεόντιος', 'Κλαίρη'],
+  groupSize: 6,
   minVoters: 2,
+  activeGroup: { id: 1, name: 'The Originals', slug: 'the-originals' },
+  allVoters: ['Φώτης', 'Μητσέας', 'Παντελής', 'Στέλιας', 'Λεόντιος', 'Κλαίρη'],
   sandboxMode: false,
   sandboxVoter: '',
   hideHal: false,
 };
 
-const AppConfigContext = createContext(DEFAULTS);
+const AppConfigContext = createContext({
+  ...DEFAULTS,
+  refreshConfig: () => Promise.resolve(),
+});
 
 export function AppConfigProvider({ children }) {
   const [config, setConfig] = useState(DEFAULTS);
 
-  useEffect(() => {
-    fetch('/api/config')
+  const refreshConfig = useCallback(() => {
+    return fetch('/api/config')
       .then(r => r.json())
-      .then(setConfig)
-      .catch(() => {}); // keep defaults on failure
+      .then(d => {
+        setConfig(prev => ({ ...prev, ...d }));
+        return d;
+      })
+      .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    refreshConfig();
+  }, [refreshConfig]);
+
   return (
-    <AppConfigContext.Provider value={config}>
+    <AppConfigContext.Provider value={{ ...config, refreshConfig }}>
       {children}
     </AppConfigContext.Provider>
   );

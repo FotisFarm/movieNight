@@ -85,6 +85,26 @@ function VoterPills({ movieId, title, ratings, top3, voters }) {
   );
 }
 
+function OtherClubCompanionPill({ otherRatings }) {
+  if (!otherRatings) return null;
+  const entries = Object.entries(otherRatings).filter(([, r]) => r && r.score != null);
+  if (entries.length === 0) return null;
+
+  const count = entries.length;
+  const sum = entries.reduce((acc, [, r]) => acc + r.score, 0);
+  const avg = (sum / count).toFixed(1);
+
+  const tooltip = `Other Club Benchmark: ${avg} avg (${count} ${count === 1 ? 'member' : 'members'})\n` +
+    entries.map(([v, r]) => `• ${v}: ${r.score}${r.comment ? ` ("${r.comment}")` : ''}`).join('\n');
+
+  return (
+    <span className="companion-pill" title={tooltip}>
+      <span className="companion-label">🎬 II</span>
+      <span className={`companion-score ${scoreClass(Number(avg))}`}>{avg}</span>
+    </span>
+  );
+}
+
 // Fixed 2:3 box so the row height never changes as images stream in, and the
 // films with no poster (a wrong or missing imdb_id) still line up with the rest.
 function Poster({ path, title, size }) {
@@ -100,7 +120,7 @@ function Poster({ path, title, size }) {
 
 export default function MovieCard({ movie, onClick, listView = false, scoreMode = 'fair', onWatchlistToggle }) {
   const { voters, minVoters } = useAppConfig();
-  const { id, title, director, year, runtime, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, letterboxd_rating, poster_path } = movie;
+  const { id, title, director, year, runtime, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, letterboxd_rating, poster_path, otherRatings } = movie;
 
   const hasScore = voterCount >= minVoters;
   const displayScore = hasScore
@@ -142,16 +162,17 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
 
         <div className="card-ratings">
           <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} />
+          {LetterboxdBadge}
+          <OtherClubCompanionPill otherRatings={otherRatings} />
         </div>
-
-        {LetterboxdBadge}
       </article>
     );
   }
 
   const hasBadges = Boolean(mn || watchlist || rank_global || onWatchlistToggle);
+  const hasOtherRatings = Boolean(otherRatings && Object.keys(otherRatings).length > 0);
   const hasVoterRatings = Boolean(voters && voters.some(v => ratings?.[v] != null));
-  const hasRatingsOrLb = Boolean(hasVoterRatings || imdb_id || letterboxd_rating != null);
+  const hasRatingsOrLb = Boolean(hasVoterRatings || hasOtherRatings || imdb_id || letterboxd_rating != null);
 
   return (
     <article className={cardClass} onClick={onClick} {...keyProps}>
@@ -187,6 +208,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
               <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} />
             )}
             {LetterboxdBadge}
+            <OtherClubCompanionPill otherRatings={otherRatings} />
           </div>
         )}
       </div>
