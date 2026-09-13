@@ -156,8 +156,8 @@ function GroupDropdown({ activeGroup, groups = [], onSwitchGroup, isAdmin }) {
     return () => document.removeEventListener('mousedown', onDown);
   }, []);
 
-  if (!activeGroup) return null;
-  const canSwitch = isAdmin && groups && groups.length > 1;
+  if (!isAdmin || !activeGroup) return null;
+  const canSwitch = groups && groups.length > 1;
 
   return (
     <div className="group-switcher-wrap" ref={ref}>
@@ -609,7 +609,9 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
                 <HalEye size={24} active={isOpen} />
               </button>
             )}
-            <GroupDropdown activeGroup={activeGroup} groups={groups} onSwitchGroup={onSwitchGroup} isAdmin={isAdmin} />
+            {isAdmin && (
+              <GroupDropdown activeGroup={activeGroup} groups={groups} onSwitchGroup={onSwitchGroup} isAdmin={isAdmin} />
+            )}
             {isAdmin && (
               <NavLink
                 to="/admin"
