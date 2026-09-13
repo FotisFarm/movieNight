@@ -11,8 +11,12 @@ export default function Admin() {
   const [error, setError] = useState('');
   const [toast, setToast] = useState(null);
 
-  // Active view tab: 'users' | 'clubs'
+  // Active view tab: 'users' | 'clubs' | 'sessions'
   const [activeTab, setActiveTab] = useState('users');
+
+  // Sessions state
+  const [sessions, setSessions] = useState([]);
+  const [sessionStats, setSessionStats] = useState({ totalActive: 0, totalExpired: 0, uniqueUsersCount: 0 });
 
   // Search & Filters
   const [search, setSearch] = useState('');
@@ -53,12 +57,15 @@ export default function Admin() {
     try {
       setLoading(true);
       setError('');
-      const [uList, gList] = await Promise.all([
+      const [uList, gList, sData] = await Promise.all([
         api.adminGetUsers(),
         api.adminGetGroups().catch(() => []),
+        api.adminGetSessions().catch(() => ({ sessions: [], stats: {} })),
       ]);
       setUsers(Array.isArray(uList) ? uList : []);
       setGroups(Array.isArray(gList) ? gList : []);
+      setSessions(sData?.sessions || []);
+      setSessionStats(sData?.stats || { totalActive: 0, totalExpired: 0, uniqueUsersCount: 0 });
       if (Array.isArray(gList) && gList.length > 0) {
         if (!newGroupId) setNewGroupId(String(gList[0].id));
         if (!targetActiveGroupId && activeGroup?.id) {
@@ -254,6 +261,41 @@ export default function Admin() {
     }
   };
 
+  // Revoke a single active session
+  const handleRevokeSession = async (sid, isCurrentDevice, displayName) => {
+    const warning = isCurrentDevice
+      ? '⚠️ Warning: This is your CURRENT browser session. If you revoke it, you will be logged out immediately. Continue?'
+      : `Revoke active session for "${displayName}"? The member will be required to log in again on that device.`;
+    if (!window.confirm(warning)) return;
+
+    try {
+      const res = await api.adminRevokeSession(sid);
+      if (res?.ok) {
+        if (isCurrentDevice) {
+          window.location.reload();
+          return;
+        }
+        showNotification(`Session for "${displayName}" was revoked successfully!`);
+        loadData();
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to revoke session');
+    }
+  };
+
+  // Prune all expired sessions
+  const handlePruneSessions = async () => {
+    try {
+      const res = await api.adminPruneSessions();
+      if (res?.ok) {
+        showNotification(`Pruned ${res.prunedCount} expired session(s) from database!`);
+        loadData();
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to prune sessions');
+    }
+  };
+
   return (
     <div className="admin-page">
       {/* Top Notice */}
@@ -351,6 +393,12 @@ export default function Admin() {
           onClick={() => setActiveTab('clubs')}
         >
           <span>🎬</span> Movie Clubs ({groups.length})
+        </button>
+        <button
+          className={`admin-nav-tab ${activeTab === 'sessions' ? 'active' : ''}`}
+          onClick={() => setActiveTab('sessions')}
+        >
+          <span>🛡️</span> Active Sessions ({sessionStats?.totalActive ?? sessions.length})
         </button>
       </div>
 
@@ -526,6 +574,130 @@ export default function Admin() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* VIEW 3: ACTIVE SESSIONS */}
+      {activeTab === 'sessions' && (
+        <div>
+          {/* Stats Overview */}
+          <div className="admin-stats-overview">
+            <div className="admin-stat-card">
+              <div className="admin-stat-label">Active Sessions</div>
+              <div className="admin-stat-value">
+                <span style={{ color: 'var(--green)', fontSize: 16 }}>●</span>
+                {sessionStats?.totalActive ?? sessions.length}
+              </div>
+              <div className="admin-stat-sub">Live browser sessions in database</div>
+            </div>
+
+            <div className="admin-stat-card">
+              <div className="admin-stat-label">Unique Members Online</div>
+              <div className="admin-stat-value">
+                <span style={{ fontSize: 20 }}>👥</span>
+                {sessionStats?.uniqueUsersCount ?? 0}
+              </div>
+              <div className="admin-stat-sub">Distinct member accounts</div>
+            </div>
+
+            <div className="admin-stat-card">
+              <div className="admin-stat-label">Persistence Engine</div>
+              <div className="admin-stat-value" style={{ fontSize: 18, color: 'var(--gold)' }}>
+                Turso DB (30d)
+              </div>
+              <div className="admin-stat-sub">Survives Render deploys & restarts</div>
+            </div>
+
+            <div className="admin-stat-card">
+              <div className="admin-stat-label">Expired in Database</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="admin-stat-value" style={{ fontSize: 20 }}>
+                  {sessionStats?.totalExpired ?? 0}
+                </div>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={handlePruneSessions}
+                  disabled={!sessionStats?.totalExpired}
+                  title="Delete expired sessions from database"
+                >
+                  🧹 Prune
+                </button>
+              </div>
+              <div className="admin-stat-sub">Pending database cleanup</div>
+            </div>
+          </div>
+
+          {/* Sessions Table */}
+          <div className="admin-table-card">
+            {sessions.length === 0 ? (
+              <div style={{ padding: 40, textAlign: 'center', color: 'var(--text2)' }}>
+                No active sessions found.
+              </div>
+            ) : (
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Member</th>
+                    <th>Session ID / Device</th>
+                    <th>Club Scope</th>
+                    <th>Status</th>
+                    <th>Expires In</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sessions.map(s => {
+                    const daysLeft = Math.max(0, Math.round((s.expiresAt - Date.now()) / (24 * 60 * 60 * 1000)));
+                    return (
+                      <tr key={s.sid}>
+                        <td>
+                          <div className="admin-user-cell">
+                            <div className="admin-user-avatar">
+                              {s.displayName.slice(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="admin-user-name">{s.displayName}</div>
+                              <div className="admin-user-handle">@{s.username}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span className="admin-session-device">{s.maskedSid}</span>
+                            {s.isCurrentDevice && (
+                              <span className="admin-session-badge current" title="Your current browser session">
+                                ⭐ This Device
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          <span className="admin-group-tag">🎬 {s.activeGroupName}</span>
+                        </td>
+                        <td>
+                          <span className="admin-session-badge active">● Active</span>
+                        </td>
+                        <td>
+                          <span title={new Date(s.expiresAt).toLocaleString()} style={{ color: 'var(--text)' }}>
+                            in {daysLeft} {daysLeft === 1 ? 'day' : 'days'}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleRevokeSession(s.sid, s.isCurrentDevice, s.displayName)}
+                            title="Log out this device immediately"
+                          >
+                            🚫 Revoke
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       )}
 

@@ -194,4 +194,77 @@ router.get('/groups', ah(async (_req, res) => {
   res.json(groups);
 }));
 
+// GET /api/admin/sessions — list active database sessions
+router.get('/sessions', ah(async (req, res) => {
+  const now = Date.now();
+  const rows = await db.all('SELECT sid, sess, expired FROM sessions WHERE expired > ? ORDER BY expired DESC', now);
+  const expiredCountRow = await db.get('SELECT COUNT(*) AS c FROM sessions WHERE expired <= ?', now);
+
+  const currentSid = req.sessionID;
+  const sessions = [];
+  const uniqueUsers = new Set();
+
+  for (const row of rows) {
+    try {
+      const data = JSON.parse(row.sess);
+      const displayName = data.displayName || data.voter || 'Guest';
+      const username = data.username || data.voter || 'unknown';
+      if (data.userId) uniqueUsers.add(data.userId);
+
+      sessions.push({
+        sid: row.sid,
+        maskedSid: row.sid.length > 12 ? `${row.sid.slice(0, 6)}...${row.sid.slice(-4)}` : row.sid,
+        userId: data.userId || null,
+        username,
+        displayName,
+        isAdmin: Boolean(data.isAdmin),
+        activeGroupId: data.activeGroupId || 1,
+        activeGroupName: data.activeGroupName || 'The Originals',
+        expiresAt: row.expired,
+        isCurrentDevice: row.sid === currentSid,
+      });
+    } catch (_) {}
+  }
+
+  res.json({
+    sessions,
+    stats: {
+      totalActive: sessions.length,
+      totalExpired: Number(expiredCountRow?.c || 0),
+      uniqueUsersCount: uniqueUsers.size,
+    },
+  });
+}));
+
+// DELETE /api/admin/sessions/:sid — terminate a single session
+router.delete('/sessions/:sid', ah(async (req, res) => {
+  const sid = req.params.sid;
+  await db.run('DELETE FROM sessions WHERE sid = ?', sid);
+  res.json({ ok: true, message: 'Session revoked successfully' });
+}));
+
+// POST /api/admin/sessions/prune — delete all expired sessions from database
+router.post('/sessions/prune', ah(async (_req, res) => {
+  const now = Date.now();
+  const result = await db.run('DELETE FROM sessions WHERE expired <= ?', now);
+  res.json({ ok: true, prunedCount: result.changes || 0 });
+}));
+
+// POST /api/admin/users/:id/revoke-sessions — terminate all sessions for a specific user
+router.post('/users/:id/revoke-sessions', ah(async (req, res) => {
+  const userId = Number(req.params.id);
+  const rows = await db.all('SELECT sid, sess FROM sessions');
+  let revokedCount = 0;
+  for (const row of rows) {
+    try {
+      const data = JSON.parse(row.sess);
+      if (data.userId === userId) {
+        await db.run('DELETE FROM sessions WHERE sid = ?', row.sid);
+        revokedCount++;
+      }
+    } catch (_) {}
+  }
+  res.json({ ok: true, revokedCount });
+}));
+
 module.exports = router;

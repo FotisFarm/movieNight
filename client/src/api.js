@@ -77,4 +77,8 @@ export const api = {
   adminRemoveGroup: (userId, groupId) => request(`/admin/users/${userId}/groups/${groupId}`, { method: 'DELETE' }),
   adminSetUserGroups: (userId, groupIds) => request(`/admin/users/${userId}/groups`, { method: 'PUT', body: { groupIds } }),
   adminGetGroups: () => request('/admin/groups'),
+  adminGetSessions: () => request('/admin/sessions'),
+  adminRevokeSession: (sid) => request(`/admin/sessions/${encodeURIComponent(sid)}`, { method: 'DELETE' }),
+  adminPruneSessions: () => request('/admin/sessions/prune', { method: 'POST' }),
+  adminRevokeUserSessions: (userId) => request(`/admin/users/${userId}/revoke-sessions`, { method: 'POST' }),
 };
