@@ -72,9 +72,7 @@ export default function AddMovieModal({ onClose, onAdded }) {
   }
 
   async function handleAdd() {
-    if (!title.trim())    { setError('Film title is required.'); return; }
-    if (!director.trim()) { setError('Director is required.'); return; }
-    if (!year.trim())     { setError('Year is required.'); return; }
+    if (!title.trim()) { setError('Film title is required.'); return; }
 
     // Already resolved (picked a suggestion) or user chose to add anyway → create directly.
     if (resolvedImdbId || skipImdb) { doCreate(); return; }
@@ -139,12 +137,12 @@ export default function AddMovieModal({ onClose, onAdded }) {
               <input className="input" placeholder="e.g. The Seventh Seal" value={title} onChange={e => onTitleChange(e.target.value)} autoFocus />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: 6 }}>Director *</label>
-              <input className="input" placeholder="e.g. Bergman" value={director} onChange={e => setDirector(e.target.value)} />
+              <label style={{ display: 'block', marginBottom: 6 }}>Director</label>
+              <input className="input" placeholder="e.g. Bergman (optional)" value={director} onChange={e => setDirector(e.target.value)} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: 6 }}>Year *</label>
-              <input className="input" placeholder="e.g. 1957" value={year} onChange={e => setYear(e.target.value)} style={{ maxWidth: 140 }} />
+              <label style={{ display: 'block', marginBottom: 6 }}>Year</label>
+              <input className="input" placeholder="e.g. 1957 (optional)" value={year} onChange={e => setYear(e.target.value)} style={{ maxWidth: 140 }} />
             </div>
             {!suggest && !resolvedImdbId && (
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
