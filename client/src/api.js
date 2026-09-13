@@ -75,5 +75,6 @@ export const api = {
   adminToggleRole: (userId) => request(`/admin/users/${userId}/toggle-admin`, { method: 'POST' }),
   adminAssignGroup: (userId, groupId) => request(`/admin/users/${userId}/groups`, { method: 'POST', body: { groupId } }),
   adminRemoveGroup: (userId, groupId) => request(`/admin/users/${userId}/groups/${groupId}`, { method: 'DELETE' }),
+  adminSetUserGroups: (userId, groupIds) => request(`/admin/users/${userId}/groups`, { method: 'PUT', body: { groupIds } }),
   adminGetGroups: () => request('/admin/groups'),
 };

@@ -1,22 +1,34 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '../api';
+import { useAppConfig } from '../AppConfigContext';
 import './Admin.css';
 
 export default function Admin() {
+  const { activeGroup, refreshConfig } = useAppConfig() || {};
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [toast, setToast] = useState(null);
 
+  // Active view tab: 'users' | 'clubs'
+  const [activeTab, setActiveTab] = useState('users');
+
   // Search & Filters
   const [search, setSearch] = useState('');
   const [groupFilter, setGroupFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
 
+  // Switch Active Club bar state
+  const [targetActiveGroupId, setTargetActiveGroupId] = useState('');
+  const [isSwitchingActiveClub, setIsSwitchingActiveClub] = useState(false);
+
   // Modals state
   const [addUserOpen, setAddUserOpen] = useState(false);
+  const [createClubOpen, setCreateClubOpen] = useState(false);
   const [resetTargetUser, setResetTargetUser] = useState(null);
+  const [editClubsTargetUser, setEditClubsTargetUser] = useState(null);
+  const [selectedClubIds, setSelectedClubIds] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Add User Form State
@@ -27,9 +39,14 @@ export default function Admin() {
   const [newIsAdmin, setNewIsAdmin] = useState(false);
   const [formError, setFormError] = useState('');
 
+  // Create Club Form State
+  const [newClubName, setNewClubName] = useState('');
+  const [newClubSlug, setNewClubSlug] = useState('');
+  const [clubFormError, setClubFormError] = useState('');
+
   const showNotification = (msg) => {
     setToast(msg);
-    setTimeout(() => setToast(null), 4000);
+    setTimeout(() => setToast(null), 4500);
   };
 
   const loadData = async () => {
@@ -42,12 +59,15 @@ export default function Admin() {
       ]);
       setUsers(Array.isArray(uList) ? uList : []);
       setGroups(Array.isArray(gList) ? gList : []);
-      if (Array.isArray(gList) && gList.length > 0 && !newGroupId) {
-        setNewGroupId(String(gList[0].id));
+      if (Array.isArray(gList) && gList.length > 0) {
+        if (!newGroupId) setNewGroupId(String(gList[0].id));
+        if (!targetActiveGroupId && activeGroup?.id) {
+          setTargetActiveGroupId(String(activeGroup.id));
+        }
       }
     } catch (err) {
       console.error('Failed to load admin data:', err);
-      setError(err.message || 'Failed to load users');
+      setError(err.message || 'Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -56,6 +76,12 @@ export default function Admin() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (activeGroup?.id) {
+      setTargetActiveGroupId(String(activeGroup.id));
+    }
+  }, [activeGroup]);
 
   const filteredUsers = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -71,6 +97,25 @@ export default function Admin() {
     });
   }, [users, search, groupFilter, roleFilter]);
 
+  // Handle switching active club context
+  const handleSwitchActiveClub = async (groupId) => {
+    const targetId = Number(groupId || targetActiveGroupId);
+    if (!targetId) return;
+    try {
+      setIsSwitchingActiveClub(true);
+      const res = await api.switchGroup(targetId);
+      if (res?.ok) {
+        await refreshConfig?.();
+        showNotification(`Active viewing club switched to: ${res.activeGroup?.name || 'Club #' + targetId}!`);
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to switch club');
+    } finally {
+      setIsSwitchingActiveClub(false);
+    }
+  };
+
+  // Open Add User
   const handleOpenAddUser = () => {
     setNewUsername('');
     setNewDisplayName('');
@@ -111,6 +156,72 @@ export default function Admin() {
     }
   };
 
+  // Open Edit User Clubs
+  const handleOpenEditClubs = (u) => {
+    setEditClubsTargetUser(u);
+    const existingIds = (u.groups || []).map(g => g.id);
+    setSelectedClubIds(existingIds);
+  };
+
+  const handleToggleClubSelection = (clubId) => {
+    setSelectedClubIds(prev =>
+      prev.includes(clubId) ? prev.filter(id => id !== clubId) : [...prev, clubId]
+    );
+  };
+
+  const handleSaveUserClubs = async () => {
+    if (!editClubsTargetUser) return;
+    try {
+      setIsSubmitting(true);
+      const res = await api.adminSetUserGroups(editClubsTargetUser.id, selectedClubIds);
+      if (res.ok) {
+        showNotification(`Updated club memberships for ${editClubsTargetUser.displayName}!`);
+        setEditClubsTargetUser(null);
+        loadData();
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to update user clubs');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Open Create Club
+  const handleOpenCreateClub = () => {
+    setNewClubName('');
+    setNewClubSlug('');
+    setClubFormError('');
+    setCreateClubOpen(true);
+  };
+
+  const handleCreateClub = async (e) => {
+    e.preventDefault();
+    setClubFormError('');
+    if (!newClubName.trim()) {
+      setClubFormError('Club Name is required');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const res = await api.createGroup({
+        name: newClubName.trim(),
+        slug: newClubSlug.trim() || undefined,
+      });
+
+      if (res.id) {
+        setCreateClubOpen(false);
+        showNotification(`Club "${newClubName}" created successfully!`);
+        loadData();
+      }
+    } catch (err) {
+      setClubFormError(err.message || 'Failed to create club');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Password reset
   const handleConfirmReset = async () => {
     if (!resetTargetUser) return;
     try {
@@ -127,6 +238,7 @@ export default function Admin() {
     }
   };
 
+  // Role toggle
   const handleToggleAdmin = async (u) => {
     const action = u.isAdmin ? 'revoke admin from' : 'grant admin privileges to';
     if (!window.confirm(`Are you sure you want to ${action} ${u.displayName}?`)) return;
@@ -155,15 +267,53 @@ export default function Admin() {
         <span style={{ color: 'var(--text2)', fontSize: 12 }}>Branch: <code>dev</code></span>
       </div>
 
+      {/* ACTIVE CLUB CONTEXT BAR (Group Switcher right in Admin Console) */}
+      <div className="admin-active-club-bar">
+        <div className="admin-active-club-info">
+          <span className="admin-active-club-label">Active Club Context:</span>
+          <div className="admin-active-club-badge">
+            <span>🎬</span>
+            <span>{activeGroup?.name || 'The Originals'}</span>
+          </div>
+          <span style={{ fontSize: 12, color: 'var(--text2)' }}>
+            (Current film list & rankings scope)
+          </span>
+        </div>
+
+        <div className="admin-club-switcher-control">
+          <select
+            className="admin-select"
+            value={targetActiveGroupId}
+            onChange={e => setTargetActiveGroupId(e.target.value)}
+          >
+            {groups.map(g => (
+              <option key={g.id} value={String(g.id)}>
+                {g.name} {g.id === activeGroup?.id ? ' (Current)' : ''}
+              </option>
+            ))}
+          </select>
+          <button
+            className="btn btn-secondary btn-sm"
+            disabled={isSwitchingActiveClub || String(activeGroup?.id) === targetActiveGroupId}
+            onClick={() => handleSwitchActiveClub(targetActiveGroupId)}
+          >
+            {isSwitchingActiveClub ? 'Switching...' : 'Switch Active Club'}
+          </button>
+        </div>
+      </div>
+
       {/* Header Row */}
       <div className="admin-header-row">
         <div>
           <h1>⚙️ User & Club Administration</h1>
           <p className="admin-header-desc">
-            Manage members, add users, grant admin privileges, and reset forgotten passwords to default (<code>movieNight5</code>).
+            Manage member club assignments, add users, grant admin privileges, and reset passwords to default (<code>movieNight5</code>).
           </p>
         </div>
-        <div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className="btn btn-secondary" onClick={handleOpenCreateClub}>
+            ➕ Create Club
+          </button>
           <button className="btn btn-primary" onClick={handleOpenAddUser}>
             ➕ Add New Member
           </button>
@@ -188,112 +338,325 @@ export default function Admin() {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="admin-filter-bar">
-        <input
-          type="text"
-          className="admin-search-input"
-          placeholder="Search by name, handle (@username)..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-        <select
-          className="admin-select"
-          value={groupFilter}
-          onChange={e => setGroupFilter(e.target.value)}
+      {/* Admin Navigation Tabs */}
+      <div className="admin-nav-tabs">
+        <button
+          className={`admin-nav-tab ${activeTab === 'users' ? 'active' : ''}`}
+          onClick={() => setActiveTab('users')}
         >
-          <option value="all">All Movie Clubs</option>
-          {groups.map(g => (
-            <option key={g.id} value={String(g.id)}>{g.name}</option>
-          ))}
-        </select>
-        <select
-          className="admin-select"
-          value={roleFilter}
-          onChange={e => setRoleFilter(e.target.value)}
+          <span>👥</span> Members ({users.length})
+        </button>
+        <button
+          className={`admin-nav-tab ${activeTab === 'clubs' ? 'active' : ''}`}
+          onClick={() => setActiveTab('clubs')}
         >
-          <option value="all">All Roles</option>
-          <option value="admin">Admins Only</option>
-          <option value="member">Regular Members</option>
-        </select>
+          <span>🎬</span> Movie Clubs ({groups.length})
+        </button>
       </div>
 
-      {/* Table */}
-      <div className="admin-table-card">
-        {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text2)' }}>Loading users...</div>
-        ) : filteredUsers.length === 0 ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text2)' }}>No members found matching criteria.</div>
-        ) : (
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Member</th>
-                <th>Clubs</th>
-                <th>Permissions</th>
-                <th>Ratings</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.map(u => {
-                const initials = u.displayName.slice(0, 2).toUpperCase();
-                return (
-                  <tr key={u.id}>
-                    <td>
-                      <div className="admin-user-cell">
-                        <div className="admin-user-avatar">{initials}</div>
-                        <div>
-                          <div className="admin-user-name">{u.displayName}</div>
-                          <div className="admin-user-handle">@{u.username}</div>
+      {/* VIEW 1: MEMBERS */}
+      {activeTab === 'users' && (
+        <>
+          {/* Filters */}
+          <div className="admin-filter-bar">
+            <input
+              type="text"
+              className="admin-search-input"
+              placeholder="Search by name, handle (@username)..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            <select
+              className="admin-select"
+              value={groupFilter}
+              onChange={e => setGroupFilter(e.target.value)}
+            >
+              <option value="all">All Movie Clubs</option>
+              {groups.map(g => (
+                <option key={g.id} value={String(g.id)}>{g.name}</option>
+              ))}
+            </select>
+            <select
+              className="admin-select"
+              value={roleFilter}
+              onChange={e => setRoleFilter(e.target.value)}
+            >
+              <option value="all">All Roles</option>
+              <option value="admin">Admins Only</option>
+              <option value="member">Regular Members</option>
+            </select>
+          </div>
+
+          {/* Table */}
+          <div className="admin-table-card">
+            {loading ? (
+              <div style={{ padding: 40, textAlign: 'center', color: 'var(--text2)' }}>Loading users...</div>
+            ) : filteredUsers.length === 0 ? (
+              <div style={{ padding: 40, textAlign: 'center', color: 'var(--text2)' }}>No members found matching criteria.</div>
+            ) : (
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Member</th>
+                    <th>Movie Clubs</th>
+                    <th>Permissions</th>
+                    <th>Ratings</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUsers.map(u => {
+                    const initials = u.displayName.slice(0, 2).toUpperCase();
+                    return (
+                      <tr key={u.id}>
+                        <td>
+                          <div className="admin-user-cell">
+                            <div className="admin-user-avatar">{initials}</div>
+                            <div>
+                              <div className="admin-user-name">{u.displayName}</div>
+                              <div className="admin-user-handle">@{u.username}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+                            {u.groups && u.groups.length > 0 ? (
+                              u.groups.map(g => (
+                                <span key={g.id} className="admin-group-tag">
+                                  🎬 {g.name}
+                                </span>
+                              ))
+                            ) : (
+                              <span style={{ color: 'var(--text3)', fontSize: 12 }}>No Clubs</span>
+                            )}
+                            <button
+                              type="button"
+                              className="admin-edit-clubs-btn"
+                              onClick={() => handleOpenEditClubs(u)}
+                              title="Change clubs for this user"
+                            >
+                              ✏️ Change
+                            </button>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`admin-role-badge ${u.isAdmin ? 'admin' : 'member'}`}>
+                            {u.isAdmin ? '👑 Site Admin' : 'Member'}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontWeight: 600 }}>{u.ratingsCount}</span>
+                          <span style={{ color: 'var(--text2)', fontSize: 12 }}> votes</span>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <div className="admin-actions">
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => handleOpenEditClubs(u)}
+                              title="Change which clubs this member belongs to"
+                            >
+                              🎬 Clubs
+                            </button>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => setResetTargetUser(u)}
+                              title="Reset password to movieNight5"
+                            >
+                              🔑 Reset PW
+                            </button>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => handleToggleAdmin(u)}
+                              title={u.isAdmin ? 'Demote to regular member' : 'Promote to site admin'}
+                            >
+                              {u.isAdmin ? 'Revoke Admin' : 'Make Admin'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* VIEW 2: MOVIE CLUBS */}
+      {activeTab === 'clubs' && (
+        <div className="admin-clubs-grid">
+          {groups.map(g => {
+            const isActiveClub = g.id === activeGroup?.id;
+            return (
+              <div key={g.id} className={`admin-club-box ${isActiveClub ? 'is-active' : ''}`}>
+                <div>
+                  <div className="admin-club-box-header">
+                    <div>
+                      <div className="admin-club-box-title">
+                        <span>🎬</span> {g.name}
+                      </div>
+                      <div className="admin-club-box-slug">
+                        Slug: <code>{g.slug}</code> (ID: #{g.id})
+                      </div>
+                    </div>
+                    {isActiveClub && (
+                      <span className="admin-role-badge admin">Active Context</span>
+                    )}
+                  </div>
+
+                  <div className="admin-club-box-stats">
+                    <div>• <strong>{g.member_count ?? 0}</strong> Registered Members</div>
+                    <div>• Private ratings, top 10s, and watchlist</div>
+                  </div>
+                </div>
+
+                <div className="admin-club-box-footer">
+                  <span style={{ fontSize: 12, color: 'var(--text2)' }}>
+                    Created: {g.created_at ? new Date(g.created_at).toLocaleDateString() : 'Initial'}
+                  </span>
+                  <button
+                    className={`btn btn-sm ${isActiveClub ? 'btn-ghost' : 'btn-secondary'}`}
+                    disabled={isActiveClub || isSwitchingActiveClub}
+                    onClick={() => handleSwitchActiveClub(g.id)}
+                  >
+                    {isActiveClub ? '✓ Currently Active' : 'Switch Context Here'}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* MODAL: EDIT USER CLUBS */}
+      {editClubsTargetUser && (
+        <div className="admin-modal-backdrop" onClick={() => !isSubmitting && setEditClubsTargetUser(null)}>
+          <div className="admin-modal" onClick={e => e.stopPropagation()}>
+            <div className="admin-modal-header">
+              <h3>🎬 Change Clubs for {editClubsTargetUser.displayName}</h3>
+              <button className="admin-modal-close" onClick={() => setEditClubsTargetUser(null)}>✕</button>
+            </div>
+            <div className="admin-modal-body">
+              <p style={{ fontSize: 13.5, color: 'var(--text2)', marginBottom: 16 }}>
+                Select which movie club(s) <strong>{editClubsTargetUser.displayName}</strong> (@{editClubsTargetUser.username}) should belong to:
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+                {groups.map(g => {
+                  const isChecked = selectedClubIds.includes(g.id);
+                  return (
+                    <label
+                      key={g.id}
+                      className="admin-checkbox-row"
+                      style={{ border: isChecked ? '1px solid var(--accent)' : '1px solid var(--border)' }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => handleToggleClubSelection(g.id)}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13.5, color: '#fff' }}>
+                          🎬 {g.name}
+                        </div>
+                        <div style={{ fontSize: 12, color: 'var(--text2)' }}>
+                          Slug: <code>{g.slug}</code>
                         </div>
                       </div>
-                    </td>
-                    <td>
-                      {u.groups && u.groups.length > 0 ? (
-                        u.groups.map(g => (
-                          <span key={g.id} className="admin-group-tag">
-                            🎬 {g.name}
-                          </span>
-                        ))
-                      ) : (
-                        <span style={{ color: 'var(--text3)', fontSize: 12 }}>None</span>
-                      )}
-                    </td>
-                    <td>
-                      <span className={`admin-role-badge ${u.isAdmin ? 'admin' : 'member'}`}>
-                        {u.isAdmin ? '👑 Site Admin' : 'Member'}
-                      </span>
-                    </td>
-                    <td>
-                      <span style={{ fontWeight: 600 }}>{u.ratingsCount}</span>
-                      <span style={{ color: 'var(--text2)', fontSize: 12 }}> votes</span>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div className="admin-actions">
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => setResetTargetUser(u)}
-                          title="Reset password to movieNight5"
-                        >
-                          🔑 Reset PW
-                        </button>
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => handleToggleAdmin(u)}
-                          title={u.isAdmin ? 'Demote to regular member' : 'Promote to site admin'}
-                        >
-                          {u.isAdmin ? 'Revoke Admin' : 'Make Admin'}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+                * Users can belong to multiple clubs. Their ratings and top 10 lists remain scoped to their respective clubs.
+              </div>
+            </div>
+            <div className="admin-modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={isSubmitting}
+                onClick={() => setEditClubsTargetUser(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={isSubmitting}
+                onClick={handleSaveUserClubs}
+              >
+                {isSubmitting ? 'Saving...' : 'Save Club Assignments'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CREATE NEW CLUB */}
+      {createClubOpen && (
+        <div className="admin-modal-backdrop" onClick={() => !isSubmitting && setCreateClubOpen(false)}>
+          <div className="admin-modal" onClick={e => e.stopPropagation()}>
+            <div className="admin-modal-header">
+              <h3>🎬 Create New Movie Club</h3>
+              <button className="admin-modal-close" onClick={() => setCreateClubOpen(false)}>✕</button>
+            </div>
+            <form onSubmit={handleCreateClub}>
+              <div className="admin-modal-body">
+                {clubFormError && (
+                  <div style={{ padding: 10, background: 'rgba(242,97,97,0.15)', border: '1px solid var(--red)', borderRadius: 6, marginBottom: 14, fontSize: 12.5 }}>
+                    ⚠️ {clubFormError}
+                  </div>
+                )}
+
+                <div className="admin-form-group">
+                  <label>Club Name *</label>
+                  <input
+                    type="text"
+                    className="admin-form-input"
+                    placeholder="e.g. Film Club II or Cinema Society"
+                    value={newClubName}
+                    onChange={e => setNewClubName(e.target.value)}
+                    required
+                  />
+                  <div className="admin-form-desc">The human-readable title of the movie club.</div>
+                </div>
+
+                <div className="admin-form-group">
+                  <label>Slug (URL Handle, optional)</label>
+                  <input
+                    type="text"
+                    className="admin-form-input"
+                    placeholder="e.g. film-club-ii (auto-generated if empty)"
+                    value={newClubSlug}
+                    onChange={e => setNewClubSlug(e.target.value)}
+                  />
+                  <div className="admin-form-desc">Used for URLs and internal club identification.</div>
+                </div>
+              </div>
+              <div className="admin-modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={isSubmitting}
+                  onClick={() => setCreateClubOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Creating...' : 'Create Club'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* MODAL: RESET PASSWORD CONFIRMATION */}
       {resetTargetUser && (

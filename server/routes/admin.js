@@ -152,6 +152,25 @@ router.post('/users/:id/groups', ah(async (req, res) => {
   res.json({ ok: true });
 }));
 
+// PUT /api/admin/users/:id/groups — replace all group memberships for a user
+router.put('/users/:id/groups', ah(async (req, res) => {
+  const userId = Number(req.params.id);
+  const { groupIds = [] } = req.body || {};
+
+  const user = await db.get('SELECT id, display_name FROM users WHERE id = ?', userId);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  await db.run('DELETE FROM group_members WHERE user_id = ?', userId);
+  for (const gid of groupIds) {
+    await db.run(
+      'INSERT OR IGNORE INTO group_members (group_id, user_id, role) VALUES (?, ?, ?)',
+      Number(gid), userId, 'member'
+    );
+  }
+
+  res.json({ ok: true, message: `Updated clubs for ${user.display_name}` });
+}));
+
 // DELETE /api/admin/users/:id/groups/:groupId — remove user from a group
 router.delete('/users/:id/groups/:groupId', ah(async (req, res) => {
   const userId = Number(req.params.id);
