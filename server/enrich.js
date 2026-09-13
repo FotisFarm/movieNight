@@ -282,6 +282,7 @@ async function enrichMoviesBatch(movies, options = {}) {
     // For Group 1 (The Originals): Completely pure view, zero cross-club pills or ratings.
     // For other groups: Compute The Originals benchmark score and show The Originals perspective.
     let originalsScore = null;
+    let originalsBoostedScore = null;
     let originalsVoterCount = null;
     const returnedOtherRatings = {};
 
@@ -306,7 +307,6 @@ async function enrichMoviesBatch(movies, options = {}) {
 
       const nOrig = origScores.length;
       originalsVoterCount = nOrig;
-      let originalsBoostedScore = null;
       if (nOrig > 0) {
         const origSum = origScores.reduce((a, b) => a + b, 0);
         const origFair = origSum / nOrig;
