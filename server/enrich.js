@@ -100,12 +100,14 @@ async function enrichMovie(movie, options = {}) {
   // For Group 1 (The Originals): Completely pure view, zero cross-club pills or ratings.
   // For other groups: Compute The Originals benchmark score and show The Originals perspective.
   let originalsScore = null;
+  let originalsBoostedScore = null;
   let originalsVoterCount = null;
   const returnedOtherRatings = {};
 
   if (groupId !== 1) {
     const originalsGroup = await getOriginalsGroup();
     const origVoters = originalsGroup?.voters || VOTERS;
+    const origGroupSize = originalsGroup?.groupSize || origVoters.length || 5;
     const origScores = [];
     const origRatingsMap = {};
 
@@ -126,11 +128,13 @@ async function enrichMovie(movie, options = {}) {
     if (nOrig > 0) {
       const origSum = origScores.reduce((a, b) => a + b, 0);
       const origFair = origSum / nOrig;
+      const origGroup = origSum / origGroupSize;
       const origBoost = origVoters
         .map(v => origRatingsMap[v]?.rank)
         .filter(r => r != null)
         .reduce((acc, rank) => acc + rankBonus(rank), 0);
       originalsScore = Math.round(Math.min(10, origFair + origBoost) * 100) / 100;
+      originalsBoostedScore = Math.round(Math.min(10, origGroup + origBoost) * 100) / 100;
     }
 
     for (const [v, r] of Object.entries(origRatingsMap)) {
@@ -162,6 +166,7 @@ async function enrichMovie(movie, options = {}) {
     stdDev,
     otherRatings: returnedOtherRatings,
     originalsScore,
+    originalsBoostedScore,
     originalsVoterCount,
     networkScore: groupId === 1 ? null : networkScore,
     networkVoterCount: groupId === 1 ? null : networkVoterCount,
@@ -196,9 +201,11 @@ async function enrichMoviesBatch(movies, options = {}) {
   const allScoresMap = {};
 
   let originalsVoters = null;
+  let originalsGroupSize = 5;
   if (groupId !== 1) {
     const originalsGroup = await getOriginalsGroup();
     originalsVoters = originalsGroup?.voters || VOTERS;
+    originalsGroupSize = originalsGroup?.groupSize || originalsVoters.length || 5;
   }
 
   for (const r of ratingsRows) {
@@ -299,14 +306,17 @@ async function enrichMoviesBatch(movies, options = {}) {
 
       const nOrig = origScores.length;
       originalsVoterCount = nOrig;
+      let originalsBoostedScore = null;
       if (nOrig > 0) {
         const origSum = origScores.reduce((a, b) => a + b, 0);
         const origFair = origSum / nOrig;
+        const origGroup = origSum / originalsGroupSize;
         const origBoost = originalsVoters
           .map(v => origRatingsMap[v]?.rank)
           .filter(r => r != null)
           .reduce((acc, rank) => acc + rankBonus(rank), 0);
         originalsScore = Math.round(Math.min(10, origFair + origBoost) * 100) / 100;
+        originalsBoostedScore = Math.round(Math.min(10, origGroup + origBoost) * 100) / 100;
       }
 
       for (const [v, r] of Object.entries(origRatingsMap)) {
@@ -339,6 +349,7 @@ async function enrichMoviesBatch(movies, options = {}) {
       stdDev,
       otherRatings: returnedOtherRatings,
       originalsScore,
+      originalsBoostedScore,
       originalsVoterCount,
       networkScore: groupId === 1 ? null : networkScore,
       networkVoterCount: groupId === 1 ? null : networkVoterCount,

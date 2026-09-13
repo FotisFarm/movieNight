@@ -773,9 +773,20 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     {movie.originalsScore != null && (
-                      <span className="companion-pill" style={{ fontSize: 11, padding: '2px 8px' }} title={`The Originals Reference Score: ${movie.originalsScore}`}>
+                      <span
+                        className="companion-pill"
+                        style={{ fontSize: 11, padding: '2px 8px' }}
+                        title={`The Originals Fair Score: ${movie.originalsScore}${movie.originalsBoostedScore != null ? ` · Group Score: ${movie.originalsBoostedScore}` : ''}`}
+                      >
                         <span className="companion-label">Originals</span>
-                        <span className={`companion-score ${scoreClass(movie.originalsScore)}`}>{movie.originalsScore}</span>
+                        <span className={`companion-score ${scoreClass(movie.originalsScore)}`}>
+                          Fair {movie.originalsScore}
+                        </span>
+                        {movie.originalsBoostedScore != null && movie.originalsBoostedScore !== movie.originalsScore && (
+                          <span style={{ fontSize: 10.5, color: 'var(--text2)', marginLeft: 4, fontWeight: 600 }}>
+                            · Grp {movie.originalsBoostedScore}
+                          </span>
+                        )}
                       </span>
                     )}
                     <span style={{ fontSize: 11, color: 'var(--text3)' }}>

@@ -85,11 +85,16 @@ function VoterPills({ movieId, title, ratings, top3, voters }) {
   );
 }
 
-function OriginalsCompanionPill({ originalsScore, originalsVoterCount, otherRatings }) {
-  if (originalsScore == null) return null;
-  const score = Number.isInteger(originalsScore) ? originalsScore.toFixed(1) : originalsScore;
+function OriginalsCompanionPill({ originalsScore, originalsBoostedScore, scoreMode = 'fair', originalsVoterCount, otherRatings }) {
+  const currentScore = scoreMode === 'group'
+    ? (originalsBoostedScore ?? originalsScore)
+    : originalsScore;
 
-  let tooltip = `The Originals Rating: ${score}`;
+  if (currentScore == null) return null;
+  const score = Number.isInteger(currentScore) ? currentScore.toFixed(1) : currentScore;
+
+  const modeLabel = scoreMode === 'group' ? 'Group Score' : 'Fair Score';
+  let tooltip = `The Originals ${modeLabel}: ${score}`;
   if (originalsVoterCount) {
     tooltip += ` (${originalsVoterCount} ${originalsVoterCount === 1 ? 'vote' : 'votes'})`;
   }
@@ -123,7 +128,7 @@ function Poster({ path, title, size }) {
 
 export default function MovieCard({ movie, onClick, listView = false, scoreMode = 'fair', onWatchlistToggle }) {
   const { voters, minVoters } = useAppConfig();
-  const { id, title, director, year, runtime, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, letterboxd_rating, poster_path, otherRatings, originalsScore, originalsVoterCount } = movie;
+  const { id, title, director, year, runtime, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, letterboxd_rating, poster_path, otherRatings, originalsScore, originalsBoostedScore, originalsVoterCount } = movie;
 
   const hasScore = voterCount >= minVoters;
   const displayScore = hasScore
@@ -166,7 +171,13 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
         <div className="card-ratings">
           <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} />
           {LetterboxdBadge}
-          <OriginalsCompanionPill originalsScore={originalsScore} originalsVoterCount={originalsVoterCount} otherRatings={otherRatings} />
+          <OriginalsCompanionPill
+            originalsScore={originalsScore}
+            originalsBoostedScore={originalsBoostedScore}
+            scoreMode={scoreMode}
+            originalsVoterCount={originalsVoterCount}
+            otherRatings={otherRatings}
+          />
         </div>
       </article>
     );
@@ -211,7 +222,13 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
               <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} />
             )}
             {LetterboxdBadge}
-            <OriginalsCompanionPill originalsScore={originalsScore} originalsVoterCount={originalsVoterCount} otherRatings={otherRatings} />
+            <OriginalsCompanionPill
+              originalsScore={originalsScore}
+              originalsBoostedScore={originalsBoostedScore}
+              scoreMode={scoreMode}
+              originalsVoterCount={originalsVoterCount}
+              otherRatings={otherRatings}
+            />
           </div>
         )}
       </div>
