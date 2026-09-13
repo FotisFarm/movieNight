@@ -345,6 +345,24 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                 <div className={`info-val ${scoreClass(fairBoosted)}`}>{fmt(fairBoosted)}</div>
                 <div className="info-lbl">Score</div>
               </div>
+              {/* Clicking the tile opens the Letterboxd/IMDb link editor below. */}
+              <div
+                className="info-cell"
+                role="button" tabIndex={0}
+                style={{ cursor: 'pointer' }}
+                title={movie.imdb_id ? 'Click the badge to open Letterboxd · click here to edit link' : 'Add Letterboxd / IMDb link'}
+                onClick={() => setImdbOpen(o => !o)}
+                onKeyDown={e => e.key === 'Enter' && setImdbOpen(o => !o)}
+              >
+                <div className="info-val">
+                  {movie.letterboxd_rating != null || movie.imdb_id ? (
+                    <LetterboxdPill imdbId={movie.imdb_id} score={movie.letterboxd_rating} />
+                  ) : (
+                    <span className="score-none">＋</span>
+                  )}
+                </div>
+                <div className="info-lbl">Letterboxd</div>
+              </div>
               <div className="info-cell">
                 <div className={`info-val ${voterCountClass(voterCount, groupSize)}`}>{voterCount}/{groupSize}</div>
                 <div className="info-lbl">Voters</div>
@@ -367,30 +385,6 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                   <div className="info-lbl">Group Rank</div>
                 </div>
               )}
-              {movie?.networkScore != null && (
-                <div className="info-cell" title={`Network score across all clubs (${movie.networkVoterCount} voter${movie.networkVoterCount > 1 ? 's' : ''})`}>
-                  <div className={`info-val ${scoreClass(movie.networkScore)}`}>{fmt(movie.networkScore)}</div>
-                  <div className="info-lbl">Network Score</div>
-                </div>
-              )}
-              {/* Clicking the tile opens the Letterboxd/IMDb link editor below. */}
-              <div
-                className="info-cell"
-                role="button" tabIndex={0}
-                style={{ cursor: 'pointer' }}
-                title={movie.imdb_id ? 'Click the badge to open Letterboxd · click here to edit link' : 'Add Letterboxd / IMDb link'}
-                onClick={() => setImdbOpen(o => !o)}
-                onKeyDown={e => e.key === 'Enter' && setImdbOpen(o => !o)}
-              >
-                <div className="info-val">
-                  {movie.letterboxd_rating != null || movie.imdb_id ? (
-                    <LetterboxdPill imdbId={movie.imdb_id} score={movie.letterboxd_rating} />
-                  ) : (
-                    <span className="score-none">＋</span>
-                  )}
-                </div>
-                <div className="info-lbl">Letterboxd</div>
-              </div>
             </div>
 
             {/* IMDb / Letterboxd editor — opened by ✎ edit mode or by clicking the Letterboxd tile above */}
@@ -596,8 +590,13 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
           {/* ── Right Column: Voter Ratings & Picks ── */}
           <div className="movie-modal-right">
             <div className="movie-modal-right-header">
-              <div className="modal-section-label section-label" style={{ marginBottom: 0 }}>
-                {activeGroup?.name ? `${activeGroup.name} Ratings` : 'Group Ratings & Picks'}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div className="modal-section-label section-label" style={{ marginBottom: 0 }}>
+                  {activeGroup?.name ? `${activeGroup.name} Ratings` : 'Group Ratings & Picks'}
+                </div>
+                {(movie?.imdb_id || movie?.letterboxd_rating != null) && (
+                  <LetterboxdPill imdbId={movie.imdb_id} score={movie.letterboxd_rating} />
+                )}
               </div>
               <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>
                 {voterCount} of {groupSize} rated

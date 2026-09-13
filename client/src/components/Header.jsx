@@ -144,7 +144,7 @@ function ThemeDropdown({ up = false }) {
   );
 }
 
-function GroupDropdown({ activeGroup, groups = [], onSwitchGroup }) {
+function GroupDropdown({ activeGroup, groups = [], onSwitchGroup, isAdmin }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -157,7 +157,7 @@ function GroupDropdown({ activeGroup, groups = [], onSwitchGroup }) {
   }, []);
 
   if (!activeGroup) return null;
-  const canSwitch = groups && groups.length > 1;
+  const canSwitch = isAdmin && groups && groups.length > 1;
 
   return (
     <div className="group-switcher-wrap" ref={ref}>
@@ -295,6 +295,7 @@ function ChangePasswordModal({ onClose }) {
 
 export default function Header({ voter, user, activeGroup, groups = [], onSwitchGroup, onLogout }) {
   const { sandboxMode, hideHal } = useAppConfig() || {};
+  const isAdmin = Boolean(user?.isAdmin || voter === 'mnAdmin' || user?.is_admin === 1);
   const location = useLocation();
   const pathname = location.pathname;
   const { isUnlocked, isOpen, toggleHal, lockHal } = useHal() || {};
@@ -608,7 +609,7 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
                 <HalEye size={24} active={isOpen} />
               </button>
             )}
-            <GroupDropdown activeGroup={activeGroup} groups={groups} onSwitchGroup={onSwitchGroup} />
+            <GroupDropdown activeGroup={activeGroup} groups={groups} onSwitchGroup={onSwitchGroup} isAdmin={isAdmin} />
             <ThemeDropdown />
             {voter && (
               <button

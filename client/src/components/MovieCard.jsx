@@ -141,7 +141,7 @@ function Poster({ path, title, size }) {
 
 export default function MovieCard({ movie, onClick, listView = false, scoreMode = 'fair', onWatchlistToggle }) {
   const { voters, minVoters } = useAppConfig();
-  const { id, title, director, year, runtime, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, letterboxd_rating, poster_path, otherRatings, networkScore, networkVoterCount } = movie;
+  const { id, title, director, year, runtime, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, letterboxd_rating, poster_path, otherRatings } = movie;
 
   const hasScore = voterCount >= minVoters;
   const displayScore = hasScore
@@ -160,17 +160,11 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
       <article className={cardClass} onClick={onClick} {...keyProps}>
         <Poster path={poster_path} title={title} size="w92" />
 
-        {displayScore !== null ? (
+        {displayScore !== null && (
           <div className="card-score">
             <div className={`score-big ${scoreClass(displayScore)}`}>{fmt(displayScore)}</div>
           </div>
-        ) : networkScore != null ? (
-          <div className="card-score">
-            <div className="score-big score-network" title={`Network score (${networkVoterCount} ratings across clubs)`}>
-              <span className="network-score-icon">🌐</span>{fmt(networkScore)}
-            </div>
-          </div>
-        ) : null}
+        )}
 
         <div className="card-info">
           <h3 className="card-title">{title}</h3>
@@ -189,10 +183,9 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
 
         <div className="card-ratings">
           <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} />
+          {LetterboxdBadge}
           <OtherRatingsPills otherRatings={otherRatings} activeCount={voterCount} />
         </div>
-
-        {LetterboxdBadge}
       </article>
     );
   }
@@ -209,15 +202,11 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
       <div className="card-body">
         <div className="card-header-row">
           <h3 className="card-title" title={title}>{title}</h3>
-          {displayScore !== null ? (
+          {displayScore !== null && (
             <div className={`score-big ${scoreClass(displayScore)} card-grid-score`}>
               {fmt(displayScore)}
             </div>
-          ) : networkScore != null ? (
-            <div className="score-big score-network card-grid-score" title={`Network score (${networkVoterCount} ratings across clubs)`}>
-              <span className="network-score-icon">🌐</span>{fmt(networkScore)}
-            </div>
-          ) : null}
+          )}
         </div>
 
         <p className="card-meta">
@@ -239,8 +228,8 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
             {hasVoterRatings && (
               <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} />
             )}
-            <OtherRatingsPills otherRatings={otherRatings} activeCount={voterCount} />
             {LetterboxdBadge}
+            <OtherRatingsPills otherRatings={otherRatings} activeCount={voterCount} />
           </div>
         )}
       </div>
