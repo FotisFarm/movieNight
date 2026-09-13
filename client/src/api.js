@@ -69,4 +69,11 @@ export const api = {
   addGroupMember: (groupId, data) => request(`/auth/groups/${groupId}/members`, { method: 'POST', body: data }),
   registerUser: (data) => request('/auth/register', { method: 'POST', body: data }),
   getAllVoters: () => request('/auth/voters'),
+  adminGetUsers: () => request('/admin/users'),
+  adminCreateUser: (data) => request('/admin/users', { method: 'POST', body: data }),
+  adminResetPassword: (userId) => request(`/admin/users/${userId}/reset-password`, { method: 'POST' }),
+  adminToggleRole: (userId) => request(`/admin/users/${userId}/toggle-admin`, { method: 'POST' }),
+  adminAssignGroup: (userId, groupId) => request(`/admin/users/${userId}/groups`, { method: 'POST', body: { groupId } }),
+  adminRemoveGroup: (userId, groupId) => request(`/admin/users/${userId}/groups/${groupId}`, { method: 'DELETE' }),
+  adminGetGroups: () => request('/admin/groups'),
 };

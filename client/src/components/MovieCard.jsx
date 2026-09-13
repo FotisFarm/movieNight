@@ -85,44 +85,23 @@ function VoterPills({ movieId, title, ratings, top3, voters }) {
   );
 }
 
-function OtherRatingsPills({ otherRatings, activeCount = 0 }) {
+function OtherClubCompanionPill({ otherRatings }) {
   if (!otherRatings) return null;
   const entries = Object.entries(otherRatings).filter(([, r]) => r && r.score != null);
   if (entries.length === 0) return null;
 
-  const maxToShow = activeCount > 2 ? 1 : 2;
-  const showList = entries.slice(0, maxToShow);
-  const overflow = entries.slice(maxToShow);
+  const count = entries.length;
+  const sum = entries.reduce((acc, [, r]) => acc + r.score, 0);
+  const avg = (sum / count).toFixed(1);
+
+  const tooltip = `Other Club Benchmark: ${avg} avg (${count} ${count === 1 ? 'member' : 'members'})\n` +
+    entries.map(([v, r]) => `• ${v}: ${r.score}${r.comment ? ` ("${r.comment}")` : ''}`).join('\n');
 
   return (
-    <>
-      {showList.map(([v, r]) => {
-        const score = r.score;
-        const titleText = `${v} (Other Club): ${score}${r.rank ? ` · Top 10 #${r.rank}` : ''}${r.comment ? ` — "${r.comment}"` : ''}`;
-        return (
-          <span
-            key={v}
-            className="voter-pill other-group-pill"
-            title={titleText}
-          >
-            <span className="other-pill-icon">🌐</span>
-            <span className="voter-abbr">{v.slice(0, 3)}</span>
-            <span className={`voter-score ${scoreClass(score)}`}>
-              {Number.isInteger(score) ? score : score.toFixed(1)}
-            </span>
-          </span>
-        );
-      })}
-      {overflow.length > 0 && (
-        <span
-          className="voter-pill other-group-more-pill"
-          title={overflow.map(([v, r]) => `${v}: ${r.score}${r.comment ? ` ("${r.comment}")` : ''}`).join('\n')}
-        >
-          <span className="other-pill-icon">🌐</span>
-          <span className="other-pill-more-text">+{overflow.length}</span>
-        </span>
-      )}
-    </>
+    <span className="companion-pill" title={tooltip}>
+      <span className="companion-label">🎬 II</span>
+      <span className={`companion-score ${scoreClass(Number(avg))}`}>{avg}</span>
+    </span>
   );
 }
 
@@ -184,7 +163,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
         <div className="card-ratings">
           <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} />
           {LetterboxdBadge}
-          <OtherRatingsPills otherRatings={otherRatings} activeCount={voterCount} />
+          <OtherClubCompanionPill otherRatings={otherRatings} />
         </div>
       </article>
     );
@@ -229,7 +208,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
               <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} />
             )}
             {LetterboxdBadge}
-            <OtherRatingsPills otherRatings={otherRatings} activeCount={voterCount} />
+            <OtherClubCompanionPill otherRatings={otherRatings} />
           </div>
         )}
       </div>

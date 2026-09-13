@@ -731,7 +731,7 @@ async function initMultiGroup() {
     const userCountRow = await get('SELECT COUNT(*) AS c FROM users');
     if (!userCountRow || Number(userCountRow.c) === 0) {
       console.log('[db] Initializing multi-group schema and migrating existing voters...');
-      const defaultPass = process.env.MN_PASSWORD || 'changeme';
+      const defaultPass = process.env.MN_PASSWORD || 'movieNight5';
       const defaultHash = hashPassword(defaultPass);
 
       const initialUsers = [

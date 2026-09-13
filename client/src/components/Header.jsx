@@ -610,6 +610,17 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
               </button>
             )}
             <GroupDropdown activeGroup={activeGroup} groups={groups} onSwitchGroup={onSwitchGroup} isAdmin={isAdmin} />
+            {isAdmin && (
+              <NavLink
+                to="/admin"
+                className={({ isActive }) => `btn btn-sm ${isActive ? 'btn-gold' : 'btn-ghost'}`}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', fontSize: 12 }}
+                title="Club & User Admin Console"
+              >
+                <span>⚙️</span>
+                <span>Admin</span>
+              </NavLink>
+            )}
             <ThemeDropdown />
             {voter && (
               <button
@@ -831,6 +842,21 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
                 </div>
                 {pathname.startsWith('/compare') && <span className="hub-card-check">✓</span>}
               </NavLink>
+
+              {isAdmin && (
+                <NavLink
+                  to="/admin"
+                  className={({ isActive }) => isActive ? 'hub-card active' : 'hub-card'}
+                  onClick={() => setMobileStatsOpen(false)}
+                >
+                  <div className="hub-card-icon">⚙️</div>
+                  <div className="hub-card-text">
+                    <div className="hub-card-title">Admin Console</div>
+                    <div className="hub-card-desc">User Management & Password Resets</div>
+                  </div>
+                  {pathname === '/admin' && <span className="hub-card-check">✓</span>}
+                </NavLink>
+              )}
             </div>
           </div>
         </div>

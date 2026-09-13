@@ -70,6 +70,13 @@ function requireAuth(req, res, next) {
   res.status(401).json({ error: 'Unauthorized' });
 }
 
+function requireAdmin(req, res, next) {
+  const isAdmin = Boolean(req.session?.isAdmin || req.session?.voter === 'mnAdmin');
+  if (isAdmin) return next();
+  res.status(403).json({ error: 'Forbidden: Administrator privileges required' });
+}
+
+app.use('/api/admin', requireAuth, requireAdmin, require('./routes/admin'));
 app.use('/api/movies', requireAuth, require('./routes/movies'));
 app.use('/api/rankings', requireAuth, require('./routes/rankings'));
 app.use('/api/recommendations', requireAuth, require('./routes/recommendations'));

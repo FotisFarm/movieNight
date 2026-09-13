@@ -13,6 +13,7 @@ import Lists from './pages/Lists';
 import Session from './pages/Session';
 import Chat from './pages/Chat';
 import Login from './pages/Login';
+import Admin from './pages/Admin';
 import { api } from './api';
 import { ThemeProvider } from './ThemeContext';
 import { AppConfigProvider, useAppConfig } from './AppConfigContext';
@@ -135,6 +136,10 @@ function AppInner() {
               still resolves server-side and redirects to the canonical URL. */}
           <Route path="/lists/:key" element={<Lists voter={voter} />} />
           <Route path="/compare" element={<Compare />} />
+          <Route
+            path="/admin"
+            element={user?.isAdmin || voter === 'mnAdmin' ? <Admin /> : <Navigate to="/films" replace />}
+          />
           <Route
             path="/chat"
             element={hideHal ? <Navigate to="/films" replace /> : <Chat voter={voter} />}

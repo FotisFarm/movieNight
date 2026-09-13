@@ -20,7 +20,7 @@ router.post('/login', ah(async (req, res) => {
     identifier, identifier
   );
 
-  const defaultPassword = process.env.MN_PASSWORD || 'changeme';
+  const defaultPassword = process.env.MN_PASSWORD || 'movieNight5';
 
   // Fallback for initial login before seeding or special fallback
   if (!user && (identifier === 'mnAdmin' || VOTERS.includes(identifier))) {
@@ -192,7 +192,7 @@ router.post('/change-password', ah(async (req, res) => {
   }
 
   const isValid = verifyPassword(currentPassword, user.password_hash)
-    || currentPassword === (process.env.MN_PASSWORD || 'changeme');
+    || currentPassword === (process.env.MN_PASSWORD || 'movieNight5');
 
   if (!isValid) {
     return res.status(403).json({ error: 'Incorrect current password' });
