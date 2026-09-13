@@ -4,7 +4,7 @@ import { useAppConfig } from '../AppConfigContext';
 import './Admin.css';
 
 export default function Admin() {
-  const { activeGroup, refreshConfig } = useAppConfig() || {};
+  const { activeGroup, refreshConfig, sandboxMode } = useAppConfig() || {};
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -343,16 +343,17 @@ export default function Admin() {
 
   return (
     <div className="admin-page">
-      {/* Top Notice */}
-      <div className="admin-env-badge">
-        <div className="admin-env-badge-left">
-          <span className="admin-env-tag">Isolated DB</span>
-          <span className="admin-env-desc">
-            Connected to <strong>movies-dev</strong> on Render.
-          </span>
+      {/* Top Notice (Only displayed in Sandbox mode) */}
+      {sandboxMode && (
+        <div className="admin-env-badge">
+          <div className="admin-env-badge-left">
+            <span className="admin-env-tag">Sandbox Mode</span>
+            <span className="admin-env-desc">
+              Connected to isolated sandbox environment (<code>port 3002</code>). Production database is untouched.
+            </span>
+          </div>
         </div>
-        <span className="admin-env-branch">Branch: <code>dev</code></span>
-      </div>
+      )}
 
       {/* ACTIVE CLUB CONTEXT BAR (Instant switcher) */}
       <div className="admin-active-club-bar">
