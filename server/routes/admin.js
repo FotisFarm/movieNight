@@ -194,6 +194,55 @@ router.get('/groups', ah(async (_req, res) => {
   res.json(groups);
 }));
 
+// PATCH /api/admin/groups/:id — rename / update a movie club
+router.patch('/groups/:id', ah(async (req, res) => {
+  const groupId = Number(req.params.id);
+  if (!groupId || isNaN(groupId)) {
+    return res.status(400).json({ error: 'Valid group ID is required' });
+  }
+
+  const { name, slug: customSlug } = req.body || {};
+  if (!name || typeof name !== 'string' || !name.trim()) {
+    return res.status(400).json({ error: 'Group name is required' });
+  }
+
+  const existing = await db.get('SELECT * FROM groups WHERE id = ?', groupId);
+  if (!existing) {
+    return res.status(404).json({ error: 'Group not found' });
+  }
+
+  const trimmedName = name.trim();
+  let slug = existing.slug;
+
+  if (customSlug && typeof customSlug === 'string' && customSlug.trim()) {
+    slug = customSlug.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    if (!slug) slug = existing.slug;
+    const conflict = await db.get('SELECT id FROM groups WHERE LOWER(slug) = LOWER(?) AND id != ?', slug, groupId);
+    if (conflict) {
+      return res.status(409).json({ error: 'A group with this slug already exists' });
+    }
+  }
+
+  await db.run('UPDATE groups SET name = ?, slug = ? WHERE id = ?', trimmedName, slug, groupId);
+
+  // If current session's active group was renamed, update it in session
+  if (req.session && req.session.activeGroupId === groupId) {
+    req.session.activeGroupName = trimmedName;
+    req.session.activeGroupSlug = slug;
+  }
+
+  const updated = await db.get(`
+    SELECT g.id, g.name, g.slug, g.created_at,
+           COUNT(DISTINCT gm.user_id) AS member_count
+    FROM groups g
+    LEFT JOIN group_members gm ON gm.group_id = g.id
+    WHERE g.id = ?
+    GROUP BY g.id
+  `, groupId);
+
+  res.json({ ok: true, group: updated });
+}));
+
 // GET /api/admin/sessions — list active database sessions
 router.get('/sessions', ah(async (req, res) => {
   const now = Date.now();

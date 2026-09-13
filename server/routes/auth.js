@@ -258,6 +258,49 @@ router.post('/groups', ah(async (req, res) => {
   res.status(201).json(createdGroup);
 }));
 
+// PATCH /api/auth/groups/:id — rename group (group admin or site admin)
+router.patch('/groups/:id', ah(async (req, res) => {
+  if (!req.session?.userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const groupId = Number(req.params.id);
+  const group = await getGroupWithMembers(groupId);
+  if (!group) return res.status(404).json({ error: 'Group not found' });
+
+  const isGroupAdmin = group.members.some(m => m.id === req.session.userId && m.role === 'admin');
+  if (!isGroupAdmin && !req.session.isAdmin) {
+    return res.status(403).json({ error: 'Only group admins or site admins can rename groups' });
+  }
+
+  const { name, slug: customSlug } = req.body || {};
+  if (!name?.trim()) {
+    return res.status(400).json({ error: 'Group name is required' });
+  }
+
+  const trimmedName = name.trim();
+  let slug = group.slug;
+
+  if (customSlug?.trim()) {
+    slug = customSlug.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    if (!slug) slug = group.slug;
+    const conflict = await db.get('SELECT id FROM groups WHERE LOWER(slug) = LOWER(?) AND id != ?', slug, groupId);
+    if (conflict) {
+      return res.status(409).json({ error: 'A group with this slug already exists' });
+    }
+  }
+
+  await db.run('UPDATE groups SET name = ?, slug = ? WHERE id = ?', trimmedName, slug, groupId);
+
+  if (req.session.activeGroupId === groupId) {
+    req.session.activeGroupName = trimmedName;
+    req.session.activeGroupSlug = slug;
+  }
+
+  const updatedGroup = await getGroupWithMembers(groupId);
+  res.json({ ok: true, group: updatedGroup });
+}));
+
 // POST /api/auth/groups/:id/members — add a member to group
 router.post('/groups/:id/members', ah(async (req, res) => {
   if (!req.session?.userId) {

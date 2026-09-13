@@ -48,6 +48,12 @@ export default function Admin() {
   const [newClubSlug, setNewClubSlug] = useState('');
   const [clubFormError, setClubFormError] = useState('');
 
+  // Rename Club Form State
+  const [renameClubTarget, setRenameClubTarget] = useState(null);
+  const [renameClubName, setRenameClubName] = useState('');
+  const [renameClubSlug, setRenameClubSlug] = useState('');
+  const [renameFormError, setRenameFormError] = useState('');
+
   const showNotification = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 4500);
@@ -223,6 +229,45 @@ export default function Admin() {
       }
     } catch (err) {
       setClubFormError(err.message || 'Failed to create club');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Open & Save Rename Club
+  const handleOpenRenameClub = (g) => {
+    setRenameClubTarget(g);
+    setRenameClubName(g.name);
+    setRenameClubSlug(g.slug || '');
+    setRenameFormError('');
+  };
+
+  const handleSaveRenameClub = async (e) => {
+    e.preventDefault();
+    if (!renameClubTarget) return;
+    setRenameFormError('');
+    if (!renameClubName.trim()) {
+      setRenameFormError('Club Name is required');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const res = await api.adminUpdateGroup(renameClubTarget.id, {
+        name: renameClubName.trim(),
+        slug: renameClubSlug.trim() || undefined,
+      });
+
+      if (res.ok || res.group) {
+        showNotification(`Club renamed to "${renameClubName.trim()}" successfully!`);
+        setRenameClubTarget(null);
+        await loadData();
+        if (activeGroup?.id === renameClubTarget.id) {
+          refreshConfig?.();
+        }
+      }
+    } catch (err) {
+      setRenameFormError(err.message || 'Failed to rename club');
     } finally {
       setIsSubmitting(false);
     }
@@ -642,13 +687,23 @@ export default function Admin() {
                   <span style={{ fontSize: 12, color: 'var(--text2)' }}>
                     Created: {g.created_at ? new Date(g.created_at).toLocaleDateString() : 'Initial'}
                   </span>
-                  <button
-                    className={`btn btn-sm ${isActiveClub ? 'btn-ghost' : 'btn-secondary'}`}
-                    disabled={isActiveClub || isSwitchingActiveClub}
-                    onClick={() => handleSwitchActiveClub(g.id)}
-                  >
-                    {isActiveClub ? '✓ Currently Active' : 'Switch Context Here'}
-                  </button>
+                  <div className="admin-club-box-actions">
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => handleOpenRenameClub(g)}
+                      title={`Rename "${g.name}"`}
+                    >
+                      ✏️ Rename
+                    </button>
+                    <button
+                      className={`btn btn-sm ${isActiveClub ? 'btn-ghost' : 'btn-secondary'}`}
+                      disabled={isActiveClub || isSwitchingActiveClub}
+                      onClick={() => handleSwitchActiveClub(g.id)}
+                    >
+                      {isActiveClub ? '✓ Currently Active' : 'Switch Context Here'}
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -952,6 +1007,70 @@ export default function Admin() {
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Creating...' : 'Create Club'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: RENAME MOVIE CLUB */}
+      {renameClubTarget && (
+        <div className="admin-modal-backdrop" onClick={() => !isSubmitting && setRenameClubTarget(null)}>
+          <div className="admin-modal" onClick={e => e.stopPropagation()}>
+            <div className="admin-modal-header">
+              <h3>✏️ Rename Movie Club</h3>
+              <button className="admin-modal-close" onClick={() => setRenameClubTarget(null)}>✕</button>
+            </div>
+            <form onSubmit={handleSaveRenameClub}>
+              <div className="admin-modal-body">
+                {renameFormError && (
+                  <div style={{ padding: 10, background: 'rgba(242,97,97,0.15)', border: '1px solid var(--red)', borderRadius: 6, marginBottom: 14, fontSize: 12.5 }}>
+                    ⚠️ {renameFormError}
+                  </div>
+                )}
+
+                <div className="admin-form-group">
+                  <label>Club Name *</label>
+                  <input
+                    type="text"
+                    className="admin-form-input"
+                    placeholder="e.g. The Originals, Movie Nights II"
+                    value={renameClubName}
+                    onChange={e => setRenameClubName(e.target.value)}
+                    required
+                    autoFocus
+                  />
+                  <div className="admin-form-desc">The human-readable display title of the club.</div>
+                </div>
+
+                <div className="admin-form-group">
+                  <label>Slug (URL Handle)</label>
+                  <input
+                    type="text"
+                    className="admin-form-input"
+                    placeholder="e.g. movie-nights-ii"
+                    value={renameClubSlug}
+                    onChange={e => setRenameClubSlug(e.target.value)}
+                  />
+                  <div className="admin-form-desc">Unique identifier used for club URLs and routing.</div>
+                </div>
+              </div>
+              <div className="admin-modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={isSubmitting}
+                  onClick={() => setRenameClubTarget(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>

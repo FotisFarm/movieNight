@@ -36,14 +36,12 @@ export default function LetterboxdPill({ imdbId, score }) {
         onClick={e => e.stopPropagation()}
         title="View on Letterboxd · hover for rating histogram"
       >
-        <span className="letterboxd-pill-badge">
-          <span className="letterboxd-dots">
-            <span className="lb-dot lb-dot-orange" />
-            <span className="lb-dot lb-dot-green" />
-            <span className="lb-dot lb-dot-blue" />
-          </span>
-          <span className="lb-text">LB</span>
+        <span className="letterboxd-dots">
+          <span className="lb-dot lb-dot-orange" />
+          <span className="lb-dot lb-dot-green" />
+          <span className="lb-dot lb-dot-blue" />
         </span>
+        <span className="lb-text">LB</span>
         {formattedScore && (
           <span className="letterboxd-rating-val">{formattedScore}</span>
         )}

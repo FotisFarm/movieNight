@@ -281,7 +281,8 @@
   letter-spacing: .1em;
 }
 
-[data-theme="cold-press"] .movie-card.list-view .voter-pill {
+[data-theme="cold-press"] .movie-card.list-view .voter-pill,
+[data-theme="cold-press"] .badge-letterboxd-pill {
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 4px;
