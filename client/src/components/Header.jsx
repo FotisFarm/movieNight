@@ -199,7 +199,7 @@ function GroupDropdown({ activeGroup, groups = [], onSwitchGroup, isAdmin }) {
   );
 }
 
-function MobileUserMenu({ voter, user, isUnlocked, lockHal, onLogout, onOpenPassword }) {
+function MobileUserMenu({ voter, user, onLogout, onOpenPassword }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const { theme, setTheme } = useTheme();
@@ -254,16 +254,6 @@ function MobileUserMenu({ voter, user, isUnlocked, lockHal, onLogout, onOpenPass
           </div>
 
           <div className="mobile-user-dropdown-actions">
-            {isUnlocked && lockHal && (
-              <button
-                type="button"
-                className="mobile-user-menu-item"
-                onClick={() => { setOpen(false); lockHal(); }}
-              >
-                <span>🔒</span>
-                <span>Hide HAL Eye</span>
-              </button>
-            )}
             <button
               type="button"
               className="mobile-user-menu-item"
@@ -744,8 +734,6 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
               <MobileUserMenu
                 voter={voter}
                 user={user}
-                isUnlocked={!hideHal && isUnlocked}
-                lockHal={lockHal}
                 onLogout={onLogout}
                 onOpenPassword={() => setShowPasswordModal(true)}
               />

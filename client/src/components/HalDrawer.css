@@ -728,7 +728,8 @@
 
 @media (max-width: 640px) {
   .hal-drawer-panel,
-  .hal-drawer-panel.hal-drawer-wide {
-    width: 100vw;
+  .hal-drawer-panel.hal-drawer-wide,
+  .hal-drawer-backdrop {
+    display: none !important;
   }
 }
