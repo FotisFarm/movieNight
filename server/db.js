@@ -245,7 +245,17 @@ async function init() {
       user_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       UNIQUE(group_id, movie_id, user_id)
     );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      sid     TEXT PRIMARY KEY,
+      sess    TEXT NOT NULL,
+      expired INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_sessions_expired ON sessions(expired);
   `);
+
+  // Prune expired sessions on boot
+  try { await client.execute({ sql: 'DELETE FROM sessions WHERE expired <= ?', args: [Date.now()] }); } catch (_) {}
 
   // Migrations
   try { await client.execute("ALTER TABLE ratings ADD COLUMN comment TEXT NOT NULL DEFAULT ''"); } catch (_) {}

@@ -1,14 +1,11 @@
 import { useState } from 'react';
 import { api } from '../api';
-import { useAppConfig } from '../AppConfigContext';
 
 export default function Login({ onLogin }) {
-  const { voters, allVoters } = useAppConfig();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword]     = useState('');
   const [error, setError]           = useState('');
   const [loading, setLoading]       = useState(false);
-  const [showQuickPicks, setShowQuickPicks] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -32,8 +29,6 @@ export default function Login({ onLogin }) {
       setLoading(false);
     }
   }
-
-  const quickVoters = (allVoters && allVoters.length > 0) ? allVoters : (voters || []);
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
@@ -81,7 +76,7 @@ export default function Login({ onLogin }) {
             <input
               className="input"
               type="text"
-              placeholder="e.g. Φώτης, mnAdmin..."
+              placeholder="Username or Name"
               value={identifier}
               onChange={e => { setIdentifier(e.target.value); setError(''); }}
               autoFocus
@@ -115,52 +110,6 @@ export default function Login({ onLogin }) {
             {loading ? 'Signing in…' : 'Sign In'}
           </button>
         </form>
-
-        {/* Quick select assistant for existing voters */}
-        <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <span style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-              Quick Select
-            </span>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              style={{ fontSize: 11, padding: '2px 6px', height: 'auto', color: 'var(--text2)' }}
-              onClick={() => setShowQuickPicks(s => !s)}
-            >
-              {showQuickPicks ? 'Hide ▲' : 'Show members ▼'}
-            </button>
-          </div>
-
-          {showQuickPicks && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {quickVoters.map(v => (
-                <button
-                  key={v}
-                  type="button"
-                  className="btn btn-ghost btn-sm"
-                  style={{
-                    fontSize: 12,
-                    padding: '4px 8px',
-                    borderColor: identifier === v ? 'var(--gold)' : undefined,
-                    color: identifier === v ? 'var(--gold)' : undefined,
-                  }}
-                  onClick={() => { setIdentifier(v); setError(''); }}
-                >
-                  {v}
-                </button>
-              ))}
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                style={{ fontSize: 12, padding: '4px 8px', color: 'var(--text3)' }}
-                onClick={() => { setIdentifier('mnAdmin'); setError(''); }}
-              >
-                Admin
-              </button>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
