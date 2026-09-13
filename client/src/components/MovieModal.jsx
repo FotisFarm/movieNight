@@ -765,15 +765,23 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
               })()}
             </div>
 
-            {movie?.otherRatings && Object.keys(movie.otherRatings).length > 0 && (
+            {activeGroup?.id !== 1 && movie?.otherRatings && Object.keys(movie.otherRatings).length > 0 && (
               <div className="community-ratings-section">
                 <div className="community-ratings-header">
-                  <div className="modal-section-label section-label" style={{ marginBottom: 0 }}>
-                    <span className="community-globe-icon">🌐</span> Community Ratings ({Object.keys(movie.otherRatings).length})
+                  <div className="modal-section-label section-label" style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span>🎬</span> The Originals Perspective ({Object.keys(movie.otherRatings).length})
                   </div>
-                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>
-                    From other movie clubs
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {movie.originalsScore != null && (
+                      <span className="companion-pill" style={{ fontSize: 11, padding: '2px 8px' }} title={`The Originals Reference Score: ${movie.originalsScore}`}>
+                        <span className="companion-label">Originals</span>
+                        <span className={`companion-score ${scoreClass(movie.originalsScore)}`}>{movie.originalsScore}</span>
+                      </span>
+                    )}
+                    <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                      Reference ratings & reviews
+                    </span>
+                  </div>
                 </div>
 
                 <div className="community-ratings-list">

@@ -7,6 +7,23 @@ const db = require('./db');
 const { rankBonus } = require('./scoring');
 const { VOTERS, GROUP_SIZE } = require('./config');
 
+let cachedGroup1 = null;
+let cachedGroup1Time = 0;
+async function getOriginalsGroup() {
+  const now = Date.now();
+  if (cachedGroup1 && (now - cachedGroup1Time) < 30000) {
+    return cachedGroup1;
+  }
+  try {
+    const { getGroupWithMembers } = require('./groupContext');
+    cachedGroup1 = await getGroupWithMembers(1);
+    cachedGroup1Time = now;
+  } catch {
+    cachedGroup1 = null;
+  }
+  return cachedGroup1;
+}
+
 function resolveGroupParams(options = {}) {
   const group = options.group;
   const groupId = group?.id || (typeof options.groupId === 'number' ? options.groupId : 1);
@@ -43,7 +60,6 @@ async function enrichMovie(movie, options = {}) {
 
   const ratingsMap = {};
   const commentsMap = {};
-  const otherRatings = {};
   const allScores = [];
 
   for (const r of ratings) {
@@ -51,13 +67,6 @@ async function enrichMovie(movie, options = {}) {
     if (voters.includes(r.voter)) {
       ratingsMap[r.voter] = r.score;
       if (r.comment) commentsMap[r.voter] = r.comment;
-    } else {
-      const t = top3.find(x => x.voter === r.voter);
-      otherRatings[r.voter] = {
-        score: r.score,
-        comment: r.comment || '',
-        rank: t ? t.rank : null,
-      };
     }
   }
 
@@ -87,6 +96,50 @@ async function enrichMovie(movie, options = {}) {
     }
   }
 
+  // Asymmetric Benchmark Architecture:
+  // For Group 1 (The Originals): Completely pure view, zero cross-club pills or ratings.
+  // For other groups: Compute The Originals benchmark score and show The Originals perspective.
+  let originalsScore = null;
+  let originalsVoterCount = null;
+  const returnedOtherRatings = {};
+
+  if (groupId !== 1) {
+    const originalsGroup = await getOriginalsGroup();
+    const origVoters = originalsGroup?.voters || VOTERS;
+    const origScores = [];
+    const origRatingsMap = {};
+
+    for (const r of ratings) {
+      if (origVoters.includes(r.voter)) {
+        if (r.score != null) origScores.push(r.score);
+        const t = top3.find(x => x.voter === r.voter);
+        origRatingsMap[r.voter] = {
+          score: r.score,
+          comment: r.comment || '',
+          rank: t ? t.rank : null,
+        };
+      }
+    }
+
+    const nOrig = origScores.length;
+    originalsVoterCount = nOrig;
+    if (nOrig > 0) {
+      const origSum = origScores.reduce((a, b) => a + b, 0);
+      const origFair = origSum / nOrig;
+      const origBoost = origVoters
+        .map(v => origRatingsMap[v]?.rank)
+        .filter(r => r != null)
+        .reduce((acc, rank) => acc + rankBonus(rank), 0);
+      originalsScore = Math.round(Math.min(10, origFair + origBoost) * 100) / 100;
+    }
+
+    for (const [v, r] of Object.entries(origRatingsMap)) {
+      if (!voters.includes(v)) {
+        returnedOtherRatings[v] = r;
+      }
+    }
+  }
+
   const networkVoterCount = allScores.length;
   const networkScore = networkVoterCount > 0
     ? Math.round((allScores.reduce((a, b) => a + b, 0) / networkVoterCount) * 100) / 100
@@ -107,9 +160,11 @@ async function enrichMovie(movie, options = {}) {
     boostedScore,
     fairBoosted,
     stdDev,
-    otherRatings,
-    networkScore,
-    networkVoterCount,
+    otherRatings: returnedOtherRatings,
+    originalsScore,
+    originalsVoterCount,
+    networkScore: groupId === 1 ? null : networkScore,
+    networkVoterCount: groupId === 1 ? null : networkVoterCount,
     groupId,
   };
 }
@@ -136,33 +191,37 @@ async function enrichMoviesBatch(movies, options = {}) {
   // Build lookup maps
   const ratingsMap = {};
   const commentsMap = {};
-  const otherRatingsMap = {};
+  const allMovieRatingsMap = {};
+  const allMovieTop3Map = {};
   const allScoresMap = {};
+
+  let originalsVoters = null;
+  if (groupId !== 1) {
+    const originalsGroup = await getOriginalsGroup();
+    originalsVoters = originalsGroup?.voters || VOTERS;
+  }
 
   for (const r of ratingsRows) {
     (allScoresMap[r.movie_id] ||= []).push(r.score);
+    if (!allMovieRatingsMap[r.movie_id]) allMovieRatingsMap[r.movie_id] = {};
+    allMovieRatingsMap[r.movie_id][r.voter] = { score: r.score, comment: r.comment || '' };
+
     if (voters.includes(r.voter)) {
       if (!ratingsMap[r.movie_id]) ratingsMap[r.movie_id] = {};
       if (!commentsMap[r.movie_id]) commentsMap[r.movie_id] = {};
       ratingsMap[r.movie_id][r.voter] = r.score;
       if (r.comment) commentsMap[r.movie_id][r.voter] = r.comment;
-    } else {
-      if (!otherRatingsMap[r.movie_id]) otherRatingsMap[r.movie_id] = {};
-      otherRatingsMap[r.movie_id][r.voter] = {
-        score: r.score,
-        comment: r.comment || '',
-        rank: null,
-      };
     }
   }
 
   const top3Map = {};
   for (const t of top3Rows) {
+    if (!allMovieTop3Map[t.movie_id]) allMovieTop3Map[t.movie_id] = {};
+    allMovieTop3Map[t.movie_id][t.voter] = t.rank;
+
     if (voters.includes(t.voter)) {
       if (!top3Map[t.movie_id]) top3Map[t.movie_id] = {};
       top3Map[t.movie_id][t.voter] = t.rank;
-    } else if (otherRatingsMap[t.movie_id]?.[t.voter]) {
-      otherRatingsMap[t.movie_id][t.voter].rank = t.rank;
     }
   }
 
@@ -187,7 +246,6 @@ async function enrichMoviesBatch(movies, options = {}) {
     const ratings = ratingsMap[movie.id] || {};
     const comments = commentsMap[movie.id] || {};
     const top3 = top3Map[movie.id] || {};
-    const otherRatings = otherRatingsMap[movie.id] || {};
     const watchlistVotes = wlMap[movie.id] || [];
 
     const st = statusMap[movie.id];
@@ -213,6 +271,51 @@ async function enrichMoviesBatch(movies, options = {}) {
       }
     }
 
+    // Asymmetric Benchmark Architecture:
+    // For Group 1 (The Originals): Completely pure view, zero cross-club pills or ratings.
+    // For other groups: Compute The Originals benchmark score and show The Originals perspective.
+    let originalsScore = null;
+    let originalsVoterCount = null;
+    const returnedOtherRatings = {};
+
+    if (groupId !== 1 && originalsVoters) {
+      const origScores = [];
+      const origRatingsMap = {};
+      const movieRatings = allMovieRatingsMap[movie.id] || {};
+      const movieTop3 = allMovieTop3Map[movie.id] || {};
+
+      for (const v of originalsVoters) {
+        const r = movieRatings[v];
+        if (r && r.score != null) {
+          origScores.push(r.score);
+          const tRank = movieTop3[v] || null;
+          origRatingsMap[v] = {
+            score: r.score,
+            comment: r.comment || '',
+            rank: tRank,
+          };
+        }
+      }
+
+      const nOrig = origScores.length;
+      originalsVoterCount = nOrig;
+      if (nOrig > 0) {
+        const origSum = origScores.reduce((a, b) => a + b, 0);
+        const origFair = origSum / nOrig;
+        const origBoost = originalsVoters
+          .map(v => origRatingsMap[v]?.rank)
+          .filter(r => r != null)
+          .reduce((acc, rank) => acc + rankBonus(rank), 0);
+        originalsScore = Math.round(Math.min(10, origFair + origBoost) * 100) / 100;
+      }
+
+      for (const [v, r] of Object.entries(origRatingsMap)) {
+        if (!voters.includes(v)) {
+          returnedOtherRatings[v] = r;
+        }
+      }
+    }
+
     const allScores = allScoresMap[movie.id] || [];
     const networkVoterCount = allScores.length;
     const networkScore = networkVoterCount > 0
@@ -234,9 +337,11 @@ async function enrichMoviesBatch(movies, options = {}) {
       boostedScore,
       fairBoosted,
       stdDev,
-      otherRatings,
-      networkScore,
-      networkVoterCount,
+      otherRatings: returnedOtherRatings,
+      originalsScore,
+      originalsVoterCount,
+      networkScore: groupId === 1 ? null : networkScore,
+      networkVoterCount: groupId === 1 ? null : networkVoterCount,
       groupId,
     };
   });

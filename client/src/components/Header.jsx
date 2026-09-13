@@ -169,7 +169,7 @@ function GroupDropdown({ activeGroup, groups = [], onSwitchGroup, isAdmin }) {
         style={{ cursor: canSwitch ? 'pointer' : 'default' }}
       >
         <span>🎬</span>
-        <span>{activeGroup.name}</span>
+        <span className="group-badge-name">{activeGroup.name}</span>
         {canSwitch && <span style={{ fontSize: 9, opacity: 0.7 }}>▾</span>}
       </button>
 
@@ -615,12 +615,11 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
             {isAdmin && (
               <NavLink
                 to="/admin"
-                className={({ isActive }) => `btn btn-sm ${isActive ? 'btn-gold' : 'btn-ghost'}`}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', fontSize: 12 }}
+                className={({ isActive }) => `btn btn-sm admin-nav-btn ${isActive ? 'btn-gold' : 'btn-ghost'}`}
                 title="Club & User Admin Console"
               >
                 <span>⚙️</span>
-                <span>Admin</span>
+                <span className="admin-nav-label">Admin</span>
               </NavLink>
             )}
             <ThemeDropdown />

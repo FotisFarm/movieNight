@@ -483,8 +483,47 @@ button.nav-link {
   .header-right {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     margin-left: auto;
+    min-width: 0;
+  }
+
+  .admin-nav-btn {
+    padding: 3px 6px !important;
+    font-size: 13px !important;
+    line-height: 1 !important;
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .admin-nav-label {
+    display: none !important;
+  }
+
+  .group-badge-btn {
+    max-width: 110px;
+    padding: 2px 6px;
+    font-size: 11px;
+    gap: 3px;
+  }
+
+  .group-badge-name {
+    max-width: 65px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .theme-dropdown .theme-drop-btn {
+    max-width: 80px;
+    font-size: 11px;
+    padding: 2px 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .header-voter {
@@ -493,15 +532,16 @@ button.nav-link {
     border: 1px solid var(--border);
     padding: 2px 6px;
     border-radius: var(--radius);
-    max-width: 75px;
+    max-width: 65px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .header-logout {
-    font-size: 11px;
-    padding: 2px 7px;
+    font-size: 10.5px;
+    padding: 2px 6px;
+    white-space: nowrap;
   }
 
   /* ── 5-Tab Mobile Bottom Navigation Bar ── */

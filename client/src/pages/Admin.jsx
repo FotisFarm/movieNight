@@ -352,7 +352,7 @@ export default function Admin() {
             Manage member club assignments, add users, grant admin privileges, and reset passwords to default (<code>movieNight5</code>).
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div className="admin-header-actions">
           <button className="btn btn-secondary" onClick={handleOpenCreateClub}>
             ➕ Create Club
           </button>
@@ -435,29 +435,106 @@ export default function Admin() {
             </select>
           </div>
 
-          {/* Table */}
+          {/* Table & Mobile Cards */}
           <div className="admin-table-card">
             {loading ? (
               <div style={{ padding: 40, textAlign: 'center', color: 'var(--text2)' }}>Loading users...</div>
             ) : filteredUsers.length === 0 ? (
               <div style={{ padding: 40, textAlign: 'center', color: 'var(--text2)' }}>No members found matching criteria.</div>
             ) : (
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Member</th>
-                    <th>Movie Clubs</th>
-                    <th>Permissions</th>
-                    <th>Ratings</th>
-                    <th style={{ textAlign: 'right' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <>
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Member</th>
+                      <th>Movie Clubs</th>
+                      <th>Permissions</th>
+                      <th>Ratings</th>
+                      <th style={{ textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.map(u => {
+                      const initials = u.displayName.slice(0, 2).toUpperCase();
+                      return (
+                        <tr key={u.id}>
+                          <td>
+                            <div className="admin-user-cell">
+                              <div className="admin-user-avatar">{initials}</div>
+                              <div>
+                                <div className="admin-user-name">{u.displayName}</div>
+                                <div className="admin-user-handle">@{u.username}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+                              {u.groups && u.groups.length > 0 ? (
+                                u.groups.map(g => (
+                                  <span key={g.id} className="admin-group-tag">
+                                    🎬 {g.name}
+                                  </span>
+                                ))
+                              ) : (
+                                <span style={{ color: 'var(--text3)', fontSize: 12 }}>No Clubs</span>
+                              )}
+                              <button
+                                type="button"
+                                className="admin-edit-clubs-btn"
+                                onClick={() => handleOpenEditClubs(u)}
+                                title="Change clubs for this user"
+                              >
+                                ✏️ Change
+                              </button>
+                            </div>
+                          </td>
+                          <td>
+                            <span className={`admin-role-badge ${u.isAdmin ? 'admin' : 'member'}`}>
+                              {u.isAdmin ? '👑 Site Admin' : 'Member'}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{ fontWeight: 600 }}>{u.ratingsCount}</span>
+                            <span style={{ color: 'var(--text2)', fontSize: 12 }}> votes</span>
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <div className="admin-actions">
+                              <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => handleOpenEditClubs(u)}
+                                title="Change which clubs this member belongs to"
+                              >
+                                🎬 Clubs
+                              </button>
+                              <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => setResetTargetUser(u)}
+                                title="Reset password to movieNight5"
+                              >
+                                🔑 Reset PW
+                              </button>
+                              <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => handleToggleAdmin(u)}
+                                title={u.isAdmin ? 'Demote to regular member' : 'Promote to site admin'}
+                              >
+                                {u.isAdmin ? 'Revoke Admin' : 'Make Admin'}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+
+                {/* Mobile Responsive Cards (visible <= 680px) */}
+                <div className="admin-mobile-cards">
                   {filteredUsers.map(u => {
                     const initials = u.displayName.slice(0, 2).toUpperCase();
                     return (
-                      <tr key={u.id}>
-                        <td>
+                      <div key={u.id} className="admin-member-card">
+                        <div className="admin-card-header">
                           <div className="admin-user-cell">
                             <div className="admin-user-avatar">{initials}</div>
                             <div>
@@ -465,9 +542,14 @@ export default function Admin() {
                               <div className="admin-user-handle">@{u.username}</div>
                             </div>
                           </div>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+                          <span className={`admin-role-badge ${u.isAdmin ? 'admin' : 'member'}`}>
+                            {u.isAdmin ? '👑 Admin' : 'Member'}
+                          </span>
+                        </div>
+
+                        <div className="admin-card-clubs-row">
+                          <div className="admin-card-section-label">Movie Clubs:</div>
+                          <div className="admin-card-chips">
                             {u.groups && u.groups.length > 0 ? (
                               u.groups.map(g => (
                                 <span key={g.id} className="admin-group-tag">
@@ -486,46 +568,42 @@ export default function Admin() {
                               ✏️ Change
                             </button>
                           </div>
-                        </td>
-                        <td>
-                          <span className={`admin-role-badge ${u.isAdmin ? 'admin' : 'member'}`}>
-                            {u.isAdmin ? '👑 Site Admin' : 'Member'}
+                        </div>
+
+                        <div className="admin-card-meta-row">
+                          <span className="admin-card-stat">
+                            ⭐ <strong>{u.ratingsCount}</strong> votes recorded
                           </span>
-                        </td>
-                        <td>
-                          <span style={{ fontWeight: 600 }}>{u.ratingsCount}</span>
-                          <span style={{ color: 'var(--text2)', fontSize: 12 }}> votes</span>
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <div className="admin-actions">
-                            <button
-                              className="btn btn-secondary btn-sm"
-                              onClick={() => handleOpenEditClubs(u)}
-                              title="Change which clubs this member belongs to"
-                            >
-                              🎬 Clubs
-                            </button>
-                            <button
-                              className="btn btn-secondary btn-sm"
-                              onClick={() => setResetTargetUser(u)}
-                              title="Reset password to movieNight5"
-                            >
-                              🔑 Reset PW
-                            </button>
-                            <button
-                              className="btn btn-secondary btn-sm"
-                              onClick={() => handleToggleAdmin(u)}
-                              title={u.isAdmin ? 'Demote to regular member' : 'Promote to site admin'}
-                            >
-                              {u.isAdmin ? 'Revoke Admin' : 'Make Admin'}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                        </div>
+
+                        <div className="admin-card-actions">
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => handleOpenEditClubs(u)}
+                            title="Change clubs"
+                          >
+                            🎬 Clubs
+                          </button>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setResetTargetUser(u)}
+                            title="Reset password"
+                          >
+                            🔑 Reset PW
+                          </button>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => handleToggleAdmin(u)}
+                            title={u.isAdmin ? 'Demote to regular member' : 'Promote to site admin'}
+                          >
+                            {u.isAdmin ? 'Revoke Admin' : 'Make Admin'}
+                          </button>
+                        </div>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
+                </div>
+              </>
             )}
           </div>
         </>
@@ -627,75 +705,125 @@ export default function Admin() {
             </div>
           </div>
 
-          {/* Sessions Table */}
+          {/* Sessions Table & Mobile Cards */}
           <div className="admin-table-card">
             {sessions.length === 0 ? (
               <div style={{ padding: 40, textAlign: 'center', color: 'var(--text2)' }}>
                 No active sessions found.
               </div>
             ) : (
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Member</th>
-                    <th>Session ID / Device</th>
-                    <th>Club Scope</th>
-                    <th>Status</th>
-                    <th>Expires In</th>
-                    <th style={{ textAlign: 'right' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <>
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Member</th>
+                      <th>Session ID / Device</th>
+                      <th>Club Scope</th>
+                      <th>Status</th>
+                      <th>Expires In</th>
+                      <th style={{ textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sessions.map(s => {
+                      const daysLeft = Math.max(0, Math.round((s.expiresAt - Date.now()) / (24 * 60 * 60 * 1000)));
+                      return (
+                        <tr key={s.sid}>
+                          <td>
+                            <div className="admin-user-cell">
+                              <div className="admin-user-avatar">
+                                {s.displayName.slice(0, 2).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="admin-user-name">{s.displayName}</div>
+                                <div className="admin-user-handle">@{s.username}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span className="admin-session-device">{s.maskedSid}</span>
+                              {s.isCurrentDevice && (
+                                <span className="admin-session-badge current" title="Your current browser session">
+                                  ⭐ This Device
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td>
+                            <span className="admin-group-tag">🎬 {s.activeGroupName}</span>
+                          </td>
+                          <td>
+                            <span className="admin-session-badge active">● Active</span>
+                          </td>
+                          <td>
+                            <span title={new Date(s.expiresAt).toLocaleString()} style={{ color: 'var(--text)' }}>
+                              in {daysLeft} {daysLeft === 1 ? 'day' : 'days'}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleRevokeSession(s.sid, s.isCurrentDevice, s.displayName)}
+                              title="Log out this device immediately"
+                            >
+                              🚫 Revoke
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+
+                {/* Mobile Responsive Cards for Sessions (visible <= 680px) */}
+                <div className="admin-mobile-cards">
                   {sessions.map(s => {
                     const daysLeft = Math.max(0, Math.round((s.expiresAt - Date.now()) / (24 * 60 * 60 * 1000)));
+                    const initials = s.displayName.slice(0, 2).toUpperCase();
                     return (
-                      <tr key={s.sid}>
-                        <td>
+                      <div key={s.sid} className="admin-member-card">
+                        <div className="admin-card-header">
                           <div className="admin-user-cell">
-                            <div className="admin-user-avatar">
-                              {s.displayName.slice(0, 2).toUpperCase()}
-                            </div>
+                            <div className="admin-user-avatar">{initials}</div>
                             <div>
                               <div className="admin-user-name">{s.displayName}</div>
                               <div className="admin-user-handle">@{s.username}</div>
                             </div>
                           </div>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span className="admin-session-device">{s.maskedSid}</span>
+                          <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                             {s.isCurrentDevice && (
-                              <span className="admin-session-badge current" title="Your current browser session">
-                                ⭐ This Device
-                              </span>
+                              <span className="admin-session-badge current">⭐ You</span>
                             )}
+                            <span className="admin-session-badge active">● Active</span>
                           </div>
-                        </td>
-                        <td>
-                          <span className="admin-group-tag">🎬 {s.activeGroupName}</span>
-                        </td>
-                        <td>
-                          <span className="admin-session-badge active">● Active</span>
-                        </td>
-                        <td>
-                          <span title={new Date(s.expiresAt).toLocaleString()} style={{ color: 'var(--text)' }}>
-                            in {daysLeft} {daysLeft === 1 ? 'day' : 'days'}
-                          </span>
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
+                        </div>
+
+                        <div className="admin-card-meta-row">
+                          <span><strong>Club:</strong> 🎬 {s.activeGroupName}</span>
+                          <span><strong>Expires:</strong> {daysLeft} {daysLeft === 1 ? 'day' : 'days'}</span>
+                        </div>
+
+                        <div style={{ fontSize: 11.5, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span>Session ID:</span>
+                          <code className="admin-session-device">{s.maskedSid}</code>
+                        </div>
+
+                        <div className="admin-card-actions">
                           <button
                             className="btn btn-danger btn-sm"
                             onClick={() => handleRevokeSession(s.sid, s.isCurrentDevice, s.displayName)}
                             title="Log out this device immediately"
+                            style={{ width: '100%', justifyContent: 'center' }}
                           >
-                            🚫 Revoke
+                            {s.isCurrentDevice ? '🚪 Sign Out (This Device)' : '🚫 Revoke Session'}
                           </button>
-                        </td>
-                      </tr>
+                        </div>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
+                </div>
+              </>
             )}
           </div>
         </div>
