@@ -300,64 +300,63 @@ export default function Admin() {
     <div className="admin-page">
       {/* Top Notice */}
       <div className="admin-env-badge">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="admin-env-badge-left">
           <span className="admin-env-tag">Isolated DB</span>
-          <span>
-            Connected to <strong>movies-dev</strong> on Render. The live Oracle production server is completely untouched.
+          <span className="admin-env-desc">
+            Connected to <strong>movies-dev</strong> on Render.
           </span>
         </div>
-        <span style={{ color: 'var(--text2)', fontSize: 12 }}>Branch: <code>dev</code></span>
+        <span className="admin-env-branch">Branch: <code>dev</code></span>
       </div>
 
-      {/* ACTIVE CLUB CONTEXT BAR (Group Switcher right in Admin Console) */}
+      {/* ACTIVE CLUB CONTEXT BAR (Instant switcher) */}
       <div className="admin-active-club-bar">
         <div className="admin-active-club-info">
-          <span className="admin-active-club-label">Active Club Context:</span>
+          <span className="admin-active-club-label">Active Club:</span>
           <div className="admin-active-club-badge">
             <span>🎬</span>
             <span>{activeGroup?.name || 'The Originals'}</span>
           </div>
-          <span style={{ fontSize: 12, color: 'var(--text2)' }}>
-            (Current film list & rankings scope)
-          </span>
         </div>
 
-        <div className="admin-club-switcher-control">
-          <select
-            className="admin-select"
-            value={targetActiveGroupId}
-            onChange={e => setTargetActiveGroupId(e.target.value)}
-          >
-            {groups.map(g => (
-              <option key={g.id} value={String(g.id)}>
-                {g.name} {g.id === activeGroup?.id ? ' (Current)' : ''}
-              </option>
-            ))}
-          </select>
-          <button
-            className="btn btn-secondary btn-sm"
-            disabled={isSwitchingActiveClub || String(activeGroup?.id) === targetActiveGroupId}
-            onClick={() => handleSwitchActiveClub(targetActiveGroupId)}
-          >
-            {isSwitchingActiveClub ? 'Switching...' : 'Switch Active Club'}
-          </button>
-        </div>
+        {groups.length > 1 && (
+          <div className="admin-club-switcher-control">
+            <select
+              className="admin-select admin-club-select"
+              value={targetActiveGroupId}
+              onChange={e => {
+                const newId = e.target.value;
+                setTargetActiveGroupId(newId);
+                if (newId && Number(newId) !== activeGroup?.id) {
+                  handleSwitchActiveClub(newId);
+                }
+              }}
+              title="Switch active movie club context"
+            >
+              {groups.map(g => (
+                <option key={g.id} value={String(g.id)}>
+                  {g.id === activeGroup?.id ? `✓ ${g.name} (Active)` : `Switch to: ${g.name}`}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Header Row */}
       <div className="admin-header-row">
-        <div>
-          <h1>⚙️ User & Club Administration</h1>
+        <div className="admin-header-title-wrap">
+          <h1>⚙️ Administration</h1>
           <p className="admin-header-desc">
-            Manage member club assignments, add users, grant admin privileges, and reset passwords to default (<code>movieNight5</code>).
+            Manage member club assignments, add users, grant admin privileges, and reset passwords.
           </p>
         </div>
         <div className="admin-header-actions">
-          <button className="btn btn-secondary" onClick={handleOpenCreateClub}>
-            ➕ Create Club
+          <button className="btn btn-secondary btn-sm" onClick={handleOpenCreateClub}>
+            ➕ Club
           </button>
-          <button className="btn btn-primary" onClick={handleOpenAddUser}>
-            ➕ Add New Member
+          <button className="btn btn-primary btn-sm" onClick={handleOpenAddUser}>
+            ➕ Member
           </button>
         </div>
       </div>
@@ -414,25 +413,27 @@ export default function Admin() {
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
-            <select
-              className="admin-select"
-              value={groupFilter}
-              onChange={e => setGroupFilter(e.target.value)}
-            >
-              <option value="all">All Movie Clubs</option>
-              {groups.map(g => (
-                <option key={g.id} value={String(g.id)}>{g.name}</option>
-              ))}
-            </select>
-            <select
-              className="admin-select"
-              value={roleFilter}
-              onChange={e => setRoleFilter(e.target.value)}
-            >
-              <option value="all">All Roles</option>
-              <option value="admin">Admins Only</option>
-              <option value="member">Regular Members</option>
-            </select>
+            <div className="admin-filter-dropdowns">
+              <select
+                className="admin-select"
+                value={groupFilter}
+                onChange={e => setGroupFilter(e.target.value)}
+              >
+                <option value="all">All Clubs</option>
+                {groups.map(g => (
+                  <option key={g.id} value={String(g.id)}>{g.name}</option>
+                ))}
+              </select>
+              <select
+                className="admin-select"
+                value={roleFilter}
+                onChange={e => setRoleFilter(e.target.value)}
+              >
+                <option value="all">All Roles</option>
+                <option value="admin">Admins Only</option>
+                <option value="member">Members</option>
+              </select>
+            </div>
           </div>
 
           {/* Table & Mobile Cards */}

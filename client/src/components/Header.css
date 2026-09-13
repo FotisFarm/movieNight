@@ -518,30 +518,13 @@ button.nav-link {
     vertical-align: middle;
   }
 
-  .theme-dropdown .theme-drop-btn {
-    max-width: 80px;
-    font-size: 11px;
-    padding: 2px 6px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .desktop-user-group {
+    display: none !important;
   }
 
-  .header-voter {
-    font-size: 11px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    padding: 2px 6px;
-    border-radius: var(--radius);
-    max-width: 65px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .header-logout {
-    font-size: 10.5px;
-    padding: 2px 6px;
-    white-space: nowrap;
+  .mobile-user-group {
+    display: flex !important;
+    align-items: center;
   }
 
   /* ── 5-Tab Mobile Bottom Navigation Bar ── */
@@ -834,4 +817,176 @@ button.nav-link {
 
 .header-user-btn:hover .header-voter {
   color: var(--green);
+}
+
+/* ── Mobile User Profile Menu & Desktop Group ── */
+.desktop-user-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-user-group {
+  display: none;
+}
+
+.mobile-user-menu-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.mobile-avatar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.mobile-avatar-circle {
+  width: 29px;
+  height: 29px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1.5px solid var(--accent);
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.mobile-avatar-btn:hover .mobile-avatar-circle {
+  transform: scale(1.05);
+}
+
+.mobile-avatar-caret {
+  font-size: 8px;
+  color: var(--text3);
+}
+
+.mobile-user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 210px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  padding: 12px;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: dropdownFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mobile-user-dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mobile-user-avatar-lg {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface3);
+  color: var(--gold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.mobile-user-dropdown-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mobile-user-dropdown-name {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-user-dropdown-role {
+  font-size: 10.5px;
+  color: var(--text3);
+}
+
+.mobile-user-dropdown-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mobile-user-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+}
+
+.mobile-theme-select {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+
+.mobile-user-dropdown-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.mobile-user-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 7px 8px;
+  border-radius: 4px;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+
+.mobile-user-menu-item:hover {
+  background: var(--surface3);
+  color: var(--text);
+}
+
+.mobile-user-menu-item.logout {
+  color: var(--red);
+}
+
+.mobile-user-menu-item.logout:hover {
+  background: rgba(242, 97, 97, 0.12);
+  color: var(--red);
 }

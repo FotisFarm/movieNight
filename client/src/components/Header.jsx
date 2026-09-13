@@ -158,6 +158,7 @@ function GroupDropdown({ activeGroup, groups = [], onSwitchGroup, isAdmin }) {
 
   if (!isAdmin || !activeGroup) return null;
   const canSwitch = groups && groups.length > 1;
+  const shortName = activeGroup.name.replace(/^The\s+/, '');
 
   return (
     <div className="group-switcher-wrap" ref={ref}>
@@ -165,11 +166,11 @@ function GroupDropdown({ activeGroup, groups = [], onSwitchGroup, isAdmin }) {
         type="button"
         className="group-badge-btn"
         onClick={() => canSwitch && setOpen(o => !o)}
-        title={canSwitch ? 'Switch Movie Club' : activeGroup.name}
+        title={canSwitch ? `Switch Movie Club (Current: ${activeGroup.name})` : activeGroup.name}
         style={{ cursor: canSwitch ? 'pointer' : 'default' }}
       >
         <span>🎬</span>
-        <span className="group-badge-name">{activeGroup.name}</span>
+        <span className="group-badge-name">{shortName}</span>
         {canSwitch && <span style={{ fontSize: 9, opacity: 0.7 }}>▾</span>}
       </button>
 
@@ -192,6 +193,86 @@ function GroupDropdown({ activeGroup, groups = [], onSwitchGroup, isAdmin }) {
               {g.id === activeGroup.id && <span>✓</span>}
             </button>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MobileUserMenu({ voter, user, onLogout, onOpenPassword }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    function onDown(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, []);
+
+  if (!voter) return null;
+  const initials = voter.slice(0, 2).toUpperCase();
+
+  return (
+    <div className="mobile-user-menu-wrap" ref={ref}>
+      <button
+        type="button"
+        className="mobile-avatar-btn"
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        title={`Account: ${voter}`}
+      >
+        <span className="mobile-avatar-circle">{initials}</span>
+        <span className="mobile-avatar-caret">{open ? '▴' : '▾'}</span>
+      </button>
+
+      {open && (
+        <div className="mobile-user-dropdown">
+          <div className="mobile-user-dropdown-header">
+            <div className="mobile-user-avatar-lg">{initials}</div>
+            <div className="mobile-user-dropdown-info">
+              <div className="mobile-user-dropdown-name">{voter}</div>
+              <div className="mobile-user-dropdown-role">
+                {user?.isAdmin ? '👑 Site Admin' : 'Member'}
+              </div>
+            </div>
+          </div>
+
+          <div className="mobile-user-dropdown-section">
+            <label className="mobile-user-section-label">🎨 Theme</label>
+            <select
+              className="mobile-theme-select"
+              value={theme}
+              onChange={e => setTheme(e.target.value)}
+            >
+              {THEMES.map(t => (
+                <option key={t.id} value={t.id}>{t.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mobile-user-dropdown-actions">
+            <button
+              type="button"
+              className="mobile-user-menu-item"
+              onClick={() => { setOpen(false); onOpenPassword(); }}
+            >
+              <span>🔑</span>
+              <span>Change Password</span>
+            </button>
+            {onLogout && (
+              <button
+                type="button"
+                className="mobile-user-menu-item logout"
+                onClick={() => { setOpen(false); onLogout(); }}
+              >
+                <span>🚪</span>
+                <span>Sign Out</span>
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -622,28 +703,41 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
                 <span className="admin-nav-label">Admin</span>
               </NavLink>
             )}
-            <ThemeDropdown />
-            {voter && (
-              <button
-                type="button"
-                className="header-user-btn"
-                onClick={() => setShowPasswordModal(true)}
-                title="Account: Click to change password"
-              >
-                <span className="header-voter">{voter}</span>
-                <span style={{ fontSize: 11, opacity: 0.65 }}>🔑</span>
-              </button>
-            )}
-            {onLogout && (
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm header-logout"
-                onClick={onLogout}
-                title="Sign out"
-              >
-                Sign out
-              </button>
-            )}
+            {/* Desktop User Controls (> 640px) */}
+            <div className="desktop-user-group">
+              <ThemeDropdown />
+              {voter && (
+                <button
+                  type="button"
+                  className="header-user-btn"
+                  onClick={() => setShowPasswordModal(true)}
+                  title="Account: Click to change password"
+                >
+                  <span className="header-voter">{voter}</span>
+                  <span style={{ fontSize: 11, opacity: 0.65 }}>🔑</span>
+                </button>
+              )}
+              {onLogout && (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm header-logout"
+                  onClick={onLogout}
+                  title="Sign out"
+                >
+                  Sign out
+                </button>
+              )}
+            </div>
+
+            {/* Mobile User Menu (<= 640px) */}
+            <div className="mobile-user-group">
+              <MobileUserMenu
+                voter={voter}
+                user={user}
+                onLogout={onLogout}
+                onOpenPassword={() => setShowPasswordModal(true)}
+              />
+            </div>
           </div>
         </div>
       </header>

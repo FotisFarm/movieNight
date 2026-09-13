@@ -224,6 +224,11 @@
   cursor: pointer;
 }
 
+.admin-filter-dropdowns {
+  display: flex;
+  gap: 10px;
+}
+
 .admin-table-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -558,67 +563,93 @@
 /* ── Mobile Responsive Layout (<= 680px) ── */
 @media (max-width: 680px) {
   .admin-page {
-    padding: 16px 12px 60px;
-  }
-
-  .admin-header-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 14px;
-  }
-
-  .admin-header-row h1 {
-    font-size: 20px;
-  }
-
-  .admin-header-actions {
-    display: flex;
-    gap: 8px;
-    width: 100%;
-  }
-
-  .admin-header-actions .btn {
-    flex: 1;
-    justify-content: center;
-    font-size: 13px;
-    padding: 8px 10px;
-    white-space: nowrap;
+    padding: 12px 10px 60px;
   }
 
   .admin-env-badge {
-    flex-direction: column;
-    align-items: flex-start;
+    padding: 6px 12px;
+    font-size: 11.5px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
     gap: 8px;
-    padding: 10px 14px;
-    font-size: 12px;
+    border-radius: 6px;
   }
 
-  /* Active Club Bar Stacking */
+  .admin-env-desc {
+    display: none;
+  }
+
+  /* Active Club Bar compact row */
   .admin-active-club-bar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-    padding: 14px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    border-radius: 6px;
   }
 
   .admin-active-club-info {
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
+  .admin-active-club-label {
+    font-size: 11.5px;
+  }
+
+  .admin-active-club-badge {
+    font-size: 11.5px;
+    padding: 2px 7px;
   }
 
   .admin-club-switcher-control {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-    width: 100%;
+    width: auto;
   }
 
-  .admin-club-switcher-control .admin-select,
-  .admin-club-switcher-control .btn {
-    width: 100%;
-    box-sizing: border-box;
-    justify-content: center;
+  .admin-club-select {
+    padding: 4px 8px;
+    font-size: 11.5px;
+    max-width: 135px;
+  }
+
+  /* Header Row compact */
+  .admin-header-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+
+  .admin-header-row h1 {
+    font-size: 17px;
+    margin: 0;
+  }
+
+  .admin-header-desc {
+    display: none;
+  }
+
+  .admin-header-actions {
+    display: flex;
+    gap: 6px;
+    width: auto;
+  }
+
+  .admin-header-actions .btn {
+    flex: initial;
+    font-size: 11.5px;
+    padding: 5px 9px;
   }
 
   /* Horizontally Scrollable Nav Tabs */
@@ -626,31 +657,45 @@
     overflow-x: auto;
     white-space: nowrap;
     -webkit-overflow-scrolling: touch;
-    gap: 4px;
-    padding-bottom: 2px;
+    gap: 2px;
+    margin-bottom: 12px;
+    padding-bottom: 0;
   }
 
   .admin-nav-tab {
-    padding: 8px 14px;
-    font-size: 13px;
+    padding: 6px 10px;
+    font-size: 12px;
     flex-shrink: 0;
   }
 
-  /* Filter Bar Stacking */
+  /* Filter Bar compact */
   .admin-filter-bar {
+    display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
+    margin-bottom: 12px;
   }
 
   .admin-filter-bar .admin-search-input {
     width: 100%;
-    min-width: unset;
     box-sizing: border-box;
+    padding: 6px 10px;
+    font-size: 12.5px;
+    min-width: unset;
   }
 
-  .admin-filter-bar .admin-select {
+  .admin-filter-dropdowns {
+    display: flex;
+    gap: 6px;
     width: 100%;
+  }
+
+  .admin-filter-dropdowns .admin-select {
+    flex: 1;
+    min-width: 0;
     box-sizing: border-box;
+    padding: 6px 8px;
+    font-size: 11.5px;
   }
 
   /* Hide 5-column table on mobile, show rich responsive cards */
