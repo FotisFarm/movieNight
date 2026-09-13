@@ -590,13 +590,8 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
           {/* ── Right Column: Voter Ratings & Picks ── */}
           <div className="movie-modal-right">
             <div className="movie-modal-right-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div className="modal-section-label section-label" style={{ marginBottom: 0 }}>
-                  {activeGroup?.name ? `${activeGroup.name} Ratings` : 'Group Ratings & Picks'}
-                </div>
-                {(movie?.imdb_id || movie?.letterboxd_rating != null) && (
-                  <LetterboxdPill imdbId={movie.imdb_id} score={movie.letterboxd_rating} />
-                )}
+              <div className="modal-section-label section-label" style={{ marginBottom: 0 }}>
+                Voter Ratings &amp; Picks
               </div>
               <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>
                 {voterCount} of {groupSize} rated
