@@ -75,17 +75,19 @@ router.post('/contenders', ah(async (req, res) => {
   }
 
   for (const r of allRatings) {
-    (ratingsByMovie[r.movie_id] ||= []).push(r);
-    if (voterRatings[r.voter]) {
-      voterRatings[r.voter].push(r);
-      const m = movieById.get(r.movie_id);
-      if (m) {
-        if (m.year) {
-          const dec = Math.floor(parseInt(m.year, 10) / 10) * 10;
-          if (!isNaN(dec)) (voterDecadeAvg[r.voter][dec] ||= []).push(r.score);
-        }
-        if (m.director) {
-          (voterDirAvg[r.voter][m.director] ||= []).push(r.score);
+    if (groupVoters.includes(r.voter)) {
+      (ratingsByMovie[r.movie_id] ||= []).push(r);
+      if (voterRatings[r.voter]) {
+        voterRatings[r.voter].push(r);
+        const m = movieById.get(r.movie_id);
+        if (m) {
+          if (m.year) {
+            const dec = Math.floor(parseInt(m.year, 10) / 10) * 10;
+            if (!isNaN(dec)) (voterDecadeAvg[r.voter][dec] ||= []).push(r.score);
+          }
+          if (m.director) {
+            (voterDirAvg[r.voter][m.director] ||= []).push(r.score);
+          }
         }
       }
     }
@@ -109,9 +111,11 @@ router.post('/contenders', ah(async (req, res) => {
   // Index Top 10 directors per voter
   const voterTopDirs = {};
   for (const t of allTop3) {
-    const m = movieById.get(t.movie_id);
-    if (m?.director) {
-      (voterTopDirs[t.voter] ||= new Set()).add(m.director);
+    if (groupVoters.includes(t.voter)) {
+      const m = movieById.get(t.movie_id);
+      if (m?.director) {
+        (voterTopDirs[t.voter] ||= new Set()).add(m.director);
+      }
     }
   }
 

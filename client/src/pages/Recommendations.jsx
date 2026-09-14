@@ -34,7 +34,7 @@ const DEFAULTS = { search: '', filterMn: false, filterWl: false, filterDir: '', 
 const DEFAULT_WEIGHTS = { dw: 0.35, lbw: 0.40, ew: 0.25, tw: 0.10, maxVoters: 2, minDirFilms: 2 };
 
 export default function Recommendations() {
-  const { voters } = useAppConfig();
+  const { voters, activeGroup } = useAppConfig();
   const [allFilms, setAllFilms] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [modalId, setModalId]   = useState(null);
@@ -63,12 +63,16 @@ export default function Recommendations() {
   const weightTimer = useRef(null);
 
   useEffect(() => {
+    setUnvotedBy(new Set());
+  }, [activeGroup?.id]);
+
+  useEffect(() => {
     clearTimeout(weightTimer.current);
     weightTimer.current = setTimeout(() => {
       setLoading(true);
       api.getRecommendations({ dw, lbw, ew, tw, maxVoters, minDirFilms }).then(setAllFilms).finally(() => setLoading(false));
     }, 400);
-  }, [dw, lbw, ew, tw, maxVoters, minDirFilms]);
+  }, [dw, lbw, ew, tw, maxVoters, minDirFilms, activeGroup?.id]);
 
   function changeMinDirFilms(n) {
     setMinDirFilms(n);

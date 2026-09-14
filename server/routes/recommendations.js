@@ -4,7 +4,7 @@ const { rankBonus } = require('../scoring');
 const ah = require('../asyncHandler');
 
 const router = express.Router();
-const { GROUP_SIZE } = require('../config');
+const { GROUP_SIZE, VOTERS } = require('../config');
 
 router.get('/', ah(async (req, res) => {
   // Parse bias weights from query params (default 0.35 / 0.40 / 0.25 / 0.10)
@@ -16,41 +16,59 @@ router.get('/', ah(async (req, res) => {
   // Top 10 scaling rate (responsive to tw slider, where default 0.10 => 0.15 rate)
   const twRate = rawTw > 0 ? 0.15 * (rawTw / 0.10) : 0;
 
-  const _mv = req.query.maxVoters !== undefined ? parseInt(req.query.maxVoters) : 2;
-  const maxVoters = Math.min(4, Math.max(0, isNaN(_mv) ? 2 : _mv));
+  const group = req.group;
+  const groupId = group?.id || 1;
+  const groupVoters = (group?.voters && group.voters.length > 0) ? group.voters : VOTERS;
+  const groupSize = group?.groupSize || groupVoters.length || GROUP_SIZE;
+  const minGroupVoters = Math.min(2, groupVoters.length);
+
+  const _mv = req.query.maxVoters !== undefined ? parseInt(req.query.maxVoters) : minGroupVoters;
+  const maxVoters = Math.min(groupSize, Math.max(0, isNaN(_mv) ? minGroupVoters : _mv));
   const minDirFilms = Math.max(1, parseInt(req.query.minDirFilms) || 2);
 
   // Independent full-table reads — concurrent, so this costs one round trip.
-  const [allMovies, allRatings, allTop3] = await Promise.all([
+  const [allMovies, allRatings, allTop3, allGroupStatus] = await Promise.all([
     db.all('SELECT * FROM movies'),
     db.all('SELECT movie_id, voter, score FROM ratings'),
     db.all('SELECT movie_id, voter, rank FROM top3'),
+    db.all('SELECT movie_id, mn, watchlist FROM group_movie_status WHERE group_id = ?', groupId),
   ]);
+
+  const groupRatings = allRatings.filter(r => groupVoters.includes(r.voter));
+  const groupTop3 = allTop3.filter(t => groupVoters.includes(t.voter));
+
+  const statusByMovie = new Map(allGroupStatus.map(s => [s.movie_id, s]));
+  for (const m of allMovies) {
+    const st = statusByMovie.get(m.id);
+    m.watchlist = st ? st.watchlist : (groupId === 1 ? m.watchlist : 0);
+    m.mn = st ? st.mn : (groupId === 1 ? m.mn : 0);
+  }
+
   const movieById  = new Map(allMovies.map(m => [m.id, m]));
 
   // Index ratings and top3 by movie_id
   const ratingsByMovie = {};
-  for (const r of allRatings) {
+  for (const r of groupRatings) {
     if (!ratingsByMovie[r.movie_id]) ratingsByMovie[r.movie_id] = [];
     ratingsByMovie[r.movie_id].push(r);
   }
   const top3ByMovie = {};
-  for (const t of allTop3) {
+  for (const t of groupTop3) {
     if (!top3ByMovie[t.movie_id]) top3ByMovie[t.movie_id] = [];
     top3ByMovie[t.movie_id].push(t.rank);
   }
 
-  // Compute fairBoosted for a movie (returns null if < 2 voters)
+  // Compute fairBoosted for a movie (returns null if < minGroupVoters)
   function computeFairBoosted(movieId) {
     const rs = ratingsByMovie[movieId] || [];
-    if (rs.length < 2) return null;
+    if (rs.length < minGroupVoters) return null;
     const sum   = rs.reduce((a, r) => a + r.score, 0);
     const fair  = sum / rs.length;
     const boost = (top3ByMovie[movieId] || []).reduce((a, rank) => a + rankBonus(rank), 0);
     return Math.min(10, fair + boost);
   }
 
-  // Build director and decade averages from fully-eligible rated films (≥2 voters)
+  // Build director and decade averages from fully-eligible rated films (≥ minGroupVoters)
   const dirScores      = {};  // director → [fairBoosted]
   const decadeScores   = {};  // decade   → [fairBoosted]
   const top3ByDirector = {};  // director → [top3 rows]
@@ -65,7 +83,7 @@ router.get('/', ah(async (req, res) => {
       if (!isNaN(decade)) (decadeScores[decade] = decadeScores[decade] || []).push(fb);
     }
   }
-  for (const t of allTop3) {
+  for (const t of groupTop3) {
     const m = movieById.get(t.movie_id);
     if (m?.director) {
       (top3ByDirector[m.director] = top3ByDirector[m.director] || []).push(t);
@@ -138,11 +156,11 @@ router.get('/', ah(async (req, res) => {
     // Bayesian blend: trust actual score more as voterCount grows
     let predictedScore = null;
     if (actualScore !== null && prior !== null) {
-      const confidence = voterCount / GROUP_SIZE;
+      const confidence = voterCount / groupSize;
       predictedScore = confidence * actualScore + (1 - confidence) * prior;
     } else if (actualScore !== null) {
       // Have real score but no prior — trust the actual score
-      const confidence = voterCount / GROUP_SIZE;
+      const confidence = voterCount / groupSize;
       predictedScore = confidence * actualScore;
     } else if (prior !== null) {
       // No real score — use prior only
@@ -207,41 +225,59 @@ router.get('/', ah(async (req, res) => {
 
 // GET /api/recommendations/accuracy — Leave-One-Out Backtesting on Scored Movies
 router.get('/accuracy', ah(async (req, res) => {
-  const minVoters = Math.max(2, parseInt(req.query.minVoters) || 2);
+  const group = req.group;
+  const groupId = group?.id || 1;
+  const groupVoters = (group?.voters && group.voters.length > 0) ? group.voters : VOTERS;
+  const groupSize = group?.groupSize || groupVoters.length || GROUP_SIZE;
+  const minGroupVoters = Math.min(2, groupVoters.length);
+
+  const minVoters = Math.max(minGroupVoters, parseInt(req.query.minVoters) || minGroupVoters);
   const minDirFilms = Math.max(1, parseInt(req.query.minDirFilms) || 2);
   const dw = parseFloat(req.query.dw !== undefined ? req.query.dw : 0.35);
   const lbw = parseFloat(req.query.lbw !== undefined ? req.query.lbw : 0.40);
   const ew = parseFloat(req.query.ew !== undefined ? req.query.ew : 0.25);
   const twRate = 0.15; // default 1.0x boost
 
-  const [allMovies, allRatings, allTop3] = await Promise.all([
+  const [allMovies, allRatings, allTop3, allGroupStatus] = await Promise.all([
     db.all('SELECT * FROM movies'),
     db.all('SELECT movie_id, voter, score FROM ratings'),
     db.all('SELECT movie_id, voter, rank FROM top3'),
+    db.all('SELECT movie_id, mn, watchlist FROM group_movie_status WHERE group_id = ?', groupId),
   ]);
+
+  const groupRatings = allRatings.filter(r => groupVoters.includes(r.voter));
+  const groupTop3 = allTop3.filter(t => groupVoters.includes(t.voter));
+
+  const statusByMovie = new Map(allGroupStatus.map(s => [s.movie_id, s]));
+  for (const m of allMovies) {
+    const st = statusByMovie.get(m.id);
+    m.watchlist = st ? st.watchlist : (groupId === 1 ? m.watchlist : 0);
+    m.mn = st ? st.mn : (groupId === 1 ? m.mn : 0);
+  }
+
   const movieById = new Map(allMovies.map(m => [m.id, m]));
 
   const ratingsByMovie = {};
-  for (const r of allRatings) {
+  for (const r of groupRatings) {
     if (!ratingsByMovie[r.movie_id]) ratingsByMovie[r.movie_id] = [];
     ratingsByMovie[r.movie_id].push(r);
   }
   const top3ByMovie = {};
-  for (const t of allTop3) {
+  for (const t of groupTop3) {
     if (!top3ByMovie[t.movie_id]) top3ByMovie[t.movie_id] = [];
     top3ByMovie[t.movie_id].push(t.rank);
   }
 
   function computeFairBoosted(movieId) {
     const rs = ratingsByMovie[movieId] || [];
-    if (rs.length < 2) return null;
+    if (rs.length < minGroupVoters) return null;
     const sum = rs.reduce((a, r) => a + r.score, 0);
     const fair = sum / rs.length;
     const boost = (top3ByMovie[movieId] || []).reduce((a, rank) => a + rankBonus(rank), 0);
     return Math.min(10, fair + boost);
   }
 
-  // Pre-calculate fairBoosted for all movies with >= 2 votes
+  // Pre-calculate fairBoosted for all movies with >= minGroupVoters votes
   const fairBoostedMap = new Map();
   for (const m of allMovies) {
     const fb = computeFairBoosted(m.id);
@@ -268,7 +304,7 @@ router.get('/accuracy', ah(async (req, res) => {
 
   // Index top3 picks by director
   const top3ByDirector = {};
-  for (const t of allTop3) {
+  for (const t of groupTop3) {
     const m = movieById.get(t.movie_id);
     if (m?.director) {
       if (!top3ByDirector[m.director]) top3ByDirector[m.director] = [];
