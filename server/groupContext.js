@@ -104,7 +104,7 @@ async function attachGroupContext(req, _res, next) {
       }
     }
 
-    let targetGroupId = req.session?.activeGroupId;
+    let targetGroupId = req.query?.groupId || req.session?.activeGroupId;
 
     if (!targetGroupId && req.session?.userId) {
       const userGroups = await getUserGroups(req.session.userId);

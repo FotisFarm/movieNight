@@ -128,7 +128,7 @@ class ConfettiSystem {
 }
 
 export default function Session({ voter }) {
-  const { voters: configVoters } = useAppConfig();
+  const { voters: configVoters, activeGroup } = useAppConfig();
 
   // Attendees state: defaults to all config voters
   const [attendees, setAttendees] = useState(configVoters || []);
@@ -160,22 +160,24 @@ export default function Session({ voter }) {
   const animFrameRef = useRef(null);
   const lastTickSliceRef = useRef(-1);
 
-  // Ensure attendees synchronize if configVoters change
+  // Ensure attendees synchronize if active group or configVoters change
   useEffect(() => {
-    if (configVoters && configVoters.length > 0 && attendees.length === 0) {
+    if (configVoters && configVoters.length > 0) {
       setAttendees(configVoters);
     }
-  }, [configVoters]);
+  }, [configVoters, activeGroup?.id]);
 
-  // Load available custom lists
+  // Load available custom lists for the active group
   useEffect(() => {
     api.getLists().then(lists => {
       setCustomLists(lists || []);
-      if (lists && lists.length > 0 && !selectedListId) {
+      if (lists && lists.length > 0) {
         setSelectedListId(lists[0].id);
+      } else {
+        setSelectedListId('');
       }
     }).catch(() => {});
-  }, []);
+  }, [activeGroup?.id]);
 
   // Fetch contenders when filters change
   const fetchContenders = useCallback(async () => {

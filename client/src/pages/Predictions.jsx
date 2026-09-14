@@ -32,7 +32,7 @@ function VoterPills({ ratings, voters }) {
 }
 
 export default function Predictions() {
-  const { voters } = useAppConfig();
+  const { voters, activeGroup } = useAppConfig();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeFilm, setActiveFilm] = useState(null); // Selected film for PredictionModal
@@ -59,7 +59,7 @@ export default function Predictions() {
         toast('Failed to load prediction accuracy data');
       })
       .finally(() => setLoading(false));
-  }, [minVoters, minDirFilms]);
+  }, [minVoters, minDirFilms, activeGroup?.id]);
 
   function handleSaved(updated) {
     if (!data) return;
