@@ -41,17 +41,7 @@ router.post('/login', ah(async (req, res) => {
   }
 
   // Verify password with salted scrypt
-  let isValid = verifyPassword(password, user.password_hash);
-
-  // Migration fallback: if hash hasn't updated or matches default env password
-  if (!isValid && password === defaultPassword) {
-    isValid = true;
-    try {
-      const newHash = hashPassword(password);
-      await db.run('UPDATE users SET password_hash = ? WHERE id = ?', newHash, user.id);
-      user.password_hash = newHash;
-    } catch (_) {}
-  }
+  const isValid = verifyPassword(password, user.password_hash);
 
   if (!isValid) {
     return res.status(401).json({ error: 'Invalid username or password' });
@@ -191,8 +181,7 @@ router.post('/change-password', ah(async (req, res) => {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  const isValid = verifyPassword(currentPassword, user.password_hash)
-    || currentPassword === (process.env.MN_PASSWORD || 'movieNight5');
+  const isValid = verifyPassword(currentPassword, user.password_hash);
 
   if (!isValid) {
     return res.status(403).json({ error: 'Incorrect current password' });
