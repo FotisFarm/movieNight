@@ -38,15 +38,16 @@ app.use(attachGroupContext);
 app.use('/api/auth', require('./routes/auth'));
 
 app.get('/api/config', async (req, res) => {
-  const { SANDBOX_MODE, SANDBOX_VOTER, HIDE_HAL } = require('./config');
+  const { SANDBOX_MODE, SANDBOX_VOTER, HIDE_HAL, VOTERS, GROUP_SIZE, MIN_VOTERS } = require('./config');
+  const group = req.group || { id: 1, name: 'The Originals', slug: 'the-originals', voters: VOTERS, groupSize: GROUP_SIZE, minVoters: MIN_VOTERS };
   const isLoggedIn = Boolean(req.session.voter || req.session.userId);
   if (!isLoggedIn) {
     return res.json({
-      voters: [],
-      groupSize: 5,
-      minVoters: 2,
-      activeGroup: null,
-      allVoters: [],
+      voters: group.voters,
+      groupSize: group.groupSize,
+      minVoters: group.minVoters,
+      activeGroup: { id: group.id, name: group.name, slug: group.slug },
+      allVoters: group.voters,
       sandboxMode: SANDBOX_MODE,
       sandboxVoter: SANDBOX_VOTER,
       hideHal: HIDE_HAL,
@@ -55,7 +56,6 @@ app.get('/api/config', async (req, res) => {
       isGroupAdmin: false,
     });
   }
-  const group = req.group;
   const isSiteAdmin = Boolean(req.session?.isAdmin || req.session?.voter === 'mnAdmin' || req.session?.username === 'mnAdmin');
   const isGroupAdmin = Boolean(group?.members?.some(m => (m.id === req.session?.userId || m.displayName === req.session?.voter || m.username === req.session?.voter) && m.role === 'admin'));
   const isAdmin = isSiteAdmin || isGroupAdmin;
