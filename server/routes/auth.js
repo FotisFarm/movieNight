@@ -50,18 +50,6 @@ router.post('/login', ah(async (req, res) => {
   // Fetch groups this user belongs to
   let userGroups = await getUserGroups(user.id);
 
-  // If user has no groups, attach them to Group 1 by default (especially for mnAdmin)
-  if (userGroups.length === 0) {
-    const g1 = await db.get('SELECT id FROM groups WHERE id = 1');
-    if (g1) {
-      await db.run(
-        'INSERT OR IGNORE INTO group_members (group_id, user_id, role) VALUES (1, ?, ?)',
-        user.id, user.is_admin ? 'admin' : 'member'
-      );
-      userGroups = await getUserGroups(user.id);
-    }
-  }
-
   const primaryGroup = userGroups.find(g => g.id === 1) || userGroups[0];
   const activeGroup = await getGroupWithMembers(primaryGroup?.id || 1);
 
