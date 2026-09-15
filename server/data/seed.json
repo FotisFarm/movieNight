@@ -6916,7 +6916,7 @@
     "movie": "Three Colours: White",
     "year": "1994",
     "rank": 87,
-    "mn": "",
+    "mn": "Y",
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
@@ -6925,8 +6925,11 @@
     "poster_path": "/6r09mQLfJmQes0uFD4yTa8NAKPj.jpg",
     "runtime": 92,
     "ratings": {
+      "Μητσέας": "9.5",
       "Παντελής": "9.5",
-      "Φώτης": "8"
+      "Στέλιας": "9.2",
+      "Φώτης": "7",
+      "Λεόντιος": "7"
     },
     "top3": {},
     "watchlistVotes": []
@@ -14543,7 +14546,7 @@
     "year": "1970",
     "rank": null,
     "mn": "",
-    "watchlist": "",
+    "watchlist": "Y",
     "tokens": "",
     "tokenPts": 0,
     "imdb_id": "tt0065396",
@@ -19532,7 +19535,7 @@
     "runtime": 109,
     "ratings": {
       "Στέλιας": "8.2",
-      "Λεόντιος": "8"
+      "Λεόντιος": "8.5"
     },
     "top3": {},
     "watchlistVotes": []
@@ -20460,6 +20463,40 @@
     "ratings": {
       "Φώτης": "7.5"
     },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "",
+    "movie": "Show Pieces",
+    "year": "",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt8008606",
+    "imdb_rating": 7.2,
+    "poster_path": "/se7REi4zouOQLSLuDuZ6c5rBd75.jpg",
+    "runtime": 78,
+    "ratings": {},
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "",
+    "movie": "Onibaba",
+    "year": "",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0058430",
+    "imdb_rating": 7.8,
+    "poster_path": "/xyPLG53OodhJtvfQEfcmC43l16O.jpg",
+    "runtime": 103,
+    "ratings": {},
     "top3": {},
     "watchlistVotes": []
   }
