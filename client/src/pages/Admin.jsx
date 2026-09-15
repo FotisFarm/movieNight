@@ -515,25 +515,31 @@ export default function Admin() {
                             </div>
                           </td>
                           <td>
-                            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
-                              {u.groups && u.groups.length > 0 ? (
-                                u.groups.map(g => (
-                                  <span key={g.id} className="admin-group-tag">
-                                    🎬 {g.name}
-                                  </span>
-                                ))
-                              ) : (
-                                <span style={{ color: 'var(--text3)', fontSize: 12 }}>No Clubs</span>
-                              )}
-                              <button
-                                type="button"
-                                className="admin-edit-clubs-btn"
-                                onClick={() => handleOpenEditClubs(u)}
-                                title="Change clubs for this user"
-                              >
-                                ✏️ Change
-                              </button>
-                            </div>
+                            {u.username === 'mnAdmin' ? (
+                              <span className="admin-group-tag" style={{ background: 'rgba(212, 160, 23, 0.15)', borderColor: 'var(--gold)', color: 'var(--gold)', fontWeight: 600 }}>
+                                👑 All Clubs (System Admin)
+                              </span>
+                            ) : (
+                              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+                                {u.groups && u.groups.length > 0 ? (
+                                  u.groups.map(g => (
+                                    <span key={g.id} className="admin-group-tag">
+                                      🎬 {g.name}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span style={{ color: 'var(--text3)', fontSize: 12 }}>No Clubs</span>
+                                )}
+                                <button
+                                  type="button"
+                                  className="admin-edit-clubs-btn"
+                                  onClick={() => handleOpenEditClubs(u)}
+                                  title="Change clubs for this user"
+                                >
+                                  ✏️ Change
+                                </button>
+                              </div>
+                            )}
                           </td>
                           <td>
                             <span className={`admin-role-badge ${u.isAdmin ? 'admin' : 'member'}`}>
@@ -546,13 +552,15 @@ export default function Admin() {
                           </td>
                           <td style={{ textAlign: 'right' }}>
                             <div className="admin-actions">
-                              <button
-                                className="btn btn-secondary btn-sm"
-                                onClick={() => handleOpenEditClubs(u)}
-                                title="Change which clubs this member belongs to"
-                              >
-                                🎬 Clubs
-                              </button>
+                              {u.username !== 'mnAdmin' && (
+                                <button
+                                  className="btn btn-secondary btn-sm"
+                                  onClick={() => handleOpenEditClubs(u)}
+                                  title="Change which clubs this member belongs to"
+                                >
+                                  🎬 Clubs
+                                </button>
+                              )}
                               <button
                                 className="btn btn-secondary btn-sm"
                                 onClick={() => setResetTargetUser(u)}
@@ -597,23 +605,31 @@ export default function Admin() {
                         <div className="admin-card-clubs-row">
                           <div className="admin-card-section-label">Movie Clubs:</div>
                           <div className="admin-card-chips">
-                            {u.groups && u.groups.length > 0 ? (
-                              u.groups.map(g => (
-                                <span key={g.id} className="admin-group-tag">
-                                  🎬 {g.name}
-                                </span>
-                              ))
+                            {u.username === 'mnAdmin' ? (
+                              <span className="admin-group-tag" style={{ background: 'rgba(212, 160, 23, 0.15)', borderColor: 'var(--gold)', color: 'var(--gold)', fontWeight: 600 }}>
+                                👑 All Clubs (System Admin)
+                              </span>
                             ) : (
-                              <span style={{ color: 'var(--text3)', fontSize: 12 }}>No Clubs</span>
+                              <>
+                                {u.groups && u.groups.length > 0 ? (
+                                  u.groups.map(g => (
+                                    <span key={g.id} className="admin-group-tag">
+                                      🎬 {g.name}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span style={{ color: 'var(--text3)', fontSize: 12 }}>No Clubs</span>
+                                )}
+                                <button
+                                  type="button"
+                                  className="admin-edit-clubs-btn"
+                                  onClick={() => handleOpenEditClubs(u)}
+                                  title="Change clubs for this user"
+                                >
+                                  ✏️ Change
+                                </button>
+                              </>
                             )}
-                            <button
-                              type="button"
-                              className="admin-edit-clubs-btn"
-                              onClick={() => handleOpenEditClubs(u)}
-                              title="Change clubs for this user"
-                            >
-                              ✏️ Change
-                            </button>
                           </div>
                         </div>
 
@@ -624,13 +640,15 @@ export default function Admin() {
                         </div>
 
                         <div className="admin-card-actions">
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => handleOpenEditClubs(u)}
-                            title="Change clubs"
-                          >
-                            🎬 Clubs
-                          </button>
+                          {u.username !== 'mnAdmin' && (
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => handleOpenEditClubs(u)}
+                              title="Change clubs"
+                            >
+                              🎬 Clubs
+                            </button>
+                          )}
                           <button
                             className="btn btn-secondary btn-sm"
                             onClick={() => setResetTargetUser(u)}

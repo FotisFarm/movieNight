@@ -56,7 +56,7 @@ app.get('/api/config', async (req, res) => {
     });
   }
   const group = req.group;
-  const isSiteAdmin = Boolean(req.session?.isAdmin || req.session?.voter === 'mnAdmin');
+  const isSiteAdmin = Boolean(req.session?.isAdmin || req.session?.voter === 'mnAdmin' || req.session?.username === 'mnAdmin');
   const isGroupAdmin = Boolean(group?.members?.some(m => (m.id === req.session?.userId || m.displayName === req.session?.voter || m.username === req.session?.voter) && m.role === 'admin'));
   const isAdmin = isSiteAdmin || isGroupAdmin;
   res.json({

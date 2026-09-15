@@ -784,6 +784,12 @@ async function initMultiGroup() {
         await run('INSERT OR IGNORE INTO group_members (group_id, user_id, role) VALUES (2, ?, ?)', fotis.id, 'admin');
       }
 
+      // Ensure mnAdmin is never in group_members to preserve group size (6 voters)
+      await run(`
+        DELETE FROM group_members
+        WHERE user_id IN (SELECT id FROM users WHERE username = 'mnAdmin')
+      `);
+
       // Backfill Group 1 movie status from movies.mn and movies.watchlist
       await run(`
         INSERT OR IGNORE INTO group_movie_status (group_id, movie_id, mn, watchlist)

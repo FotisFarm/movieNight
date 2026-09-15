@@ -15,6 +15,7 @@ router.get('/users', ah(async (_req, res) => {
     ORDER BY u.id ASC
   `);
 
+  const allGroups = await db.all('SELECT id, name, slug FROM groups ORDER BY id ASC');
   const userIds = users.map(u => u.id);
   let memberships = [];
   if (userIds.length > 0) {
@@ -35,9 +36,11 @@ router.get('/users', ah(async (_req, res) => {
     isAdmin: Boolean(u.is_admin),
     createdAt: u.created_at,
     ratingsCount: Number(u.ratings_count || 0),
-    groups: memberships
-      .filter(m => m.user_id === u.id)
-      .map(m => ({ id: m.group_id, name: m.group_name, slug: m.group_slug, role: m.role })),
+    groups: u.username === 'mnAdmin'
+      ? allGroups.map(g => ({ id: g.id, name: g.name, slug: g.slug, role: 'admin' }))
+      : memberships
+          .filter(m => m.user_id === u.id)
+          .map(m => ({ id: m.group_id, name: m.group_name, slug: m.group_slug, role: m.role })),
   }));
 
   res.json(enriched);
@@ -157,8 +160,12 @@ router.put('/users/:id/groups', ah(async (req, res) => {
   const userId = Number(req.params.id);
   const { groupIds = [] } = req.body || {};
 
-  const user = await db.get('SELECT id, display_name FROM users WHERE id = ?', userId);
+  const user = await db.get('SELECT id, username, display_name FROM users WHERE id = ?', userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
+
+  if (user.username === 'mnAdmin') {
+    return res.json({ ok: true, message: 'System administrator has global access to all clubs without affecting voter counts' });
+  }
 
   await db.run('DELETE FROM group_members WHERE user_id = ?', userId);
   for (const gid of groupIds) {
