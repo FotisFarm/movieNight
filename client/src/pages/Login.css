@@ -1,0 +1,260 @@
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: var(--bg);
+}
+
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  padding: 36px 28px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  animation: loginFadeIn 0.25s ease-out;
+}
+
+@keyframes loginFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-brand {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.login-brand-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.login-brand-sub {
+  color: var(--text2);
+  font-size: 13px;
+}
+
+.login-error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid var(--red);
+  color: var(--red);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Profiles Grid ── */
+.login-profiles-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+@media (min-width: 400px) {
+  .login-profiles-grid.grid-many {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.login-profile-card {
+  position: relative;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 10px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  user-select: none;
+}
+
+.login-profile-card:hover {
+  background: var(--surface3);
+  border-color: var(--gold);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.login-profile-card:active {
+  transform: translateY(0);
+}
+
+.login-profile-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.login-profile-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.login-profile-handle {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.login-profile-badge {
+  font-size: 10px;
+  color: var(--gold);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.login-remove-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text3);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+
+.login-profile-card:hover .login-remove-btn {
+  opacity: 1;
+}
+
+.login-remove-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--red);
+}
+
+/* ── Selected Profile Banner ── */
+.login-selected-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 20px;
+}
+
+.login-selected-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.login-selected-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.login-selected-handle {
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.login-switch-btn {
+  font-size: 12px;
+  color: var(--gold);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.login-switch-btn:hover {
+  background: rgba(232, 197, 71, 0.1);
+}
+
+/* ── Actions & Toggles ── */
+.login-footer-actions {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.login-alt-btn {
+  width: 100%;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+
+.login-alt-btn:hover {
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--text3);
+}
+
+.login-admin-quick-link {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  transition: color 0.15s;
+}
+
+.login-admin-quick-link:hover {
+  color: var(--gold);
+}
