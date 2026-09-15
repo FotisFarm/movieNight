@@ -9,6 +9,9 @@ const DEFAULTS = {
   sandboxMode: false,
   sandboxVoter: '',
   hideHal: false,
+  isAdmin: false,
+  isSiteAdmin: false,
+  isGroupAdmin: false,
 };
 
 const AppConfigContext = createContext({

@@ -165,9 +165,11 @@ function ListDetail({ listKey, voter }) {
   if (loading) return <div className="spinner" />;
   if (error || !list) return <div className="lists-empty">{error || "List not found"}</div>;
 
-  const { sandboxMode } = useAppConfig();
+  const { sandboxMode, isAdmin: configIsAdmin, activeGroup } = useAppConfig();
+  const isGroupAdmin = Boolean(activeGroup?.members?.some(m => (m.displayName === voter || m.username === voter) && m.role === 'admin'));
+  const isAdmin = Boolean(configIsAdmin || sessionStorage.getItem('isAdmin') === 'true' || voter === 'mnAdmin' || isGroupAdmin);
   const isSandboxList = sandboxMode && (list.id >= 1000000);
-  const canEdit = isSandboxList || (!sandboxMode && (voter === 'mnAdmin' || voter === list.created_by));
+  const canEdit = isSandboxList || (!sandboxMode && (isAdmin || voter === list.created_by));
   const canModifyItems = isSandboxList || !sandboxMode;
   const films = list.films || [];
   const existingIds = new Set(films.map(f => f.id));

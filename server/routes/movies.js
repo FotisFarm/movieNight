@@ -11,6 +11,13 @@ const router = express.Router();
 
 const { VOTERS, GROUP_SIZE, SANDBOX_MODE } = require('../config');
 
+function isUserAdmin(req) {
+  if (req.session?.isAdmin) return true;
+  if (req.session?.voter === 'mnAdmin' || req.session?.username === 'mnAdmin') return true;
+  if (req.group?.members?.some(m => (m.id === req.session?.userId || m.displayName === req.session?.voter || m.username === req.session?.voter) && m.role === 'admin')) return true;
+  return false;
+}
+
 // GET /api/movies
 router.get('/', ah(async (req, res) => {
   const { search, director, year, yearMin, yearMax, voter, voters, mn, watchlist, rated, minVoters, maxVoters } = req.query;
@@ -101,7 +108,8 @@ router.get('/:id/history', ah(async (req, res) => {
 router.post('/:id/watchlist-vote', ah(async (req, res) => {
   const id = Number(req.params.id);
   const sessionVoter = req.session.voter;
-  const voter = (sessionVoter === 'mnAdmin' && req.body.targetVoter) ? req.body.targetVoter : sessionVoter;
+  const isAdmin = isUserAdmin(req);
+  const voter = (isAdmin && req.body.targetVoter) ? req.body.targetVoter : sessionVoter;
   const groupId = req.group?.id || 1;
 
   let user = await db.get('SELECT id FROM users WHERE display_name = ? OR username = ?', voter, voter);
@@ -123,7 +131,7 @@ router.post('/:id/watchlist-vote', ah(async (req, res) => {
       await db.run('DELETE FROM watchlist_votes WHERE movie_id = ? AND voter = ?', id, voter);
     }
   } else {
-    if (sessionVoter !== 'mnAdmin') {
+    if (!isAdmin) {
       const { c: count } = await db.get(
         'SELECT COUNT(*) as c FROM group_watchlist_votes WHERE group_id = ? AND user_id = ?',
         groupId, userId
@@ -178,7 +186,7 @@ router.get('/top10/:voter', ah(async (req, res) => {
 // Must be before /:id. Permission is implicit: it only ever touches req.session.voter's rows.
 router.put('/top10', ah(async (req, res) => {
   const sessionVoter = req.session.voter;
-  const isAdmin = sessionVoter === 'mnAdmin';
+  const isAdmin = isUserAdmin(req);
   // Admins may target any voter; everyone else can only rewrite their own.
   if (!isAdmin && req.body.voter && req.body.voter !== sessionVoter) {
     return res.status(403).json({ error: 'Forbidden' });
@@ -400,7 +408,7 @@ router.patch('/:id', ah(async (req, res) => {
 
   const { director, title, year, mn, watchlist, cinobo, imdb_id, runtime, ratings, comments, top3 } = req.body;
   const sessionVoter = req.session.voter;
-  const isAdmin = sessionVoter === 'mnAdmin';
+  const isAdmin = isUserAdmin(req);
 
   const updates = {};
   const isSandboxMovie = SANDBOX_MODE && (id >= 1000000);

@@ -50,18 +50,28 @@ app.get('/api/config', async (req, res) => {
       sandboxMode: SANDBOX_MODE,
       sandboxVoter: SANDBOX_VOTER,
       hideHal: HIDE_HAL,
+      isAdmin: false,
+      isSiteAdmin: false,
+      isGroupAdmin: false,
     });
   }
   const group = req.group;
+  const isSiteAdmin = Boolean(req.session?.isAdmin || req.session?.voter === 'mnAdmin');
+  const isGroupAdmin = Boolean(group?.members?.some(m => (m.id === req.session?.userId || m.displayName === req.session?.voter || m.username === req.session?.voter) && m.role === 'admin'));
+  const isAdmin = isSiteAdmin || isGroupAdmin;
   res.json({
     voters: group.voters,
     groupSize: group.groupSize,
     minVoters: group.minVoters,
-    activeGroup: { id: group.id, name: group.name, slug: group.slug },
+    activeGroup: { id: group.id, name: group.name, slug: group.slug, members: group.members },
     allVoters: group.voters,
     sandboxMode: SANDBOX_MODE,
     sandboxVoter: SANDBOX_VOTER,
     hideHal: HIDE_HAL,
+    isAdmin,
+    isSiteAdmin,
+    isGroupAdmin,
+    currentUser: req.session.voter || req.session.displayName,
   });
 });
 

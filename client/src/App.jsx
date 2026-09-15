@@ -67,12 +67,18 @@ function AppInner() {
     api.me().then(d => {
       const v = d.voter || '';
       if (v) sessionStorage.setItem('voter', v);
+      if (d.user?.isAdmin || v === 'mnAdmin') {
+        sessionStorage.setItem('isAdmin', 'true');
+      } else {
+        sessionStorage.removeItem('isAdmin');
+      }
       setVoter(v);
       setUser(d.user || null);
       setGroups(d.groups || []);
       if (v) refreshConfig?.();
     }).catch(() => {
       setVoter('');
+      sessionStorage.removeItem('isAdmin');
       setUser(null);
       setGroups([]);
     });
@@ -81,6 +87,11 @@ function AppInner() {
   const handleLogin = (data) => {
     const v = data?.voter || data;
     sessionStorage.setItem('voter', v);
+    if (data?.user?.isAdmin || v === 'mnAdmin') {
+      sessionStorage.setItem('isAdmin', 'true');
+    } else {
+      sessionStorage.removeItem('isAdmin');
+    }
     setVoter(v);
     setUser(data?.user || null);
     setGroups(data?.groups || []);
@@ -90,6 +101,7 @@ function AppInner() {
   const handleLogout = () => {
     api.logout();
     sessionStorage.removeItem('voter');
+    sessionStorage.removeItem('isAdmin');
     setVoter('');
     setUser(null);
     setGroups([]);

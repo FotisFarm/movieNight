@@ -172,7 +172,9 @@ function Top10SortableRow({ m, voter, onOpen }) {
 }
 
 export default function Stats({ voter }) {
-  const { voters, groupSize } = useAppConfig();
+  const { voters, groupSize, isAdmin: configIsAdmin, activeGroup } = useAppConfig();
+  const isGroupAdmin = Boolean(activeGroup?.members?.some(m => (m.displayName === voter || m.username === voter) && m.role === 'admin'));
+  const isAdmin = Boolean(configIsAdmin || sessionStorage.getItem('isAdmin') === 'true' || voter === 'mnAdmin' || isGroupAdmin);
   const [movies, setMovies]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalId, setModalId] = useState(null);
@@ -410,7 +412,7 @@ export default function Stats({ voter }) {
         <h2 className="stats-heading">Everyone's Top 10</h2>
         <div className="top10-grid">
           {stats.map(s => {
-            const editable = (voter === 'mnAdmin' || s.voter === voter) && s.topPicks.length > 1;
+            const editable = (isAdmin || s.voter === voter) && s.topPicks.length > 1;
             return (
               <div key={s.voter} className={`top10-card${editable ? ' top10-card-editable' : ''}`}>
                 <div className="top10-name">
