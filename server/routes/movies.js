@@ -2,7 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { rankBonus } = require('../scoring');
 const { lookupImdb, searchImdb, getImdbById, extractImdbId } = require('../omdb');
-const { findByImdbId, lookupPosterPath, getMovieDetails, lookupMovieRuntime } = require('../tmdb');
+const { findByImdbId, lookupPosterPath, getMovieDetails, lookupMovieRuntime, getMovieTrailer } = require('../tmdb');
 const { fetchLetterboxdRating } = require('../letterboxd');
 const ah = require('../asyncHandler');
 const { enrichMovie, enrichMoviesBatch } = require('../enrich');
@@ -102,6 +102,29 @@ router.get('/:id/history', ah(async (req, res) => {
     });
   }
   res.json(byVoter);
+}));
+
+// Trailer in-memory cache (24 hours TTL)
+const trailerCache = new Map();
+const TRAILER_CACHE_TTL = 24 * 60 * 60 * 1000;
+
+// GET /api/movies/:id/trailer
+router.get('/:id/trailer', ah(async (req, res) => {
+  const movieId = parseInt(req.params.id, 10);
+  if (!movieId) return res.status(400).json({ error: 'Invalid movie ID' });
+
+  const cached = trailerCache.get(movieId);
+  if (cached && (Date.now() - cached.cachedAt < TRAILER_CACHE_TTL)) {
+    return res.json({ trailer: cached.trailer });
+  }
+
+  const movie = await db.get('SELECT id, title, year, imdb_id FROM movies WHERE id = ?', movieId);
+  if (!movie) return res.status(404).json({ error: 'Movie not found' });
+
+  const trailer = await getMovieTrailer(movie.imdb_id, movie.title, movie.year);
+  trailerCache.set(movieId, { trailer, cachedAt: Date.now() });
+
+  res.json({ trailer });
 }));
 
 // POST /api/movies/:id/watchlist-vote  — must be before /:id

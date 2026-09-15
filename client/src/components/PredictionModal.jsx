@@ -1,18 +1,27 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { fmt, scoreClass, posterUrl } from '../utils';
 import WatchlistBadge from './WatchlistBadge';
 import LetterboxdPill from './LetterboxdPill';
+import TrailerModal from './TrailerModal';
 import './PredictionModal.css';
 
 export default function PredictionModal({ film, voters = [], onClose, onToggleWatchlist, onOpenFullMovie }) {
+  const [trailerOpen, setTrailerOpen] = useState(false);
+
   // Close on Escape
   useEffect(() => {
     function handleKeyDown(e) {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (trailerOpen) {
+          setTrailerOpen(false);
+        } else {
+          onClose();
+        }
+      }
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  }, [onClose, trailerOpen]);
 
   if (!film) return null;
 
@@ -234,7 +243,14 @@ export default function PredictionModal({ film, voters = [], onClose, onToggleWa
 
         {/* ── Modal Footer ── */}
         <div className="pred-modal-footer">
-          <div className="pred-modal-footer-left">
+          <div className="pred-modal-footer-left" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button
+              type="button"
+              className="btn btn-trailer btn-sm"
+              onClick={() => setTrailerOpen(true)}
+            >
+              ▶ Watch Trailer
+            </button>
             {onOpenFullMovie && (
               <button
                 type="button"
@@ -252,6 +268,13 @@ export default function PredictionModal({ film, voters = [], onClose, onToggleWa
             Close
           </button>
         </div>
+
+        {trailerOpen && (
+          <TrailerModal
+            movie={film}
+            onClose={() => setTrailerOpen(false)}
+          />
+        )}
       </div>
     </div>
   );

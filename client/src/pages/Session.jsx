@@ -3,6 +3,7 @@ import { api } from '../api';
 import { useAppConfig } from '../AppConfigContext';
 import { formatRuntime, posterUrl, fmtScore10 as fmt, scoreClass } from '../utils';
 import MovieModal from '../components/MovieModal';
+import TrailerModal from '../components/TrailerModal';
 import './Session.css';
 
 // Palette of distinct cinematic hues for the wheel slices
@@ -150,6 +151,7 @@ export default function Session({ voter }) {
   const [isSpinning, setIsSpinning] = useState(false);
   const [winner, setWinner] = useState(null);
   const [detailMovieId, setDetailMovieId] = useState(null);
+  const [trailerMovie, setTrailerMovie] = useState(null);
 
   // Canvas refs
   const canvasRef = useRef(null);
@@ -764,6 +766,13 @@ export default function Session({ voter }) {
                 <div className="winner-actions">
                   <button
                     type="button"
+                    className="btn btn-trailer btn-sm"
+                    onClick={() => setTrailerMovie(winner)}
+                  >
+                    ▶ Watch Trailer
+                  </button>
+                  <button
+                    type="button"
                     className="btn btn-primary btn-sm"
                     onClick={() => setDetailMovieId(winner.id)}
                   >
@@ -870,9 +879,22 @@ export default function Session({ voter }) {
                     <div className="contender-info">
                       <div className="contender-title-row">
                         <span className="contender-title" title={movie.title}>{movie.title}</span>
-                        <span className={`contender-score ${scoreClass(movie.sessionScore)}`}>
-                          {fmt(movie.sessionScore)}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                          <button
+                            type="button"
+                            className="contender-trailer-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTrailerMovie(movie);
+                            }}
+                            title={`Watch trailer for ${movie.title}`}
+                          >
+                            ▶
+                          </button>
+                          <span className={`contender-score ${scoreClass(movie.sessionScore)}`}>
+                            {fmt(movie.sessionScore)}
+                          </span>
+                        </div>
                       </div>
 
                       <div className="contender-meta">
@@ -933,6 +955,14 @@ export default function Session({ voter }) {
             setDetailMovieId(null);
             fetchContenders();
           }}
+        />
+      )}
+
+      {/* TrailerModal */}
+      {trailerMovie && (
+        <TrailerModal
+          movie={trailerMovie}
+          onClose={() => setTrailerMovie(null)}
         />
       )}
     </div>

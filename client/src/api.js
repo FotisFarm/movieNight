@@ -27,6 +27,7 @@ export const api = {
   updateMovie: (id, data) => request(`/movies/${id}`, { method: 'PATCH', body: data }),
   deleteMovie: (id) => request(`/movies/${id}`, { method: 'DELETE' }),
   getMovieHistory: (id) => request(`/movies/${id}/history`),
+  getMovieTrailer: (id) => request(`/movies/${id}/trailer`),
   getDirectors: () => request('/movies/directors'),
   imdbSearch: (title, year) => request(`/movies/imdb-search?title=${encodeURIComponent(title)}&year=${encodeURIComponent(year || '')}`),
   imdbDetail: (imdbId) => request(`/movies/imdb-detail?imdbId=${encodeURIComponent(imdbId)}`),

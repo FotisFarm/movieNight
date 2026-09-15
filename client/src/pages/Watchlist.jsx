@@ -12,6 +12,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
 import LetterboxdPill from '../components/LetterboxdPill';
+import TrailerModal from '../components/TrailerModal';
 import { useToast } from '../hooks/useToast.jsx';
 import { useAppConfig } from '../AppConfigContext';
 import { fmtScore10 as fmt, scoreClass, formatRuntime } from '../utils';
@@ -35,7 +36,7 @@ function sortWithManual(a, b, manualOrder) {
   return (b.voterCount ?? 0) - (a.voterCount ?? 0);
 }
 
-function RankingRow({ m, index, draggable, onOpen }) {
+function RankingRow({ m, index, draggable, onOpen, onTrailer }) {
   const { voters } = useAppConfig();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: m.id, disabled: !draggable });
@@ -66,10 +67,25 @@ function RankingRow({ m, index, draggable, onOpen }) {
           {m.runtime ? ` · ${formatRuntime(m.runtime)}` : ''}
         </span>
       </div>
-      <div className="wl-ranking-voters">
-        {voters.map(v => m.watchlistVotes.includes(v) && (
-          <span key={v} className="wl-vote-pill">{v}</span>
-        ))}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+        {onTrailer && (
+          <button
+            type="button"
+            className="wl-trailer-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onTrailer(m);
+            }}
+            title={`Watch trailer for ${m.title}`}
+          >
+            ▶
+          </button>
+        )}
+        <div className="wl-ranking-voters">
+          {voters.map(v => m.watchlistVotes.includes(v) && (
+            <span key={v} className="wl-vote-pill">{v}</span>
+          ))}
+        </div>
       </div>
     </li>
   );
@@ -82,6 +98,7 @@ export default function Watchlist({ voter }) {
   const [movies, setMovies]         = useState([]);
   const [loading, setLoading]       = useState(true);
   const [selectedId, setSelectedId] = useState(null);
+  const [trailerMovie, setTrailerMovie] = useState(null);
   const [manualOrder, setManualOrder] = useState(loadManualOrder);
   const [activeId, setActiveId]     = useState(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState(null);
@@ -298,6 +315,7 @@ export default function Watchlist({ voter }) {
                     index={i}
                     draggable={isAdmin && tiedCounts.has(m.watchlistVotes.length)}
                     onOpen={setSelectedId}
+                    onTrailer={setTrailerMovie}
                   />
                 ))}
               </ol>
@@ -330,6 +348,17 @@ export default function Watchlist({ voter }) {
                   <div className="wl-card-top">
                     <div className="wl-movie-title">{m.title}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                      <button
+                        type="button"
+                        className="wl-trailer-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTrailerMovie(m);
+                        }}
+                        title={`Watch trailer for ${m.title}`}
+                      >
+                        ▶
+                      </button>
                       {(m.imdb_id || m.letterboxd_rating != null) && (
                         <LetterboxdPill imdbId={m.imdb_id} score={m.letterboxd_rating} />
                       )}
@@ -413,6 +442,13 @@ export default function Watchlist({ voter }) {
           onClose={() => setSelectedId(null)}
           onSaved={handleSaved}
           onDeleted={id => { setMovies(ms => ms.filter(m => m.id !== id)); setSelectedId(null); }}
+        />
+      )}
+
+      {trailerMovie && (
+        <TrailerModal
+          movie={trailerMovie}
+          onClose={() => setTrailerMovie(null)}
         />
       )}
       <Toast />

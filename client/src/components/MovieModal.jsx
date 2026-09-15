@@ -4,6 +4,7 @@ import { useAppConfig } from '../AppConfigContext';
 import { fmtScore10 as fmt, scoreClass, extractImdbId, posterUrl, formatRuntime } from '../utils';
 import ReorderTop10Dialog from './ReorderTop10Dialog';
 import LetterboxdPill from './LetterboxdPill';
+import TrailerModal from './TrailerModal';
 import './MovieModal.css';
 
 const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
@@ -74,6 +75,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   const [listError,    setListError]    = useState('');
   const [reorderVoter, setReorderVoter] = useState(null);
   const [top10Reordered, setTop10Reordered] = useState(false);
+  const [trailerOpen, setTrailerOpen] = useState(false);
 
   function handleModalClose() {
     if (top10Reordered) {
@@ -89,7 +91,9 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   useEffect(() => {
     function onKey(e) {
       if (e.key === 'Escape') {
-        if (reorderVoter) {
+        if (trailerOpen) {
+          setTrailerOpen(false);
+        } else if (reorderVoter) {
           setReorderVoter(null);
         } else {
           handleModalClose();
@@ -98,7 +102,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [onClose, reorderVoter, top10Reordered, movieId]);
+  }, [onClose, reorderVoter, top10Reordered, movieId, trailerOpen]);
 
   useEffect(() => {
     api.getTop10Counts().then(setTop10Counts).catch(() => {});
@@ -339,6 +343,14 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                 </div>
               )}
             </div>
+
+            <button
+              type="button"
+              className="btn btn-trailer full-width"
+              onClick={() => setTrailerOpen(true)}
+            >
+              ▶ Watch Trailer
+            </button>
 
             {/* Stats */}
             <div className="info-grid">
@@ -861,6 +873,13 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
               setTop3(t => ({ ...t, [reorderVoter]: found ? found.rank : null }));
               setTop10Counts(c => ({ ...c, [reorderVoter]: newPicks.length }));
             }}
+          />
+        )}
+
+        {trailerOpen && (
+          <TrailerModal
+            movie={{ id: movie.id, title: movie.title || editTitle, year: movie.year || editYear }}
+            onClose={() => setTrailerOpen(false)}
           />
         )}
       </div>

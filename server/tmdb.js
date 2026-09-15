@@ -126,4 +126,51 @@ async function lookupMovieRuntime(imdbId, title, year) {
   return null;
 }
 
-module.exports = { findByImdbId, searchMovie, getExternalIds, lookupPosterPath, getMovieDetails, lookupMovieRuntime };
+// Fetches official YouTube trailer or teaser for a movie
+async function getMovieTrailer(imdbId, title, year) {
+  let tmdbId = null;
+  if (imdbId) {
+    const byId = await findByImdbId(imdbId);
+    if (byId?.tmdbId) tmdbId = byId.tmdbId;
+  }
+  if (!tmdbId && title) {
+    const [first] = await searchMovie(title, year);
+    if (first?.tmdbId) tmdbId = first.tmdbId;
+  }
+  if (!tmdbId) return null;
+
+  try {
+    const data = await tmdbFetch(`/movie/${tmdbId}/videos`);
+    const videos = data?.results || [];
+    const ytVideos = videos.filter(v => v.site === 'YouTube' && v.key);
+    if (ytVideos.length === 0) return null;
+
+    // Pick best match: Official Trailer > Trailer > Official Teaser > Teaser > Clip
+    const scored = ytVideos.map(v => {
+      let score = 0;
+      if (v.type === 'Trailer' && v.official) score = 100;
+      else if (v.type === 'Trailer') score = 80;
+      else if (v.type === 'Teaser' && v.official) score = 60;
+      else if (v.type === 'Teaser') score = 40;
+      else if (v.type === 'Clip') score = 20;
+      return { ...v, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    const best = scored[0];
+    return {
+      key: best.key,
+      name: best.name,
+      site: best.site,
+      type: best.type,
+      official: Boolean(best.official),
+      youtubeUrl: `https://www.youtube.com/watch?v=${best.key}`,
+      embedUrl: `https://www.youtube-nocookie.com/embed/${best.key}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
+module.exports = { findByImdbId, searchMovie, getExternalIds, lookupPosterPath, getMovieDetails, lookupMovieRuntime, getMovieTrailer };
+
