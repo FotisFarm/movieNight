@@ -37,10 +37,11 @@ function rankClass(r) {
 }
 
 export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankData }) {
-  const { voters: configVoters, groupSize, sandboxMode, activeGroup } = useAppConfig();
+  const { voters: configVoters, groupSize, sandboxMode, activeGroup, isAdmin: configIsAdmin } = useAppConfig();
   const currentVoter = sessionStorage.getItem('voter');
-  const isAdmin = currentVoter === 'mnAdmin';
-  const isGhost = !configVoters.includes(currentVoter) && currentVoter !== 'mnAdmin' && !!currentVoter;
+  const isGroupAdmin = Boolean(activeGroup?.members?.some(m => (m.displayName === currentVoter || m.username === currentVoter) && m.role === 'admin'));
+  const isAdmin = Boolean(configIsAdmin || sessionStorage.getItem('isAdmin') === 'true' || currentVoter === 'mnAdmin' || isGroupAdmin);
+  const isGhost = !configVoters.includes(currentVoter) && currentVoter !== 'mnAdmin' && !isAdmin && !!currentVoter;
   const [movie, setMovie]     = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);

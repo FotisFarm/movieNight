@@ -104,6 +104,22 @@ async function attachGroupContext(req, _res, next) {
       }
     }
 
+    if (req.session?.userId && req.session.isAdmin === undefined) {
+      const user = await db.get(
+        'SELECT id, username, display_name, is_admin FROM users WHERE id = ?',
+        req.session.userId
+      );
+      if (user) {
+        req.session.username = user.username;
+        req.session.displayName = user.display_name;
+        req.session.isAdmin = !!user.is_admin;
+      }
+    }
+
+    if (req.session?.voter === 'mnAdmin' || req.session?.username === 'mnAdmin') {
+      req.session.isAdmin = true;
+    }
+
     let targetGroupId = req.query?.groupId || req.session?.activeGroupId;
 
     if (!targetGroupId && req.session?.userId) {

@@ -76,8 +76,9 @@ function RankingRow({ m, index, draggable, onOpen }) {
 }
 
 export default function Watchlist({ voter }) {
-  const { voters } = useAppConfig();
-  const isAdmin = voter === 'mnAdmin';
+  const { voters, isAdmin: configIsAdmin, activeGroup } = useAppConfig();
+  const isGroupAdmin = Boolean(activeGroup?.members?.some(m => (m.displayName === voter || m.username === voter) && m.role === 'admin'));
+  const isAdmin = Boolean(configIsAdmin || sessionStorage.getItem('isAdmin') === 'true' || voter === 'mnAdmin' || isGroupAdmin);
   const [movies, setMovies]         = useState([]);
   const [loading, setLoading]       = useState(true);
   const [selectedId, setSelectedId] = useState(null);

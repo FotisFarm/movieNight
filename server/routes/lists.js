@@ -30,7 +30,8 @@ async function findList(key) {
 // created it (and mnAdmin), so nobody can wipe someone else's list by accident.
 function canEditList(req, list) {
   if (SANDBOX_MODE && list.id >= 1000000) return true;
-  return req.session.voter === 'mnAdmin' || req.session.voter === list.created_by;
+  const isAdmin = Boolean(req.session?.isAdmin || req.session?.voter === 'mnAdmin');
+  return isAdmin || req.session.voter === list.created_by;
 }
 
 function cleanTitle(value) {
