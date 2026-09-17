@@ -196,13 +196,20 @@ async function getMovieTrailer(imdbId, title, year) {
 // Fetches streaming availability (flatrate, rent, buy) for a movie, defaulting to Greece (GR)
 async function getMovieWatchProviders(imdbId, title, year, region = 'GR') {
   let tmdbId = null;
+  let backdropPath = null;
   if (imdbId) {
     const byId = await findByImdbId(imdbId);
-    if (byId?.tmdbId) tmdbId = byId.tmdbId;
+    if (byId?.tmdbId) {
+      tmdbId = byId.tmdbId;
+      backdropPath = byId.backdropPath || null;
+    }
   }
   if (!tmdbId && title) {
     const [first] = await searchMovie(title, year);
-    if (first?.tmdbId) tmdbId = first.tmdbId;
+    if (first?.tmdbId) {
+      tmdbId = first.tmdbId;
+      backdropPath = first.backdropPath || null;
+    }
   }
   if (!tmdbId) return null;
 
@@ -220,6 +227,7 @@ async function getMovieWatchProviders(imdbId, title, year, region = 'GR') {
     if (!regData) {
       return {
         region,
+        backdropPath,
         link: data?.results?.US?.link || data?.results?.GB?.link || null,
         flatrate: [],
         rent: [],
@@ -230,6 +238,7 @@ async function getMovieWatchProviders(imdbId, title, year, region = 'GR') {
 
     return {
       region,
+      backdropPath,
       link: regData.link || null,
       flatrate: (regData.flatrate || []).map(mapProvider),
       rent: (regData.rent || []).map(mapProvider),

@@ -80,14 +80,26 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   const [providersLoading, setProvidersLoading] = useState(false);
 
   useEffect(() => {
-    if (!movieId) return;
-    setProviders(null);
+    if (!movieId) {
+      setProviders(null);
+      setProvidersLoading(false);
+      return;
+    }
+    // Defer watch providers lookup until after movie details are loaded,
+    // so the initial getMovie request is fast and unblocked.
+    if (loading) return;
+
     setProvidersLoading(true);
     api.getMovieWatchProviders(movieId)
-      .then(res => setProviders(res?.providers || null))
+      .then(res => {
+        setProviders(res?.providers || null);
+        if (res?.backdropPath) {
+          setMovie(prev => (prev && !prev.backdrop_path) ? { ...prev, backdrop_path: res.backdropPath } : prev);
+        }
+      })
       .catch(() => setProviders(null))
       .finally(() => setProvidersLoading(false));
-  }, [movieId]);
+  }, [movieId, loading]);
 
   function handleModalClose() {
     if (top10Reordered) {

@@ -143,24 +143,30 @@ router.get('/:id/watch-providers', ah(async (req, res) => {
 
   const cached = watchProvidersCache.get(movieId);
   if (cached && (Date.now() - cached.cachedAt < WATCH_PROVIDERS_CACHE_TTL)) {
-    return res.json({ providers: cached.providers });
+    return res.json({ providers: cached.providers, backdropPath: cached.backdropPath });
   }
 
-  const movie = await db.get('SELECT id, title, year, imdb_id, stream_gr FROM movies WHERE id = ?', movieId);
+  const movie = await db.get('SELECT id, title, year, imdb_id, backdrop_path, stream_gr FROM movies WHERE id = ?', movieId);
   if (!movie) return res.status(404).json({ error: 'Movie not found' });
 
-  const providers = await getMovieWatchProviders(movie.imdb_id, movie.title, movie.year, 'GR');
-  watchProvidersCache.set(movieId, { providers, cachedAt: Date.now() });
+  const result = await getMovieWatchProviders(movie.imdb_id, movie.title, movie.year, 'GR');
+  const providers = result ? { ...result } : null;
+  const backdropPath = result?.backdropPath ?? movie.backdrop_path ?? null;
 
-  // Update stream_gr in background if flatrate providers were resolved
+  watchProvidersCache.set(movieId, { providers, backdropPath, cachedAt: Date.now() });
+
+  // Update in background without awaiting so client response is instant
   if (providers?.flatrate && Array.isArray(providers.flatrate)) {
     const streamNames = providers.flatrate.map(p => p.name).join('|');
     if (streamNames !== movie.stream_gr) {
-      await db.run('UPDATE movies SET stream_gr = ? WHERE id = ?', streamNames, movieId).catch(() => {});
+      db.run('UPDATE movies SET stream_gr = ? WHERE id = ?', streamNames, movieId).catch(() => {});
     }
   }
+  if (backdropPath && !movie.backdrop_path) {
+    db.run('UPDATE movies SET backdrop_path = ? WHERE id = ?', backdropPath, movieId).catch(() => {});
+  }
 
-  res.json({ providers });
+  res.json({ providers, backdropPath });
 }));
 
 // POST /api/movies/:id/watchlist-vote  — must be before /:id

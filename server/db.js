@@ -286,6 +286,7 @@ async function init() {
   if (!SANDBOX_MODE) {
     await backfillInitialRuntimes();
     await backfillInitialLetterboxd();
+    await backfillInitialBackdrops();
     await backfillListSlugs();
   }
 
@@ -732,6 +733,45 @@ async function backfillInitialLetterboxd() {
     console.log(`[db] Letterboxd ratings backfilled successfully. Total with letterboxd_rating: ${after?.c}`);
   } catch (err) {
     console.warn('[db] Note: backfillInitialLetterboxd notice:', err.message);
+  }
+}
+
+async function backfillInitialBackdrops() {
+  try {
+    const existing = await get("SELECT COUNT(backdrop_path) AS c FROM movies WHERE backdrop_path IS NOT NULL AND backdrop_path != ''");
+    if (existing && Number(existing.c) >= 500) {
+      console.log(`[db] Movie backdrops already populated (${existing.c} films).`);
+      return;
+    }
+
+    let data;
+    try {
+      data = require('./initial-backdrops.json');
+    } catch (_) {
+      try {
+        data = require('./data/initial-backdrops.json');
+      } catch (e) {
+        console.warn('[db] Could not load initial-backdrops.json:', e.message);
+        return;
+      }
+    }
+
+    const entries = Object.entries(data).filter(([_, p]) => p != null && p !== '');
+    if (!entries.length) return;
+    console.log(`[db] Backfilling ${entries.length} movie backdrops into database...`);
+
+    const CHUNK = 100;
+    for (let i = 0; i < entries.length; i += CHUNK) {
+      const slice = entries.slice(i, i + CHUNK);
+      const whenClauses = slice.map(([id, p]) => `WHEN ${parseInt(id, 10)} THEN '${String(p).replace(/'/g, "''")}'`).join(' ');
+      const ids = slice.map(([id]) => parseInt(id, 10)).join(',');
+      const sql = `UPDATE movies SET backdrop_path = CASE id ${whenClauses} END WHERE id IN (${ids}) AND (backdrop_path IS NULL OR backdrop_path = '')`;
+      await run(sql);
+    }
+    const after = await get("SELECT COUNT(backdrop_path) AS c FROM movies WHERE backdrop_path IS NOT NULL AND backdrop_path != ''");
+    console.log(`[db] Movie backdrops backfilled successfully. Total with backdrop: ${after?.c}`);
+  } catch (err) {
+    console.warn('[db] Note: backfillInitialBackdrops notice:', err.message);
   }
 }
 
