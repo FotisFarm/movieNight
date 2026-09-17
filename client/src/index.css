@@ -379,6 +379,7 @@ label { font-size: 12px; font-weight: 600; color: var(--text2); }
 .badge-ranked  { background: #7c6af720; color: var(--accent); border: 1px solid #7c6af740; }
 .badge-top3    { background: #e8c54715; color: var(--gold);   border: 1px solid #e8c54730; font-size: 11px; }
 .badge-imdb    { background: #F5C518; color: #000000; border: 1px solid #d4aa00; font-weight: 700; text-decoration: none; }
+.badge-stream  { background: rgba(0, 184, 212, 0.12); color: #26c6da; border: 1px solid rgba(0, 184, 212, 0.3); }
 
 /* ── IMDb pill (shared across all pages) ── */
 .badge-imdb-pill {

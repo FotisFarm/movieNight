@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
 import { useAppConfig } from '../AppConfigContext';
-import { fmtScore10 as fmt, scoreClass, extractImdbId, posterUrl, formatRuntime } from '../utils';
+import { fmtScore10 as fmt, scoreClass, extractImdbId, posterUrl, backdropUrl, formatRuntime } from '../utils';
 import ReorderTop10Dialog from './ReorderTop10Dialog';
 import LetterboxdPill from './LetterboxdPill';
 import TrailerModal from './TrailerModal';
@@ -76,6 +76,18 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   const [reorderVoter, setReorderVoter] = useState(null);
   const [top10Reordered, setTop10Reordered] = useState(false);
   const [trailerOpen, setTrailerOpen] = useState(false);
+  const [providers, setProviders] = useState(null);
+  const [providersLoading, setProvidersLoading] = useState(false);
+
+  useEffect(() => {
+    if (!movieId) return;
+    setProviders(null);
+    setProvidersLoading(true);
+    api.getMovieWatchProviders(movieId)
+      .then(res => setProviders(res?.providers || null))
+      .catch(() => setProviders(null))
+      .finally(() => setProvidersLoading(false));
+  }, [movieId]);
 
   function handleModalClose() {
     if (top10Reordered) {
@@ -293,6 +305,17 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && handleModalClose()}>
       <div className="modal movie-modal-split">
+        {movie?.backdrop_path && (
+          <div className="movie-modal-backdrop-hero">
+            <img
+              src={backdropUrl(movie.backdrop_path, 'w780')}
+              alt=""
+              className="movie-modal-backdrop-img"
+              loading="eager"
+            />
+            <div className="movie-modal-backdrop-gradient" />
+          </div>
+        )}
         <div className="modal-header">
           <div className="modal-header-text">
             {editing ? (
@@ -351,6 +374,51 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
             >
               ▶ Watch Trailer
             </button>
+
+            {/* Where to Watch (Greece) */}
+            <div className="modal-section-label section-label" style={{ marginTop: 2, marginBottom: 4 }}>
+              Where to Watch · Greece
+            </div>
+            {providersLoading ? (
+              <div style={{ fontSize: 11, color: 'var(--text3)' }}>Checking streaming…</div>
+            ) : providers ? (
+              <div className="streaming-section">
+                {providers.flatrate && providers.flatrate.length > 0 ? (
+                  <div className="streaming-providers-list">
+                    {providers.flatrate.map(p => (
+                      <div key={p.id} className="streaming-provider-badge" title={`Stream on ${p.name}`}>
+                        {p.logoUrl && <img src={p.logoUrl} alt={p.name} className="streaming-provider-logo" />}
+                        <span className="streaming-provider-name">{p.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="streaming-none">
+                    Not on subscription streaming in Greece
+                  </div>
+                )}
+
+                {((providers.rent && providers.rent.length > 0) || (providers.buy && providers.buy.length > 0)) && (
+                  <div className="streaming-rent-buy">
+                    <span className="streaming-rent-label">Rent/Buy:</span>{' '}
+                    {Array.from(new Set([...(providers.rent || []).map(p => p.name), ...(providers.buy || []).map(p => p.name)])).slice(0, 4).join(', ')}
+                  </div>
+                )}
+
+                {providers.link && (
+                  <a
+                    href={providers.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="streaming-justwatch-link"
+                  >
+                    JustWatch ↗
+                  </a>
+                )}
+              </div>
+            ) : (
+              <div style={{ fontSize: 11, color: 'var(--text3)' }}>No streaming info available</div>
+            )}
 
             {/* Stats */}
             <div className="info-grid">

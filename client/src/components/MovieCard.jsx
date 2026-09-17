@@ -131,7 +131,7 @@ function Poster({ path, title, size }) {
 
 export default function MovieCard({ movie, onClick, listView = false, scoreMode = 'fair', onWatchlistToggle }) {
   const { voters, minVoters } = useAppConfig();
-  const { id, title, director, year, runtime, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, letterboxd_rating, poster_path, otherRatings, originalsScore, originalsBoostedScore, originalsVoterCount, originalsMn } = movie;
+  const { id, title, director, year, runtime, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, letterboxd_rating, poster_path, stream_gr, otherRatings, originalsScore, originalsBoostedScore, originalsVoterCount, originalsMn } = movie;
 
   const hasScore = voterCount >= minVoters;
   const displayScore = hasScore
@@ -169,6 +169,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
           {mn          && <span className="badge badge-mn">MN{mn_rank ? ` #${mn_rank}` : ''}</span>}
           <WatchlistBadge id={id} watchlist={watchlist} onToggle={onWatchlistToggle} />
           {rank_global && <span className="badge badge-ranked">#{rank_global}</span>}
+          {stream_gr   && <span className="badge badge-stream" title={`Stream in Greece on: ${stream_gr.replace(/\|/g, ', ')}`}>📺 {stream_gr.split('|')[0]}</span>}
         </div>
 
         <div className="card-ratings">
@@ -187,7 +188,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
     );
   }
 
-  const hasBadges = Boolean(mn || watchlist || rank_global || onWatchlistToggle);
+  const hasBadges = Boolean(mn || watchlist || rank_global || onWatchlistToggle || stream_gr);
   const hasOtherRatings = Boolean(originalsScore != null || (otherRatings && Object.keys(otherRatings).length > 0));
   const hasVoterRatings = Boolean(voters && voters.some(v => ratings?.[v] != null));
   const hasRatingsOrLb = Boolean(hasVoterRatings || hasOtherRatings || imdb_id || letterboxd_rating != null);
@@ -217,6 +218,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
             {mn          && <span className="badge badge-mn">MN{mn_rank ? ` #${mn_rank}` : ''}</span>}
             <WatchlistBadge id={id} watchlist={watchlist} onToggle={onWatchlistToggle} />
             {rank_global && <span className="badge badge-ranked">#{rank_global}</span>}
+            {stream_gr   && <span className="badge badge-stream" title={`Stream in Greece on: ${stream_gr.replace(/\|/g, ', ')}`}>📺 {stream_gr.split('|')[0]}</span>}
           </div>
         )}
 

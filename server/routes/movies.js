@@ -2,7 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { rankBonus } = require('../scoring');
 const { lookupImdb, searchImdb, getImdbById, extractImdbId } = require('../omdb');
-const { findByImdbId, lookupPosterPath, getMovieDetails, lookupMovieRuntime, getMovieTrailer } = require('../tmdb');
+const { findByImdbId, lookupPosterPath, lookupBackdropPath, lookupMediaPaths, getMovieDetails, lookupMovieRuntime, getMovieTrailer, getMovieWatchProviders } = require('../tmdb');
 const { fetchLetterboxdRating } = require('../letterboxd');
 const ah = require('../asyncHandler');
 const { enrichMovie, enrichMoviesBatch } = require('../enrich');
@@ -20,7 +20,7 @@ function isUserAdmin(req) {
 
 // GET /api/movies
 router.get('/', ah(async (req, res) => {
-  const { search, director, year, yearMin, yearMax, voter, voters, mn, watchlist, rated, minVoters, maxVoters } = req.query;
+  const { search, director, year, yearMin, yearMax, voter, voters, mn, watchlist, rated, minVoters, maxVoters, stream, provider } = req.query;
 
   let query = 'SELECT * FROM movies WHERE 1=1';
   const params = [];
@@ -39,6 +39,13 @@ router.get('/', ah(async (req, res) => {
   if (watchlist === '1') {
     query += ' AND EXISTS (SELECT 1 FROM group_movie_status gms WHERE gms.group_id = ? AND gms.movie_id = movies.id AND gms.watchlist = 1)';
     params.push(groupId);
+  }
+  if (stream === '1') {
+    query += " AND (movies.stream_gr IS NOT NULL AND movies.stream_gr != '')";
+  }
+  if (provider) {
+    query += ' AND movies.stream_gr LIKE ?';
+    params.push(`%${provider}%`);
   }
 
   const voterList = (voters ? voters.split(',') : voter ? [voter] : []).map(v => v.trim()).filter(Boolean);
@@ -123,6 +130,37 @@ router.get('/:id/trailer', ah(async (req, res) => {
   trailerCache.set(movieId, { trailer, cachedAt: Date.now() });
 
   res.json({ trailer });
+}));
+
+// Watch providers in-memory cache (24 hours TTL)
+const watchProvidersCache = new Map();
+const WATCH_PROVIDERS_CACHE_TTL = 24 * 60 * 60 * 1000;
+
+// GET /api/movies/:id/watch-providers
+router.get('/:id/watch-providers', ah(async (req, res) => {
+  const movieId = parseInt(req.params.id, 10);
+  if (!movieId) return res.status(400).json({ error: 'Invalid movie ID' });
+
+  const cached = watchProvidersCache.get(movieId);
+  if (cached && (Date.now() - cached.cachedAt < WATCH_PROVIDERS_CACHE_TTL)) {
+    return res.json({ providers: cached.providers });
+  }
+
+  const movie = await db.get('SELECT id, title, year, imdb_id, stream_gr FROM movies WHERE id = ?', movieId);
+  if (!movie) return res.status(404).json({ error: 'Movie not found' });
+
+  const providers = await getMovieWatchProviders(movie.imdb_id, movie.title, movie.year, 'GR');
+  watchProvidersCache.set(movieId, { providers, cachedAt: Date.now() });
+
+  // Update stream_gr in background if flatrate providers were resolved
+  if (providers?.flatrate && Array.isArray(providers.flatrate)) {
+    const streamNames = providers.flatrate.map(p => p.name).join('|');
+    if (streamNames !== movie.stream_gr) {
+      await db.run('UPDATE movies SET stream_gr = ? WHERE id = ?', streamNames, movieId).catch(() => {});
+    }
+  }
+
+  res.json({ providers });
 }));
 
 // POST /api/movies/:id/watchlist-vote  — must be before /:id
@@ -385,17 +423,21 @@ router.post('/', ah(async (req, res) => {
     const imdb = imdb_id ? await getImdbById(imdb_id) : await lookupImdb(title.trim(), year.trim());
     let runtime = imdb?.runtime || null;
     let posterPath = null;
+    let backdropPath = null;
     try {
       if (imdb?.imdbId) {
         const tmdbFound = await findByImdbId(imdb.imdbId);
         if (tmdbFound?.posterPath) posterPath = tmdbFound.posterPath;
+        if (tmdbFound?.backdropPath) backdropPath = tmdbFound.backdropPath;
         if (!runtime && tmdbFound?.tmdbId) {
           const details = await getMovieDetails(tmdbFound.tmdbId);
           if (details?.runtime) runtime = details.runtime;
         }
       }
-      if (!posterPath) {
-        posterPath = await lookupPosterPath(imdb?.imdbId, title.trim(), year.trim());
+      if (!posterPath || !backdropPath) {
+        const media = await lookupMediaPaths(imdb?.imdbId, title.trim(), year.trim());
+        if (!posterPath) posterPath = media.posterPath;
+        if (!backdropPath) backdropPath = media.backdropPath;
       }
       if (!runtime) {
         runtime = await lookupMovieRuntime(imdb?.imdbId, title.trim(), year.trim());
@@ -409,9 +451,9 @@ router.post('/', ah(async (req, res) => {
       } catch (_) { /* best effort */ }
     }
 
-    if (imdb?.imdbId || runtime || posterPath || letterboxdRating != null) {
-      await db.run(`UPDATE ${targetTable} SET imdb_id = ?, imdb_rating = ?, letterboxd_rating = ?, poster_path = ?, runtime = ? WHERE id = ?`,
-        imdb?.imdbId ?? null, imdb?.imdbRating ?? null, letterboxdRating ?? null, posterPath ?? null, runtime ?? null, lastInsertRowid);
+    if (imdb?.imdbId || runtime || posterPath || backdropPath || letterboxdRating != null) {
+      await db.run(`UPDATE ${targetTable} SET imdb_id = ?, imdb_rating = ?, letterboxd_rating = ?, poster_path = ?, backdrop_path = ?, runtime = ? WHERE id = ?`,
+        imdb?.imdbId ?? null, imdb?.imdbRating ?? null, letterboxdRating ?? null, posterPath ?? null, backdropPath ?? null, runtime ?? null, lastInsertRowid);
     }
   } catch (_) { /* film is still added even if metadata lookup is unavailable */ }
 
@@ -465,8 +507,9 @@ router.patch('/:id', ah(async (req, res) => {
         updates.imdb_id = null;
         updates.imdb_rating = null;
         updates.letterboxd_rating = null;
-        // The poster was resolved from that id, so it goes too.
+        // The poster and backdrop were resolved from that id, so they go too.
         updates.poster_path = null;
+        updates.backdrop_path = null;
       } else {
         updates.imdb_id = cleanId;
         const [detail, lbRating] = await Promise.all([
@@ -476,16 +519,20 @@ router.patch('/:id', ah(async (req, res) => {
         updates.imdb_rating = detail?.imdbRating ?? null;
         updates.letterboxd_rating = lbRating ?? null;
         if (detail?.runtime && updates.runtime === undefined) updates.runtime = detail.runtime;
-        // Re-point the poster at the film the new id actually names. A TMDB
+        // Re-point the poster and backdrop at the film the new id actually names. A TMDB
         // miss clears it rather than leaving the previous film's artwork.
         try {
           const found = await findByImdbId(cleanId);
           updates.poster_path = found?.posterPath ?? null;
+          updates.backdrop_path = found?.backdropPath ?? null;
           if (!updates.runtime && found?.tmdbId) {
             const tmdbDetails = await getMovieDetails(found.tmdbId);
             if (tmdbDetails?.runtime) updates.runtime = tmdbDetails.runtime;
           }
-        } catch (_) { updates.poster_path = null; }
+        } catch (_) {
+          updates.poster_path = null;
+          updates.backdrop_path = null;
+        }
       }
     }
 

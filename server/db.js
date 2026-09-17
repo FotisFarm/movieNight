@@ -268,6 +268,8 @@ async function init() {
   // TMDB poster path (e.g. '/3bhkrj58Vtu7enYsRolD1fZdja1.jpg'), not a full
   // URL — the width is chosen at render time. See server/tmdb.js.
   try { await client.execute('ALTER TABLE movies ADD COLUMN poster_path TEXT DEFAULT NULL'); } catch (_) {}
+  try { await client.execute('ALTER TABLE movies ADD COLUMN backdrop_path TEXT DEFAULT NULL'); } catch (_) {}
+  try { await client.execute('ALTER TABLE movies ADD COLUMN stream_gr TEXT DEFAULT NULL'); } catch (_) {}
   // Film duration in minutes (from TMDB/OMDb)
   try { await client.execute('ALTER TABLE movies ADD COLUMN runtime INTEGER DEFAULT NULL'); } catch (_) {}
   // Letterboxd rating (5-star scale with 2 decimals)
@@ -441,9 +443,13 @@ async function init() {
         imdb_id           TEXT    DEFAULT NULL,
         imdb_rating       REAL    DEFAULT NULL,
         poster_path       TEXT    DEFAULT NULL,
+        backdrop_path     TEXT    DEFAULT NULL,
+        stream_gr         TEXT    DEFAULT NULL,
         runtime           INTEGER DEFAULT NULL,
         letterboxd_rating REAL    DEFAULT NULL
       );
+      try { await client.execute('ALTER TABLE sandbox_movies ADD COLUMN backdrop_path TEXT DEFAULT NULL'); } catch (_) {}
+      try { await client.execute('ALTER TABLE sandbox_movies ADD COLUMN stream_gr TEXT DEFAULT NULL'); } catch (_) {}
 
       CREATE TABLE IF NOT EXISTS sandbox_lists (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -486,7 +492,7 @@ async function init() {
         m.rank_global, m.mn,
         COALESCE(s.watchlist, m.watchlist) AS watchlist,
         m.cinobo, m.tokens, m.token_pts,
-        m.imdb_id, m.imdb_rating, m.letterboxd_rating, m.poster_path, m.runtime
+        m.imdb_id, m.imdb_rating, m.letterboxd_rating, m.poster_path, m.backdrop_path, m.stream_gr, m.runtime
       FROM movies m
       LEFT JOIN sandbox_watchlist_overrides s ON s.movie_id = m.id
       UNION ALL
@@ -495,7 +501,7 @@ async function init() {
         sm.rank_global, sm.mn,
         COALESCE(s.watchlist, sm.watchlist) AS watchlist,
         sm.cinobo, sm.tokens, sm.token_pts,
-        sm.imdb_id, sm.imdb_rating, sm.letterboxd_rating, sm.poster_path, sm.runtime
+        sm.imdb_id, sm.imdb_rating, sm.letterboxd_rating, sm.poster_path, sm.backdrop_path, sm.stream_gr, sm.runtime
       FROM sandbox_movies sm
       LEFT JOIN sandbox_watchlist_overrides s ON s.movie_id = sm.id;
 
@@ -569,7 +575,7 @@ async function init() {
       SELECT
         m.id, m.director, m.title, m.year,
         m.mn, m.watchlist, m.cinobo, m.tokens, m.token_pts,
-        m.imdb_id, m.imdb_rating, m.letterboxd_rating, m.poster_path, m.runtime,
+        m.imdb_id, m.imdb_rating, m.letterboxd_rating, m.poster_path, m.backdrop_path, m.stream_gr, m.runtime,
         r.voter_count,
         r.score_sum,
         r.fair_score,
@@ -611,7 +617,7 @@ async function init() {
       SELECT
         m.id, m.director, m.title, m.year,
         m.mn, m.watchlist, m.cinobo, m.tokens, m.token_pts,
-        m.imdb_id, m.imdb_rating, m.letterboxd_rating, m.poster_path, m.runtime,
+        m.imdb_id, m.imdb_rating, m.letterboxd_rating, m.poster_path, m.backdrop_path, m.stream_gr, m.runtime,
         r.voter_count,
         r.score_sum,
         r.fair_score,

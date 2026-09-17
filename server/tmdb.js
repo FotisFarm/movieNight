@@ -40,6 +40,7 @@ function toMovie(record) {
     originalTitle: record.original_title || '',
     year: record.release_date ? record.release_date.slice(0, 4) : '',
     posterPath: record.poster_path || null,
+    backdropPath: record.backdrop_path || null,
   };
 }
 
@@ -83,14 +84,34 @@ async function getExternalIds(tmdbId) {
   }
 }
 
-// Convenience for the add/edit flow: best-effort poster path for a film,
+// Convenience for the add/edit flow: best-effort media paths (poster & backdrop)
 // preferring the exact imdb_id lookup and falling back to a title search.
-async function lookupPosterPath(imdbId, title, year) {
+async function lookupMediaPaths(imdbId, title, year) {
   const byId = await findByImdbId(imdbId);
-  if (byId?.posterPath) return byId.posterPath;
-  if (!title) return null;
+  if (byId) {
+    return {
+      posterPath: byId.posterPath || null,
+      backdropPath: byId.backdropPath || null,
+      tmdbId: byId.tmdbId || null,
+    };
+  }
+  if (!title) return { posterPath: null, backdropPath: null, tmdbId: null };
   const [first] = await searchMovie(title, year);
-  return first?.posterPath || null;
+  return {
+    posterPath: first?.posterPath || null,
+    backdropPath: first?.backdropPath || null,
+    tmdbId: first?.tmdbId || null,
+  };
+}
+
+async function lookupPosterPath(imdbId, title, year) {
+  const media = await lookupMediaPaths(imdbId, title, year);
+  return media.posterPath;
+}
+
+async function lookupBackdropPath(imdbId, title, year) {
+  const media = await lookupMediaPaths(imdbId, title, year);
+  return media.backdropPath;
 }
 
 // Fetches full details including runtime and genres from TMDB
@@ -172,5 +193,64 @@ async function getMovieTrailer(imdbId, title, year) {
   }
 }
 
-module.exports = { findByImdbId, searchMovie, getExternalIds, lookupPosterPath, getMovieDetails, lookupMovieRuntime, getMovieTrailer };
+// Fetches streaming availability (flatrate, rent, buy) for a movie, defaulting to Greece (GR)
+async function getMovieWatchProviders(imdbId, title, year, region = 'GR') {
+  let tmdbId = null;
+  if (imdbId) {
+    const byId = await findByImdbId(imdbId);
+    if (byId?.tmdbId) tmdbId = byId.tmdbId;
+  }
+  if (!tmdbId && title) {
+    const [first] = await searchMovie(title, year);
+    if (first?.tmdbId) tmdbId = first.tmdbId;
+  }
+  if (!tmdbId) return null;
+
+  try {
+    const data = await tmdbFetch(`/movie/${tmdbId}/watch/providers`);
+    const regData = data?.results?.[region];
+    const mapProvider = p => ({
+      id: p.provider_id,
+      name: p.provider_name,
+      logoPath: p.logo_path || null,
+      logoUrl: p.logo_path ? `https://image.tmdb.org/t/p/w92${p.logo_path}` : null,
+      displayPriority: p.display_priority ?? 999,
+    });
+
+    if (!regData) {
+      return {
+        region,
+        link: data?.results?.US?.link || data?.results?.GB?.link || null,
+        flatrate: [],
+        rent: [],
+        buy: [],
+        free: [],
+      };
+    }
+
+    return {
+      region,
+      link: regData.link || null,
+      flatrate: (regData.flatrate || []).map(mapProvider),
+      rent: (regData.rent || []).map(mapProvider),
+      buy: (regData.buy || []).map(mapProvider),
+      free: (regData.free || []).map(mapProvider),
+    };
+  } catch {
+    return null;
+  }
+}
+
+module.exports = {
+  findByImdbId,
+  searchMovie,
+  getExternalIds,
+  lookupMediaPaths,
+  lookupPosterPath,
+  lookupBackdropPath,
+  getMovieDetails,
+  lookupMovieRuntime,
+  getMovieTrailer,
+  getMovieWatchProviders,
+};
 
