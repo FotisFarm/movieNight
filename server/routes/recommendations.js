@@ -40,8 +40,8 @@ router.get('/', ah(async (req, res) => {
   const statusByMovie = new Map(allGroupStatus.map(s => [s.movie_id, s]));
   for (const m of allMovies) {
     const st = statusByMovie.get(m.id);
-    m.watchlist = st ? st.watchlist : (groupId === 1 ? m.watchlist : 0);
-    m.mn = st ? st.mn : (groupId === 1 ? m.mn : 0);
+    m.watchlist = st ? st.watchlist : 0;
+    m.mn = st ? st.mn : 0;
   }
 
   const movieById  = new Map(allMovies.map(m => [m.id, m]));
@@ -251,8 +251,8 @@ router.get('/accuracy', ah(async (req, res) => {
   const statusByMovie = new Map(allGroupStatus.map(s => [s.movie_id, s]));
   for (const m of allMovies) {
     const st = statusByMovie.get(m.id);
-    m.watchlist = st ? st.watchlist : (groupId === 1 ? m.watchlist : 0);
-    m.mn = st ? st.mn : (groupId === 1 ? m.mn : 0);
+    m.watchlist = st ? st.watchlist : 0;
+    m.mn = st ? st.mn : 0;
   }
 
   const movieById = new Map(allMovies.map(m => [m.id, m]));

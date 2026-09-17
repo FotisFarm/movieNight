@@ -526,20 +526,35 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
             )}
 
             {/* Flags */}
-            <div className="modal-section-label section-label" style={{ marginTop: 6 }}>Flags</div>
+            <div className="modal-section-label section-label" style={{ marginTop: 6 }}>
+              Flags{activeGroup?.name ? ` · ${activeGroup.name}` : ''}
+            </div>
             <div className="flags-row">
               <button
+                type="button"
                 className={`toggle-btn${mn ? ' active' : ''}`}
                 onClick={() => (!sandboxMode || (movie && movie.id >= 1000000)) && setMn(x => !x)}
                 disabled={sandboxMode && !(movie && movie.id >= 1000000)}
-                title={sandboxMode && !(movie && movie.id >= 1000000) ? 'Official Movie Night flag can only be set in production' : ''}
+                title={sandboxMode && !(movie && movie.id >= 1000000)
+                  ? 'Official Movie Night flag can only be set in production'
+                  : `Toggle Official Movie Night for ${activeGroup?.name || 'this group'}`}
               >
                 🎬 Movie Night
               </button>
-              <button className={`toggle-btn${watchlist ? ' active' : ''}`} onClick={() => setWatchlist(x => !x)}>
+              <button
+                type="button"
+                className={`toggle-btn${watchlist ? ' active' : ''}`}
+                onClick={() => setWatchlist(x => !x)}
+                title={`Toggle Watchlist for ${activeGroup?.name || 'this group'}`}
+              >
                 👁 Watchlist
               </button>
             </div>
+            {movie?.originalsMn && activeGroup?.id !== 1 && (
+              <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span>🎬</span> Official Movie Night for The Originals
+              </div>
+            )}
 
             {/* Lists */}
             <div className="modal-section-label section-label" style={{ marginTop: 6 }}>Lists</div>

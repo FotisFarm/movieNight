@@ -20,7 +20,7 @@ async function getAllEnriched(mnOnly = false, group = null) {
       (SELECT COUNT(*) FROM top3 t WHERE t.movie_id = m.id AND t.voter IN (${vPh})) as top3_count,
       (SELECT GROUP_CONCAT(r.voter, '|') FROM ratings r WHERE r.movie_id = m.id AND r.voter IN (${vPh})) as voter_names,
       (SELECT GROUP_CONCAT(t.voter || ':' || t.rank, '|') FROM top3 t WHERE t.movie_id = m.id AND t.voter IN (${vPh})) as top3_entries,
-      COALESCE((SELECT gms.mn FROM group_movie_status gms WHERE gms.group_id = ? AND gms.movie_id = m.id), ${groupId === 1 ? 'm.mn' : '0'}) as group_mn
+      COALESCE((SELECT gms.mn FROM group_movie_status gms WHERE gms.group_id = ? AND gms.movie_id = m.id), 0) as group_mn
      FROM movies m
      WHERE voter_count >= ? ${mnOnly ? 'AND group_mn = 1' : ''}
     `,

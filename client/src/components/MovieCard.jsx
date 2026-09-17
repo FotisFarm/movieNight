@@ -85,7 +85,7 @@ function VoterPills({ movieId, title, ratings, top3, voters }) {
   );
 }
 
-function OriginalsCompanionPill({ originalsScore, originalsBoostedScore, scoreMode = 'fair', originalsVoterCount, otherRatings }) {
+function OriginalsCompanionPill({ originalsScore, originalsBoostedScore, scoreMode = 'fair', originalsVoterCount, otherRatings, originalsMn }) {
   const currentScore = scoreMode === 'group'
     ? (originalsBoostedScore ?? originalsScore)
     : originalsScore;
@@ -98,6 +98,9 @@ function OriginalsCompanionPill({ originalsScore, originalsBoostedScore, scoreMo
   if (originalsVoterCount) {
     tooltip += ` (${originalsVoterCount} ${originalsVoterCount === 1 ? 'vote' : 'votes'})`;
   }
+  if (originalsMn) {
+    tooltip += ' · Official Movie Night';
+  }
   if (otherRatings) {
     const entries = Object.entries(otherRatings).filter(([, r]) => r && r.score != null);
     if (entries.length > 0) {
@@ -107,7 +110,7 @@ function OriginalsCompanionPill({ originalsScore, originalsBoostedScore, scoreMo
 
   return (
     <span className="companion-pill" title={tooltip}>
-      <span className="companion-label">🎬 Originals</span>
+      <span className="companion-label">🎬 Originals{originalsMn ? ' ★' : ''}</span>
       <span className={`companion-score ${scoreClass(Number(score))}`}>{score}</span>
     </span>
   );
@@ -128,7 +131,7 @@ function Poster({ path, title, size }) {
 
 export default function MovieCard({ movie, onClick, listView = false, scoreMode = 'fair', onWatchlistToggle }) {
   const { voters, minVoters } = useAppConfig();
-  const { id, title, director, year, runtime, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, letterboxd_rating, poster_path, otherRatings, originalsScore, originalsBoostedScore, originalsVoterCount } = movie;
+  const { id, title, director, year, runtime, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, letterboxd_rating, poster_path, otherRatings, originalsScore, originalsBoostedScore, originalsVoterCount, originalsMn } = movie;
 
   const hasScore = voterCount >= minVoters;
   const displayScore = hasScore
@@ -177,6 +180,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
             scoreMode={scoreMode}
             originalsVoterCount={originalsVoterCount}
             otherRatings={otherRatings}
+            originalsMn={originalsMn}
           />
         </div>
       </article>
@@ -228,6 +232,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
               scoreMode={scoreMode}
               originalsVoterCount={originalsVoterCount}
               otherRatings={otherRatings}
+              originalsMn={originalsMn}
             />
           </div>
         )}

@@ -37,7 +37,7 @@ function resolveGroupParams(options = {}) {
 async function enrichMovie(movie, options = {}) {
   const { groupId, voters, groupSize } = resolveGroupParams(options);
 
-  const [ratings, top3, groupStatusRow, groupWlRows, legacyWlRows] = await Promise.all([
+  const [ratings, top3, groupStatusRow, groupWlRows, legacyWlRows, origStatusRow] = await Promise.all([
     db.all('SELECT voter, score, comment FROM ratings WHERE movie_id = ?', movie.id),
     db.all('SELECT voter, rank FROM top3 WHERE movie_id = ?', movie.id),
     db.get('SELECT mn, watchlist FROM group_movie_status WHERE group_id = ? AND movie_id = ?', groupId, movie.id),
@@ -48,6 +48,7 @@ async function enrichMovie(movie, options = {}) {
       WHERE gwv.group_id = ? AND gwv.movie_id = ?
     `, groupId, movie.id),
     groupId === 1 ? db.all('SELECT voter FROM watchlist_votes WHERE movie_id = ?', movie.id) : Promise.resolve([]),
+    groupId !== 1 ? db.get('SELECT mn FROM group_movie_status WHERE group_id = 1 AND movie_id = ?', movie.id) : Promise.resolve(null),
   ]);
 
   const groupVotes = groupWlRows.map(r => r.voter);
@@ -55,8 +56,9 @@ async function enrichMovie(movie, options = {}) {
     ? groupVotes
     : legacyWlRows.map(r => r.voter);
 
-  const isMn = groupStatusRow ? groupStatusRow.mn === 1 : (groupId === 1 ? movie.mn === 1 : false);
-  const isWatchlist = groupStatusRow ? groupStatusRow.watchlist === 1 : (groupId === 1 ? movie.watchlist === 1 : false);
+  const isMn = groupStatusRow ? groupStatusRow.mn === 1 : false;
+  const isWatchlist = groupStatusRow ? groupStatusRow.watchlist === 1 : false;
+  const originalsMn = groupId === 1 ? null : Boolean(origStatusRow && origStatusRow.mn === 1);
 
   const ratingsMap = {};
   const commentsMap = {};
@@ -168,6 +170,7 @@ async function enrichMovie(movie, options = {}) {
     originalsScore,
     originalsBoostedScore,
     originalsVoterCount,
+    originalsMn,
     networkScore: groupId === 1 ? null : networkScore,
     networkVoterCount: groupId === 1 ? null : networkVoterCount,
     groupId,
@@ -180,7 +183,7 @@ async function enrichMoviesBatch(movies, options = {}) {
   const ids = movies.map(m => m.id);
   const placeholders = ids.map(() => '?').join(',');
 
-  const [ratingsRows, top3Rows, groupStatusRows, groupWlRows, legacyWlRows] = await Promise.all([
+  const [ratingsRows, top3Rows, groupStatusRows, groupWlRows, legacyWlRows, origStatusRows] = await Promise.all([
     db.all(`SELECT movie_id, voter, score, comment FROM ratings WHERE movie_id IN (${placeholders})`, ...ids),
     db.all(`SELECT movie_id, voter, rank FROM top3 WHERE movie_id IN (${placeholders})`, ...ids),
     db.all(`SELECT movie_id, mn, watchlist FROM group_movie_status WHERE group_id = ? AND movie_id IN (${placeholders})`, groupId, ...ids),
@@ -191,6 +194,7 @@ async function enrichMoviesBatch(movies, options = {}) {
       WHERE gwv.group_id = ? AND gwv.movie_id IN (${placeholders})
     `, groupId, ...ids),
     groupId === 1 ? db.all(`SELECT movie_id, voter FROM watchlist_votes WHERE movie_id IN (${placeholders})`, ...ids) : Promise.resolve([]),
+    groupId !== 1 ? db.all(`SELECT movie_id, mn FROM group_movie_status WHERE group_id = 1 AND movie_id IN (${placeholders})`, ...ids) : Promise.resolve([]),
   ]);
 
   // Build lookup maps
@@ -237,6 +241,13 @@ async function enrichMoviesBatch(movies, options = {}) {
     statusMap[s.movie_id] = s;
   }
 
+  const origMnMap = {};
+  if (origStatusRows) {
+    for (const o of origStatusRows) {
+      if (o.mn === 1) origMnMap[o.movie_id] = true;
+    }
+  }
+
   const wlMap = {};
   for (const w of groupWlRows) {
     (wlMap[w.movie_id] ||= []).push(w.voter);
@@ -256,8 +267,8 @@ async function enrichMoviesBatch(movies, options = {}) {
     const watchlistVotes = wlMap[movie.id] || [];
 
     const st = statusMap[movie.id];
-    const mn = st ? st.mn === 1 : (groupId === 1 ? movie.mn === 1 : false);
-    const watchlist = st ? st.watchlist === 1 : (groupId === 1 ? movie.watchlist === 1 : false);
+    const mn = st ? st.mn === 1 : false;
+    const watchlist = st ? st.watchlist === 1 : false;
 
     const scores = voters.map(v => ratings[v]).filter(s => s != null);
     const n = scores.length;
@@ -351,6 +362,7 @@ async function enrichMoviesBatch(movies, options = {}) {
       originalsScore,
       originalsBoostedScore,
       originalsVoterCount,
+      originalsMn: groupId === 1 ? null : Boolean(origMnMap[movie.id]),
       networkScore: groupId === 1 ? null : networkScore,
       networkVoterCount: groupId === 1 ? null : networkVoterCount,
       groupId,

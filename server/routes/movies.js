@@ -33,13 +33,11 @@ router.get('/', ah(async (req, res) => {
   if (yearMax)  { query += ' AND CAST(year AS INTEGER) <= ?'; params.push(parseInt(yearMax)); }
   const groupId = req.group?.id || 1;
   if (mn === '1') {
-    query += ' AND (EXISTS (SELECT 1 FROM group_movie_status gms WHERE gms.group_id = ? AND gms.movie_id = movies.id AND gms.mn = 1) ' +
-             (groupId === 1 ? 'OR movies.mn = 1)' : ')');
+    query += ' AND EXISTS (SELECT 1 FROM group_movie_status gms WHERE gms.group_id = ? AND gms.movie_id = movies.id AND gms.mn = 1)';
     params.push(groupId);
   }
   if (watchlist === '1') {
-    query += ' AND (EXISTS (SELECT 1 FROM group_movie_status gms WHERE gms.group_id = ? AND gms.movie_id = movies.id AND gms.watchlist = 1) ' +
-             (groupId === 1 ? 'OR movies.watchlist = 1)' : ')');
+    query += ' AND EXISTS (SELECT 1 FROM group_movie_status gms WHERE gms.group_id = ? AND gms.movie_id = movies.id AND gms.watchlist = 1)';
     params.push(groupId);
   }
 
@@ -368,8 +366,8 @@ router.post('/', ah(async (req, res) => {
   const targetTable = SANDBOX_MODE ? 'sandbox_movies' : 'movies';
   const { lastInsertRowid } = await db.run(`
     INSERT INTO ${targetTable} (director, title, year, mn, watchlist)
-    VALUES (?, ?, ?, ?, ?)
-  `, director.trim(), title.trim(), year.trim(), mn ? 1 : 0, watchlist ? 1 : 0);
+    VALUES (?, ?, ?, 0, 0)
+  `, director.trim(), title.trim(), year.trim());
 
   const groupId = req.group?.id || 1;
   if (mn || watchlist) {
@@ -456,8 +454,7 @@ router.patch('/:id', ah(async (req, res) => {
     if (director !== undefined) updates.director = director;
     if (title !== undefined)    updates.title = title;
     if (year !== undefined)     updates.year = year;
-    if (mn !== undefined)       updates.mn = mn ? 1 : 0;
-    if (watchlist !== undefined) updates.watchlist = watchlist ? 1 : 0;
+    // Note: mn and watchlist are group-scoped and stored exclusively in group_movie_status, not in shared movies table
     if (cinobo !== undefined)   updates.cinobo = cinobo;
     if (runtime !== undefined)  updates.runtime = (runtime === null || runtime === '') ? null : parseInt(runtime, 10);
     // Setting/changing the IMDb id re-fetches the rating; clearing it wipes both.
@@ -515,7 +512,7 @@ router.patch('/:id', ah(async (req, res) => {
     }
 
     // Leaving the watchlist discards the film's votes — a film re-added later starts fresh.
-    if (watchlist !== undefined && !watchlist && movie.watchlist) {
+    if (watchlist !== undefined && !watchlist && groupId === 1) {
       await db.run('DELETE FROM watchlist_votes WHERE movie_id = ?', id);
     }
   }
