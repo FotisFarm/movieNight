@@ -271,6 +271,7 @@ function ListDetail({ listKey, voter }) {
       )}
 
       <div className="lists-detail-sub">
+        {list.group_name && <span className="badge" style={{ marginRight: 6, verticalAlign: 'middle' }}>{list.group_name}</span>}
         {films.length} film{films.length !== 1 ? 's' : ''}
         {list.created_by ? ` · by ${list.created_by}` : ''}
         {canEdit && films.length > 1 ? ' · drag to reorder' : ''}
@@ -337,7 +338,7 @@ function ListDetail({ listKey, voter }) {
 
 // ── List index (/lists) ──
 function ListIndex({ voter }) {
-  const { sandboxMode } = useAppConfig();
+  const { sandboxMode, activeGroup } = useAppConfig();
   const navigate = useNavigate();
   const [lists, setLists]     = useState([]);
   const [loading, setLoading] = useState(true);
@@ -347,11 +348,12 @@ function ListIndex({ voter }) {
   const { toast, Toast } = useToast();
 
   useEffect(() => {
+    setLoading(true);
     api.getLists()
       .then(setLists)
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [activeGroup?.id]);
 
   async function create() {
     const title = newTitle.trim();
@@ -366,7 +368,9 @@ function ListIndex({ voter }) {
   return (
     <div className="lists-page">
       <div className="lists-head">
-        <h1 className="lists-title">Lists</h1>
+        <h1 className="lists-title">
+          Lists{activeGroup?.name ? <span style={{ color: 'var(--text3)', fontWeight: 400, fontSize: '0.8em', marginLeft: 8 }}>· {activeGroup.name}</span> : ''}
+        </h1>
         {!creating && (
           <button className="btn btn-primary btn-sm" onClick={() => setCreating(true)}>+ New list</button>
         )}
@@ -400,7 +404,7 @@ function ListIndex({ voter }) {
       {loading ? (
         <div className="spinner" />
       ) : lists.length === 0 ? (
-        <div className="lists-empty">No lists yet. Make one — any theme you like.</div>
+        <div className="lists-empty">No lists in {activeGroup?.name || 'this club'} yet. Make one — any theme you like.</div>
       ) : (
         <div className="lists-grid">
           {lists.map(l => (

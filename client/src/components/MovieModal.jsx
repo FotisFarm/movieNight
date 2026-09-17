@@ -557,7 +557,9 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
             )}
 
             {/* Lists */}
-            <div className="modal-section-label section-label" style={{ marginTop: 6 }}>Lists</div>
+            <div className="modal-section-label section-label" style={{ marginTop: 6 }}>
+              Lists{activeGroup?.name ? ` · ${activeGroup.name}` : ''}
+            </div>
             {lists === null ? (
               <div style={{ fontSize: 12, color: 'var(--text2)' }}>Loading lists…</div>
             ) : (

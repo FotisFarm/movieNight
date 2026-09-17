@@ -262,6 +262,7 @@ async function init() {
   try { await client.execute('ALTER TABLE ratings ADD COLUMN user_id INTEGER REFERENCES users(id)'); } catch (_) {}
   try { await client.execute('ALTER TABLE top3 ADD COLUMN user_id INTEGER REFERENCES users(id)'); } catch (_) {}
   try { await client.execute('ALTER TABLE lists ADD COLUMN group_id INTEGER REFERENCES groups(id)'); } catch (_) {}
+  try { await client.execute('UPDATE lists SET group_id = 1 WHERE group_id IS NULL'); } catch (_) {}
   try { await client.execute('ALTER TABLE movies ADD COLUMN imdb_id TEXT DEFAULT NULL'); } catch (_) {}
   try { await client.execute('ALTER TABLE movies ADD COLUMN imdb_rating REAL DEFAULT NULL'); } catch (_) {}
   // TMDB poster path (e.g. '/3bhkrj58Vtu7enYsRolD1fZdja1.jpg'), not a full
@@ -450,9 +451,11 @@ async function init() {
         description TEXT    NOT NULL DEFAULT '',
         created_by  TEXT    NOT NULL DEFAULT '',
         created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
-        slug        TEXT    DEFAULT NULL
+        slug        TEXT    DEFAULT NULL,
+        group_id    INTEGER REFERENCES groups(id) DEFAULT 1
       );
       CREATE UNIQUE INDEX IF NOT EXISTS idx_sandbox_lists_slug ON sandbox_lists(slug);
+      try { await client.execute('ALTER TABLE sandbox_lists ADD COLUMN group_id INTEGER REFERENCES groups(id) DEFAULT 1'); } catch (_) {}
 
       CREATE TABLE IF NOT EXISTS sandbox_list_items (
         id       INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -539,10 +542,10 @@ async function init() {
 
       DROP VIEW IF EXISTS v6_effective_lists;
       CREATE VIEW v6_effective_lists AS
-      SELECT id, title, description, created_by, created_at, slug
+      SELECT id, title, description, created_by, created_at, slug, COALESCE(group_id, 1) AS group_id
       FROM lists
       UNION ALL
-      SELECT id, title, description, created_by, created_at, slug
+      SELECT id, title, description, created_by, created_at, slug, COALESCE(group_id, 1) AS group_id
       FROM sandbox_lists;
 
       DROP VIEW IF EXISTS v6_effective_list_items;

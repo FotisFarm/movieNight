@@ -4,6 +4,7 @@ const ah = require('../asyncHandler');
 const { enrichMoviesBatch } = require('../enrich');
 const { uniqueSlug } = require('../listSlugs');
 const { SANDBOX_MODE } = require('../config');
+const { getGroupWithMembers, getUserGroups } = require('../groupContext');
 
 const router = express.Router();
 
@@ -15,23 +16,47 @@ const router = express.Router();
 //   3. a bare numeric id, for links made before slugs existed.
 // slugify() never produces a bare number, so (1) and (3) can't collide.
 async function findList(key) {
-  const bySlug = await db.get('SELECT * FROM lists WHERE slug = ?', key);
+  const table = SANDBOX_MODE ? 'v6_effective_lists' : 'lists';
+  const aliasTable = SANDBOX_MODE ? 'v6_effective_list_slug_aliases' : 'list_slug_aliases';
+  const bySlug = await db.get(`SELECT * FROM ${table} WHERE slug = ?`, key);
   if (bySlug) return bySlug;
 
-  const alias = await db.get('SELECT list_id FROM list_slug_aliases WHERE slug = ?', key);
-  if (alias) return db.get('SELECT * FROM lists WHERE id = ?', alias.list_id);
+  const alias = await db.get(`SELECT list_id FROM ${aliasTable} WHERE slug = ?`, key);
+  if (alias) return db.get(`SELECT * FROM ${table} WHERE id = ?`, alias.list_id);
 
-  if (/^\d+$/.test(String(key))) return db.get('SELECT * FROM lists WHERE id = ?', key);
+  if (/^\d+$/.test(String(key))) return db.get(`SELECT * FROM ${table} WHERE id = ?`, key);
   return undefined;
 }
 
-// Lists are collaborative: anybody logged in can create one and add/remove
-// films from any list. Renaming and deleting a list is restricted to whoever
-// created it (and mnAdmin), so nobody can wipe someone else's list by accident.
-function canEditList(req, list) {
+function getListGroupId(list) {
+  return list.group_id || 1;
+}
+
+async function userCanAccessList(req, list) {
   if (SANDBOX_MODE && list.id >= 1000000) return true;
-  const isAdmin = Boolean(req.session?.isAdmin || req.session?.voter === 'mnAdmin');
-  return isAdmin || req.session.voter === list.created_by;
+  if (req.session?.isAdmin || req.session?.voter === 'mnAdmin' || req.session?.username === 'mnAdmin') return true;
+  const listGroupId = getListGroupId(list);
+  if ((req.group?.id || 1) === listGroupId) return true;
+  if (req.session?.userId) {
+    const userGroups = await getUserGroups(req.session.userId);
+    if (userGroups.some(g => g.id === listGroupId)) return true;
+  }
+  return false;
+}
+
+async function canEditList(req, list) {
+  if (SANDBOX_MODE && list.id >= 1000000) return true;
+  if (req.session?.isAdmin || req.session?.voter === 'mnAdmin' || req.session?.username === 'mnAdmin') return true;
+  const listGroupId = getListGroupId(list);
+  const targetGroup = (req.group?.id === listGroupId) ? req.group : await getGroupWithMembers(listGroupId);
+  const isGroupAdmin = targetGroup?.members?.some(
+    m => (m.id === req.session?.userId || m.displayName === req.session?.voter || m.username === req.session?.voter) && m.role === 'admin'
+  );
+  if (isGroupAdmin) return true;
+  const isMember = targetGroup?.members?.some(
+    m => (m.id === req.session?.userId || m.displayName === req.session?.voter || m.username === req.session?.voter)
+  );
+  return (req.session?.voter === list.created_by) && isMember;
 }
 
 function cleanTitle(value) {
@@ -45,29 +70,30 @@ function cleanDescription(value) {
 // How many posters the index cards stack on each list card.
 const POSTER_PREVIEW_COUNT = 6;
 
-// GET /api/lists — every list with its film count plus a few poster paths for the
-// index cards. `?movieId=` additionally flags which lists already hold that film,
-// which is what the MovieModal's list picker toggles against.
+// GET /api/lists — lists for the current group with film counts and preview posters.
+// `?movieId=` additionally flags which lists already hold that film.
 router.get('/', ah(async (req, res) => {
   const groupId = req.group?.id || 1;
+  const table = SANDBOX_MODE ? 'v6_effective_lists' : 'lists';
+  const itemsTable = SANDBOX_MODE ? 'v6_effective_list_items' : 'list_items';
+
   const rows = await db.all(`
     SELECT l.*, COUNT(li.id) AS film_count
-    FROM lists l
-    LEFT JOIN list_items li ON li.list_id = l.id
-    WHERE l.group_id = ? OR l.group_id IS NULL OR ? = 1
+    FROM ${table} l
+    LEFT JOIN ${itemsTable} li ON li.list_id = l.id
+    WHERE COALESCE(l.group_id, 1) = ?
     GROUP BY l.id
     ORDER BY l.created_at DESC, l.id DESC
-  `, groupId, groupId);
+  `, groupId);
 
-  // One pass over every list's films, in list order, keeping the first few posters
-  // per list — cheaper than a correlated subquery per list.
   const posterRows = await db.all(`
     SELECT li.list_id, m.poster_path
-    FROM list_items li
+    FROM ${itemsTable} li
     JOIN movies m ON m.id = li.movie_id
-    WHERE m.poster_path IS NOT NULL AND m.poster_path != ''
+    JOIN ${table} l ON l.id = li.list_id
+    WHERE COALESCE(l.group_id, 1) = ? AND m.poster_path IS NOT NULL AND m.poster_path != ''
     ORDER BY li.list_id, li.position, li.id
-  `);
+  `, groupId);
   const postersByList = new Map();
   for (const row of posterRows) {
     const posters = postersByList.get(row.list_id) || [];
@@ -78,33 +104,46 @@ router.get('/', ah(async (req, res) => {
   const movieId = parseInt(req.query.movieId, 10);
   let listsWithMovie = new Set();
   if (Number.isInteger(movieId)) {
-    const memberships = await db.all('SELECT list_id FROM list_items WHERE movie_id = ?', movieId);
+    const memberships = await db.all(`
+      SELECT li.list_id FROM ${itemsTable} li
+      JOIN ${table} l ON l.id = li.list_id
+      WHERE li.movie_id = ? AND COALESCE(l.group_id, 1) = ?
+    `, movieId, groupId);
     listsWithMovie = new Set(memberships.map(m => m.list_id));
   }
 
   res.json(rows.map(r => ({
     ...r,
+    group_id: r.group_id || 1,
     film_count: Number(r.film_count),
     posters: postersByList.get(r.id) || [],
     has_film: listsWithMovie.has(r.id),
   })));
 }));
 
-// GET /api/lists/:key — the list plus its films, fully enriched and in order.
-// The response carries the canonical `slug`, so a client that arrived on an old
-// alias or a numeric id can correct its own URL.
+// GET /api/lists/:key — the list plus its films, fully enriched with the list group's context
 router.get('/:key', ah(async (req, res) => {
   const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
+  if (!await userCanAccessList(req, list)) return res.status(404).json({ error: 'Not found' });
 
+  const listGroupId = getListGroupId(list);
+  const listGroup = (req.group?.id === listGroupId) ? req.group : await getGroupWithMembers(listGroupId);
+
+  const itemsTable = (SANDBOX_MODE && list.id >= 1000000) ? 'sandbox_list_items' : 'list_items';
   const movies = await db.all(`
-    SELECT m.* FROM list_items li
+    SELECT m.* FROM ${itemsTable} li
     JOIN movies m ON m.id = li.movie_id
     WHERE li.list_id = ?
     ORDER BY li.position, li.id
   `, list.id);
 
-  res.json({ ...list, films: await enrichMoviesBatch(movies, { group: req.group }) });
+  res.json({
+    ...list,
+    group_id: listGroupId,
+    group_name: listGroup?.name || 'The Originals',
+    films: await enrichMoviesBatch(movies, { group: listGroup })
+  });
 }));
 
 // POST /api/lists
@@ -118,18 +157,24 @@ router.post('/', ah(async (req, res) => {
     `INSERT INTO ${targetTable} (title, description, created_by, slug, group_id) VALUES (?, ?, ?, ?, ?)`,
     title, cleanDescription(req.body.description), req.session.voter, await uniqueSlug(db, title), groupId
   );
-  const list = await db.get('SELECT * FROM lists WHERE id = ?', result.lastInsertRowid);
-  res.status(201).json({ ...list, film_count: 0 });
+  const list = await db.get(`SELECT * FROM ${targetTable} WHERE id = ?`, result.lastInsertRowid);
+  res.status(201).json({
+    ...list,
+    group_id: groupId,
+    group_name: req.group?.name || 'The Originals',
+    film_count: 0
+  });
 }));
 
 // PATCH /api/lists/:key — rename / re-describe
 router.patch('/:key', ah(async (req, res) => {
   const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
+  if (!await userCanAccessList(req, list)) return res.status(404).json({ error: 'Not found' });
   if (SANDBOX_MODE && list.id < 1000000) {
     return res.status(403).json({ error: 'Editing production lists is disabled in sandbox mode.' });
   }
-  if (!canEditList(req, list)) return res.status(403).json({ error: 'Only the list creator can edit this list' });
+  if (!await canEditList(req, list)) return res.status(403).json({ error: 'Only the list creator or club admin can edit this list' });
 
   const title = req.body.title !== undefined ? cleanTitle(req.body.title) : list.title;
   if (!title) return res.status(400).json({ error: 'Title is required' });
@@ -161,17 +206,22 @@ router.patch('/:key', ah(async (req, res) => {
   }
 
   await db.run(`UPDATE ${listsTable} SET title = ?, description = ? WHERE id = ?`, title, description, list.id);
-  res.json(await db.get('SELECT * FROM lists WHERE id = ?', list.id));
+  const updated = await db.get(`SELECT * FROM ${listsTable} WHERE id = ?`, list.id);
+  res.json({
+    ...updated,
+    group_id: updated.group_id || 1
+  });
 }));
 
 // DELETE /api/lists/:key — items and slug aliases cascade, films themselves are never touched
 router.delete('/:key', ah(async (req, res) => {
   const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
+  if (!await userCanAccessList(req, list)) return res.status(404).json({ error: 'Not found' });
   if (SANDBOX_MODE && list.id < 1000000) {
     return res.status(403).json({ error: 'Deleting production lists is disabled in sandbox mode.' });
   }
-  if (!canEditList(req, list)) return res.status(403).json({ error: 'Only the list creator can delete this list' });
+  if (!await canEditList(req, list)) return res.status(403).json({ error: 'Only the list creator or club admin can delete this list' });
 
   if (SANDBOX_MODE && list.id >= 1000000) {
     await db.transaction(async tx => {
@@ -189,6 +239,7 @@ router.delete('/:key', ah(async (req, res) => {
 router.post('/:key/items', ah(async (req, res) => {
   const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
+  if (!await userCanAccessList(req, list)) return res.status(404).json({ error: 'Not found' });
   if (SANDBOX_MODE && list.id < 1000000) {
     return res.status(403).json({ error: 'Modifying production lists is disabled in sandbox mode.' });
   }
@@ -213,6 +264,7 @@ router.post('/:key/items', ah(async (req, res) => {
 router.delete('/:key/items/:movieId', ah(async (req, res) => {
   const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
+  if (!await userCanAccessList(req, list)) return res.status(404).json({ error: 'Not found' });
   if (SANDBOX_MODE && list.id < 1000000) {
     return res.status(403).json({ error: 'Modifying production lists is disabled in sandbox mode.' });
   }
@@ -230,6 +282,7 @@ router.delete('/:key/items/:movieId', ah(async (req, res) => {
 router.put('/:key/items', ah(async (req, res) => {
   const list = await findList(req.params.key);
   if (!list) return res.status(404).json({ error: 'Not found' });
+  if (!await userCanAccessList(req, list)) return res.status(404).json({ error: 'Not found' });
   if (SANDBOX_MODE && list.id < 1000000) {
     return res.status(403).json({ error: 'Modifying production lists is disabled in sandbox mode.' });
   }
