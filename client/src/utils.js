@@ -35,9 +35,9 @@ export function posterUrl(path, size = 'w185') {
 }
 
 export const BACKDROP_SIZES = ['w300', 'w780', 'w1280', 'original'];
-export function backdropUrl(path, size = 'w780') {
+export function backdropUrl(path, size = 'w1280') {
   if (!path) return null;
-  return `${TMDB_IMAGE_BASE}${BACKDROP_SIZES.includes(size) ? size : 'w780'}${path}`;
+  return `${TMDB_IMAGE_BASE}${BACKDROP_SIZES.includes(size) ? size : 'w1280'}${path}`;
 }
 
 // Pull an IMDb id out of anything the user pastes: a full URL, a bare id, or a fragment.

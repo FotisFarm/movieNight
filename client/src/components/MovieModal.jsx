@@ -320,10 +320,13 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
         {movie?.backdrop_path && (
           <div className="movie-modal-backdrop-hero">
             <img
-              src={backdropUrl(movie.backdrop_path, 'w780')}
+              src={backdropUrl(movie.backdrop_path, 'w1280')}
+              srcSet={`${backdropUrl(movie.backdrop_path, 'w780')} 780w, ${backdropUrl(movie.backdrop_path, 'w1280')} 1280w, ${backdropUrl(movie.backdrop_path, 'original')} 1920w`}
+              sizes="(max-width: 768px) 100vw, 980px"
               alt=""
               className="movie-modal-backdrop-img"
               loading="eager"
+              decoding="async"
             />
             <div className="movie-modal-backdrop-gradient" />
           </div>
