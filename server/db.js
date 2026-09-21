@@ -287,6 +287,7 @@ async function init() {
     await backfillInitialRuntimes();
     await backfillInitialLetterboxd();
     await backfillInitialBackdrops();
+    await backfillInitialStreaming();
     await backfillListSlugs();
   }
 
@@ -772,6 +773,45 @@ async function backfillInitialBackdrops() {
     console.log(`[db] Movie backdrops backfilled successfully. Total with backdrop: ${after?.c}`);
   } catch (err) {
     console.warn('[db] Note: backfillInitialBackdrops notice:', err.message);
+  }
+}
+
+async function backfillInitialStreaming() {
+  try {
+    const existing = await get("SELECT COUNT(stream_gr) AS c FROM movies WHERE stream_gr IS NOT NULL AND stream_gr != ''");
+    if (existing && Number(existing.c) >= 50) {
+      console.log(`[db] Greek streaming providers already populated (${existing.c} films).`);
+      return;
+    }
+
+    let data;
+    try {
+      data = require('./initial-streaming.json');
+    } catch (_) {
+      try {
+        data = require('./data/initial-streaming.json');
+      } catch (e) {
+        console.warn('[db] Could not load initial-streaming.json:', e.message);
+        return;
+      }
+    }
+
+    const entries = Object.entries(data).filter(([_, s]) => s != null && s !== '');
+    if (!entries.length) return;
+    console.log(`[db] Backfilling ${entries.length} Greek streaming providers into database...`);
+
+    const CHUNK = 100;
+    for (let i = 0; i < entries.length; i += CHUNK) {
+      const slice = entries.slice(i, i + CHUNK);
+      const whenClauses = slice.map(([id, s]) => `WHEN ${parseInt(id, 10)} THEN '${String(s).replace(/'/g, "''")}'`).join(' ');
+      const ids = slice.map(([id]) => parseInt(id, 10)).join(',');
+      const sql = `UPDATE movies SET stream_gr = CASE id ${whenClauses} END WHERE id IN (${ids}) AND (stream_gr IS NULL OR stream_gr = '')`;
+      await run(sql);
+    }
+    const after = await get("SELECT COUNT(stream_gr) AS c FROM movies WHERE stream_gr IS NOT NULL AND stream_gr != ''");
+    console.log(`[db] Greek streaming providers backfilled successfully. Total with stream_gr: ${after?.c}`);
+  } catch (err) {
+    console.warn('[db] Note: backfillInitialStreaming notice:', err.message);
   }
 }
 

@@ -457,9 +457,20 @@ router.post('/', ah(async (req, res) => {
       } catch (_) { /* best effort */ }
     }
 
-    if (imdb?.imdbId || runtime || posterPath || backdropPath || letterboxdRating != null) {
-      await db.run(`UPDATE ${targetTable} SET imdb_id = ?, imdb_rating = ?, letterboxd_rating = ?, poster_path = ?, backdrop_path = ?, runtime = ? WHERE id = ?`,
-        imdb?.imdbId ?? null, imdb?.imdbRating ?? null, letterboxdRating ?? null, posterPath ?? null, backdropPath ?? null, runtime ?? null, lastInsertRowid);
+    let streamGr = null;
+    try {
+      const providersResult = await getMovieWatchProviders(imdb?.imdbId, title.trim(), year.trim(), 'GR');
+      if (providersResult?.flatrate && Array.isArray(providersResult.flatrate) && providersResult.flatrate.length > 0) {
+        streamGr = providersResult.flatrate.map(p => p.name).join('|');
+      }
+      if (providersResult?.backdropPath && !backdropPath) {
+        backdropPath = providersResult.backdropPath;
+      }
+    } catch (_) { /* best effort */ }
+
+    if (imdb?.imdbId || runtime || posterPath || backdropPath || letterboxdRating != null || streamGr) {
+      await db.run(`UPDATE ${targetTable} SET imdb_id = ?, imdb_rating = ?, letterboxd_rating = ?, poster_path = ?, backdrop_path = ?, runtime = ?, stream_gr = ? WHERE id = ?`,
+        imdb?.imdbId ?? null, imdb?.imdbRating ?? null, letterboxdRating ?? null, posterPath ?? null, backdropPath ?? null, runtime ?? null, streamGr ?? null, lastInsertRowid);
     }
   } catch (_) { /* film is still added even if metadata lookup is unavailable */ }
 
