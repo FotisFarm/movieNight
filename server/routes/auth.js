@@ -140,10 +140,14 @@ router.post('/switch-group', ah(async (req, res) => {
     return res.status(404).json({ error: 'Group not found' });
   }
 
-  // Only admins can switch groups
-  const isAdmin = Boolean(req.session?.isAdmin || req.session?.voter === 'mnAdmin');
-  if (!isAdmin) {
-    return res.status(403).json({ error: 'Only administrators can switch groups' });
+  // Site admins can switch to any group; members can only switch to groups they belong to
+  const isSiteAdmin = Boolean(req.session?.isAdmin || req.session?.voter === 'mnAdmin');
+  if (!isSiteAdmin) {
+    const userGroups = await getUserGroups(req.session.userId);
+    const isMember = userGroups.some(g => g.id === targetGroup.id);
+    if (!isMember) {
+      return res.status(403).json({ error: 'You are not a member of this group' });
+    }
   }
 
   req.session.activeGroupId = targetGroup.id;

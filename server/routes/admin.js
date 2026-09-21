@@ -48,7 +48,7 @@ router.get('/users', ah(async (_req, res) => {
 
 // POST /api/admin/users — create a new user & assign to club
 router.post('/users', ah(async (req, res) => {
-  const { username, displayName, groupId, isAdmin = false, password } = req.body || {};
+  const { username, displayName, groupId, isAdmin = false, groupRole = 'member', password } = req.body || {};
 
   const cleanUser = (username || '').trim().toLowerCase();
   const cleanDisplay = (displayName || '').trim();
@@ -84,9 +84,10 @@ router.post('/users', ah(async (req, res) => {
   const newUserId = ins.lastInsertRowid;
 
   if (groupId) {
+    const role = (adminFlag || groupRole === 'admin') ? 'admin' : 'member';
     await db.run(
       'INSERT OR IGNORE INTO group_members (group_id, user_id, role) VALUES (?, ?, ?)',
-      Number(groupId), newUserId, adminFlag ? 'admin' : 'member'
+      Number(groupId), newUserId, role
     );
   }
 
@@ -158,7 +159,7 @@ router.post('/users/:id/groups', ah(async (req, res) => {
 // PUT /api/admin/users/:id/groups — replace all group memberships for a user
 router.put('/users/:id/groups', ah(async (req, res) => {
   const userId = Number(req.params.id);
-  const { groupIds = [] } = req.body || {};
+  const { groupIds = [], roles = {}, memberships = [] } = req.body || {};
 
   const user = await db.get('SELECT id, username, display_name FROM users WHERE id = ?', userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
@@ -167,12 +168,23 @@ router.put('/users/:id/groups', ah(async (req, res) => {
     return res.json({ ok: true, message: 'System administrator has global access to all clubs without affecting voter counts' });
   }
 
+  const targetMemberships = Array.isArray(memberships) && memberships.length > 0
+    ? memberships
+    : groupIds.map(gid => ({
+        groupId: Number(gid),
+        role: roles[gid] === 'admin' ? 'admin' : 'member',
+      }));
+
   await db.run('DELETE FROM group_members WHERE user_id = ?', userId);
-  for (const gid of groupIds) {
-    await db.run(
-      'INSERT OR IGNORE INTO group_members (group_id, user_id, role) VALUES (?, ?, ?)',
-      Number(gid), userId, 'member'
-    );
+  for (const m of targetMemberships) {
+    const gid = Number(m.groupId || m.id);
+    const role = m.role === 'admin' ? 'admin' : 'member';
+    if (gid) {
+      await db.run(
+        'INSERT OR REPLACE INTO group_members (group_id, user_id, role) VALUES (?, ?, ?)',
+        gid, userId, role
+      );
+    }
   }
 
   res.json({ ok: true, message: `Updated clubs for ${user.display_name}` });

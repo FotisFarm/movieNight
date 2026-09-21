@@ -33,6 +33,7 @@ export default function Admin() {
   const [resetTargetUser, setResetTargetUser] = useState(null);
   const [editClubsTargetUser, setEditClubsTargetUser] = useState(null);
   const [selectedClubIds, setSelectedClubIds] = useState([]);
+  const [selectedClubRoles, setSelectedClubRoles] = useState({}); // clubId -> 'admin' | 'member'
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Add User Form State
@@ -41,6 +42,7 @@ export default function Admin() {
   const [newGroupId, setNewGroupId] = useState('1');
   const [newPassword, setNewPassword] = useState('movieNight5');
   const [newIsAdmin, setNewIsAdmin] = useState(false);
+  const [newIsGroupAdmin, setNewIsGroupAdmin] = useState(false);
   const [formError, setFormError] = useState('');
 
   // Create Club Form State
@@ -105,7 +107,9 @@ export default function Admin() {
       const matchGroup = groupFilter === 'all'
         || u.groups?.some(g => String(g.id) === groupFilter);
       const matchRole = roleFilter === 'all'
-        || (roleFilter === 'admin' ? u.isAdmin : !u.isAdmin);
+        || (roleFilter === 'admin' || roleFilter === 'siteAdmin' ? u.isAdmin : false)
+        || (roleFilter === 'groupAdmin' ? (!u.isAdmin && u.groups?.some(g => g.role === 'admin')) : false)
+        || (roleFilter === 'member' ? (!u.isAdmin && !u.groups?.some(g => g.role === 'admin')) : false);
       return matchSearch && matchGroup && matchRole;
     });
   }, [users, search, groupFilter, roleFilter]);
@@ -134,6 +138,7 @@ export default function Admin() {
     setNewDisplayName('');
     setNewPassword('movieNight5');
     setNewIsAdmin(false);
+    setNewIsGroupAdmin(false);
     setFormError('');
     if (groups.length > 0) setNewGroupId(String(groups[0].id));
     setAddUserOpen(true);
@@ -155,6 +160,7 @@ export default function Admin() {
         groupId: Number(newGroupId) || 1,
         password: newPassword.trim() || 'movieNight5',
         isAdmin: newIsAdmin,
+        groupRole: (!newIsAdmin && newIsGroupAdmin) ? 'admin' : 'member',
       });
 
       if (res.ok) {
@@ -174,19 +180,34 @@ export default function Admin() {
     setEditClubsTargetUser(u);
     const existingIds = (u.groups || []).map(g => g.id);
     setSelectedClubIds(existingIds);
+    const roles = {};
+    (u.groups || []).forEach(g => {
+      roles[g.id] = g.role || 'member';
+    });
+    setSelectedClubRoles(roles);
   };
 
   const handleToggleClubSelection = (clubId) => {
     setSelectedClubIds(prev =>
       prev.includes(clubId) ? prev.filter(id => id !== clubId) : [...prev, clubId]
     );
+    setSelectedClubRoles(prev => {
+      if (!prev[clubId]) {
+        return { ...prev, [clubId]: 'member' };
+      }
+      return prev;
+    });
+  };
+
+  const handleClubRoleChange = (clubId, role) => {
+    setSelectedClubRoles(prev => ({ ...prev, [clubId]: role }));
   };
 
   const handleSaveUserClubs = async () => {
     if (!editClubsTargetUser) return;
     try {
       setIsSubmitting(true);
-      const res = await api.adminSetUserGroups(editClubsTargetUser.id, selectedClubIds);
+      const res = await api.adminSetUserGroups(editClubsTargetUser.id, selectedClubIds, selectedClubRoles);
       if (res.ok) {
         showNotification(`Updated club memberships for ${editClubsTargetUser.displayName}!`);
         setEditClubsTargetUser(null);
@@ -554,8 +575,9 @@ export default function Admin() {
                 onChange={e => setRoleFilter(e.target.value)}
               >
                 <option value="all">All Roles</option>
-                <option value="admin">Admins Only</option>
-                <option value="member">Members</option>
+                <option value="siteAdmin">Site Admins Only</option>
+                <option value="groupAdmin">Group Admins Only</option>
+                <option value="member">Regular Members</option>
               </select>
             </div>
           </div>
@@ -601,8 +623,13 @@ export default function Admin() {
                               <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
                                 {u.groups && u.groups.length > 0 ? (
                                   u.groups.map(g => (
-                                    <span key={g.id} className="admin-group-tag">
-                                      🎬 {g.name}
+                                    <span
+                                      key={g.id}
+                                      className="admin-group-tag"
+                                      style={g.role === 'admin' ? { borderColor: '#ffd54f', color: '#ffd54f', background: 'rgba(255, 213, 79, 0.12)' } : undefined}
+                                      title={g.role === 'admin' ? `Group Admin of ${g.name}` : `Member of ${g.name}`}
+                                    >
+                                      🎬 {g.name}{g.role === 'admin' ? ' (Admin)' : ''}
                                     </span>
                                   ))
                                 ) : (
@@ -620,9 +647,24 @@ export default function Admin() {
                             )}
                           </td>
                           <td>
-                            <span className={`admin-role-badge ${u.isAdmin ? 'admin' : 'member'}`}>
-                              {u.isAdmin ? '👑 Site Admin' : 'Member'}
-                            </span>
+                            {u.isAdmin ? (
+                              <span className="admin-role-badge admin">👑 Site Admin</span>
+                            ) : u.groups?.some(g => g.role === 'admin') ? (
+                              <span
+                                className="admin-role-badge"
+                                style={{
+                                  background: 'rgba(255, 213, 79, 0.15)',
+                                  color: '#ffd54f',
+                                  border: '1px solid rgba(255, 213, 79, 0.35)',
+                                  fontWeight: 600,
+                                }}
+                                title={`Group Admin of: ${u.groups.filter(g => g.role === 'admin').map(g => g.name).join(', ')}`}
+                              >
+                                👑 Group Admin
+                              </span>
+                            ) : (
+                              <span className="admin-role-badge member">Member</span>
+                            )}
                           </td>
                           <td>
                             <span style={{ fontWeight: 600 }}>{u.ratingsCount}</span>
@@ -675,9 +717,24 @@ export default function Admin() {
                               <div className="admin-user-handle">@{u.username}</div>
                             </div>
                           </div>
-                          <span className={`admin-role-badge ${u.isAdmin ? 'admin' : 'member'}`}>
-                            {u.isAdmin ? '👑 Admin' : 'Member'}
-                          </span>
+                          {u.isAdmin ? (
+                            <span className="admin-role-badge admin">👑 Site Admin</span>
+                          ) : u.groups?.some(g => g.role === 'admin') ? (
+                            <span
+                              className="admin-role-badge"
+                              style={{
+                                background: 'rgba(255, 213, 79, 0.15)',
+                                color: '#ffd54f',
+                                border: '1px solid rgba(255, 213, 79, 0.35)',
+                                fontWeight: 600,
+                              }}
+                              title={`Group Admin of: ${u.groups.filter(g => g.role === 'admin').map(g => g.name).join(', ')}`}
+                            >
+                              👑 Group Admin
+                            </span>
+                          ) : (
+                            <span className="admin-role-badge member">Member</span>
+                          )}
                         </div>
 
                         <div className="admin-card-clubs-row">
@@ -691,8 +748,13 @@ export default function Admin() {
                               <>
                                 {u.groups && u.groups.length > 0 ? (
                                   u.groups.map(g => (
-                                    <span key={g.id} className="admin-group-tag">
-                                      🎬 {g.name}
+                                    <span
+                                      key={g.id}
+                                      className="admin-group-tag"
+                                      style={g.role === 'admin' ? { borderColor: '#ffd54f', color: '#ffd54f', background: 'rgba(255, 213, 79, 0.12)' } : undefined}
+                                      title={g.role === 'admin' ? `Group Admin of ${g.name}` : `Member of ${g.name}`}
+                                    >
+                                      🎬 {g.name}{g.role === 'admin' ? ' (Admin)' : ''}
                                     </span>
                                   ))
                                 ) : (
@@ -1176,32 +1238,69 @@ export default function Admin() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
                 {groups.map(g => {
                   const isChecked = selectedClubIds.includes(g.id);
+                  const currentRole = selectedClubRoles[g.id] || 'member';
                   return (
-                    <label
+                    <div
                       key={g.id}
                       className="admin-checkbox-row"
-                      style={{ border: isChecked ? '1px solid var(--accent)' : '1px solid var(--border)' }}
+                      style={{
+                        border: isChecked ? '1px solid var(--accent)' : '1px solid var(--border)',
+                        background: isChecked ? 'rgba(229, 9, 20, 0.04)' : undefined,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        gap: 12,
+                      }}
                     >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => handleToggleClubSelection(g.id)}
-                      />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 600, fontSize: 13.5, color: '#fff' }}>
-                          🎬 {g.name}
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', flex: 1, margin: 0 }}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleToggleClubSelection(g.id)}
+                        />
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 13.5, color: '#fff' }}>
+                            🎬 {g.name}
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--text2)' }}>
+                            Slug: <code>{g.slug}</code>
+                          </div>
                         </div>
-                        <div style={{ fontSize: 12, color: 'var(--text2)' }}>
-                          Slug: <code>{g.slug}</code>
+                      </label>
+                      {isChecked && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontSize: 12, color: 'var(--text3)' }}>Role:</span>
+                          <select
+                            value={currentRole}
+                            onChange={e => handleClubRoleChange(g.id, e.target.value)}
+                            style={{
+                              padding: '5px 9px',
+                              fontSize: 12,
+                              borderRadius: 6,
+                              background: currentRole === 'admin' ? 'rgba(255, 213, 79, 0.15)' : 'var(--bg3)',
+                              color: currentRole === 'admin' ? '#ffd54f' : 'var(--text1)',
+                              border: currentRole === 'admin' ? '1px solid rgba(255, 213, 79, 0.4)' : '1px solid var(--border)',
+                              fontWeight: currentRole === 'admin' ? 600 : 400,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <option value="member">👤 Member</option>
+                            <option value="admin">👑 Group Admin</option>
+                          </select>
                         </div>
-                      </div>
-                    </label>
+                      )}
+                    </div>
                   );
                 })}
               </div>
 
-              <div style={{ fontSize: 12, color: 'var(--text3)' }}>
-                * Users can belong to multiple clubs. Their ratings and top 10 lists remain scoped to their respective clubs.
+              <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.5 }}>
+                <div>* Users can belong to multiple clubs. Their ratings and top 10 lists remain scoped to their respective clubs.</div>
+                <div style={{ marginTop: 6, color: 'var(--text2)' }}>
+                  👑 <strong>Group Admins</strong> can enter ratings, adjust rankings, and manage lists on behalf of any member during group watch sessions, but cannot see or access other clubs or the system admin console.
+                </div>
               </div>
             </div>
             <div className="admin-modal-footer">
@@ -1474,14 +1573,33 @@ export default function Admin() {
                     <input
                       type="checkbox"
                       checked={newIsAdmin}
-                      onChange={e => setNewIsAdmin(e.target.checked)}
+                      onChange={e => {
+                        setNewIsAdmin(e.target.checked);
+                        if (e.target.checked) setNewIsGroupAdmin(false);
+                      }}
                     />
                     <div>
                       <div style={{ fontWeight: 600, fontSize: 13, color: '#fff' }}>Grant Site Administrator</div>
-                      <div style={{ fontSize: 11.5, color: 'var(--text2)' }}>Grants access to this Admin Console and group switching.</div>
+                      <div style={{ fontSize: 11.5, color: 'var(--text2)' }}>Grants access to this Admin Console and group switching across all clubs.</div>
                     </div>
                   </label>
                 </div>
+
+                {!newIsAdmin && (
+                  <div className="admin-form-group">
+                    <label className="admin-checkbox-row">
+                      <input
+                        type="checkbox"
+                        checked={newIsGroupAdmin}
+                        onChange={e => setNewIsGroupAdmin(e.target.checked)}
+                      />
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: '#ffd54f' }}>👑 Grant Group Admin for this Club</div>
+                        <div style={{ fontSize: 11.5, color: 'var(--text2)' }}>Can enter ratings & manage lists for anyone during group watch sessions (cannot access other clubs or Admin console).</div>
+                      </div>
+                    </label>
+                  </div>
+                )}
               </div>
               <div className="admin-modal-footer">
                 <button

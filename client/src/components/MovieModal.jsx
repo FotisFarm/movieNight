@@ -38,10 +38,11 @@ function rankClass(r) {
 }
 
 export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankData, onMovieUpdated }) {
-  const { voters: configVoters, groupSize, sandboxMode, activeGroup, isAdmin: configIsAdmin } = useAppConfig();
+  const { voters: configVoters, groupSize, sandboxMode, activeGroup, isAdmin: configIsAdmin, isSiteAdmin, isGroupAdmin: configIsGroupAdmin } = useAppConfig();
   const currentVoter = sessionStorage.getItem('voter');
-  const isGroupAdmin = Boolean(activeGroup?.members?.some(m => (m.displayName === currentVoter || m.username === currentVoter) && m.role === 'admin'));
-  const isAdmin = Boolean(configIsAdmin || sessionStorage.getItem('isAdmin') === 'true' || currentVoter === 'mnAdmin' || isGroupAdmin);
+  const isGroupAdmin = Boolean(configIsGroupAdmin || activeGroup?.members?.some(m => (m.displayName === currentVoter || m.username === currentVoter) && m.role === 'admin'));
+  const isGlobalAdmin = Boolean(isSiteAdmin || sessionStorage.getItem('isAdmin') === 'true' || currentVoter === 'mnAdmin');
+  const isAdmin = Boolean(configIsAdmin || isGlobalAdmin || isGroupAdmin);
   const isGhost = !configVoters.includes(currentVoter) && currentVoter !== 'mnAdmin' && !isAdmin && !!currentVoter;
   const [movie, setMovie]     = useState(null);
   const [loading, setLoading] = useState(true);
@@ -722,9 +723,28 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
               <div className="modal-section-label section-label" style={{ marginBottom: 0 }}>
                 Voter Ratings &amp; Picks
               </div>
-              <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>
-                {voterCount} of {groupSize} rated
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {isGroupAdmin && !isGlobalAdmin && (
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: '#ffd54f',
+                      background: 'rgba(255, 213, 79, 0.12)',
+                      border: '1px solid rgba(255, 213, 79, 0.35)',
+                      padding: '2px 7px',
+                      borderRadius: 99,
+                      letterSpacing: '0.02em',
+                    }}
+                    title="As Group Admin, you can record and edit ratings for everyone in this club"
+                  >
+                    👑 Group Admin
+                  </span>
+                )}
+                <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 600 }}>
+                  {voterCount} of {groupSize} rated
+                </span>
+              </div>
             </div>
 
             <div className="voter-card-list">
