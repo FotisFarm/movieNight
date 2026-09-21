@@ -21,6 +21,7 @@ router.post('/contenders', ah(async (req, res) => {
     stream,
     provider,
     limit = 16,
+    search,
   } = req.body;
 
   // Resolve effective history mode:
@@ -198,6 +199,15 @@ router.post('/contenders', ah(async (req, res) => {
   if (provider && typeof provider === 'string' && provider.trim()) {
     const provLower = provider.toLowerCase().trim();
     candidates = candidates.filter(m => m.stream_gr && m.stream_gr.toLowerCase().includes(provLower));
+  }
+
+  // 6. Search query filtering (title, director)
+  if (search && typeof search === 'string' && search.trim()) {
+    const q = search.toLowerCase().trim();
+    candidates = candidates.filter(m =>
+      (m.title && m.title.toLowerCase().includes(q)) ||
+      (m.director && m.director.toLowerCase().includes(q))
+    );
   }
 
   // Score each candidate film for the attendee room

@@ -157,11 +157,22 @@ export default function Session({ voter }) {
 
   // Contenders state from backend
   const [contenders, setContenders] = useState([]);
+  const [knownContenders, setKnownContenders] = useState(new Map());
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [meta, setMeta] = useState(null);
   const [candidateLimit, setCandidateLimit] = useState(16);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Debounce search input by 250ms
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 250);
+    return () => clearTimeout(t);
+  }, [search]);
 
   // Wheel state
   const [isSpinning, setIsSpinning] = useState(false);
@@ -197,10 +208,10 @@ export default function Session({ voter }) {
     }).catch(() => {});
   }, [activeGroup?.id]);
 
-  // Reset candidate limit when core filters change
+  // Reset candidate limit when core filters or search change
   useEffect(() => {
     setCandidateLimit(16);
-  }, [attendees, pool, selectedListId, historyMode, durationFilter, streamingFilter]);
+  }, [attendees, pool, selectedListId, historyMode, durationFilter, streamingFilter, debouncedSearch]);
 
   // Fetch contenders when filters change
   const fetchContenders = useCallback(async () => {
@@ -228,6 +239,7 @@ export default function Session({ voter }) {
         maxRuntime: dur.max,
         stream: streamVal,
         provider: providerVal,
+        search: debouncedSearch.trim() || undefined,
         limit: candidateLimit,
       });
 
@@ -237,26 +249,36 @@ export default function Session({ voter }) {
         return;
       }
 
-      setContenders(res.contenders || []);
+      const list = res.contenders || [];
+      setContenders(list);
+      setKnownContenders(prev => {
+        const next = new Map(prev);
+        list.forEach(c => next.set(c.id, c));
+        return next;
+      });
       setMeta(res.meta || null);
-      // Default: select up to top 8 contenders on the wheel (preserve if expanding limit)
+
+      // Default: select up to top 8 contenders on the wheel (preserve if expanding limit or searching)
       setSelectedIds(prev => {
-        if (prev.size > 0 && candidateLimit > 16) return prev;
-        return new Set((res.contenders || []).slice(0, 8).map(c => c.id));
+        if (prev.size > 0 && (candidateLimit > 16 || debouncedSearch)) return prev;
+        return new Set(list.slice(0, 8).map(c => c.id));
       });
     } catch (err) {
       setError(err.message || 'Failed to load session contenders');
     } finally {
       setLoading(false);
     }
-  }, [attendees, pool, selectedListId, historyMode, durationFilter, streamingFilter, candidateLimit]);
+  }, [attendees, pool, selectedListId, historyMode, durationFilter, streamingFilter, debouncedSearch, candidateLimit]);
 
   useEffect(() => {
     fetchContenders();
   }, [fetchContenders]);
 
   // Contenders currently active on the wheel
-  const activeContenders = contenders.filter(c => selectedIds.has(c.id));
+  const activeContenders = Array.from(selectedIds)
+    .map(id => knownContenders.get(id) || contenders.find(c => c.id === id))
+    .filter(Boolean)
+    .sort((a, b) => b.sessionScore - a.sessionScore);
 
   // Initialize confetti canvas
   useEffect(() => {
@@ -846,9 +868,11 @@ export default function Session({ voter }) {
               <span className="contenders-sub">
                 {loading
                   ? 'Calculating consensus...'
-                  : meta?.totalCandidates && meta.totalCandidates > contenders.length
-                    ? `Showing top ${contenders.length} of ${meta.totalCandidates} candidates scored for tonight`
-                    : `${contenders.length} candidate films scored for tonight`}
+                  : search.trim()
+                    ? `Found ${contenders.length} candidate${contenders.length === 1 ? '' : 's'} matching "${search.trim()}"`
+                    : meta?.totalCandidates && meta.totalCandidates > contenders.length
+                      ? `Showing top ${contenders.length} of ${meta.totalCandidates} candidates scored for tonight`
+                      : `${contenders.length} candidate films scored for tonight`}
               </span>
             </div>
             {meta?.pool && (
@@ -856,6 +880,29 @@ export default function Session({ voter }) {
                 Pool: {pool === 'watchlist' ? 'Watchlist' : (pool === 'list' ? 'Custom List' : 'All Films')}
               </span>
             )}
+          </div>
+
+          {/* Search Bar */}
+          <div className="session-search-bar">
+            <div className="search-box session-search-box">
+              <span className="search-icon">🔍</span>
+              <input
+                className="input search-input"
+                placeholder="Search candidates by title or director…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+              {search && (
+                <button
+                  type="button"
+                  className="search-clear"
+                  onClick={() => setSearch('')}
+                  aria-label="Clear search"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
 
           {loading ? (
@@ -874,12 +921,27 @@ export default function Session({ voter }) {
             <div className="session-empty">
               <span className="empty-icon">🎞</span>
               <h3>No candidate films found</h3>
-              <p>Try selecting a different pool or duration filter.</p>
+              <p>
+                {search.trim()
+                  ? `No films matching "${search.trim()}" found in the current pool or filters.`
+                  : 'Try selecting a different pool or duration filter.'}
+              </p>
+              {search.trim() && (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setSearch('')}
+                  style={{ marginTop: 8 }}
+                >
+                  Clear search
+                </button>
+              )}
               {pool === 'watchlist' && (
                 <button
                   type="button"
                   className="btn btn-primary btn-sm"
                   onClick={() => setPool('all')}
+                  style={{ marginTop: search.trim() ? 4 : 8 }}
                 >
                   Explore All Films
                 </button>
