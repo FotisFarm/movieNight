@@ -23,6 +23,24 @@ const STREAMING_PLATFORMS = [
   { id: 'ert', label: 'ERTFLIX' },
 ];
 
+const RUNTIME_PRESETS = [
+  { id: '', label: 'Any Duration' },
+  { id: 'under90', label: 'Short (< 90m)', min: '', max: '89' },
+  { id: '90-120', label: 'Standard (90–120m)', min: '90', max: '120' },
+  { id: 'over120', label: 'Long (> 120m)', min: '121', max: '' },
+  { id: 'over150', label: 'Epic (> 150m)', min: '151', max: '' },
+  { id: 'custom', label: 'Custom…' },
+];
+
+const LB_RATING_OPTIONS = [
+  { value: '', label: 'Any Letterboxd Rating' },
+  { value: '4.2', label: '≥ 4.2 ★ (Top Tier)' },
+  { value: '4.0', label: '≥ 4.0 ★ (Acclaimed)' },
+  { value: '3.8', label: '≥ 3.8 ★ (Gems)' },
+  { value: '3.5', label: '≥ 3.5 ★ (Good)' },
+  { value: '3.0', label: '≥ 3.0 ★ (Decent)' },
+];
+
 const DEFAULTS = {
   search: '',
   sortBy: 'alpha',
@@ -38,6 +56,10 @@ const DEFAULTS = {
   filterYearMax: '',
   filterMinVoters: '',
   filterMaxVoters: '',
+  filterRuntime: '',
+  filterRuntimeMin: '',
+  filterRuntimeMax: '',
+  filterMinLb: '',
 };
 
 export default function Films() {
@@ -53,7 +75,18 @@ export default function Films() {
   const [viewMode, setViewMode]       = useState('list');
   const [scoreMode, setScoreMode]     = useState('fair');
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(() =>
-    !!(searchParams.get('director') || searchParams.get('yearMin') || searchParams.get('yearMax') || searchParams.get('minVoters') || searchParams.get('maxVoters') || searchParams.get('provider'))
+    !!(
+      searchParams.get('director') ||
+      searchParams.get('yearMin') ||
+      searchParams.get('yearMax') ||
+      searchParams.get('minVoters') ||
+      searchParams.get('maxVoters') ||
+      searchParams.get('provider') ||
+      searchParams.get('runtime') ||
+      searchParams.get('runtimeMin') ||
+      searchParams.get('runtimeMax') ||
+      searchParams.get('minLb')
+    )
   );
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const { toast, Toast }              = useToast();
@@ -72,7 +105,20 @@ export default function Films() {
   const [filterYearMax, setFilterYearMax]   = useState(() => searchParams.get('yearMax') || DEFAULTS.filterYearMax);
   const [filterMinVoters, setFilterMinVoters] = useState(() => searchParams.get('minVoters') || DEFAULTS.filterMinVoters);
   const [filterMaxVoters, setFilterMaxVoters] = useState(() => searchParams.get('maxVoters') || DEFAULTS.filterMaxVoters);
-  const [directors, setDirectors]                 = useState([]);
+  const [filterRuntime, setFilterRuntime]   = useState(() => searchParams.get('runtime') || DEFAULTS.filterRuntime);
+  const [filterRuntimeMin, setFilterRuntimeMin] = useState(() => searchParams.get('runtimeMin') || DEFAULTS.filterRuntimeMin);
+  const [filterRuntimeMax, setFilterRuntimeMax] = useState(() => searchParams.get('runtimeMax') || DEFAULTS.filterRuntimeMax);
+  const [filterMinLb, setFilterMinLb]       = useState(() => searchParams.get('minLb') || DEFAULTS.filterMinLb);
+  const [directors, setDirectors]           = useState([]);
+
+  function handleRuntimePreset(presetId) {
+    setFilterRuntime(presetId);
+    const found = RUNTIME_PRESETS.find(p => p.id === presetId);
+    if (found && presetId !== 'custom') {
+      setFilterRuntimeMin(found.min || '');
+      setFilterRuntimeMax(found.max || '');
+    }
+  }
 
   useEffect(() => {
     const p = {};
@@ -90,14 +136,20 @@ export default function Films() {
     if (filterYearMax)                        p.yearMax = filterYearMax;
     if (filterMinVoters)                      p.minVoters = filterMinVoters;
     if (filterMaxVoters)                      p.maxVoters = filterMaxVoters;
+    if (filterRuntime)                        p.runtime = filterRuntime;
+    if (filterRuntimeMin)                     p.runtimeMin = filterRuntimeMin;
+    if (filterRuntimeMax)                     p.runtimeMax = filterRuntimeMax;
+    if (filterMinLb)                          p.minLb = filterMinLb;
     setSearchParams(p, { replace: true });
-  }, [search, sortBy, sortVoter, filterMn, filterRated, filterWl, filterStream, filterProvider, filterVoters, filterDirector, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters]);
+  }, [search, sortBy, sortVoter, filterMn, filterRated, filterWl, filterStream, filterProvider, filterVoters, filterDirector, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, filterRuntime, filterRuntimeMin, filterRuntimeMax, filterMinLb]);
 
   const searchTimer = useRef(null);
 
   const advancedFilterCount = [
     !!filterDirector, !!filterYearMin, !!filterYearMax,
     !!filterMinVoters, !!filterMaxVoters, !!filterProvider,
+    !!filterRuntime || !!filterRuntimeMin || !!filterRuntimeMax,
+    !!filterMinLb,
   ].filter(Boolean).length;
 
   const filtersActive = search || filterMn || filterRated || filterWl || filterStream || !!filterProvider || filterVoters.length || advancedFilterCount > 0;
@@ -107,9 +159,28 @@ export default function Films() {
     !!filterRated, advancedFilterCount > 0,
   ].filter(Boolean).length;
 
-  const setters = { search: setSearch, sortBy: setSortBy, sortVoter: setSortVoter, filterMn: setFilterMn, filterRated: setFilterRated, filterWl: setFilterWl, filterStream: setFilterStream, filterProvider: setFilterProvider, filterVoters: setFilterVoters, filterDirector: setFilterDirector, filterYearMin: setFilterYearMin, filterYearMax: setFilterYearMax, filterMinVoters: setFilterMinVoters, filterMaxVoters: setFilterMaxVoters };
+  const setters = {
+    search: setSearch,
+    sortBy: setSortBy,
+    sortVoter: setSortVoter,
+    filterMn: setFilterMn,
+    filterRated: setFilterRated,
+    filterWl: setFilterWl,
+    filterStream: setFilterStream,
+    filterProvider: setFilterProvider,
+    filterVoters: setFilterVoters,
+    filterDirector: setFilterDirector,
+    filterYearMin: setFilterYearMin,
+    filterYearMax: setFilterYearMax,
+    filterMinVoters: setFilterMinVoters,
+    filterMaxVoters: setFilterMaxVoters,
+    filterRuntime: setFilterRuntime,
+    filterRuntimeMin: setFilterRuntimeMin,
+    filterRuntimeMax: setFilterRuntimeMax,
+    filterMinLb: setFilterMinLb,
+  };
   function resetFilters() {
-    Object.entries(DEFAULTS).forEach(([k, v]) => setters[k](v));
+    Object.entries(DEFAULTS).forEach(([k, v]) => setters[k]?.(v));
   }
   function toggleVoter(v, e) {
     if (e && (e.shiftKey || e.ctrlKey || e.metaKey)) {
@@ -171,9 +242,12 @@ export default function Films() {
         yearMax:    filterYearMax   || undefined,
         minVoters:  filterMinVoters || undefined,
         maxVoters:  filterMaxVoters || undefined,
+        runtimeMin: filterRuntimeMin || undefined,
+        runtimeMax: filterRuntimeMax || undefined,
+        minLb:      filterMinLb      || undefined,
       });
     }, 250);
-  }, [search, filterMn, filterWl, filterStream, filterProvider, filterRated, filterVoters, filterDirector, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, fetchMovies]);
+  }, [search, filterMn, filterWl, filterStream, filterProvider, filterRated, filterVoters, filterDirector, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, filterRuntimeMin, filterRuntimeMax, filterMinLb, fetchMovies]);
 
   const rankMap = useRankMap(allMovies);
 
@@ -203,17 +277,21 @@ export default function Films() {
 
   const sorted = [...sortBase].sort((a, b) => {
     switch (sortBy) {
-      case 'alpha':      return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+      case 'alpha':        return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
       case 'alpha-dir': {
         const d = a.director.localeCompare(b.director, undefined, { sensitivity: 'base' });
         return d || a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
       }
-      case 'year-desc':  return (parseInt(b.year) || 0) - (parseInt(a.year) || 0);
-      case 'year-asc':   return (parseInt(a.year) || 0) - (parseInt(b.year) || 0);
-      case 'score-desc': return (b.fairBoosted  - a.fairBoosted)  || tiebreakScore(a, b);
-      case 'score-asc':  return (a.fairBoosted  - b.fairBoosted)  || tiebreakScore(b, a);
-      case 'group-desc': return (b.boostedScore - a.boostedScore) || tiebreakScore(a, b);
-      case 'group-asc':  return (a.boostedScore - b.boostedScore) || tiebreakScore(b, a);
+      case 'year-desc':    return (parseInt(b.year) || 0) - (parseInt(a.year) || 0);
+      case 'year-asc':     return (parseInt(a.year) || 0) - (parseInt(b.year) || 0);
+      case 'score-desc':   return (b.fairBoosted  - a.fairBoosted)  || tiebreakScore(a, b);
+      case 'score-asc':    return (a.fairBoosted  - b.fairBoosted)  || tiebreakScore(b, a);
+      case 'group-desc':   return (b.boostedScore - a.boostedScore) || tiebreakScore(a, b);
+      case 'group-asc':    return (a.boostedScore - b.boostedScore) || tiebreakScore(b, a);
+      case 'runtime-desc': return (b.runtime || 0) - (a.runtime || 0) || a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+      case 'runtime-asc':  return (a.runtime || 99999) - (b.runtime || 99999) || a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+      case 'lb-desc':      return ((b.letterboxd_rating ?? -1) - (a.letterboxd_rating ?? -1)) || a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+      case 'lb-asc':       return ((a.letterboxd_rating ?? 99) - (b.letterboxd_rating ?? 99)) || a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
       case 'added-desc':   return b.id - a.id;
       case 'added-asc':    return a.id - b.id;
       case 'voter-desc':   return ((b.ratings?.[sortVoter] ?? -1) - (a.ratings?.[sortVoter] ?? -1)) || voterTiebreak(a, b);
@@ -296,6 +374,10 @@ export default function Films() {
             <option value="score-asc">Sort: Fair Score ↑</option>
             <option value="group-desc">Sort: Group Score ↓</option>
             <option value="group-asc">Sort: Group Score ↑</option>
+            <option value="runtime-desc">Sort: Longest Runtime ↓</option>
+            <option value="runtime-asc">Sort: Shortest Runtime ↑</option>
+            <option value="lb-desc">Sort: Letterboxd Rating ↓</option>
+            <option value="lb-asc">Sort: Letterboxd Rating ↑</option>
             <option value="voter-desc">Sort: Voter Rating ↓</option>
             <option value="voter-asc">Sort: Voter Rating ↑</option>
             <option value="controversial">Sort: Most Controversial</option>
@@ -418,6 +500,34 @@ export default function Films() {
             <span className="active-chip">
               🗳 {filterMinVoters ? `≥${filterMinVoters}` : ''}{filterMinVoters && filterMaxVoters ? ' & ' : ''}{filterMaxVoters ? `≤${filterMaxVoters}` : ''} votes
               <button type="button" onClick={() => { setFilterMinVoters(''); setFilterMaxVoters(''); }} title="Remove vote count filter">✕</button>
+            </span>
+          )}
+          {(filterRuntime || filterRuntimeMin || filterRuntimeMax) && (
+            <span className="active-chip">
+              ⏱ {
+                filterRuntime === 'under90' ? '< 90m' :
+                filterRuntime === '90-120' ? '90–120m' :
+                filterRuntime === 'over120' ? '> 120m' :
+                filterRuntime === 'over150' ? '> 150m' :
+                `${filterRuntimeMin || 0}–${filterRuntimeMax || '…'}m`
+              }
+              <button
+                type="button"
+                onClick={() => {
+                  setFilterRuntime('');
+                  setFilterRuntimeMin('');
+                  setFilterRuntimeMax('');
+                }}
+                title="Remove duration filter"
+              >
+                ✕
+              </button>
+            </span>
+          )}
+          {filterMinLb && (
+            <span className="active-chip">
+              ★ ≥ {filterMinLb}
+              <button type="button" onClick={() => setFilterMinLb('')} title="Remove Letterboxd rating filter">✕</button>
             </span>
           )}
           <button type="button" className="active-chip-clear" onClick={resetFilters}>
@@ -640,6 +750,57 @@ export default function Films() {
           </div>
 
           <div className="advanced-filter-item">
+            <label className="advanced-label" htmlFor="filter-runtime">Duration</label>
+            <select
+              id="filter-runtime"
+              className="select select-sm advanced-select"
+              value={filterRuntime}
+              onChange={e => handleRuntimePreset(e.target.value)}
+            >
+              {RUNTIME_PRESETS.map(p => (
+                <option key={p.id} value={p.id}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {filterRuntime === 'custom' && (
+            <div className="advanced-filter-item">
+              <span className="advanced-label">Runtime (min)</span>
+              <div className="advanced-range-inputs">
+                <input
+                  type="number"
+                  className="input input-sm advanced-input"
+                  placeholder="Min"
+                  value={filterRuntimeMin}
+                  onChange={e => setFilterRuntimeMin(e.target.value)}
+                />
+                <span className="range-dash">–</span>
+                <input
+                  type="number"
+                  className="input input-sm advanced-input"
+                  placeholder="Max"
+                  value={filterRuntimeMax}
+                  onChange={e => setFilterRuntimeMax(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="advanced-filter-item">
+            <label className="advanced-label" htmlFor="filter-min-lb">Letterboxd Rating</label>
+            <select
+              id="filter-min-lb"
+              className="select select-sm advanced-select"
+              value={filterMinLb}
+              onChange={e => setFilterMinLb(e.target.value)}
+            >
+              {LB_RATING_OPTIONS.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="advanced-filter-item">
             <label className="advanced-label" htmlFor="filter-provider">Streaming (GR)</label>
             <select
               id="filter-provider"
@@ -668,6 +829,10 @@ export default function Films() {
                 setFilterMinVoters('');
                 setFilterMaxVoters('');
                 setFilterProvider('');
+                setFilterRuntime('');
+                setFilterRuntimeMin('');
+                setFilterRuntimeMax('');
+                setFilterMinLb('');
               }}
               title="Clear advanced filters"
             >
@@ -883,6 +1048,57 @@ export default function Films() {
                 >
                   {STREAMING_PLATFORMS.map(p => (
                     <option key={p.id} value={p.id}>{p.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Duration section */}
+              <div className="mobile-drawer-section">
+                <label className="mobile-section-label" htmlFor="mobile-filter-runtime">Duration</label>
+                <select
+                  id="mobile-filter-runtime"
+                  className="select select-sm"
+                  style={{ width: '100%' }}
+                  value={filterRuntime}
+                  onChange={e => handleRuntimePreset(e.target.value)}
+                >
+                  {RUNTIME_PRESETS.map(p => (
+                    <option key={p.id} value={p.id}>{p.label}</option>
+                  ))}
+                </select>
+                {filterRuntime === 'custom' && (
+                  <div className="advanced-range-inputs" style={{ marginTop: 8 }}>
+                    <input
+                      type="number"
+                      className="input input-sm advanced-input"
+                      placeholder="Min"
+                      value={filterRuntimeMin}
+                      onChange={e => setFilterRuntimeMin(e.target.value)}
+                    />
+                    <span className="range-dash">–</span>
+                    <input
+                      type="number"
+                      className="input input-sm advanced-input"
+                      placeholder="Max"
+                      value={filterRuntimeMax}
+                      onChange={e => setFilterRuntimeMax(e.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Letterboxd Rating section */}
+              <div className="mobile-drawer-section">
+                <label className="mobile-section-label" htmlFor="mobile-filter-lb">Letterboxd Rating</label>
+                <select
+                  id="mobile-filter-lb"
+                  className="select select-sm"
+                  style={{ width: '100%' }}
+                  value={filterMinLb}
+                  onChange={e => setFilterMinLb(e.target.value)}
+                >
+                  {LB_RATING_OPTIONS.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
               </div>

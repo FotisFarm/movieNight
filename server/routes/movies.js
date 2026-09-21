@@ -20,7 +20,7 @@ function isUserAdmin(req) {
 
 // GET /api/movies
 router.get('/', ah(async (req, res) => {
-  const { search, director, year, yearMin, yearMax, voter, voters, mn, watchlist, rated, minVoters, maxVoters, stream, provider } = req.query;
+  const { search, director, year, yearMin, yearMax, voter, voters, mn, watchlist, rated, minVoters, maxVoters, stream, provider, runtimeMin, runtimeMax, minLb, maxLb } = req.query;
 
   let query = 'SELECT * FROM movies WHERE 1=1';
   const params = [];
@@ -31,6 +31,11 @@ router.get('/', ah(async (req, res) => {
   if (year)     { query += ' AND year = ?';     params.push(year); }
   if (yearMin)  { query += ' AND CAST(year AS INTEGER) >= ?'; params.push(parseInt(yearMin)); }
   if (yearMax)  { query += ' AND CAST(year AS INTEGER) <= ?'; params.push(parseInt(yearMax)); }
+  if (runtimeMin) { query += ' AND movies.runtime >= ?'; params.push(parseInt(runtimeMin, 10)); }
+  if (runtimeMax) { query += ' AND movies.runtime <= ?'; params.push(parseInt(runtimeMax, 10)); }
+  if (minLb)      { query += ' AND movies.letterboxd_rating >= ?'; params.push(parseFloat(minLb)); }
+  if (maxLb)      { query += ' AND movies.letterboxd_rating <= ?'; params.push(parseFloat(maxLb)); }
+
   const groupId = req.group?.id || 1;
   if (mn === '1') {
     query += ' AND EXISTS (SELECT 1 FROM group_movie_status gms WHERE gms.group_id = ? AND gms.movie_id = movies.id AND gms.mn = 1)';
