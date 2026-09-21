@@ -304,7 +304,7 @@ router.post('/contenders', ah(async (req, res) => {
     return a.title.localeCompare(b.title);
   });
 
-  const cappedLimit = Math.min(30, Math.max(1, parseInt(limit, 10) || 8));
+  const cappedLimit = Math.min(100, Math.max(1, parseInt(limit, 10) || 16));
   const contenders = scored.slice(0, cappedLimit);
 
   res.json({

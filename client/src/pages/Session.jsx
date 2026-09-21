@@ -161,6 +161,7 @@ export default function Session({ voter }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [meta, setMeta] = useState(null);
+  const [candidateLimit, setCandidateLimit] = useState(16);
 
   // Wheel state
   const [isSpinning, setIsSpinning] = useState(false);
@@ -196,6 +197,11 @@ export default function Session({ voter }) {
     }).catch(() => {});
   }, [activeGroup?.id]);
 
+  // Reset candidate limit when core filters change
+  useEffect(() => {
+    setCandidateLimit(16);
+  }, [attendees, pool, selectedListId, historyMode, durationFilter, streamingFilter]);
+
   // Fetch contenders when filters change
   const fetchContenders = useCallback(async () => {
     if (attendees.length === 0) {
@@ -222,7 +228,7 @@ export default function Session({ voter }) {
         maxRuntime: dur.max,
         stream: streamVal,
         provider: providerVal,
-        limit: 16,
+        limit: candidateLimit,
       });
 
       // If watchlist is empty, auto-fallback recommendation
@@ -233,15 +239,17 @@ export default function Session({ voter }) {
 
       setContenders(res.contenders || []);
       setMeta(res.meta || null);
-      // Default: select up to top 8 contenders on the wheel
-      const initialSelected = new Set((res.contenders || []).slice(0, 8).map(c => c.id));
-      setSelectedIds(initialSelected);
+      // Default: select up to top 8 contenders on the wheel (preserve if expanding limit)
+      setSelectedIds(prev => {
+        if (prev.size > 0 && candidateLimit > 16) return prev;
+        return new Set((res.contenders || []).slice(0, 8).map(c => c.id));
+      });
     } catch (err) {
       setError(err.message || 'Failed to load session contenders');
     } finally {
       setLoading(false);
     }
-  }, [attendees, pool, selectedListId, historyMode, durationFilter, streamingFilter]);
+  }, [attendees, pool, selectedListId, historyMode, durationFilter, streamingFilter, candidateLimit]);
 
   useEffect(() => {
     fetchContenders();
@@ -838,7 +846,9 @@ export default function Session({ voter }) {
               <span className="contenders-sub">
                 {loading
                   ? 'Calculating consensus...'
-                  : `${contenders.length} candidate films scored for tonight`}
+                  : meta?.totalCandidates && meta.totalCandidates > contenders.length
+                    ? `Showing top ${contenders.length} of ${meta.totalCandidates} candidates scored for tonight`
+                    : `${contenders.length} candidate films scored for tonight`}
               </span>
             </div>
             {meta?.pool && (
@@ -982,6 +992,18 @@ export default function Session({ voter }) {
                   </div>
                 );
               })}
+              {meta?.totalCandidates > contenders.length && (
+                <div style={{ textAlign: 'center', padding: '14px 0 6px 0' }}>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => setCandidateLimit(l => l + 16)}
+                    disabled={loading}
+                  >
+                    Load more candidates ({meta.totalCandidates - contenders.length} remaining)
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </section>
