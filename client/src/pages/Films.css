@@ -154,6 +154,13 @@
   font-weight: 600;
 }
 
+.filter-chip-stream.active {
+  background: rgba(0, 184, 212, 0.18);
+  border-color: rgba(0, 184, 212, 0.55);
+  color: #26c6da;
+  font-weight: 600;
+}
+
 .filter-chip .chip-icon {
   font-size: 12px;
 }
@@ -517,6 +524,12 @@
     border-color: #e06c75;
     background: rgba(224, 108, 117, 0.16);
     color: #e06c75;
+  }
+
+  .active-chip-stream {
+    border-color: rgba(0, 184, 212, 0.45);
+    background: rgba(0, 184, 212, 0.14);
+    color: #26c6da;
   }
 
   .active-chip button {

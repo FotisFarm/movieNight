@@ -129,7 +129,7 @@ function Poster({ path, title, size }) {
   );
 }
 
-function StreamBadge({ streamGr }) {
+export function StreamBadge({ streamGr }) {
   if (!streamGr) return null;
   const providers = streamGr.split('|').map(s => s.trim()).filter(Boolean);
   if (!providers.length) return null;

@@ -18,6 +18,8 @@ router.post('/contenders', ah(async (req, res) => {
     maxRuntime,
     minRuntime,
     decade,
+    stream,
+    provider,
     limit = 16,
   } = req.body;
 
@@ -40,7 +42,7 @@ router.post('/contenders', ah(async (req, res) => {
 
   // Independent full-table reads in one concurrent round-trip
   const [allMovies, allRatings, allTop3, allGroupStatus, allGroupWlVotes, legacyWlVotes] = await Promise.all([
-    db.all('SELECT id, title, year, director, runtime, poster_path, watchlist, mn, cinobo FROM movies'),
+    db.all('SELECT id, title, year, director, runtime, poster_path, watchlist, mn, cinobo, stream_gr FROM movies'),
     db.all('SELECT movie_id, voter, score FROM ratings'),
     db.all('SELECT movie_id, voter, rank FROM top3'),
     db.all('SELECT movie_id, mn, watchlist FROM group_movie_status WHERE group_id = ?', groupId),
@@ -189,6 +191,15 @@ router.post('/contenders', ah(async (req, res) => {
     });
   }
 
+  // 5. Streaming platform filtering (Greece)
+  if (stream === '1' || stream === true) {
+    candidates = candidates.filter(m => m.stream_gr && m.stream_gr.trim() !== '');
+  }
+  if (provider && typeof provider === 'string' && provider.trim()) {
+    const provLower = provider.toLowerCase().trim();
+    candidates = candidates.filter(m => m.stream_gr && m.stream_gr.toLowerCase().includes(provLower));
+  }
+
   // Score each candidate film for the attendee room
   const scored = candidates.map(m => {
     const mDecade = m.year ? Math.floor(parseInt(m.year, 10) / 10) * 10 : null;
@@ -270,6 +281,7 @@ router.post('/contenders', ah(async (req, res) => {
       poster_path: m.poster_path || null,
       watchlist: m.watchlist === 1,
       cinobo: m.cinobo || '',
+      stream_gr: m.stream_gr || null,
       sessionScore,
       matchPercentage,
       unanimousWatchlist,

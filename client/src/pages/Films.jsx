@@ -11,6 +11,18 @@ import './Films.css';
 
 const PAGE_SIZE = 60;
 
+const STREAMING_PLATFORMS = [
+  { id: '', label: 'All Streaming Platforms' },
+  { id: 'netflix', label: 'Netflix' },
+  { id: 'cinobo', label: 'Cinobo' },
+  { id: 'apple', label: 'Apple TV+' },
+  { id: 'prime', label: 'Prime Video' },
+  { id: 'disney', label: 'Disney+' },
+  { id: 'mubi', label: 'MUBI' },
+  { id: 'max', label: 'Max' },
+  { id: 'ert', label: 'ERTFLIX' },
+];
+
 const DEFAULTS = {
   search: '',
   sortBy: 'alpha',
@@ -18,6 +30,8 @@ const DEFAULTS = {
   filterMn: false,
   filterRated: '',
   filterWl: false,
+  filterStream: false,
+  filterProvider: '',
   filterVoters: [],
   filterDirector: '',
   filterYearMin: '',
@@ -39,7 +53,7 @@ export default function Films() {
   const [viewMode, setViewMode]       = useState('list');
   const [scoreMode, setScoreMode]     = useState('fair');
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(() =>
-    !!(searchParams.get('director') || searchParams.get('yearMin') || searchParams.get('yearMax') || searchParams.get('minVoters') || searchParams.get('maxVoters'))
+    !!(searchParams.get('director') || searchParams.get('yearMin') || searchParams.get('yearMax') || searchParams.get('minVoters') || searchParams.get('maxVoters') || searchParams.get('provider'))
   );
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const { toast, Toast }              = useToast();
@@ -50,6 +64,8 @@ export default function Films() {
   const [filterMn, setFilterMn]       = useState(() => searchParams.get('mn') === '1');
   const [filterRated, setFilterRated] = useState(() => searchParams.get('rated') || DEFAULTS.filterRated);
   const [filterWl, setFilterWl]       = useState(() => searchParams.get('wl') === '1');
+  const [filterStream, setFilterStream] = useState(() => searchParams.get('stream') === '1' || !!searchParams.get('provider'));
+  const [filterProvider, setFilterProvider] = useState(() => searchParams.get('provider') || DEFAULTS.filterProvider);
   const [filterVoters, setFilterVoters] = useState(() => searchParams.get('voters') ? searchParams.get('voters').split(',') : DEFAULTS.filterVoters);
   const [filterDirector, setFilterDirector] = useState(() => searchParams.get('director') || DEFAULTS.filterDirector);
   const [filterYearMin, setFilterYearMin]   = useState(() => searchParams.get('yearMin') || DEFAULTS.filterYearMin);
@@ -66,6 +82,8 @@ export default function Films() {
     if (filterMn)                             p.mn = '1';
     if (filterRated)                          p.rated = filterRated;
     if (filterWl)                             p.wl = '1';
+    if (filterStream)                         p.stream = '1';
+    if (filterProvider)                       p.provider = filterProvider;
     if (filterVoters.length)                  p.voters = filterVoters.join(',');
     if (filterDirector)                       p.director = filterDirector;
     if (filterYearMin)                        p.yearMin = filterYearMin;
@@ -73,23 +91,23 @@ export default function Films() {
     if (filterMinVoters)                      p.minVoters = filterMinVoters;
     if (filterMaxVoters)                      p.maxVoters = filterMaxVoters;
     setSearchParams(p, { replace: true });
-  }, [search, sortBy, sortVoter, filterMn, filterRated, filterWl, filterVoters, filterDirector, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters]);
+  }, [search, sortBy, sortVoter, filterMn, filterRated, filterWl, filterStream, filterProvider, filterVoters, filterDirector, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters]);
 
   const searchTimer = useRef(null);
 
   const advancedFilterCount = [
     !!filterDirector, !!filterYearMin, !!filterYearMax,
-    !!filterMinVoters, !!filterMaxVoters,
+    !!filterMinVoters, !!filterMaxVoters, !!filterProvider,
   ].filter(Boolean).length;
 
-  const filtersActive = search || filterMn || filterRated || filterWl || filterVoters.length || advancedFilterCount > 0;
+  const filtersActive = search || filterMn || filterRated || filterWl || filterStream || !!filterProvider || filterVoters.length || advancedFilterCount > 0;
 
   const activeFilterCount = [
-    filterMn, filterWl, filterVoters.length > 0,
+    filterMn, filterWl, (filterStream || !!filterProvider), filterVoters.length > 0,
     !!filterRated, advancedFilterCount > 0,
   ].filter(Boolean).length;
 
-  const setters = { search: setSearch, sortBy: setSortBy, sortVoter: setSortVoter, filterMn: setFilterMn, filterRated: setFilterRated, filterWl: setFilterWl, filterVoters: setFilterVoters, filterDirector: setFilterDirector, filterYearMin: setFilterYearMin, filterYearMax: setFilterYearMax, filterMinVoters: setFilterMinVoters, filterMaxVoters: setFilterMaxVoters };
+  const setters = { search: setSearch, sortBy: setSortBy, sortVoter: setSortVoter, filterMn: setFilterMn, filterRated: setFilterRated, filterWl: setFilterWl, filterStream: setFilterStream, filterProvider: setFilterProvider, filterVoters: setFilterVoters, filterDirector: setFilterDirector, filterYearMin: setFilterYearMin, filterYearMax: setFilterYearMax, filterMinVoters: setFilterMinVoters, filterMaxVoters: setFilterMaxVoters };
   function resetFilters() {
     Object.entries(DEFAULTS).forEach(([k, v]) => setters[k](v));
   }
@@ -144,6 +162,8 @@ export default function Films() {
       fetchMovies({
         mn:         filterMn        ? '1' : undefined,
         watchlist:  filterWl        ? '1' : undefined,
+        stream:     (filterStream || filterProvider) ? '1' : undefined,
+        provider:   filterProvider  || undefined,
         rated:      filterRated     || undefined,
         voters:     filterVoters.length ? filterVoters.join(',') : undefined,
         director:   filterDirector  || undefined,
@@ -153,7 +173,7 @@ export default function Films() {
         maxVoters:  filterMaxVoters || undefined,
       });
     }, 250);
-  }, [search, filterMn, filterWl, filterRated, filterVoters, filterDirector, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, fetchMovies]);
+  }, [search, filterMn, filterWl, filterStream, filterProvider, filterRated, filterVoters, filterDirector, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, fetchMovies]);
 
   const rankMap = useRankMap(allMovies);
 
@@ -358,6 +378,18 @@ export default function Films() {
               <button type="button" onClick={() => setFilterWl(false)} title="Remove Watchlist filter">✕</button>
             </span>
           )}
+          {(filterStream || filterProvider) && (
+            <span className="active-chip active-chip-stream">
+              📺 {filterProvider ? (STREAMING_PLATFORMS.find(p => p.id === filterProvider)?.label || filterProvider) : 'Streaming (GR)'}
+              <button
+                type="button"
+                onClick={() => { setFilterStream(false); setFilterProvider(''); }}
+                title="Remove streaming filter"
+              >
+                ✕
+              </button>
+            </span>
+          )}
           {filterVoters.length > 0 && (
             <span className={`active-chip${filterRated === 'unvoted' ? ' active-chip-unvoted' : ''}`}>
               👤 {filterRated === 'unvoted' ? 'Unvoted: ' : 'Voted: '}{filterVoters.join(', ')}
@@ -396,7 +428,7 @@ export default function Films() {
 
       {/* ── Filter Toolbar ── */}
       <div className="films-filter-bar">
-        {/* Scope toggles: Movie Night & Watchlist */}
+        {/* Scope toggles: Movie Night, Watchlist & Streaming */}
         <div className="filter-scope-group">
           <button
             type="button"
@@ -412,6 +444,22 @@ export default function Films() {
             onClick={() => setFilterWl(w => !w)}
           >
             <span className="chip-icon">👁</span> Watchlist
+          </button>
+
+          <button
+            type="button"
+            className={`filter-chip filter-chip-stream${(filterStream || filterProvider) ? ' active' : ''}`}
+            onClick={() => {
+              if (filterStream || filterProvider) {
+                setFilterStream(false);
+                setFilterProvider('');
+              } else {
+                setFilterStream(true);
+              }
+            }}
+            title="Filter films available for streaming in Greece"
+          >
+            <span className="chip-icon">📺</span> {filterProvider ? (STREAMING_PLATFORMS.find(p => p.id === filterProvider)?.label || 'Streaming') : 'Streaming'}
           </button>
         </div>
 
@@ -591,6 +639,24 @@ export default function Films() {
             </div>
           </div>
 
+          <div className="advanced-filter-item">
+            <label className="advanced-label" htmlFor="filter-provider">Streaming (GR)</label>
+            <select
+              id="filter-provider"
+              className="select select-sm advanced-select"
+              value={filterProvider}
+              onChange={e => {
+                const val = e.target.value;
+                setFilterProvider(val);
+                if (val) setFilterStream(true);
+              }}
+            >
+              {STREAMING_PLATFORMS.map(p => (
+                <option key={p.id} value={p.id}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+
           {advancedFilterCount > 0 && (
             <button
               type="button"
@@ -601,6 +667,7 @@ export default function Films() {
                 setFilterYearMax('');
                 setFilterMinVoters('');
                 setFilterMaxVoters('');
+                setFilterProvider('');
               }}
               title="Clear advanced filters"
             >
@@ -712,6 +779,20 @@ export default function Films() {
                   >
                     <span className="chip-icon">👁</span> Watchlist
                   </button>
+                  <button
+                    type="button"
+                    className={`filter-chip filter-chip-stream${(filterStream || filterProvider) ? ' active' : ''}`}
+                    onClick={() => {
+                      if (filterStream || filterProvider) {
+                        setFilterStream(false);
+                        setFilterProvider('');
+                      } else {
+                        setFilterStream(true);
+                      }
+                    }}
+                  >
+                    <span className="chip-icon">📺</span> {filterProvider ? (STREAMING_PLATFORMS.find(p => p.id === filterProvider)?.label || 'Streaming') : 'Streaming'}
+                  </button>
                 </div>
               </div>
 
@@ -784,6 +865,26 @@ export default function Films() {
                     )}
                   </div>
                 </div>
+              </div>
+
+              {/* Streaming Platform */}
+              <div className="mobile-drawer-section">
+                <label className="mobile-section-label" htmlFor="mobile-filter-provider">Streaming Platform (GR)</label>
+                <select
+                  id="mobile-filter-provider"
+                  className="select select-sm"
+                  style={{ width: '100%' }}
+                  value={filterProvider}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setFilterProvider(val);
+                    if (val) setFilterStream(true);
+                  }}
+                >
+                  {STREAMING_PLATFORMS.map(p => (
+                    <option key={p.id} value={p.id}>{p.label}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Director section */}

@@ -4,6 +4,7 @@ import { useAppConfig } from '../AppConfigContext';
 import { formatRuntime, posterUrl, fmtScore10 as fmt, scoreClass } from '../utils';
 import MovieModal from '../components/MovieModal';
 import TrailerModal from '../components/TrailerModal';
+import { StreamBadge } from '../components/MovieCard';
 import './Session.css';
 
 // Palette of distinct cinematic hues for the wheel slices
@@ -19,6 +20,19 @@ const DURATION_OPTIONS = [
   { id: 'medium', label: '< 105m (< 1h 45m)', min: null, max: 105 },
   { id: 'standard', label: '< 120m (< 2h)', min: null, max: 120 },
   { id: 'epic', label: '120m+ (Epic)', min: 120, max: null },
+];
+
+const STREAMING_OPTIONS = [
+  { id: 'any', label: 'All Sources' },
+  { id: 'stream', label: '📺 Any Streaming (GR)' },
+  { id: 'netflix', label: 'Netflix' },
+  { id: 'cinobo', label: 'Cinobo' },
+  { id: 'apple', label: 'Apple TV+' },
+  { id: 'prime', label: 'Prime Video' },
+  { id: 'disney', label: 'Disney+' },
+  { id: 'mubi', label: 'MUBI' },
+  { id: 'max', label: 'Max' },
+  { id: 'ert', label: 'ERTFLIX' },
 ];
 
 function playTickSound(audioCtx) {
@@ -138,6 +152,7 @@ export default function Session({ voter }) {
   const [selectedListId, setSelectedListId] = useState('');
   const [historyMode, setHistoryMode] = useState('fresh'); // 'fresh' | 'share' | 'all'
   const [durationFilter, setDurationFilter] = useState('any');
+  const [streamingFilter, setStreamingFilter] = useState('any');
   const [soundEnabled, setSoundEnabled] = useState(true);
 
   // Contenders state from backend
@@ -194,6 +209,8 @@ export default function Session({ voter }) {
     setLoading(true);
     setError('');
     const dur = DURATION_OPTIONS.find(d => d.id === durationFilter) || DURATION_OPTIONS[0];
+    const streamVal = streamingFilter !== 'any' ? '1' : undefined;
+    const providerVal = (streamingFilter !== 'any' && streamingFilter !== 'stream') ? streamingFilter : undefined;
 
     try {
       const res = await api.getSessionContenders({
@@ -203,6 +220,8 @@ export default function Session({ voter }) {
         historyMode,
         minRuntime: dur.min,
         maxRuntime: dur.max,
+        stream: streamVal,
+        provider: providerVal,
         limit: 16,
       });
 
@@ -222,7 +241,7 @@ export default function Session({ voter }) {
     } finally {
       setLoading(false);
     }
-  }, [attendees, pool, selectedListId, historyMode, durationFilter]);
+  }, [attendees, pool, selectedListId, historyMode, durationFilter, streamingFilter]);
 
   useEffect(() => {
     fetchContenders();
@@ -657,6 +676,23 @@ export default function Session({ voter }) {
               </button>
             </div>
           </div>
+
+          {/* Streaming Platform (Greece) */}
+          <div className="session-filter-col">
+            <span className="session-filter-label">📺 Streaming (Greece)</span>
+            <div className="session-chip-group">
+              {STREAMING_OPTIONS.map(opt => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  className={`session-filter-chip ${streamingFilter === opt.id ? 'active' : ''}`}
+                  onClick={() => setStreamingFilter(opt.id)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -759,6 +795,9 @@ export default function Session({ voter }) {
                         {winner.sessionScore} / 10 Match
                       </span>
                       {winner.crowdPleaser && <span className="badge badge-crowd">🤝 High Agreement</span>}
+                      {winner.stream_gr && (
+                        <StreamBadge streamGr={winner.stream_gr} />
+                      )}
                     </div>
                   </div>
                 </div>
@@ -902,6 +941,9 @@ export default function Session({ voter }) {
                         {movie.year && <> · <span>{movie.year}</span></>}
                         {movie.runtime && (
                           <> · <span className="card-runtime">{formatRuntime(movie.runtime)}</span></>
+                        )}
+                        {movie.stream_gr && (
+                          <StreamBadge streamGr={movie.stream_gr} />
                         )}
                       </div>
 
