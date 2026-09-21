@@ -143,17 +143,21 @@ router.get('/:id/watch-providers', ah(async (req, res) => {
 
   const cached = watchProvidersCache.get(movieId);
   if (cached && (Date.now() - cached.cachedAt < WATCH_PROVIDERS_CACHE_TTL)) {
-    return res.json({ providers: cached.providers, backdropPath: cached.backdropPath });
+    return res.json({ providers: cached.providers, backdropPath: cached.backdropPath, letterboxdRating: cached.letterboxdRating });
   }
 
-  const movie = await db.get('SELECT id, title, year, imdb_id, backdrop_path, stream_gr FROM movies WHERE id = ?', movieId);
+  const movie = await db.get('SELECT id, title, year, imdb_id, backdrop_path, stream_gr, letterboxd_rating FROM movies WHERE id = ?', movieId);
   if (!movie) return res.status(404).json({ error: 'Movie not found' });
 
-  const result = await getMovieWatchProviders(movie.imdb_id, movie.title, movie.year, 'GR');
+  const [result, liveLbRating] = await Promise.all([
+    getMovieWatchProviders(movie.imdb_id, movie.title, movie.year, 'GR'),
+    movie.imdb_id ? fetchLetterboxdRating(movie.imdb_id).catch(() => null) : null
+  ]);
   const providers = result ? { ...result } : null;
   const backdropPath = result?.backdropPath ?? movie.backdrop_path ?? null;
+  const letterboxdRating = liveLbRating ?? movie.letterboxd_rating ?? null;
 
-  watchProvidersCache.set(movieId, { providers, backdropPath, cachedAt: Date.now() });
+  watchProvidersCache.set(movieId, { providers, backdropPath, letterboxdRating, cachedAt: Date.now() });
 
   // Update in background without awaiting so client response is instant
   if (providers?.flatrate && Array.isArray(providers.flatrate)) {
@@ -165,8 +169,11 @@ router.get('/:id/watch-providers', ah(async (req, res) => {
   if (backdropPath && !movie.backdrop_path) {
     db.run('UPDATE movies SET backdrop_path = ? WHERE id = ?', backdropPath, movieId).catch(() => {});
   }
+  if (liveLbRating != null && liveLbRating !== movie.letterboxd_rating) {
+    db.run('UPDATE movies SET letterboxd_rating = ? WHERE id = ?', liveLbRating, movieId).catch(() => {});
+  }
 
-  res.json({ providers, backdropPath });
+  res.json({ providers, backdropPath, letterboxdRating });
 }));
 
 // POST /api/movies/:id/watchlist-vote  — must be before /:id

@@ -96,6 +96,9 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
         if (res?.backdropPath) {
           setMovie(prev => (prev && !prev.backdrop_path) ? { ...prev, backdrop_path: res.backdropPath } : prev);
         }
+        if (res?.letterboxdRating != null) {
+          setMovie(prev => (prev && prev.letterboxd_rating !== res.letterboxdRating) ? { ...prev, letterboxd_rating: res.letterboxdRating } : prev);
+        }
       })
       .catch(() => setProviders(null))
       .finally(() => setProvidersLoading(false));
