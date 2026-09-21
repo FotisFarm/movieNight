@@ -323,4 +323,43 @@ router.post('/users/:id/revoke-sessions', ah(async (req, res) => {
   res.json({ ok: true, revokedCount });
 }));
 
+// GET /api/admin/letterboxd-sync/status — check background sync status
+
+router.get('/letterboxd-sync/status', ah(async (_req, res) => {
+  const { getSyncStatus } = require('../letterboxdSync');
+  const status = getSyncStatus();
+  const summary = await db.get(`
+    SELECT COUNT(*) AS total,
+           COUNT(imdb_id) AS with_imdb,
+           COUNT(letterboxd_rating) AS with_rating,
+           COUNT(letterboxd_updated_at) AS with_updated_at,
+           COUNT(CASE WHEN letterboxd_updated_at >= datetime('now', '-24 hours') THEN 1 END) AS synced_last_24h
+    FROM movies
+  `);
+  res.json({ ok: true, sync: status, catalog: summary });
+}));
+
+// POST /api/admin/letterboxd-sync/run — trigger manual background sync
+router.post('/letterboxd-sync/run', ah(async (req, res) => {
+  const { forceAll = false } = req.body || {};
+  const { runLetterboxdSync, getSyncStatus } = require('../letterboxdSync');
+  const current = getSyncStatus();
+  if (current.isRunning) {
+    return res.json({ ok: false, message: 'Sync already running', status: current });
+  }
+
+  // Launch async without awaiting completion so admin response is immediate
+  runLetterboxdSync({ forceAll }).catch(err => console.error('[admin] Sync run error:', err));
+
+  res.json({ ok: true, message: 'Letterboxd sync started in background', forceAll });
+}));
+
+// POST /api/admin/letterboxd-sync/stop — cancel running sync
+router.post('/letterboxd-sync/stop', ah(async (_req, res) => {
+  const { stopLetterboxdSync } = require('../letterboxdSync');
+  const result = stopLetterboxdSync();
+  res.json(result);
+}));
+
 module.exports = router;
+

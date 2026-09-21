@@ -463,11 +463,21 @@ Nothing is written without `--apply`. 12 films were repaired this way (`imdb_id`
 
 ## Letterboxd integration
 - `movies.letterboxd_rating` stores the Letterboxd community aggregate rating (e.g. `4.12` on a 5-star scale).
+- `movies.letterboxd_updated_at` records the ISO timestamp when the rating was last checked.
 - **Resolver** (`server/letterboxd.js`): `fetchLetterboxdRating(imdbId)` requests `https://letterboxd.com/imdb/:imdbId/` with redirect following, extracts the JSON-LD `<script type="application/ld+json">`, and parses `aggregateRating.ratingValue`.
+- **Anti-Scraping Honeypot Decoy Protection**: Letterboxd frequently returns a static dummy rating of `3.43` in SSR HTML to unauthenticated bots/crawlers. `server/letterboxd.js` identifies and rejects `3.43` (and invalid scores), preventing automated decoys from ever corrupting catalog ratings.
+- **Daily Background Sync Scheduler** (`server/letterboxdSync.js`):
+  - Automatically runs once every 24 hours in the background (paced at 1.5s delay per request).
+  - Resumable: only checks films where `letterboxd_updated_at` is null or older than 23 hours.
+  - Can be monitored and manually triggered in the Admin Console (`/admin` -> "Letterboxd Sync" tab), or via API:
+    - `GET /api/admin/letterboxd-sync/status`
+    - `POST /api/admin/letterboxd-sync/run` (supports `{ forceAll: true }`)
+    - `POST /api/admin/letterboxd-sync/stop`
 - **Bundled seed dataset**: `server/initial-letterboxd.json` (and `server/data/initial-letterboxd.json`) provides offline fallback ratings for all 1,102 catalogue films, auto-backfilled on boot in `server/db.js` so Docker volume mounts never shadow it.
 - **CLI Script**: `server/scripts/backfill-letterboxd.js` for manual or batch backfilling.
 - **Card Badge**: Rendered as a green pill (`LB 4.2 ★`) on `MovieCard.jsx` (grid & list view) linking to `https://letterboxd.com/imdb/:imdbId/`. In mobile list view, anchored to the far right.
 - **Model Integration**: Scaled by 2.0 (`lbScore = letterboxd_rating * 2.0`) and blended into `/api/recommendations` and `/api/recommendations/accuracy` as an objective quality anchor. Currently not used in `/api/session/contenders`.
+
 
 ## Chatbot — "HAL 9000" (natural-language Q&A)
 `/chat` page and global floating console (`HalDrawer`) let any logged-in voter ask free-form questions about the data ("which director do we rate highest?", "what should I watch from the watchlist?"). **Read-only** — it can query the DB but never mutate it. The chatbot is branded as **HAL 9000**.

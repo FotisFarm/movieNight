@@ -341,7 +341,78 @@ export default function Admin() {
     }
   };
 
+  // Letterboxd Sync State
+
+  const [syncData, setSyncData] = useState(null);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [isSyncTriggering, setIsSyncTriggering] = useState(false);
+  const [forceAllSync, setForceAllSync] = useState(false);
+
+  const loadSyncData = async () => {
+    try {
+      setSyncLoading(true);
+      const data = await api.adminGetLetterboxdSyncStatus();
+      setSyncData(data);
+    } catch (err) {
+      console.warn('Failed to load sync status:', err);
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'sync') {
+      loadSyncData();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    let timer;
+    if (activeTab === 'sync' || syncData?.sync?.isRunning) {
+      timer = setInterval(async () => {
+        try {
+          const data = await api.adminGetLetterboxdSyncStatus();
+          setSyncData(data);
+          if (!data?.sync?.isRunning && syncData?.sync?.isRunning) {
+            showNotification('Letterboxd sync completed!');
+          }
+        } catch (_) {}
+      }, 3000);
+    }
+    return () => timer && clearInterval(timer);
+  }, [activeTab, syncData?.sync?.isRunning]);
+
+  const handleTriggerSync = async () => {
+    try {
+      setIsSyncTriggering(true);
+      const res = await api.adminRunLetterboxdSync({ forceAll: forceAllSync });
+      if (res.ok) {
+        showNotification(forceAllSync ? 'Started full catalog Letterboxd sync' : 'Started daily Letterboxd sync');
+        loadSyncData();
+      } else {
+        alert(res.message || 'Could not start sync');
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to start sync');
+    } finally {
+      setIsSyncTriggering(false);
+    }
+  };
+
+  const handleStopSync = async () => {
+    try {
+      const res = await api.adminStopLetterboxdSync();
+      if (res.ok) {
+        showNotification('Sync cancellation requested');
+        loadSyncData();
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to stop sync');
+    }
+  };
+
   return (
+
     <div className="admin-page">
       {/* Top Notice (Only displayed in Sandbox mode) */}
       {sandboxMode && (
@@ -445,7 +516,14 @@ export default function Admin() {
         >
           <span>🛡️</span> Active Sessions ({sessionStats?.totalActive ?? sessions.length})
         </button>
+        <button
+          className={`admin-nav-tab ${activeTab === 'sync' ? 'active' : ''}`}
+          onClick={() => setActiveTab('sync')}
+        >
+          <span>🔄</span> Letterboxd Sync
+        </button>
       </div>
+
 
       {/* VIEW 1: MEMBERS */}
       {activeTab === 'users' && (
@@ -903,6 +981,184 @@ export default function Admin() {
           </div>
         </div>
       )}
+
+      {/* VIEW 4: LETTERBOXD SYNC & DATA */}
+      {activeTab === 'sync' && (
+        <div>
+          {/* Stats Overview */}
+          <div className="admin-stats-overview">
+            <div className="admin-stat-card">
+              <div className="admin-stat-label">Daily Scheduler</div>
+              <div className="admin-stat-value" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ color: syncData?.sync?.isRunning ? 'var(--gold)' : 'var(--green)', fontSize: 16 }}>●</span>
+                {syncData?.sync?.isRunning ? 'Syncing...' : 'Active (24h)'}
+              </div>
+              <div className="admin-stat-sub">
+                {syncData?.sync?.isRunning
+                  ? `Checking: ${syncData.sync.currentProgress?.movieTitle || 'In progress'}`
+                  : 'Automatic background synchronization'}
+              </div>
+            </div>
+
+            <div className="admin-stat-card">
+              <div className="admin-stat-label">Catalog Rated</div>
+              <div className="admin-stat-value">
+                <span>⭐</span> {syncData?.catalog?.with_rating ?? '–'} <span style={{ fontSize: 14, color: 'var(--text3)' }}>/ {syncData?.catalog?.total ?? '–'}</span>
+              </div>
+              <div className="admin-stat-sub">
+                {syncData?.catalog?.with_imdb ?? 0} films linked with IMDb ID
+              </div>
+            </div>
+
+            <div className="admin-stat-card">
+              <div className="admin-stat-label">Synced in Last 24h</div>
+              <div className="admin-stat-value" style={{ color: 'var(--accent)' }}>
+                {syncData?.catalog?.synced_last_24h ?? 0}
+              </div>
+              <div className="admin-stat-sub">Up to date with Letterboxd</div>
+            </div>
+
+            <div className="admin-stat-card">
+              <div className="admin-stat-label">Decoy Protections</div>
+              <div className="admin-stat-value" style={{ color: '#60a5fa' }}>
+                🛡️ {syncData?.sync?.lastRun?.decoysBlocked ?? 0}
+              </div>
+              <div className="admin-stat-sub">3.43 bot honeypots blocked</div>
+            </div>
+          </div>
+
+          {/* Sync Control Card */}
+          <div className="admin-table-card" style={{ padding: 24, marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
+              <div>
+                <h3 style={{ fontSize: 17, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span>🔄</span> Letterboxd Synchronization Manager
+                </h3>
+                <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text2)' }}>
+                  Keeps Letterboxd community star ratings updated across the entire catalog once a day.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={loadSyncData}
+                  disabled={syncLoading}
+                  title="Refresh sync status"
+                >
+                  {syncLoading ? 'Refreshing...' : '🔄 Refresh Status'}
+                </button>
+
+                {syncData?.sync?.isRunning ? (
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={handleStopSync}
+                  >
+                    ⏹️ Stop Sync
+                  </button>
+                ) : (
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={handleTriggerSync}
+                    disabled={isSyncTriggering}
+                  >
+                    {isSyncTriggering ? 'Starting...' : '🚀 Run Letterboxd Sync Now'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* If actively running, display progress bar */}
+            {syncData?.sync?.isRunning && (
+              <div style={{ background: 'var(--surface2)', padding: 16, borderRadius: 8, border: '1px solid var(--border)', marginBottom: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, fontSize: 13 }}>
+                  <span style={{ fontWeight: 600, color: 'var(--gold)' }}>
+                    Sync in progress: {syncData.sync.currentProgress?.current || 0} / {syncData.sync.currentProgress?.total || 0} films
+                  </span>
+                  <span style={{ color: 'var(--text2)' }}>
+                    {syncData.sync.currentProgress?.percent || 0}%
+                  </span>
+                </div>
+                <div style={{ width: '100%', height: 8, background: 'rgba(255,255,255,0.1)', borderRadius: 99, overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      height: '100%',
+                      width: `${syncData.sync.currentProgress?.percent || 0}%`,
+                      background: 'linear-gradient(90deg, var(--gold), var(--accent))',
+                      transition: 'width 0.3s ease'
+                    }}
+                  />
+                </div>
+                {syncData.sync.currentProgress?.movieTitle && (
+                  <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text3)' }}>
+                    Checking: <em>{syncData.sync.currentProgress.movieTitle}</em>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Options */}
+            {!syncData?.sync?.isRunning && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, fontSize: 13, color: 'var(--text2)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={forceAllSync}
+                    onChange={e => setForceAllSync(e.target.checked)}
+                  />
+                  <span>Force re-check all films (bypass 24-hour cache window)</span>
+                </label>
+              </div>
+            )}
+
+            {/* Last Run Summary Card */}
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 16 }}>
+              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 700, color: 'var(--text3)', marginBottom: 10 }}>
+                Last Background Sync Run
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, fontSize: 13 }}>
+                <div>
+                  <span style={{ color: 'var(--text3)' }}>Status: </span>
+                  <strong style={{ textTransform: 'capitalize' }}>{syncData?.sync?.lastRun?.status || 'Never run'}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text3)' }}>Films Checked: </span>
+                  <strong>{syncData?.sync?.lastRun?.totalChecked ?? 0}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text3)' }}>Ratings Updated: </span>
+                  <strong style={{ color: 'var(--green)' }}>{syncData?.sync?.lastRun?.updatedCount ?? 0}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text3)' }}>Decoys Blocked: </span>
+                  <strong style={{ color: '#60a5fa' }}>{syncData?.sync?.lastRun?.decoysBlocked ?? 0}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text3)' }}>Skipped (Current): </span>
+                  <strong>{syncData?.sync?.lastRun?.skippedCount ?? 0}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text3)' }}>Errors: </span>
+                  <strong style={{ color: (syncData?.sync?.lastRun?.errorsCount || 0) > 0 ? 'var(--red)' : 'var(--text2)' }}>
+                    {syncData?.sync?.lastRun?.errorsCount ?? 0}
+                  </strong>
+                </div>
+              </div>
+              {syncData?.sync?.lastRun?.finishedAt && (
+                <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text3)', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
+                  Completed at: {new Date(syncData.sync.lastRun.finishedAt).toLocaleString()}
+                </div>
+              )}
+            </div>
+
+            {/* Safety & Countermeasure Notice */}
+            <div style={{ marginTop: 16, padding: 12, background: 'rgba(96, 165, 250, 0.08)', border: '1px solid rgba(96, 165, 250, 0.25)', borderRadius: 8, fontSize: 12.5, color: 'var(--text2)', lineHeight: 1.5 }}>
+              🛡️ <strong>Anti-Scraping Honeypot Protection:</strong> Letterboxd now serves a static placeholder rating of <code>3.43</code> to unauthenticated automated requests. The sync engine automatically identifies and blocks this decoy so existing authentic ratings in the catalog are never overwritten.
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* MODAL: EDIT USER CLUBS */}
       {editClubsTargetUser && (

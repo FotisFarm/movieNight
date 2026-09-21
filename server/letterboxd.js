@@ -1,7 +1,14 @@
 // Letterboxd scraper & rating resolver.
 // Fetches canonical Letterboxd page via /imdb/{imdb_id}/ and parses the
 // schema.org aggregateRating.ratingValue (5-star scale with 2 decimals, e.g. 4.63).
+//
+// NOTE ON ANTI-SCRAPING DECOYS:
+// Letterboxd frequently serves a hardcoded dummy ratingValue (3.43) in SSR HTML to
+// unauthenticated scrapers/bots. We strictly identify and reject this decoy value so
+// authentic catalog ratings are never overwritten with dummy data.
 const https = require('https');
+
+const DECOY_RATING = 3.43;
 
 function fetchLetterboxdRating(imdbId) {
   if (!imdbId) return Promise.resolve(null);
@@ -44,7 +51,12 @@ function fetchLetterboxdRating(imdbId) {
               const json = JSON.parse(clean);
               const val = json.aggregateRating?.ratingValue;
               if (typeof val === 'number' && !isNaN(val)) {
-                return resolve(Math.round(val * 100) / 100);
+                const rounded = Math.round(val * 100) / 100;
+                // Reject known anti-scraping decoy
+                if (rounded === DECOY_RATING) {
+                  return resolve(null);
+                }
+                return resolve(rounded);
               }
             } catch (_) {}
           }
@@ -63,4 +75,5 @@ function fetchLetterboxdRating(imdbId) {
   });
 }
 
-module.exports = { fetchLetterboxdRating };
+module.exports = { fetchLetterboxdRating, DECOY_RATING };
+

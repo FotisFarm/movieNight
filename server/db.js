@@ -274,6 +274,7 @@ async function init() {
   try { await client.execute('ALTER TABLE movies ADD COLUMN runtime INTEGER DEFAULT NULL'); } catch (_) {}
   // Letterboxd rating (5-star scale with 2 decimals)
   try { await client.execute('ALTER TABLE movies ADD COLUMN letterboxd_rating REAL DEFAULT NULL'); } catch (_) {}
+  try { await client.execute('ALTER TABLE movies ADD COLUMN letterboxd_updated_at TEXT DEFAULT NULL'); } catch (_) {}
 
   // Readable list URLs (/lists/christougenna-2026). The column is added
   // nullable — SQLite can't add a UNIQUE column — then every list without one

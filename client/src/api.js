@@ -85,4 +85,8 @@ export const api = {
   adminRevokeSession: (sid) => request(`/admin/sessions/${encodeURIComponent(sid)}`, { method: 'DELETE' }),
   adminPruneSessions: () => request('/admin/sessions/prune', { method: 'POST' }),
   adminRevokeUserSessions: (userId) => request(`/admin/users/${userId}/revoke-sessions`, { method: 'POST' }),
+  adminGetLetterboxdSyncStatus: () => request('/admin/letterboxd-sync/status'),
+  adminRunLetterboxdSync: (data) => request('/admin/letterboxd-sync/run', { method: 'POST', body: data }),
+  adminStopLetterboxdSync: () => request('/admin/letterboxd-sync/stop', { method: 'POST' }),
 };
+

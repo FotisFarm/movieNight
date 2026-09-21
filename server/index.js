@@ -123,6 +123,10 @@ process.on('unhandledRejection', (err) => {
 (async () => {
   await db.init();
   await seed();
+
+  const { startLetterboxdSyncScheduler } = require('./letterboxdSync');
+  startLetterboxdSyncScheduler();
+
   app.listen(PORT, () =>
     console.log(`Movie Nights running on http://localhost:${PORT}`)
   );
@@ -130,3 +134,4 @@ process.on('unhandledRejection', (err) => {
   console.error('Failed to start server:', err);
   process.exit(1);
 });
+
