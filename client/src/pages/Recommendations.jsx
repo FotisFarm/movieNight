@@ -183,6 +183,21 @@ export default function Recommendations() {
     toast('Saved');
   }
 
+  function handleMovieUpdated(patch) {
+    if (!patch?.id) return;
+    setAllFilms(fs => fs.map(f => {
+      if (f.id !== patch.id) return f;
+      let changed = false;
+      for (const k in patch) {
+        if (f[k] !== patch[k]) {
+          changed = true;
+          break;
+        }
+      }
+      return changed ? { ...f, ...patch } : f;
+    }));
+  }
+
   function handleDeleted(id) {
     setAllFilms(f => f.filter(x => x.id !== id));
   }
@@ -482,6 +497,7 @@ export default function Recommendations() {
           onClose={() => setModalId(null)}
           onSaved={handleSaved}
           onDeleted={handleDeleted}
+          onMovieUpdated={handleMovieUpdated}
         />
       )}
     </div>

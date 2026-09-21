@@ -310,6 +310,32 @@ export default function Films() {
     toast('Saved!');
   }
 
+  function handleMovieUpdated(patch) {
+    if (!patch?.id) return;
+    setMovies(ms => ms.map(m => {
+      if (m.id !== patch.id) return m;
+      let changed = false;
+      for (const k in patch) {
+        if (m[k] !== patch[k]) {
+          changed = true;
+          break;
+        }
+      }
+      return changed ? { ...m, ...patch } : m;
+    }));
+    setAllMovies(ms => ms.map(m => {
+      if (m.id !== patch.id) return m;
+      let changed = false;
+      for (const k in patch) {
+        if (m[k] !== patch[k]) {
+          changed = true;
+          break;
+        }
+      }
+      return changed ? { ...m, ...patch } : m;
+    }));
+  }
+
   function handleDeleted(id) {
     setMovies(ms => ms.filter(m => m.id !== id));
     toast('Film deleted.');
@@ -887,6 +913,7 @@ export default function Films() {
           onClose={() => setSelectedId(null)}
           onSaved={handleSaved}
           onDeleted={handleDeleted}
+          onMovieUpdated={handleMovieUpdated}
           rankData={{
             fair:    rankMap.fair[selectedId]    ?? null,
             group:   rankMap.group[selectedId]   ?? null,

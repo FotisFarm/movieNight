@@ -224,6 +224,21 @@ export default function Watchlist({ voter }) {
     toast('Saved!');
   }
 
+  function handleMovieUpdated(patch) {
+    if (!patch?.id) return;
+    setMovies(ms => ms.map(m => {
+      if (m.id !== patch.id) return m;
+      let changed = false;
+      for (const k in patch) {
+        if (m[k] !== patch[k]) {
+          changed = true;
+          break;
+        }
+      }
+      return changed ? { ...m, ...patch } : m;
+    }));
+  }
+
   if (loading) return <div className="spinner" />;
 
   const myVoteCount = sortedMovies.filter(m => m.watchlistVotes?.includes(voter)).length;
@@ -442,6 +457,7 @@ export default function Watchlist({ voter }) {
           onClose={() => setSelectedId(null)}
           onSaved={handleSaved}
           onDeleted={id => { setMovies(ms => ms.filter(m => m.id !== id)); setSelectedId(null); }}
+          onMovieUpdated={handleMovieUpdated}
         />
       )}
 

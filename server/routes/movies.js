@@ -137,9 +137,10 @@ router.get('/:id/trailer', ah(async (req, res) => {
   res.json({ trailer });
 }));
 
-// Watch providers in-memory cache (24 hours TTL)
+// Watch providers in-memory cache (24 hours TTL, 5 mins if LB rating was null)
 const watchProvidersCache = new Map();
 const WATCH_PROVIDERS_CACHE_TTL = 24 * 60 * 60 * 1000;
+const WATCH_PROVIDERS_MISSING_LB_TTL = 5 * 60 * 1000;
 
 // GET /api/movies/:id/watch-providers
 router.get('/:id/watch-providers', ah(async (req, res) => {
@@ -147,8 +148,9 @@ router.get('/:id/watch-providers', ah(async (req, res) => {
   if (!movieId) return res.status(400).json({ error: 'Invalid movie ID' });
 
   const cached = watchProvidersCache.get(movieId);
-  if (cached && (Date.now() - cached.cachedAt < WATCH_PROVIDERS_CACHE_TTL)) {
-    return res.json({ providers: cached.providers, backdropPath: cached.backdropPath, letterboxdRating: cached.letterboxdRating });
+  const ttl = (cached && cached.letterboxdRating != null) ? WATCH_PROVIDERS_CACHE_TTL : WATCH_PROVIDERS_MISSING_LB_TTL;
+  if (cached && (Date.now() - cached.cachedAt < ttl)) {
+    return res.json({ providers: cached.providers, backdropPath: cached.backdropPath, letterboxdRating: cached.letterboxdRating, streamGr: cached.streamGr });
   }
 
   const movie = await db.get('SELECT id, title, year, imdb_id, backdrop_path, stream_gr, letterboxd_rating FROM movies WHERE id = ?', movieId);
@@ -162,12 +164,12 @@ router.get('/:id/watch-providers', ah(async (req, res) => {
   const backdropPath = result?.backdropPath ?? movie.backdrop_path ?? null;
   const letterboxdRating = liveLbRating ?? movie.letterboxd_rating ?? null;
 
-  watchProvidersCache.set(movieId, { providers, backdropPath, letterboxdRating, cachedAt: Date.now() });
-
+  let streamGr = movie.stream_gr;
   // Update in background without awaiting so client response is instant
   if (providers?.flatrate && Array.isArray(providers.flatrate)) {
     const streamNames = providers.flatrate.map(p => p.name).join('|');
     if (streamNames !== movie.stream_gr) {
+      streamGr = streamNames;
       db.run('UPDATE movies SET stream_gr = ? WHERE id = ?', streamNames, movieId).catch(() => {});
     }
   }
@@ -178,7 +180,9 @@ router.get('/:id/watch-providers', ah(async (req, res) => {
     db.run('UPDATE movies SET letterboxd_rating = ? WHERE id = ?', liveLbRating, movieId).catch(() => {});
   }
 
-  res.json({ providers, backdropPath, letterboxdRating });
+  watchProvidersCache.set(movieId, { providers, backdropPath, letterboxdRating, streamGr, cachedAt: Date.now() });
+
+  res.json({ providers, backdropPath, letterboxdRating, streamGr });
 }));
 
 // POST /api/movies/:id/watchlist-vote  — must be before /:id
@@ -715,12 +719,14 @@ router.patch('/:id', ah(async (req, res) => {
     }
   }
 
+  watchProvidersCache.delete(id);
   res.json(await enrichMovie(await db.get('SELECT * FROM movies WHERE id = ?', id), { group: req.group }));
 }));
 
 // DELETE /api/movies/:id
 router.delete('/:id', ah(async (req, res) => {
   const id = parseInt(req.params.id, 10);
+  watchProvidersCache.delete(id);
   if (SANDBOX_MODE) {
     if (id < 1000000) {
       return res.status(403).json({ error: 'Deleting live movies is disabled in sandbox mode.' });

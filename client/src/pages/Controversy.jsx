@@ -33,6 +33,17 @@ export default function Controversy() {
     setAllFilms(fs => fs.map(f => f.id === updated.id ? { ...f, ...updated } : f));
     toast('Saved!');
   }
+  function handleMovieUpdated(patch) {
+    if (!patch?.id) return;
+    setAllFilms(fs => fs.map(f => {
+      if (f.id !== patch.id) return f;
+      let changed = false;
+      for (const k in patch) {
+        if (f[k] !== patch[k]) { changed = true; break; }
+      }
+      return changed ? { ...f, ...patch } : f;
+    }));
+  }
   function handleDeleted(id) {
     setAllFilms(fs => fs.filter(f => f.id !== id));
   }
@@ -136,6 +147,7 @@ export default function Controversy() {
           onClose={() => setModalId(null)}
           onSaved={handleSaved}
           onDeleted={handleDeleted}
+          onMovieUpdated={handleMovieUpdated}
         />
       )}
     </div>

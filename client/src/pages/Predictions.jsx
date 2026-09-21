@@ -70,6 +70,24 @@ export default function Predictions() {
     toast('Saved');
   }
 
+  function handleMovieUpdated(patch) {
+    if (!patch?.id) return;
+    setData(prev => {
+      if (!prev?.films) return prev;
+      let changed = false;
+      const nextFilms = prev.films.map(f => {
+        if (f.id !== patch.id) return f;
+        let fChanged = false;
+        for (const k in patch) {
+          if (f[k] !== patch[k]) { fChanged = true; break; }
+        }
+        if (fChanged) changed = true;
+        return fChanged ? { ...f, ...patch } : f;
+      });
+      return changed ? { ...prev, films: nextFilms } : prev;
+    });
+  }
+
   function handleDeleted(id) {
     if (!data) return;
     setData(prev => ({
@@ -600,6 +618,7 @@ export default function Predictions() {
           onClose={() => setMovieModalId(null)}
           onSaved={handleSaved}
           onDeleted={handleDeleted}
+          onMovieUpdated={handleMovieUpdated}
         />
       )}
     </div>

@@ -228,6 +228,27 @@ function ListDetail({ listKey, voter }) {
     }
   }
 
+  function handleMovieUpdated(patch) {
+    if (!patch?.id) return;
+    setList(l => {
+      if (!l || !l.films) return l;
+      let changed = false;
+      const nextFilms = l.films.map(f => {
+        if (f.id !== patch.id) return f;
+        let fChanged = false;
+        for (const k in patch) {
+          if (f[k] !== patch[k]) {
+            fChanged = true;
+            break;
+          }
+        }
+        if (fChanged) changed = true;
+        return fChanged ? { ...f, ...patch } : f;
+      });
+      return changed ? { ...l, films: nextFilms } : l;
+    });
+  }
+
   return (
     <div className="lists-page">
       <div className="lists-detail-head">
@@ -328,6 +349,7 @@ function ListDetail({ listKey, voter }) {
             films: l.films.map(f => (f.id === saved.id ? saved : f)),
           }))}
           onDeleted={did => setList(l => ({ ...l, films: l.films.filter(f => f.id !== did) }))}
+          onMovieUpdated={handleMovieUpdated}
         />
       )}
 

@@ -274,6 +274,30 @@ export default function Session({ voter }) {
     fetchContenders();
   }, [fetchContenders]);
 
+  function handleMovieUpdated(patch) {
+    if (!patch?.id) return;
+    setContenders(cs => cs.map(c => {
+      if (c.id !== patch.id) return c;
+      let changed = false;
+      for (const k in patch) {
+        if (c[k] !== patch[k]) { changed = true; break; }
+      }
+      return changed ? { ...c, ...patch } : c;
+    }));
+    setKnownContenders(prev => {
+      if (!prev.has(patch.id)) return prev;
+      const c = prev.get(patch.id);
+      let changed = false;
+      for (const k in patch) {
+        if (c[k] !== patch[k]) { changed = true; break; }
+      }
+      if (!changed) return prev;
+      const next = new Map(prev);
+      next.set(patch.id, { ...c, ...patch });
+      return next;
+    });
+  }
+
   // Contenders currently active on the wheel
   const activeContenders = Array.from(selectedIds)
     .map(id => knownContenders.get(id) || contenders.find(c => c.id === id))
@@ -1081,6 +1105,7 @@ export default function Session({ voter }) {
             setDetailMovieId(null);
             fetchContenders();
           }}
+          onMovieUpdated={handleMovieUpdated}
         />
       )}
 

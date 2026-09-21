@@ -442,6 +442,7 @@ export default function Compare() {
           onClose={() => setModalId(null)}
           onSaved={handleSaved}
           onDeleted={id => setMovies(ms => ms.filter(m => m.id !== id))}
+          onMovieUpdated={handleSaved}
         />
       )}
     </div>

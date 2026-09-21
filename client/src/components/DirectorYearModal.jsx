@@ -46,6 +46,25 @@ export default function DirectorYearModal({ type, value, scoreKey = 'fairBoosted
     setFilms(fs => fs.map(f => f.id === updated.id ? updated : f));
     setAllMovies(ms => ms.map(m => m.id === updated.id ? updated : m));
   }
+  function handleMovieUpdated(patch) {
+    if (!patch?.id) return;
+    setFilms(fs => fs.map(f => {
+      if (f.id !== patch.id) return f;
+      let changed = false;
+      for (const k in patch) {
+        if (f[k] !== patch[k]) { changed = true; break; }
+      }
+      return changed ? { ...f, ...patch } : f;
+    }));
+    setAllMovies(ms => ms.map(m => {
+      if (m.id !== patch.id) return m;
+      let changed = false;
+      for (const k in patch) {
+        if (m[k] !== patch[k]) { changed = true; break; }
+      }
+      return changed ? { ...m, ...patch } : m;
+    }));
+  }
   function handleDeleted(id) {
     setFilms(fs => fs.filter(f => f.id !== id));
   }
@@ -109,6 +128,7 @@ export default function DirectorYearModal({ type, value, scoreKey = 'fairBoosted
           onClose={() => setMovieId(null)}
           onSaved={handleSaved}
           onDeleted={handleDeleted}
+          onMovieUpdated={handleMovieUpdated}
         />
       )}
     </div>

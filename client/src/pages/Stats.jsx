@@ -224,6 +224,18 @@ export default function Stats({ voter }) {
     toast('Saved!');
   }
 
+  function handleMovieUpdated(patch) {
+    if (!patch?.id) return;
+    setMovies(ms => ms.map(m => {
+      if (m.id !== patch.id) return m;
+      let changed = false;
+      for (const k in patch) {
+        if (m[k] !== patch[k]) { changed = true; break; }
+      }
+      return changed ? { ...m, ...patch } : m;
+    }));
+  }
+
   const stats       = useMemo(() => computeStats(movies, voters), [movies, voters]);
   const globalStats = useMemo(() => computeGlobalStats(movies, groupSize), [movies, groupSize]);
 
@@ -547,6 +559,7 @@ export default function Stats({ voter }) {
           onClose={() => setModalId(null)}
           onSaved={handleSaved}
           onDeleted={id => setMovies(ms => ms.filter(m => m.id !== id))}
+          onMovieUpdated={handleMovieUpdated}
           rankData={{
             fair:    rankMap.fair[modalId]    ?? null,
             group:   rankMap.group[modalId]   ?? null,

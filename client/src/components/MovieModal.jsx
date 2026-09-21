@@ -37,7 +37,7 @@ function rankClass(r) {
   return 'score-high';
 }
 
-export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankData }) {
+export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankData, onMovieUpdated }) {
   const { voters: configVoters, groupSize, sandboxMode, activeGroup, isAdmin: configIsAdmin } = useAppConfig();
   const currentVoter = sessionStorage.getItem('voter');
   const isGroupAdmin = Boolean(activeGroup?.members?.some(m => (m.displayName === currentVoter || m.username === currentVoter) && m.role === 'admin'));
@@ -89,28 +89,68 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
     // so the initial getMovie request is fast and unblocked.
     if (loading) return;
 
+    let active = true;
+    const reqMovieId = movieId;
     setProvidersLoading(true);
-    api.getMovieWatchProviders(movieId)
+
+    api.getMovieWatchProviders(reqMovieId)
       .then(res => {
-        setProviders(res?.providers || null);
+        const patch = { id: reqMovieId };
+        let hasChanges = false;
         if (res?.backdropPath) {
-          setMovie(prev => (prev && !prev.backdrop_path) ? { ...prev, backdrop_path: res.backdropPath } : prev);
+          patch.backdrop_path = res.backdropPath;
+          hasChanges = true;
         }
         if (res?.letterboxdRating != null) {
-          setMovie(prev => (prev && prev.letterboxd_rating !== res.letterboxdRating) ? { ...prev, letterboxd_rating: res.letterboxdRating } : prev);
+          patch.letterboxd_rating = res.letterboxdRating;
+          hasChanges = true;
+        }
+        if (res?.streamGr) {
+          patch.stream_gr = res.streamGr;
+          hasChanges = true;
+        }
+
+        if (hasChanges) {
+          if (active) {
+            setMovie(prev => {
+              if (!prev || prev.id !== reqMovieId) return prev;
+              return {
+                ...prev,
+                ...(patch.backdrop_path && !prev.backdrop_path ? { backdrop_path: patch.backdrop_path } : {}),
+                ...(patch.letterboxd_rating != null && prev.letterboxd_rating !== patch.letterboxd_rating ? { letterboxd_rating: patch.letterboxd_rating } : {}),
+                ...(patch.stream_gr && prev.stream_gr !== patch.stream_gr ? { stream_gr: patch.stream_gr } : {}),
+              };
+            });
+          }
+          onMovieUpdated?.(patch);
+        }
+        if (active) {
+          setProviders(res?.providers || null);
         }
       })
-      .catch(() => setProviders(null))
-      .finally(() => setProvidersLoading(false));
-  }, [movieId, loading]);
+      .catch(() => {
+        if (active) setProviders(null);
+      })
+      .finally(() => {
+        if (active) setProvidersLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [movieId, loading, onMovieUpdated]);
 
   function handleModalClose() {
     if (top10Reordered) {
       api.getMovie(movieId).then(m => {
-        onSaved?.(m);
+        if (onMovieUpdated) onMovieUpdated(m);
+        else onSaved?.(m);
         onClose();
       }).catch(() => onClose());
     } else {
+      if (movie) {
+        onMovieUpdated?.(movie);
+      }
       onClose();
     }
   }
@@ -151,6 +191,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
     setLoading(true);
     api.getMovie(movieId).then(m => {
       setMovie(m);
+      onMovieUpdated?.(m);
       const r = {}, c = {}, t = {};
       configVoters.forEach(v => {
         r[v] = m.ratings?.[v] ?? null;
