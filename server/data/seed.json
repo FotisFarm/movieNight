@@ -20846,5 +20846,24 @@
     },
     "top3": {},
     "watchlistVotes": []
+  },
+  {
+    "director": "Joachim Trier",
+    "movie": "Sentimental Value",
+    "year": "2025",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt27714581",
+    "imdb_rating": 7.7,
+    "poster_path": "/pz9NCWxxOk3o0W3v1Zkhawrwb4i.jpg",
+    "runtime": 133,
+    "ratings": {
+      "Στέλιας": "8"
+    },
+    "top3": {},
+    "watchlistVotes": []
   }
 ]
