@@ -1280,7 +1280,7 @@ export default function Admin() {
                               fontSize: 12,
                               borderRadius: 6,
                               background: currentRole === 'admin' ? 'rgba(255, 213, 79, 0.15)' : 'var(--bg3)',
-                              color: currentRole === 'admin' ? '#ffd54f' : 'var(--text1)',
+                              color: currentRole === 'admin' ? '#ffd54f' : 'var(--text)',
                               border: currentRole === 'admin' ? '1px solid rgba(255, 213, 79, 0.4)' : '1px solid var(--border)',
                               fontWeight: currentRole === 'admin' ? 600 : 400,
                               cursor: 'pointer',

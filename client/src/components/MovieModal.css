@@ -751,7 +751,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  color: var(--text1);
+  color: var(--text);
   transition: all 0.15s;
 }
 
@@ -788,7 +788,7 @@
   border-radius: 6px;
   font-size: 11px;
   font-weight: 500;
-  color: var(--text1);
+  color: var(--text);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: border-color 0.15s, transform 0.15s;
 }
@@ -817,7 +817,7 @@
   color: var(--text2);
   line-height: 1.4;
   padding-top: 4px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  border-top: 1px dashed var(--border);
 }
 
 .streaming-rent-label {
@@ -838,5 +838,24 @@
 .streaming-justwatch-link:hover {
   opacity: 1;
   text-decoration: underline;
+}
+
+/* ── Light-theme overrides for Streaming Section ── */
+[data-theme="blanc"] .streaming-section,
+[data-theme="clockwork"] .streaming-section {
+  background: rgba(0, 0, 0, 0.025);
+  border-color: var(--border);
+}
+
+[data-theme="blanc"] .streaming-provider-badge,
+[data-theme="clockwork"] .streaming-provider-badge {
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="blanc"] .streaming-rent-buy,
+[data-theme="clockwork"] .streaming-rent-buy {
+  border-top-color: var(--border);
 }
 

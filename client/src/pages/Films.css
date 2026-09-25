@@ -712,3 +712,18 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Light-theme overrides for Streaming Filter Chips ── */
+[data-theme="blanc"] .filter-chip-stream.active,
+[data-theme="clockwork"] .filter-chip-stream.active {
+  background: rgba(14, 116, 144, 0.12);
+  border-color: rgba(14, 116, 144, 0.45);
+  color: #0e7490;
+}
+
+[data-theme="blanc"] .active-chip-stream,
+[data-theme="clockwork"] .active-chip-stream {
+  border-color: rgba(14, 116, 144, 0.4);
+  background: rgba(14, 116, 144, 0.1);
+  color: #0e7490;
+}

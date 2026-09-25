@@ -156,8 +156,8 @@ export function StreamBadge({ streamGr }) {
   } else if (lower.includes('cinobo')) {
     icon = (
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-        <circle cx="12" cy="12" r="10" stroke="#FFD54F" strokeWidth="2.8"/>
-        <path d="M16 8C14.5 6.5 12 6 9.5 7.5C7 9 6.5 12 7.5 14.5C8.5 17 11.5 18 14 17C15.5 16.2 16.5 15 17 14" stroke="#FFD54F" strokeWidth="2.8" strokeLinecap="round"/>
+        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.8"/>
+        <path d="M16 8C14.5 6.5 12 6 9.5 7.5C7 9 6.5 12 7.5 14.5C8.5 17 11.5 18 14 17C15.5 16.2 16.5 15 17 14" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round"/>
       </svg>
     );
     label = 'Cinobo';
@@ -173,8 +173,8 @@ export function StreamBadge({ streamGr }) {
   } else if (lower.includes('prime') || lower.includes('amazon')) {
     icon = (
       <svg width="11" height="10" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-        <path d="M3 13.5C7.5 17 16.5 17 21 12" stroke="#00A8E1" strokeWidth="2.4" strokeLinecap="round"/>
-        <path d="M18.5 10.5L21.5 12L19.5 14.5" stroke="#00A8E1" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M3 13.5C7.5 17 16.5 17 21 12" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"/>
+        <path d="M18.5 10.5L21.5 12L19.5 14.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     );
     label = 'Prime';
@@ -182,8 +182,8 @@ export function StreamBadge({ streamGr }) {
   } else if (lower.includes('disney')) {
     icon = (
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-        <path d="M3 19C7 7 15 5 21 14" stroke="#4B72FF" strokeWidth="2.5" strokeLinecap="round"/>
-        <path d="M19 8V12M17 10H21" stroke="#4B72FF" strokeWidth="2.2" strokeLinecap="round"/>
+        <path d="M3 19C7 7 15 5 21 14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+        <path d="M19 8V12M17 10H21" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
       </svg>
     );
     label = 'Disney+';
@@ -200,11 +200,11 @@ export function StreamBadge({ streamGr }) {
     label = 'MUBI';
     badgeClass = 'badge-stream badge-stream-mubi';
   } else if (lower.includes('max') || lower.includes('hbo')) {
-    icon = <span style={{ fontWeight: 900, fontSize: 8.5, letterSpacing: -0.3, color: '#ce93d8', marginRight: 1 }}>MAX</span>;
+    icon = <span style={{ fontWeight: 900, fontSize: 8.5, letterSpacing: -0.3, marginRight: 1 }}>MAX</span>;
     label = '';
     badgeClass = 'badge-stream badge-stream-max';
   } else if (lower.includes('ert')) {
-    icon = <span style={{ fontWeight: 800, fontSize: 8.5, color: '#4fc3f7', marginRight: 1 }}>ERT</span>;
+    icon = <span style={{ fontWeight: 800, fontSize: 8.5, marginRight: 1 }}>ERT</span>;
     label = 'FLIX';
     badgeClass = 'badge-stream badge-stream-ertflix';
   } else {
