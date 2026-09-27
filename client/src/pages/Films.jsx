@@ -310,7 +310,7 @@ export default function Films() {
     toast('Saved!');
   }
 
-  function handleMovieUpdated(patch) {
+  const handleMovieUpdated = useCallback((patch) => {
     if (!patch?.id) return;
     setMovies(ms => ms.map(m => {
       if (m.id !== patch.id) return m;
@@ -334,7 +334,7 @@ export default function Films() {
       }
       return changed ? { ...m, ...patch } : m;
     }));
-  }
+  }, []);
 
   function handleDeleted(id) {
     setMovies(ms => ms.filter(m => m.id !== id));
