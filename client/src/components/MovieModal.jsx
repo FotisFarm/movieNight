@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
 import { useAppConfig } from '../AppConfigContext';
 import { fmtScore10 as fmt, scoreClass, extractImdbId, posterUrl, backdropUrl, formatRuntime } from '../utils';
@@ -80,6 +80,24 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   const [providers, setProviders] = useState(null);
   const [providersLoading, setProvidersLoading] = useState(false);
 
+  const onMovieUpdatedRef = useRef(onMovieUpdated);
+  useEffect(() => {
+    onMovieUpdatedRef.current = onMovieUpdated;
+  });
+
+  const movieRef = useRef(movie);
+  useEffect(() => {
+    movieRef.current = movie;
+  }, [movie]);
+
+  const lastFetchedProvidersIdRef = useRef(null);
+
+  useEffect(() => {
+    setProviders(null);
+    setProvidersLoading(false);
+    lastFetchedProvidersIdRef.current = null;
+  }, [movieId]);
+
   useEffect(() => {
     if (!movieId) {
       setProviders(null);
@@ -90,43 +108,38 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
     // so the initial getMovie request is fast and unblocked.
     if (loading) return;
 
+    // Prevent repeated re-fetches for the same movie
+    if (lastFetchedProvidersIdRef.current === movieId) return;
+    lastFetchedProvidersIdRef.current = movieId;
+
     let active = true;
     const reqMovieId = movieId;
     setProvidersLoading(true);
 
     api.getMovieWatchProviders(reqMovieId)
       .then(res => {
+        if (!active) return;
+        setProviders(res?.providers || null);
+
+        const currentMovie = movieRef.current;
         const patch = { id: reqMovieId };
         let hasChanges = false;
-        if (res?.backdropPath) {
+        if (res?.backdropPath && (!currentMovie || !currentMovie.backdrop_path)) {
           patch.backdrop_path = res.backdropPath;
           hasChanges = true;
         }
-        if (res?.letterboxdRating != null) {
+        if (res?.letterboxdRating != null && (!currentMovie || currentMovie.letterboxd_rating !== res.letterboxdRating)) {
           patch.letterboxd_rating = res.letterboxdRating;
           hasChanges = true;
         }
-        if (res?.streamGr) {
+        if (res?.streamGr && (!currentMovie || currentMovie.stream_gr !== res.streamGr)) {
           patch.stream_gr = res.streamGr;
           hasChanges = true;
         }
 
         if (hasChanges) {
-          if (active) {
-            setMovie(prev => {
-              if (!prev || prev.id !== reqMovieId) return prev;
-              return {
-                ...prev,
-                ...(patch.backdrop_path && !prev.backdrop_path ? { backdrop_path: patch.backdrop_path } : {}),
-                ...(patch.letterboxd_rating != null && prev.letterboxd_rating !== patch.letterboxd_rating ? { letterboxd_rating: patch.letterboxd_rating } : {}),
-                ...(patch.stream_gr && prev.stream_gr !== patch.stream_gr ? { stream_gr: patch.stream_gr } : {}),
-              };
-            });
-          }
-          onMovieUpdated?.(patch);
-        }
-        if (active) {
-          setProviders(res?.providers || null);
+          setMovie(prev => (prev && prev.id === reqMovieId ? { ...prev, ...patch } : prev));
+          onMovieUpdatedRef.current?.(patch);
         }
       })
       .catch(() => {
@@ -139,18 +152,18 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
     return () => {
       active = false;
     };
-  }, [movieId, loading, onMovieUpdated]);
+  }, [movieId, loading]);
 
   function handleModalClose() {
     if (top10Reordered) {
       api.getMovie(movieId).then(m => {
-        if (onMovieUpdated) onMovieUpdated(m);
+        if (onMovieUpdatedRef.current) onMovieUpdatedRef.current(m);
         else onSaved?.(m);
         onClose();
       }).catch(() => onClose());
     } else {
       if (movie) {
-        onMovieUpdated?.(movie);
+        onMovieUpdatedRef.current?.(movie);
       }
       onClose();
     }
@@ -192,7 +205,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
     setLoading(true);
     api.getMovie(movieId).then(m => {
       setMovie(m);
-      onMovieUpdated?.(m);
+      onMovieUpdatedRef.current?.(m);
       const r = {}, c = {}, t = {};
       configVoters.forEach(v => {
         r[v] = m.ratings?.[v] ?? null;
