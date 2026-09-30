@@ -117,17 +117,6 @@
 }
 
 .voter-avatar-circle {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--surface3);
-  border: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--accent);
   flex-shrink: 0;
 }
 

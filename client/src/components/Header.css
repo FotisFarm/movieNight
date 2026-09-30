@@ -808,56 +808,44 @@ button.nav-link {
   background: rgba(234, 179, 8, 0.12);
 }
 
-.header-user-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--surface3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text2);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 9px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.15s ease;
-}
-
-.header-user-btn:hover {
-  color: var(--text);
-  background: var(--surface2);
-  border-color: var(--border2, var(--border));
-}
-
-.header-user-btn:hover .header-voter {
-  color: var(--green);
-}
-
-.desktop-avatar-circle {
-  width: 17px;
-  height: 17px;
-  border-radius: 50%;
-  background: var(--surface2);
-  border: 1px solid var(--accent);
-  color: var(--gold);
-  font-weight: 700;
-  font-size: 8.5px;
+.header-avatar-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  outline: none;
+  transition: transform 0.15s ease;
+  line-height: 1;
 }
 
-.header-user-caret {
-  font-size: 8px;
-  opacity: 0.6;
+.header-avatar-btn:hover {
+  transform: scale(1.08);
+}
+
+.header-avatar-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.desktop-avatar-circle {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.header-avatar-btn:hover .desktop-avatar-circle {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2.5px rgba(245, 197, 24, 0.45);
 }
 
 /* ── Mobile User Profile Menu & Desktop Group ── */
 .desktop-user-group {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .mobile-user-group {
@@ -873,35 +861,34 @@ button.nav-link {
 .mobile-avatar-btn {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  justify-content: center;
   background: transparent;
   border: none;
   padding: 0;
   cursor: pointer;
+  border-radius: 50%;
+  outline: none;
+  transition: transform 0.15s ease;
+  line-height: 1;
+}
+
+.mobile-avatar-btn:hover {
+  transform: scale(1.08);
+}
+
+.mobile-avatar-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
 }
 
 .mobile-avatar-circle {
-  width: 29px;
-  height: 29px;
-  border-radius: 50%;
-  background: var(--surface2);
-  border: 1.5px solid var(--accent);
-  color: var(--gold);
-  font-weight: 700;
-  font-size: 11px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.15s ease, border-color 0.15s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .mobile-avatar-btn:hover .mobile-avatar-circle {
-  transform: scale(1.05);
-}
-
-.mobile-avatar-caret {
-  font-size: 8px;
-  color: var(--text3);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2.5px rgba(245, 197, 24, 0.45);
 }
 
 .mobile-user-dropdown {

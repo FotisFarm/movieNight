@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './UserAvatar.css';
 
 export default function UserAvatar({
@@ -12,6 +12,10 @@ export default function UserAvatar({
   const [hasError, setHasError] = useState(false);
   const initials = (name || '').slice(0, 2).toUpperCase();
   const showImage = Boolean(avatarUrl && !hasError);
+
+  useEffect(() => {
+    setHasError(false);
+  }, [avatarUrl]);
 
   return (
     <div

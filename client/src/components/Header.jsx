@@ -225,16 +225,16 @@ function MobileUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar })
         className="mobile-avatar-btn"
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
+        aria-label={`Account menu for ${voter}`}
         title={`Account: ${voter}`}
       >
-        <UserAvatar name={voter} avatarUrl={user?.avatarUrl} size={29} className="mobile-avatar-circle" />
-        <span className="mobile-avatar-caret">{open ? '▴' : '▾'}</span>
+        <UserAvatar name={voter} avatarUrl={user?.avatarUrl} size={34} className="mobile-avatar-circle" />
       </button>
 
       {open && (
         <div className="mobile-user-dropdown">
           <div className="mobile-user-dropdown-header">
-            <UserAvatar name={voter} avatarUrl={user?.avatarUrl} size={36} className="mobile-user-avatar-lg" />
+            <UserAvatar name={voter} avatarUrl={user?.avatarUrl} size={42} className="mobile-user-avatar-lg" />
             <div className="mobile-user-dropdown-info">
               <div className="mobile-user-dropdown-name">{voter}</div>
               <div className="mobile-user-dropdown-role">{roleLabel}</div>
@@ -316,21 +316,20 @@ function DesktopUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar }
     <div className="desktop-user-menu-wrap" ref={ref}>
       <button
         type="button"
-        className="header-user-btn"
+        className="header-avatar-btn"
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
+        aria-label={`Account menu for ${voter}`}
         title={`Account: ${voter}`}
       >
-        <UserAvatar name={voter} avatarUrl={user?.avatarUrl} size={18} className="desktop-avatar-circle" />
-        <span className="header-voter">{voter}</span>
-        <span className="header-user-caret">{open ? '▴' : '▾'}</span>
+        <UserAvatar name={voter} avatarUrl={user?.avatarUrl} size={34} className="desktop-avatar-circle" />
       </button>
 
       {open && (
         <div className="desktop-user-dropdown">
           <div className="desktop-user-dropdown-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <UserAvatar name={voter} avatarUrl={user?.avatarUrl} size={30} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <UserAvatar name={voter} avatarUrl={user?.avatarUrl} size={40} />
               <div style={{ minWidth: 0 }}>
                 <div className="desktop-user-dropdown-name">{voter}</div>
                 <div className="desktop-user-dropdown-role">{roleLabel}</div>

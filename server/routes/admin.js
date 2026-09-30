@@ -286,6 +286,9 @@ router.get('/sessions', ah(async (req, res) => {
   const sessions = [];
   const uniqueUsers = new Set();
 
+  const usersWithAvatars = await db.all('SELECT id, avatar_url FROM users');
+  const avatarMap = new Map(usersWithAvatars.map(u => [u.id, u.avatar_url]));
+
   for (const row of rows) {
     try {
       const data = JSON.parse(row.sess);
@@ -299,6 +302,7 @@ router.get('/sessions', ah(async (req, res) => {
         userId: data.userId || null,
         username,
         displayName,
+        avatarUrl: data.userId ? avatarMap.get(data.userId) || null : null,
         isAdmin: Boolean(data.isAdmin),
         activeGroupId: data.activeGroupId || 1,
         activeGroupName: data.activeGroupName || 'The Originals',
