@@ -6135,6 +6135,7 @@
       "Φώτης": "10"
     },
     "top3": {
+      "Μητσέας": 7,
       "Στέλιας": 6
     },
     "watchlistVotes": []
@@ -6265,11 +6266,13 @@
     "runtime": 99,
     "ratings": {
       "Στέλιας": "10",
-      "Φώτης": "10"
+      "Φώτης": "10",
+      "Λεόντιος": "9.5"
     },
     "top3": {
       "Στέλιας": 5,
-      "Φώτης": 6
+      "Φώτης": 6,
+      "Λεόντιος": 1
     },
     "watchlistVotes": []
   },
@@ -6728,7 +6731,9 @@
       "Παντελής": "9.5",
       "Στέλιας": "9.5"
     },
-    "top3": {},
+    "top3": {
+      "Μητσέας": 6
+    },
     "watchlistVotes": []
   },
   {
@@ -6953,7 +6958,7 @@
       "Μητσέας": "7.5",
       "Παντελής": "10",
       "Στέλιας": "7.5",
-      "Φώτης": "4.5",
+      "Φώτης": "5",
       "Λεόντιος": "5.7"
     },
     "top3": {},
@@ -9493,7 +9498,9 @@
       "Στέλιας": "9.9",
       "Φώτης": "10"
     },
-    "top3": {},
+    "top3": {
+      "Μητσέας": 9
+    },
     "watchlistVotes": []
   },
   {
@@ -12800,6 +12807,7 @@
       "Φώτης": "10"
     },
     "top3": {
+      "Μητσέας": 8,
       "Φώτης": 1
     },
     "watchlistVotes": []
@@ -14914,9 +14922,11 @@
     "poster_path": "/6VTra0NR4ygRnq3bD922I4rU0Mq.jpg",
     "runtime": 122,
     "ratings": {
-      "Μητσέας": "9"
+      "Μητσέας": "10"
     },
-    "top3": {},
+    "top3": {
+      "Μητσέας": 10
+    },
     "watchlistVotes": []
   },
   {
@@ -14938,7 +14948,9 @@
       "Φώτης": "10",
       "Λεόντιος": "9.2"
     },
-    "top3": {},
+    "top3": {
+      "Λεόντιος": 2
+    },
     "watchlistVotes": []
   },
   {
@@ -14962,7 +14974,8 @@
       "Λεόντιος": "9.2"
     },
     "top3": {
-      "Φώτης": 9
+      "Φώτης": 9,
+      "Λεόντιος": 3
     },
     "watchlistVotes": []
   },
@@ -20862,6 +20875,44 @@
     "runtime": 133,
     "ratings": {
       "Στέλιας": "8"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Pawel Pawlikowski",
+    "movie": "Cold War",
+    "year": "2018",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt6543652",
+    "imdb_rating": 7.5,
+    "poster_path": "/6rbS8oPIgUMhQgIX8oGVTtlNgLR.jpg",
+    "runtime": 89,
+    "ratings": {
+      "Φώτης": "8"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Cristian Mungiu",
+    "movie": "Fjord",
+    "year": "2026",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt35410859",
+    "imdb_rating": 7.8,
+    "poster_path": "/3PPPIeSdeivjUn3O9RahGiaJ9b8.jpg",
+    "runtime": 146,
+    "ratings": {
+      "Φώτης": "7"
     },
     "top3": {},
     "watchlistVotes": []
