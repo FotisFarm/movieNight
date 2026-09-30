@@ -12,7 +12,7 @@ const IS_PROD = process.env.NODE_ENV === 'production';
 
 const { SESSION_COOKIE_NAME } = require('./config');
 
-app.use(express.json());
+app.use(express.json({ limit: '5mb' }));
 app.use(cors({ origin: IS_PROD ? false : 'http://localhost:5173', credentials: true }));
 const TursoSessionStore = require('./sessionStore');
 const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;

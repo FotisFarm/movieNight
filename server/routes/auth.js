@@ -70,6 +70,7 @@ router.post('/login', ah(async (req, res) => {
       username: user.username,
       displayName: user.display_name,
       isAdmin: !!user.is_admin,
+      avatarUrl: user.avatar_url || null,
     },
     activeGroup,
     groups: userGroups,
@@ -84,10 +85,10 @@ router.get('/me', ah(async (req, res) => {
 
   let user = null;
   if (req.session.userId) {
-    user = await db.get('SELECT id, username, display_name, is_admin FROM users WHERE id = ?', req.session.userId);
+    user = await db.get('SELECT id, username, display_name, is_admin, avatar_url FROM users WHERE id = ?', req.session.userId);
   } else if (req.session.voter) {
     user = await db.get(
-      'SELECT id, username, display_name, is_admin FROM users WHERE display_name = ? OR username = ?',
+      'SELECT id, username, display_name, is_admin, avatar_url FROM users WHERE display_name = ? OR username = ?',
       req.session.voter, req.session.voter
     );
     if (user) {
@@ -118,10 +119,31 @@ router.get('/me', ah(async (req, res) => {
       username: user.username,
       displayName: user.display_name,
       isAdmin: !!user.is_admin,
+      avatarUrl: user.avatar_url || null,
     },
     activeGroup,
     groups: userGroups,
   });
+}));
+
+// POST /api/auth/avatar
+router.post('/avatar', ah(async (req, res) => {
+  const userId = req.session?.userId;
+  const voter = req.session?.voter;
+  if (!userId && !voter) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const { avatarUrl } = req.body || {};
+  const cleaned = typeof avatarUrl === 'string' && avatarUrl.trim() ? avatarUrl.trim() : null;
+
+  if (userId) {
+    await db.run('UPDATE users SET avatar_url = ? WHERE id = ?', cleaned, userId);
+  } else if (voter) {
+    await db.run('UPDATE users SET avatar_url = ? WHERE display_name = ? OR username = ?', cleaned, voter, voter);
+  }
+
+  res.json({ ok: true, avatarUrl: cleaned });
 }));
 
 // POST /api/auth/switch-group

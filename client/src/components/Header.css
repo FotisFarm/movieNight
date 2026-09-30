@@ -853,39 +853,6 @@ button.nav-link {
   opacity: 0.6;
 }
 
-.header-my-films-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: var(--surface3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text2);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 9px;
-  text-decoration: none;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.15s ease;
-}
-
-.header-my-films-btn:hover {
-  color: var(--text);
-  background: var(--surface2);
-  border-color: var(--accent);
-}
-
-.header-my-films-btn.active {
-  background: rgba(235, 175, 75, 0.15);
-  color: var(--gold);
-  border-color: var(--gold);
-}
-
-.header-my-films-btn .my-films-icon {
-  font-size: 12px;
-}
-
 /* ── Mobile User Profile Menu & Desktop Group ── */
 .desktop-user-group {
   display: flex;

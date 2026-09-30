@@ -9,7 +9,7 @@ const DEFAULT_PASSWORD = process.env.MN_PASSWORD || 'movieNight5';
 // GET /api/admin/users — list all users, their clubs, and ratings count
 router.get('/users', ah(async (_req, res) => {
   const users = await db.all(`
-    SELECT u.id, u.username, u.display_name, u.is_admin, u.created_at,
+    SELECT u.id, u.username, u.display_name, u.is_admin, u.avatar_url, u.created_at,
            (SELECT COUNT(*) FROM ratings r WHERE r.voter = u.display_name) AS ratings_count
     FROM users u
     ORDER BY u.id ASC
@@ -34,6 +34,7 @@ router.get('/users', ah(async (_req, res) => {
     username: u.username,
     displayName: u.display_name,
     isAdmin: Boolean(u.is_admin),
+    avatarUrl: u.avatar_url || null,
     createdAt: u.created_at,
     ratingsCount: Number(u.ratings_count || 0),
     groups: u.username === 'mnAdmin'
@@ -137,6 +138,19 @@ router.post('/users/:id/toggle-admin', ah(async (req, res) => {
     isAdmin: Boolean(newAdmin),
     message: `${user.display_name} is now ${newAdmin ? 'an Administrator' : 'a regular Member'}.`,
   });
+}));
+
+// PUT /api/admin/users/:id/avatar — update avatar for a user
+router.put('/users/:id/avatar', ah(async (req, res) => {
+  const userId = Number(req.params.id);
+  const user = await db.get('SELECT id, display_name FROM users WHERE id = ?', userId);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  const { avatarUrl } = req.body || {};
+  const cleaned = typeof avatarUrl === 'string' && avatarUrl.trim() ? avatarUrl.trim() : null;
+  await db.run('UPDATE users SET avatar_url = ? WHERE id = ?', cleaned, userId);
+
+  res.json({ ok: true, avatarUrl: cleaned, message: `Profile picture updated for ${user.display_name}.` });
 }));
 
 // POST /api/admin/users/:id/groups — assign user to a group

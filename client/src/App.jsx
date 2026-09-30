@@ -119,6 +119,11 @@ function AppInner() {
     }
   };
 
+  const handleUpdateAvatar = (newAvatarUrl) => {
+    setUser(u => u ? { ...u, avatarUrl: newAvatarUrl } : u);
+    refreshConfig?.();
+  };
+
   if (voter === null) return null;
   if (!voter) return <Login onLogin={handleLogin} />;
 
@@ -131,6 +136,7 @@ function AppInner() {
         groups={groups}
         onSwitchGroup={handleSwitchGroup}
         onLogout={handleLogout}
+        onUpdateAvatar={handleUpdateAvatar}
       />
       <main className="main-content">
         <Routes>

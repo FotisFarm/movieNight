@@ -5,6 +5,8 @@ import { useHal } from '../HalContext';
 import { useAppConfig } from '../AppConfigContext';
 import { api } from '../api';
 import HalEye from './HalEye';
+import UserAvatar from './UserAvatar';
+import ChangeAvatarModal from './ChangeAvatarModal';
 import './Header.css';
 
 const THEMES = [
@@ -199,7 +201,7 @@ function GroupDropdown({ activeGroup, groups = [], onSwitchGroup, isAdmin }) {
   );
 }
 
-function MobileUserMenu({ voter, user, onLogout, onOpenPassword }) {
+function MobileUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const { theme, setTheme } = useTheme();
@@ -213,7 +215,6 @@ function MobileUserMenu({ voter, user, onLogout, onOpenPassword }) {
   }, []);
 
   if (!voter) return null;
-  const initials = voter.slice(0, 2).toUpperCase();
   const roleLabel = user?.isAdmin ? '👑 Site Admin' : (user?.isGroupAdmin ? '⭐ Group Admin' : 'Member');
   const myFilmsUrl = `/films?voters=${encodeURIComponent(voter)}&sort=voter-desc&sortVoter=${encodeURIComponent(voter)}`;
 
@@ -226,14 +227,14 @@ function MobileUserMenu({ voter, user, onLogout, onOpenPassword }) {
         aria-expanded={open}
         title={`Account: ${voter}`}
       >
-        <span className="mobile-avatar-circle">{initials}</span>
+        <UserAvatar name={voter} avatarUrl={user?.avatarUrl} size={29} className="mobile-avatar-circle" />
         <span className="mobile-avatar-caret">{open ? '▴' : '▾'}</span>
       </button>
 
       {open && (
         <div className="mobile-user-dropdown">
           <div className="mobile-user-dropdown-header">
-            <div className="mobile-user-avatar-lg">{initials}</div>
+            <UserAvatar name={voter} avatarUrl={user?.avatarUrl} size={36} className="mobile-user-avatar-lg" />
             <div className="mobile-user-dropdown-info">
               <div className="mobile-user-dropdown-name">{voter}</div>
               <div className="mobile-user-dropdown-role">{roleLabel}</div>
@@ -265,6 +266,14 @@ function MobileUserMenu({ voter, user, onLogout, onOpenPassword }) {
             <button
               type="button"
               className="mobile-user-menu-item"
+              onClick={() => { setOpen(false); onOpenAvatar(); }}
+            >
+              <span>📷</span>
+              <span>Change Profile Picture</span>
+            </button>
+            <button
+              type="button"
+              className="mobile-user-menu-item"
               onClick={() => { setOpen(false); onOpenPassword(); }}
             >
               <span>🔑</span>
@@ -287,7 +296,7 @@ function MobileUserMenu({ voter, user, onLogout, onOpenPassword }) {
   );
 }
 
-function DesktopUserMenu({ voter, user, onLogout, onOpenPassword }) {
+function DesktopUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -300,7 +309,6 @@ function DesktopUserMenu({ voter, user, onLogout, onOpenPassword }) {
   }, []);
 
   if (!voter) return null;
-  const initials = voter.slice(0, 2).toUpperCase();
   const roleLabel = user?.isAdmin ? '👑 Site Admin' : (user?.isGroupAdmin ? '⭐ Group Admin' : 'Member');
   const myFilmsUrl = `/films?voters=${encodeURIComponent(voter)}&sort=voter-desc&sortVoter=${encodeURIComponent(voter)}`;
 
@@ -313,7 +321,7 @@ function DesktopUserMenu({ voter, user, onLogout, onOpenPassword }) {
         aria-expanded={open}
         title={`Account: ${voter}`}
       >
-        <span className="desktop-avatar-circle">{initials}</span>
+        <UserAvatar name={voter} avatarUrl={user?.avatarUrl} size={18} className="desktop-avatar-circle" />
         <span className="header-voter">{voter}</span>
         <span className="header-user-caret">{open ? '▴' : '▾'}</span>
       </button>
@@ -321,8 +329,13 @@ function DesktopUserMenu({ voter, user, onLogout, onOpenPassword }) {
       {open && (
         <div className="desktop-user-dropdown">
           <div className="desktop-user-dropdown-header">
-            <div className="desktop-user-dropdown-name">{voter}</div>
-            <div className="desktop-user-dropdown-role">{roleLabel}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <UserAvatar name={voter} avatarUrl={user?.avatarUrl} size={30} />
+              <div style={{ minWidth: 0 }}>
+                <div className="desktop-user-dropdown-name">{voter}</div>
+                <div className="desktop-user-dropdown-role">{roleLabel}</div>
+              </div>
+            </div>
           </div>
 
           <div className="desktop-user-dropdown-actions">
@@ -334,6 +347,14 @@ function DesktopUserMenu({ voter, user, onLogout, onOpenPassword }) {
               <span>🎬</span>
               <span>My Films</span>
             </NavLink>
+            <button
+              type="button"
+              className="desktop-user-menu-item"
+              onClick={() => { setOpen(false); onOpenAvatar(); }}
+            >
+              <span>📷</span>
+              <span>Profile Picture</span>
+            </button>
             <button
               type="button"
               className="desktop-user-menu-item"
@@ -454,7 +475,7 @@ function ChangePasswordModal({ onClose }) {
   );
 }
 
-export default function Header({ voter, user, activeGroup, groups = [], onSwitchGroup, onLogout }) {
+export default function Header({ voter, user, activeGroup, groups = [], onSwitchGroup, onLogout, onUpdateAvatar }) {
   const { sandboxMode, hideHal } = useAppConfig() || {};
   const isAdmin = Boolean(user?.isAdmin || voter === 'mnAdmin' || user?.is_admin === 1);
   const location = useLocation();
@@ -489,6 +510,7 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
   const [mobileRankingsOpen, setMobileRankingsOpen] = useState(false);
   const [mobileStatsOpen, setMobileStatsOpen] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   const rankingsRef = useRef(null);
   const statsRef = useRef(null);
@@ -787,25 +809,12 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
             <div className="desktop-user-group">
               <ThemeDropdown />
               {voter && (
-                <NavLink
-                  to={`/films?voters=${encodeURIComponent(voter)}&sort=voter-desc&sortVoter=${encodeURIComponent(voter)}`}
-                  className={({ isActive }) => {
-                    const isMyFilmsActive = location.pathname === '/films' &&
-                      location.search.includes(`voters=${encodeURIComponent(voter)}`);
-                    return `header-my-films-btn${isMyFilmsActive ? ' active' : ''}`;
-                  }}
-                  title="Films you have ranked"
-                >
-                  <span className="my-films-icon">🎬</span>
-                  <span>My Films</span>
-                </NavLink>
-              )}
-              {voter && (
                 <DesktopUserMenu
                   voter={voter}
                   user={user}
                   onLogout={onLogout}
                   onOpenPassword={() => setShowPasswordModal(true)}
+                  onOpenAvatar={() => setShowAvatarModal(true)}
                 />
               )}
               {onLogout && (
@@ -827,6 +836,7 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
                 user={user}
                 onLogout={onLogout}
                 onOpenPassword={() => setShowPasswordModal(true)}
+                onOpenAvatar={() => setShowAvatarModal(true)}
               />
             </div>
           </div>
@@ -834,6 +844,14 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
       </header>
 
       {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
+      {showAvatarModal && (
+        <ChangeAvatarModal
+          currentAvatar={user?.avatarUrl}
+          voter={voter}
+          onClose={() => setShowAvatarModal(false)}
+          onSaved={(newUrl) => onUpdateAvatar?.(newUrl)}
+        />
+      )}
 
       {/* Mobile 5-Tab Bottom Navigation Bar (Mirroring desktop 1-to-1) */}
       <nav className="mobile-bottom-bar" aria-label="Mobile Bottom Navigation">

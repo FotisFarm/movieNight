@@ -245,16 +245,24 @@ export default function Films() {
     }
   }
 
+  const fetchRequestIdRef = useRef(0);
   const fetchMovies = useCallback(async (params) => {
+    const reqId = ++fetchRequestIdRef.current;
     setLoading(true);
     try {
       const data = await api.getMovies(params);
-      setMovies(data);
-      setPage(1);
+      if (reqId === fetchRequestIdRef.current) {
+        setMovies(data);
+        setPage(1);
+      }
     } catch (e) {
-      console.error(e);
+      if (reqId === fetchRequestIdRef.current) {
+        console.error(e);
+      }
     } finally {
-      setLoading(false);
+      if (reqId === fetchRequestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -263,10 +271,9 @@ export default function Films() {
   }
 
   useEffect(() => {
-    fetchMovies({});
     refreshAllMovies();
     api.getDirectors().then(setDirectors).catch(() => {});
-  }, [fetchMovies]);
+  }, []);
 
   useEffect(() => {
     if (mobileDrawerOpen) {
@@ -285,13 +292,18 @@ export default function Films() {
   useEffect(() => {
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
+      const isVoterSort = sortBy === 'voter-desc' || sortBy === 'voter-asc';
+      const effectiveVoters = filterVoters.length
+        ? filterVoters.join(',')
+        : (isVoterSort ? sortVoter : undefined);
+
       fetchMovies({
         mn:         filterMn        ? '1' : undefined,
         watchlist:  filterWl        ? '1' : undefined,
         stream:     (filterStream || filterProvider) ? '1' : undefined,
         provider:   filterProvider  || undefined,
         rated:      filterRated     || undefined,
-        voters:     filterVoters.length ? filterVoters.join(',') : undefined,
+        voters:     effectiveVoters,
         director:   filterDirector  || undefined,
         yearMin:    filterYearMin   || undefined,
         yearMax:    filterYearMax   || undefined,
@@ -302,7 +314,7 @@ export default function Films() {
         minLb:      filterMinLb      || undefined,
       });
     }, 250);
-  }, [search, filterMn, filterWl, filterStream, filterProvider, filterRated, filterVoters, filterDirector, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, filterRuntimeMin, filterRuntimeMax, filterMinLb, fetchMovies]);
+  }, [search, sortBy, sortVoter, filterMn, filterWl, filterStream, filterProvider, filterRated, filterVoters, filterDirector, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, filterRuntimeMin, filterRuntimeMax, filterMinLb, fetchMovies]);
 
   const rankMap = useRankMap(allMovies);
 
@@ -327,8 +339,32 @@ export default function Films() {
       })
     : movies;
 
+  let filteredList = searchFiltered;
+
+  // Strict voter rating filter: when sorting by voter, only show films that voter has rated (or unrated if filterRated is unvoted)
+  if (sortBy === 'voter-desc' || sortBy === 'voter-asc') {
+    if (filterRated === 'unvoted') {
+      filteredList = filteredList.filter(m => m.ratings?.[sortVoter] == null);
+    } else {
+      filteredList = filteredList.filter(m => m.ratings?.[sortVoter] != null);
+    }
+  }
+
+  // Strict voter filter: voted vs unvoted
+  if (filterVoters.length > 0) {
+    if (filterRated === 'unvoted') {
+      filteredList = filteredList.filter(m => !filterVoters.some(v => m.ratings?.[v] != null));
+    } else {
+      filteredList = filteredList.filter(m => filterVoters.every(v => m.ratings?.[v] != null));
+    }
+  } else if (filterRated === 'voted') {
+    filteredList = filteredList.filter(m => (m.voterCount > 0 || (m.ratings && Object.keys(m.ratings).length > 0)));
+  } else if (filterRated === 'unvoted') {
+    filteredList = filteredList.filter(m => (!m.voterCount || m.voterCount === 0) && (!m.ratings || Object.keys(m.ratings).length === 0));
+  }
+
   const scoreSortActive = sortBy === 'score-desc' || sortBy === 'score-asc' || sortBy === 'group-desc' || sortBy === 'group-asc' || sortBy === 'controversial';
-  const sortBase = scoreSortActive && filterRated !== 'unvoted' ? searchFiltered.filter(m => m.voterCount >= minVoters) : searchFiltered;
+  const sortBase = scoreSortActive && filterRated !== 'unvoted' ? filteredList.filter(m => m.voterCount >= minVoters) : filteredList;
 
   const sorted = [...sortBase].sort((a, b) => {
     switch (sortBy) {

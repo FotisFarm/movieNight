@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { api } from '../api';
 import { useAppConfig } from '../AppConfigContext';
 import { fmtScore10 as fmt, scoreClass, extractImdbId, posterUrl, backdropUrl, formatRuntime } from '../utils';
 import ReorderTop10Dialog from './ReorderTop10Dialog';
 import LetterboxdPill from './LetterboxdPill';
 import TrailerModal from './TrailerModal';
+import UserAvatar from './UserAvatar';
 import './MovieModal.css';
 
 const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
@@ -44,6 +45,13 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   const isGlobalAdmin = Boolean(isSiteAdmin || sessionStorage.getItem('isAdmin') === 'true' || currentVoter === 'mnAdmin');
   const isAdmin = Boolean(configIsAdmin || isGlobalAdmin || isGroupAdmin);
   const isGhost = !configVoters.includes(currentVoter) && currentVoter !== 'mnAdmin' && !isAdmin && !!currentVoter;
+  const voterAvatars = useMemo(() => {
+    const map = {};
+    activeGroup?.members?.forEach(m => {
+      if (m.displayName && m.avatarUrl) map[m.displayName] = m.avatarUrl;
+    });
+    return map;
+  }, [activeGroup]);
   const [movie, setMovie]     = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
@@ -780,7 +788,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                   >
                     <div className="voter-card-header">
                       <div className="voter-card-user">
-                        <div className="voter-avatar-circle">{v.slice(0, 2)}</div>
+                        <UserAvatar name={v} avatarUrl={voterAvatars[v]} size={22} className="voter-avatar-circle" />
                         <span className="voter-name-label">
                           {v}{isSelf ? ' (You)' : ''}
                         </span>
@@ -871,7 +879,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                   <div className={`voter-rating-card${isOn ? '' : ' rating-off'} voter-card-self`}>
                     <div className="voter-card-header">
                       <div className="voter-card-user">
-                        <div className="voter-avatar-circle">{v.slice(0, 2)}</div>
+                        <UserAvatar name={v} avatarUrl={voterAvatars[v]} size={22} className="voter-avatar-circle" />
                         <span className="voter-name-label">{v} (Guest)</span>
                       </div>
 
@@ -957,7 +965,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                     <div key={v} className="community-rating-card">
                       <div className="community-card-header">
                         <div className="voter-card-user">
-                          <div className="voter-avatar-circle community-avatar">{v.slice(0, 2)}</div>
+                          <UserAvatar name={v} avatarUrl={voterAvatars[v]} size={22} className="voter-avatar-circle community-avatar" />
                           <span className="voter-name-label">{v}</span>
                         </div>
                         <div className="community-card-controls">

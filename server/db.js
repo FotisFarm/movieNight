@@ -211,6 +211,7 @@ async function init() {
       display_name  TEXT    NOT NULL,
       password_hash TEXT    NOT NULL,
       is_admin      INTEGER NOT NULL DEFAULT 0,
+      avatar_url    TEXT    DEFAULT NULL,
       created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -258,6 +259,7 @@ async function init() {
   try { await client.execute({ sql: 'DELETE FROM sessions WHERE expired <= ?', args: [Date.now()] }); } catch (_) {}
 
   // Migrations
+  try { await client.execute('ALTER TABLE users ADD COLUMN avatar_url TEXT DEFAULT NULL'); } catch (_) {}
   try { await client.execute("ALTER TABLE ratings ADD COLUMN comment TEXT NOT NULL DEFAULT ''"); } catch (_) {}
   try { await client.execute('ALTER TABLE ratings ADD COLUMN user_id INTEGER REFERENCES users(id)'); } catch (_) {}
   try { await client.execute('ALTER TABLE top3 ADD COLUMN user_id INTEGER REFERENCES users(id)'); } catch (_) {}

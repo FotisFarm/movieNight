@@ -29,7 +29,7 @@ async function getGroupWithMembers(groupIdOrSlug) {
     }
 
     const memberRows = await db.all(`
-      SELECT gm.id, gm.role, u.id AS user_id, u.username, u.display_name
+      SELECT gm.id, gm.role, u.id AS user_id, u.username, u.display_name, u.avatar_url
       FROM group_members gm
       JOIN users u ON u.id = gm.user_id
       WHERE gm.group_id = ? AND u.username != 'mnAdmin'
@@ -49,6 +49,7 @@ async function getGroupWithMembers(groupIdOrSlug) {
         username: m.username,
         displayName: m.display_name,
         role: m.role,
+        avatarUrl: m.avatar_url || null,
       })),
       groupSize: size,
       minVoters: Math.min(2, size),
