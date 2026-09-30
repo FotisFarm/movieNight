@@ -234,7 +234,7 @@ function MobileUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar })
       {open && (
         <div className="mobile-user-dropdown">
           <div className="mobile-user-dropdown-header">
-            <UserAvatar name={voter} avatarUrl={user?.avatarUrl} size={42} className="mobile-user-avatar-lg" />
+            <UserAvatar name={voter} avatarUrl={user?.avatarUrl} size={42} className="mobile-user-avatar-lg" zoomable />
             <div className="mobile-user-dropdown-info">
               <div className="mobile-user-dropdown-name">{voter}</div>
               <div className="mobile-user-dropdown-role">{roleLabel}</div>
@@ -329,7 +329,7 @@ function DesktopUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar }
         <div className="desktop-user-dropdown">
           <div className="desktop-user-dropdown-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <UserAvatar name={voter} avatarUrl={user?.avatarUrl} size={40} />
+              <UserAvatar name={voter} avatarUrl={user?.avatarUrl} size={40} zoomable />
               <div style={{ minWidth: 0 }}>
                 <div className="desktop-user-dropdown-name">{voter}</div>
                 <div className="desktop-user-dropdown-role">{roleLabel}</div>

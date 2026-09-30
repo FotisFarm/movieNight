@@ -608,7 +608,7 @@ export default function Admin() {
                         <tr key={u.id}>
                           <td>
                             <div className="admin-user-cell">
-                              <UserAvatar name={u.displayName} avatarUrl={u.avatarUrl} size={34} />
+                              <UserAvatar name={u.displayName} avatarUrl={u.avatarUrl} size={34} zoomable />
                               <div>
                                 <div className="admin-user-name">{u.displayName}</div>
                                 <div className="admin-user-handle">@{u.username}</div>
@@ -712,7 +712,7 @@ export default function Admin() {
                       <div key={u.id} className="admin-member-card">
                         <div className="admin-card-header">
                           <div className="admin-user-cell">
-                            <UserAvatar name={u.displayName} avatarUrl={u.avatarUrl} size={34} />
+                            <UserAvatar name={u.displayName} avatarUrl={u.avatarUrl} size={34} zoomable />
                             <div>
                               <div className="admin-user-name">{u.displayName}</div>
                               <div className="admin-user-handle">@{u.username}</div>
@@ -947,7 +947,7 @@ export default function Admin() {
                         <tr key={s.sid}>
                           <td>
                             <div className="admin-user-cell">
-                              <UserAvatar name={s.displayName} avatarUrl={s.avatarUrl} size={34} />
+                              <UserAvatar name={s.displayName} avatarUrl={s.avatarUrl} size={34} zoomable />
                               <div>
                                 <div className="admin-user-name">{s.displayName}</div>
                                 <div className="admin-user-handle">@{s.username}</div>
@@ -999,7 +999,7 @@ export default function Admin() {
                       <div key={s.sid} className="admin-member-card">
                         <div className="admin-card-header">
                           <div className="admin-user-cell">
-                            <UserAvatar name={s.displayName} avatarUrl={s.avatarUrl} size={34} />
+                            <UserAvatar name={s.displayName} avatarUrl={s.avatarUrl} size={34} zoomable />
                             <div>
                               <div className="admin-user-name">{s.displayName}</div>
                               <div className="admin-user-handle">@{s.username}</div>

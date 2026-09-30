@@ -108,6 +108,7 @@ export default function ChangeAvatarModal({ currentAvatar = null, voter = '', on
                 name={voter}
                 avatarUrl={avatarUrl.trim() || null}
                 size={84}
+                zoomable
                 style={{
                   border: '2.5px solid var(--accent)',
                   boxShadow: '0 4px 18px rgba(0, 0, 0, 0.45)',

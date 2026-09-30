@@ -111,7 +111,7 @@
 .voter-card-user {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex: 1;
   min-width: 120px;
 }
@@ -121,7 +121,7 @@
 }
 
 .voter-name-label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text);
 }
