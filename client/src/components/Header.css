@@ -809,19 +809,81 @@ button.nav-link {
 }
 
 .header-user-btn {
-  background: transparent;
-  border: none;
-  padding: 0;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text2);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.header-user-btn:hover {
+  color: var(--text);
+  background: var(--surface2);
+  border-color: var(--border2, var(--border));
 }
 
 .header-user-btn:hover .header-voter {
   color: var(--green);
+}
+
+.desktop-avatar-circle {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--accent);
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 8.5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-user-caret {
+  font-size: 8px;
+  opacity: 0.6;
+}
+
+.header-my-films-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text2);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.header-my-films-btn:hover {
+  color: var(--text);
+  background: var(--surface2);
+  border-color: var(--accent);
+}
+
+.header-my-films-btn.active {
+  background: rgba(235, 175, 75, 0.15);
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.header-my-films-btn .my-films-icon {
+  font-size: 12px;
 }
 
 /* ── Mobile User Profile Menu & Desktop Group ── */
@@ -979,6 +1041,7 @@ button.nav-link {
   font-weight: 500;
   cursor: pointer;
   text-align: left;
+  text-decoration: none;
   transition: background 0.15s, color 0.15s;
 }
 
@@ -995,3 +1058,86 @@ button.nav-link {
   background: rgba(242, 97, 97, 0.12);
   color: var(--red);
 }
+
+/* ── Desktop User Profile Dropdown ── */
+.desktop-user-menu-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.desktop-user-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 180px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  padding: 10px;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: dropdownFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.desktop-user-dropdown-header {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.desktop-user-dropdown-name {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desktop-user-dropdown-role {
+  font-size: 10.5px;
+  color: var(--text3);
+}
+
+.desktop-user-dropdown-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.desktop-user-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 6px 8px;
+  border-radius: 4px;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.desktop-user-menu-item:hover {
+  background: var(--surface3);
+  color: var(--text);
+}
+
+.desktop-user-menu-item.logout {
+  color: var(--red);
+}
+
+.desktop-user-menu-item.logout:hover {
+  background: rgba(242, 97, 97, 0.12);
+  color: var(--red);
+}
+

@@ -214,6 +214,8 @@ function MobileUserMenu({ voter, user, onLogout, onOpenPassword }) {
 
   if (!voter) return null;
   const initials = voter.slice(0, 2).toUpperCase();
+  const roleLabel = user?.isAdmin ? '👑 Site Admin' : (user?.isGroupAdmin ? '⭐ Group Admin' : 'Member');
+  const myFilmsUrl = `/films?voters=${encodeURIComponent(voter)}&sort=voter-desc&sortVoter=${encodeURIComponent(voter)}`;
 
   return (
     <div className="mobile-user-menu-wrap" ref={ref}>
@@ -234,9 +236,7 @@ function MobileUserMenu({ voter, user, onLogout, onOpenPassword }) {
             <div className="mobile-user-avatar-lg">{initials}</div>
             <div className="mobile-user-dropdown-info">
               <div className="mobile-user-dropdown-name">{voter}</div>
-              <div className="mobile-user-dropdown-role">
-                {user?.isAdmin ? '👑 Site Admin' : 'Member'}
-              </div>
+              <div className="mobile-user-dropdown-role">{roleLabel}</div>
             </div>
           </div>
 
@@ -254,6 +254,14 @@ function MobileUserMenu({ voter, user, onLogout, onOpenPassword }) {
           </div>
 
           <div className="mobile-user-dropdown-actions">
+            <NavLink
+              to={myFilmsUrl}
+              className="mobile-user-menu-item"
+              onClick={() => setOpen(false)}
+            >
+              <span>🎬</span>
+              <span>My Films</span>
+            </NavLink>
             <button
               type="button"
               className="mobile-user-menu-item"
@@ -266,6 +274,78 @@ function MobileUserMenu({ voter, user, onLogout, onOpenPassword }) {
               <button
                 type="button"
                 className="mobile-user-menu-item logout"
+                onClick={() => { setOpen(false); onLogout(); }}
+              >
+                <span>🚪</span>
+                <span>Sign Out</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DesktopUserMenu({ voter, user, onLogout, onOpenPassword }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function onDown(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, []);
+
+  if (!voter) return null;
+  const initials = voter.slice(0, 2).toUpperCase();
+  const roleLabel = user?.isAdmin ? '👑 Site Admin' : (user?.isGroupAdmin ? '⭐ Group Admin' : 'Member');
+  const myFilmsUrl = `/films?voters=${encodeURIComponent(voter)}&sort=voter-desc&sortVoter=${encodeURIComponent(voter)}`;
+
+  return (
+    <div className="desktop-user-menu-wrap" ref={ref}>
+      <button
+        type="button"
+        className="header-user-btn"
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        title={`Account: ${voter}`}
+      >
+        <span className="desktop-avatar-circle">{initials}</span>
+        <span className="header-voter">{voter}</span>
+        <span className="header-user-caret">{open ? '▴' : '▾'}</span>
+      </button>
+
+      {open && (
+        <div className="desktop-user-dropdown">
+          <div className="desktop-user-dropdown-header">
+            <div className="desktop-user-dropdown-name">{voter}</div>
+            <div className="desktop-user-dropdown-role">{roleLabel}</div>
+          </div>
+
+          <div className="desktop-user-dropdown-actions">
+            <NavLink
+              to={myFilmsUrl}
+              className="desktop-user-menu-item"
+              onClick={() => setOpen(false)}
+            >
+              <span>🎬</span>
+              <span>My Films</span>
+            </NavLink>
+            <button
+              type="button"
+              className="desktop-user-menu-item"
+              onClick={() => { setOpen(false); onOpenPassword(); }}
+            >
+              <span>🔑</span>
+              <span>Change Password</span>
+            </button>
+            {onLogout && (
+              <button
+                type="button"
+                className="desktop-user-menu-item logout"
                 onClick={() => { setOpen(false); onLogout(); }}
               >
                 <span>🚪</span>
@@ -707,15 +787,26 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
             <div className="desktop-user-group">
               <ThemeDropdown />
               {voter && (
-                <button
-                  type="button"
-                  className="header-user-btn"
-                  onClick={() => setShowPasswordModal(true)}
-                  title="Account: Click to change password"
+                <NavLink
+                  to={`/films?voters=${encodeURIComponent(voter)}&sort=voter-desc&sortVoter=${encodeURIComponent(voter)}`}
+                  className={({ isActive }) => {
+                    const isMyFilmsActive = location.pathname === '/films' &&
+                      location.search.includes(`voters=${encodeURIComponent(voter)}`);
+                    return `header-my-films-btn${isMyFilmsActive ? ' active' : ''}`;
+                  }}
+                  title="Films you have ranked"
                 >
-                  <span className="header-voter">{voter}</span>
-                  <span style={{ fontSize: 11, opacity: 0.65 }}>🔑</span>
-                </button>
+                  <span className="my-films-icon">🎬</span>
+                  <span>My Films</span>
+                </NavLink>
+              )}
+              {voter && (
+                <DesktopUserMenu
+                  voter={voter}
+                  user={user}
+                  onLogout={onLogout}
+                  onOpenPassword={() => setShowPasswordModal(true)}
+                />
               )}
               {onLogout && (
                 <button

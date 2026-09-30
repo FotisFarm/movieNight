@@ -111,6 +111,8 @@ export default function Films() {
   const [filterMinLb, setFilterMinLb]       = useState(() => searchParams.get('minLb') || DEFAULTS.filterMinLb);
   const [directors, setDirectors]           = useState([]);
 
+  const lastSearchStringRef           = useRef(new URLSearchParams(searchParams).toString());
+
   function handleRuntimePreset(presetId) {
     setFilterRuntime(presetId);
     const found = RUNTIME_PRESETS.find(p => p.id === presetId);
@@ -119,6 +121,53 @@ export default function Films() {
       setFilterRuntimeMax(found.max || '');
     }
   }
+
+  // Synchronize state when URL search params change externally (e.g. clicking "My Films" or browser navigation)
+  useEffect(() => {
+    const currentParamsString = new URLSearchParams(searchParams).toString();
+    if (currentParamsString === lastSearchStringRef.current) return;
+    lastSearchStringRef.current = currentParamsString;
+
+    const newQ = searchParams.get('q') || DEFAULTS.search;
+    const newSort = searchParams.get('sort') || DEFAULTS.sortBy;
+    const newSortVoter = searchParams.get('sortVoter') || DEFAULTS.sortVoter;
+    const newMn = searchParams.get('mn') === '1';
+    const newRated = searchParams.get('rated') || DEFAULTS.filterRated;
+    const newWl = searchParams.get('wl') === '1';
+    const newStream = searchParams.get('stream') === '1' || !!searchParams.get('provider');
+    const newProvider = searchParams.get('provider') || DEFAULTS.filterProvider;
+    const newVoters = searchParams.get('voters') ? searchParams.get('voters').split(',').map(s => s.trim()).filter(Boolean) : DEFAULTS.filterVoters;
+    const newDirector = searchParams.get('director') || DEFAULTS.filterDirector;
+    const newYearMin = searchParams.get('yearMin') || DEFAULTS.filterYearMin;
+    const newYearMax = searchParams.get('yearMax') || DEFAULTS.filterYearMax;
+    const newMinVoters = searchParams.get('minVoters') || DEFAULTS.filterMinVoters;
+    const newMaxVoters = searchParams.get('maxVoters') || DEFAULTS.filterMaxVoters;
+    const newRuntime = searchParams.get('runtime') || DEFAULTS.filterRuntime;
+    const newRuntimeMin = searchParams.get('runtimeMin') || DEFAULTS.filterRuntimeMin;
+    const newRuntimeMax = searchParams.get('runtimeMax') || DEFAULTS.filterRuntimeMax;
+    const newMinLb = searchParams.get('minLb') || DEFAULTS.filterMinLb;
+
+    setSearch(newQ);
+    setSortBy(newSort);
+    setSortVoter(newSortVoter);
+    setFilterMn(newMn);
+    setFilterRated(newRated);
+    setFilterWl(newWl);
+    setFilterStream(newStream);
+    setFilterProvider(newProvider);
+    setFilterVoters(newVoters);
+    setFilterDirector(newDirector);
+    setFilterYearMin(newYearMin);
+    setFilterYearMax(newYearMax);
+    setFilterMinVoters(newMinVoters);
+    setFilterMaxVoters(newMaxVoters);
+    setFilterRuntime(newRuntime);
+    setFilterRuntimeMin(newRuntimeMin);
+    setFilterRuntimeMax(newRuntimeMax);
+    setFilterMinLb(newMinLb);
+    setPage(1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [searchParams]);
 
   useEffect(() => {
     const p = {};
@@ -140,8 +189,14 @@ export default function Films() {
     if (filterRuntimeMin)                     p.runtimeMin = filterRuntimeMin;
     if (filterRuntimeMax)                     p.runtimeMax = filterRuntimeMax;
     if (filterMinLb)                          p.minLb = filterMinLb;
-    setSearchParams(p, { replace: true });
-  }, [search, sortBy, sortVoter, filterMn, filterRated, filterWl, filterStream, filterProvider, filterVoters, filterDirector, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, filterRuntime, filterRuntimeMin, filterRuntimeMax, filterMinLb]);
+
+    const newSearchString = new URLSearchParams(p).toString();
+    const currentParamsString = new URLSearchParams(searchParams).toString();
+    if (newSearchString !== currentParamsString) {
+      lastSearchStringRef.current = newSearchString;
+      setSearchParams(p, { replace: true });
+    }
+  }, [search, sortBy, sortVoter, filterMn, filterRated, filterWl, filterStream, filterProvider, filterVoters, filterDirector, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, filterRuntime, filterRuntimeMin, filterRuntimeMax, filterMinLb, searchParams, setSearchParams]);
 
   const searchTimer = useRef(null);
 
