@@ -20897,5 +20897,24 @@
     },
     "top3": {},
     "watchlistVotes": []
+  },
+  {
+    "director": "Cristian Mungiu",
+    "movie": "Fjord",
+    "year": "2026",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt35410859",
+    "imdb_rating": 7.8,
+    "poster_path": "/3PPPIeSdeivjUn3O9RahGiaJ9b8.jpg",
+    "runtime": 146,
+    "ratings": {
+      "Φώτης": "7"
+    },
+    "top3": {},
+    "watchlistVotes": []
   }
 ]
