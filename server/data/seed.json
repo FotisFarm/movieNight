@@ -20916,5 +20916,24 @@
     },
     "top3": {},
     "watchlistVotes": []
+  },
+  {
+    "director": "Naoko Yamada",
+    "movie": "A Silent Voice",
+    "year": "2016",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt5323662",
+    "imdb_rating": 8.2,
+    "poster_path": "/tuFaWiqX0TXoWu7DGNcmX3UW7sT.jpg",
+    "runtime": 130,
+    "ratings": {
+      "Στέλιας": "8.5"
+    },
+    "top3": {},
+    "watchlistVotes": []
   }
 ]
