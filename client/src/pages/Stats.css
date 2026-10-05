@@ -164,39 +164,61 @@
 .stats-voter-card.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 
 /* ── Voter drill-down modal ── */
-.vd-modal { max-width: 1200px; width: 95%; }
-.vd-body { padding: 18px; overflow-y: auto; }
+/* .modal.vd-modal (not just .vd-modal): the global .modal rule in index.css is
+   bundled after this file and would otherwise clamp the width to 620px. */
+.modal.vd-modal { max-width: 1240px; width: 96vw; }
+.vd-body { padding: 18px 20px 22px; overflow-y: auto; }
 .vd-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 16px;
+  /* Film lists need the most room for titles; decades the least. */
+  grid-template-columns: 1.35fr 1.35fr 1.1fr 0.8fr 1.2fr;
+  gap: 22px;
+  align-items: start;
 }
-
-@media (max-width: 1080px) {
-  .vd-grid {
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  }
+@media (max-width: 1100px) {
+  .vd-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
-.vd-col { display: flex; flex-direction: column; gap: 2px; }
+@media (max-width: 760px) {
+  .vd-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) {
+  .vd-grid { grid-template-columns: 1fr; }
+}
+.vd-col { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .vd-col-title {
-  font-size: 11px; color: var(--text2); text-transform: uppercase;
-  letter-spacing: .04em; margin-bottom: 6px;
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase;
+  letter-spacing: .04em; margin-bottom: 6px; padding: 0 6px 6px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.vd-col-badge {
+  font-size: 10px; font-weight: 600; color: var(--text3);
+  background: var(--surface2); border-radius: 8px; padding: 1px 6px;
 }
 .vd-film-row {
   display: flex; align-items: baseline; gap: 8px;
   padding: 4px 6px; border-radius: var(--radius); cursor: pointer;
 }
 .vd-film-row:hover { background: var(--bg); }
-.vd-film-title { flex: 1; font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.vd-film-meta { font-size: 11px; color: var(--text3); }
-.vd-film-score { font-size: 13px; font-weight: 700; min-width: 28px; text-align: right; }
-.vd-bd-row { display: flex; align-items: baseline; gap: 8px; padding: 3px 6px; border-radius: var(--radius); }
+.vd-film-row:hover .vd-film-title { color: var(--accent); }
+.vd-film-title { flex: 1; min-width: 0; font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vd-film-meta { font-size: 11px; color: var(--text3); flex-shrink: 0; }
+.vd-film-score { font-size: 13px; font-weight: 700; min-width: 24px; text-align: right; flex-shrink: 0; }
+.vd-bd-row { display: flex; align-items: baseline; gap: 8px; padding: 4px 6px; border-radius: var(--radius); }
 .vd-clickable { cursor: pointer; }
 .vd-clickable:hover { background: var(--bg); }
 .vd-clickable:hover .vd-bd-name { color: var(--accent); }
-.vd-bd-name { flex: 1; font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.vd-bd-count { font-size: 11px; color: var(--text3); }
-.vd-bd-mean { font-size: 13px; font-weight: 700; min-width: 28px; text-align: right; }
+.vd-bd-name { flex: 1; min-width: 0; font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vd-bd-count { font-size: 11px; color: var(--text3); flex-shrink: 0; }
+.vd-bd-mean { font-size: 13px; font-weight: 700; min-width: 28px; text-align: right; flex-shrink: 0; white-space: nowrap; }
+.vd-delta { font-size: 10px; font-weight: 600; opacity: .75; margin-left: 2px; }
+.vd-empty-hint { font-size: 11px; color: var(--text3); padding: 4px 6px; }
+.vd-show-more {
+  align-self: flex-start; margin: 4px 0 0 2px;
+  font-size: 11px; padding: 3px 8px; color: var(--text2);
+}
+.vd-show-more:hover { color: var(--accent); }
 .vd-film-score.score-high, .vd-bd-mean.score-high { color: var(--green); }
 .vd-film-score.score-mid,  .vd-bd-mean.score-mid  { color: var(--gold); }
 .vd-film-score.score-low,  .vd-bd-mean.score-low  { color: var(--red); }

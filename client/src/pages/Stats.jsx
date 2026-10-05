@@ -210,6 +210,7 @@ export default function Stats({ voter }) {
   const [selectedVoter, setSelectedVoter] = useState(null);
   const [dyTarget, setDyTarget] = useState(null); // { type, value } for director/decade modal
   const [filmList, setFilmList] = useState(null); // { label, films } for number-tile modal
+  const [showAllDirs, setShowAllDirs] = useState(false);
   const { toast, Toast }      = useToast();
 
   const sensors = useSensors(
@@ -228,7 +229,7 @@ export default function Stats({ voter }) {
       if (modalId) { setModalId(null); return; }
       if (dyTarget) { setDyTarget(null); return; }
       if (filmList) { setFilmList(null); return; }
-      if (selectedVoter) { setSelectedVoter(null); return; }
+      if (selectedVoter) { setSelectedVoter(null); setShowAllDirs(false); return; }
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
@@ -388,7 +389,7 @@ export default function Stats({ voter }) {
             <div
               key={s.voter}
               className={`stats-voter-card${selectedVoter === s.voter ? ' active' : ''}`}
-              onClick={() => setSelectedVoter(v => v === s.voter ? null : s.voter)}
+              onClick={() => { setSelectedVoter(v => v === s.voter ? null : s.voter); setShowAllDirs(false); }}
             >
               <div className="stats-voter-name">{s.voter}</div>
 
@@ -519,7 +520,7 @@ export default function Stats({ voter }) {
         const sel = stats.find(s => s.voter === selectedVoter);
         if (!sel) return null;
         const filmRow = m => (
-          <div key={m.id} className="vd-film-row" onClick={() => setModalId(m.id)}>
+          <div key={m.id} className="vd-film-row" onClick={() => setModalId(m.id)} title={`${m.title}${m.year ? ` (${m.year})` : ''}${m.director ? ` · ${m.director}` : ''}`}>
             <span className="vd-film-title">{m.title}</span>
             <span className="vd-film-meta">{m.year || ''}</span>
             <span className={`vd-film-score ${scoreClass(m.ratings[selectedVoter])}`}>
@@ -528,39 +529,65 @@ export default function Stats({ voter }) {
           </div>
         );
         return (
-          <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setSelectedVoter(null)}>
+          <div className="modal-overlay" onClick={e => e.target === e.currentTarget && (setSelectedVoter(null), setShowAllDirs(false))}>
             <div className="modal vd-modal">
               <div className="modal-header">
                 <div className="modal-header-text">
                   <div className="modal-title">{selectedVoter}</div>
-                  <div className="modal-sub">{sel.ratedCount} films rated · mean {fmt(sel.mean)}</div>
+                  <div className="modal-sub">{sel.ratedCount} films rated · {sel.top3Count} in Top 10</div>
                 </div>
-                <button className="modal-close" onClick={() => setSelectedVoter(null)}>✕</button>
+                {sel.mean != null && (
+                  <div className="dy-mean">
+                    <div className={`dy-mean-score ${scoreClass(sel.mean)}`}>{fmt(sel.mean)}</div>
+                    <div className="dy-mean-label">mean score</div>
+                  </div>
+                )}
+                <button className="modal-close" onClick={() => { setSelectedVoter(null); setShowAllDirs(false); }}>✕</button>
               </div>
               <div className="vd-body">
                 <div className="vd-grid">
                   <div className="vd-col">
-                    <div className="vd-col-title">Top rated</div>
+                    <div className="vd-col-title">
+                      <span>🏆 Top rated</span>
+                      <span className="vd-col-badge">{sel.topFilms.length}</span>
+                    </div>
                     {sel.topFilms.map(filmRow)}
                   </div>
                   <div className="vd-col">
-                    <div className="vd-col-title">Lowest rated</div>
+                    <div className="vd-col-title">
+                      <span>📉 Lowest rated</span>
+                      <span className="vd-col-badge">{sel.bottomFilms.length}</span>
+                    </div>
                     {sel.bottomFilms.map(filmRow)}
                   </div>
                   <div className="vd-col">
-                    <div className="vd-col-title">Directors ({sel.dirBreakdown.length})</div>
-                    {sel.dirBreakdown.map(d => (
-                      <div key={d.name} className="vd-bd-row vd-clickable" onClick={() => setDyTarget({ type: 'director', value: d.name })}>
+                    <div className="vd-col-title">
+                      <span>🎭 Directors</span>
+                      <span className="vd-col-badge">{sel.dirBreakdown.length}</span>
+                    </div>
+                    {(showAllDirs ? sel.dirBreakdown : sel.dirBreakdown.slice(0, 10)).map(d => (
+                      <div key={d.name} className="vd-bd-row vd-clickable" onClick={() => setDyTarget({ type: 'director', value: d.name })} title={`Click to view ${selectedVoter}'s films directed by ${d.name}`}>
                         <span className="vd-bd-name">{d.name}</span>
                         <span className="vd-bd-count">{d.count}</span>
                         <span className={`vd-bd-mean ${scoreClass(d.mean)}`}>{fmt(d.mean, 1)}</span>
                       </div>
                     ))}
+                    {sel.dirBreakdown.length > 10 && (
+                      <button
+                        className="btn btn-ghost btn-xs vd-show-more"
+                        onClick={() => setShowAllDirs(v => !v)}
+                      >
+                        {showAllDirs ? 'Show less' : `+${sel.dirBreakdown.length - 10} more`}
+                      </button>
+                    )}
                   </div>
                   <div className="vd-col">
-                    <div className="vd-col-title">Decades</div>
+                    <div className="vd-col-title">
+                      <span>📆 Decades</span>
+                      <span className="vd-col-badge">{sel.decBreakdown.length}</span>
+                    </div>
                     {sel.decBreakdown.map(d => (
-                      <div key={d.dec} className="vd-bd-row vd-clickable" onClick={() => setDyTarget({ type: 'decade', value: d.dec })}>
+                      <div key={d.dec} className="vd-bd-row vd-clickable" onClick={() => setDyTarget({ type: 'decade', value: d.dec })} title={`Click to view ${selectedVoter}'s films from the ${d.dec}s`}>
                         <span className="vd-bd-name">{d.dec}s</span>
                         <span className="vd-bd-count">{d.count}</span>
                         <span className={`vd-bd-mean ${scoreClass(d.mean)}`}>{fmt(d.mean, 1)}</span>
@@ -568,37 +595,45 @@ export default function Stats({ voter }) {
                     ))}
                   </div>
                   <div className="vd-col">
-                    <div className="vd-col-title">Favorite Themes ({sel.favKeywords.length})</div>
+                    <div className="vd-col-title">
+                      <span>🏷️ Fav Themes</span>
+                      <span className="vd-col-badge">{sel.favKeywords.length}</span>
+                    </div>
                     {sel.favKeywords.length === 0 ? (
-                      <div style={{ fontSize: 11, color: 'var(--text3)', padding: '4px 6px' }}>Need ≥2 films per theme</div>
+                      <div className="vd-empty-hint">Need ≥2 films per theme</div>
                     ) : (
                       sel.favKeywords.map(k => (
                         <div
                           key={k.name}
                           className="vd-bd-row vd-clickable"
                           onClick={() => setDyTarget({ type: 'keyword', value: k.name })}
+                          title={`Click to view ${selectedVoter}'s films tagged with "${k.name}"`}
                         >
-                          <span className="vd-bd-name" title={`Rated ${fmt(k.mean)} on ${k.count} films`}>🏷️ {k.name}</span>
+                          <span className="vd-bd-name">{k.name}</span>
                           <span className="vd-bd-count">{k.count}</span>
                           <span className={`vd-bd-mean ${scoreClass(k.mean)}`}>
-                            {fmt(k.mean, 1)} <span style={{ fontSize: 10, opacity: 0.8 }}>(+{k.delta.toFixed(1)})</span>
+                            {fmt(k.mean, 1)} <span className="vd-delta">+{k.delta.toFixed(1)}</span>
                           </span>
                         </div>
                       ))
                     )}
                     {sel.lowKeywords.length > 0 && (
                       <>
-                        <div className="vd-col-title" style={{ marginTop: 14 }}>Least Fav Themes</div>
+                        <div className="vd-col-title" style={{ marginTop: 14 }}>
+                          <span>Least Fav Themes</span>
+                          <span className="vd-col-badge">{sel.lowKeywords.length}</span>
+                        </div>
                         {sel.lowKeywords.map(k => (
                           <div
                             key={k.name}
                             className="vd-bd-row vd-clickable"
                             onClick={() => setDyTarget({ type: 'keyword', value: k.name })}
+                            title={`Click to view ${selectedVoter}'s films tagged with "${k.name}"`}
                           >
-                            <span className="vd-bd-name" title={`Rated ${fmt(k.mean)} on ${k.count} films`}>🏷️ {k.name}</span>
+                            <span className="vd-bd-name">{k.name}</span>
                             <span className="vd-bd-count">{k.count}</span>
                             <span className={`vd-bd-mean ${scoreClass(k.mean)}`}>
-                              {fmt(k.mean, 1)} <span style={{ fontSize: 10, opacity: 0.8 }}>({k.delta.toFixed(1)})</span>
+                              {fmt(k.mean, 1)} <span className="vd-delta">{k.delta.toFixed(1)}</span>
                             </span>
                           </div>
                         ))}
