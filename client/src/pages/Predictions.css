@@ -152,6 +152,131 @@
   line-height: 1.25;
 }
 
+/* ── Club Taste Profile ── */
+.preds-taste-profile-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.preds-taste-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.preds-taste-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.preds-taste-sub {
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.preds-taste-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.preds-taste-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.preds-taste-group-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text2);
+}
+
+.preds-taste-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.preds-taste-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  cursor: default;
+}
+
+.preds-taste-chip .chip-name {
+  text-transform: capitalize;
+  font-weight: 600;
+}
+
+.preds-taste-chip .chip-score {
+  color: var(--text2);
+  font-size: 11px;
+}
+
+.preds-taste-chip .chip-delta {
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.preds-taste-chip.chip-pos {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.08);
+}
+.preds-taste-chip.chip-pos .chip-delta {
+  color: #10b981;
+}
+
+.preds-taste-chip.chip-neg {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.08);
+}
+.preds-taste-chip.chip-neg .chip-delta {
+  color: #ef4444;
+}
+
+.badge-thematic {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  color: #a5b4fc;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  text-transform: capitalize;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.badge-thematic.thematic-pos {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #6ee7b7;
+}
+
+.badge-thematic.thematic-neg {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+}
+
 /* ── Highlights Section ── */
 .preds-highlights-section {
   margin-bottom: 28px;

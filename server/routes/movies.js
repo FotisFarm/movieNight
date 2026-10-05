@@ -2,7 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { rankBonus } = require('../scoring');
 const { lookupImdb, searchImdb, getImdbById, extractImdbId } = require('../omdb');
-const { findByImdbId, lookupPosterPath, lookupBackdropPath, lookupMediaPaths, getMovieDetails, lookupMovieRuntime, getMovieTrailer, getMovieWatchProviders } = require('../tmdb');
+const { findByImdbId, lookupPosterPath, lookupBackdropPath, lookupMediaPaths, getMovieDetails, lookupMovieRuntime, getMovieTrailer, getMovieWatchProviders, getMovieKeywords } = require('../tmdb');
 const { fetchLetterboxdRating } = require('../letterboxd');
 const ah = require('../asyncHandler');
 const { enrichMovie, enrichMoviesBatch } = require('../enrich');
@@ -446,11 +446,13 @@ router.post('/', ah(async (req, res) => {
     let runtime = imdb?.runtime || null;
     let posterPath = null;
     let backdropPath = null;
+    let tmdbMovieId = null;
     try {
       if (imdb?.imdbId) {
         const tmdbFound = await findByImdbId(imdb.imdbId);
         if (tmdbFound?.posterPath) posterPath = tmdbFound.posterPath;
         if (tmdbFound?.backdropPath) backdropPath = tmdbFound.backdropPath;
+        if (tmdbFound?.tmdbId) tmdbMovieId = tmdbFound.tmdbId;
         if (!runtime && tmdbFound?.tmdbId) {
           const details = await getMovieDetails(tmdbFound.tmdbId);
           if (details?.runtime) runtime = details.runtime;
@@ -484,9 +486,17 @@ router.post('/', ah(async (req, res) => {
       }
     } catch (_) { /* best effort */ }
 
-    if (imdb?.imdbId || runtime || posterPath || backdropPath || letterboxdRating != null || streamGr) {
-      await db.run(`UPDATE ${targetTable} SET imdb_id = ?, imdb_rating = ?, letterboxd_rating = ?, poster_path = ?, backdrop_path = ?, runtime = ?, stream_gr = ? WHERE id = ?`,
-        imdb?.imdbId ?? null, imdb?.imdbRating ?? null, letterboxdRating ?? null, posterPath ?? null, backdropPath ?? null, runtime ?? null, streamGr ?? null, lastInsertRowid);
+    let movieKeywords = [];
+    try {
+      movieKeywords = await getMovieKeywords(imdb?.imdbId, title.trim(), year.trim(), tmdbMovieId);
+    } catch (_) { /* best effort */ }
+
+    if (imdb?.imdbId || runtime || posterPath || backdropPath || letterboxdRating != null || streamGr || (movieKeywords && movieKeywords.length > 0)) {
+      await db.run(`UPDATE ${targetTable} SET imdb_id = ?, imdb_rating = ?, letterboxd_rating = ?, poster_path = ?, backdrop_path = ?, runtime = ?, stream_gr = ?, keywords = ? WHERE id = ?`,
+        imdb?.imdbId ?? null, imdb?.imdbRating ?? null, letterboxdRating ?? null, posterPath ?? null, backdropPath ?? null, runtime ?? null, streamGr ?? null, movieKeywords.length ? JSON.stringify(movieKeywords) : null, lastInsertRowid);
+      if (movieKeywords.length > 0) {
+        await db.saveMovieKeywords(lastInsertRowid, movieKeywords);
+      }
     }
   } catch (_) { /* film is still added even if metadata lookup is unavailable */ }
 
@@ -543,6 +553,7 @@ router.patch('/:id', ah(async (req, res) => {
         // The poster and backdrop were resolved from that id, so they go too.
         updates.poster_path = null;
         updates.backdrop_path = null;
+        updates.keywords = null;
       } else {
         updates.imdb_id = cleanId;
         const [detail, lbRating] = await Promise.all([
@@ -554,10 +565,12 @@ router.patch('/:id', ah(async (req, res) => {
         if (detail?.runtime && updates.runtime === undefined) updates.runtime = detail.runtime;
         // Re-point the poster and backdrop at the film the new id actually names. A TMDB
         // miss clears it rather than leaving the previous film's artwork.
+        let tmdbMovieId = null;
         try {
           const found = await findByImdbId(cleanId);
           updates.poster_path = found?.posterPath ?? null;
           updates.backdrop_path = found?.backdropPath ?? null;
+          if (found?.tmdbId) tmdbMovieId = found.tmdbId;
           if (!updates.runtime && found?.tmdbId) {
             const tmdbDetails = await getMovieDetails(found.tmdbId);
             if (tmdbDetails?.runtime) updates.runtime = tmdbDetails.runtime;
@@ -566,12 +579,28 @@ router.patch('/:id', ah(async (req, res) => {
           updates.poster_path = null;
           updates.backdrop_path = null;
         }
+
+        try {
+          const movieKeywords = await getMovieKeywords(cleanId, updates.title || movie.title, updates.year || movie.year, tmdbMovieId);
+          if (movieKeywords && movieKeywords.length > 0) {
+            updates.keywords = JSON.stringify(movieKeywords);
+          }
+        } catch (_) {}
       }
     }
 
     if (Object.keys(updates).length > 0) {
       const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');
       await db.run(`UPDATE ${targetTable} SET ${setClause} WHERE id = ?`, ...Object.values(updates), id);
+      if (updates.keywords !== undefined) {
+        if (updates.keywords) {
+          try {
+            await db.saveMovieKeywords(id, JSON.parse(updates.keywords));
+          } catch (_) {}
+        } else {
+          await db.run('DELETE FROM movie_keywords WHERE movie_id = ?', id);
+        }
+      }
     }
 
     const groupId = req.group?.id || 1;

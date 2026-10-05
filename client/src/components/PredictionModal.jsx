@@ -194,6 +194,24 @@ export default function PredictionModal({ film, voters = [], onClose, onToggleWa
                     : 'Director has no other films in Top 10 picks'}
                 </div>
               </div>
+
+              {/* Thematic Affinity */}
+              <div className="pred-calc-card">
+                <div className="pred-calc-card-header">
+                  <span className="pred-calc-title">Thematic Fit</span>
+                  <span className="pred-calc-weight">Affinity</span>
+                </div>
+                <div className="pred-calc-val">
+                  {film.thematicBonus != null && film.thematicBonus !== 0
+                    ? `${film.thematicBonus > 0 ? '+' : ''}${fmt(film.thematicBonus)}`
+                    : '±0,00'}
+                </div>
+                <div className="pred-calc-sub">
+                  {film.thematicMatches && film.thematicMatches.length > 0
+                    ? film.thematicMatches.map(m => `${m.keyword} (${m.delta > 0 ? '+' : ''}${m.delta}★)`).join(' · ')
+                    : 'No matching club themes'}
+                </div>
+              </div>
             </div>
 
             <div className="pred-formula-bar">
@@ -204,7 +222,10 @@ export default function PredictionModal({ film, voters = [], onClose, onToggleWa
                   if (film.letterboxd_rating != null && wLb > 0) parts.push(`(${fmt(film.letterboxd_rating * 2)} LB × ${wLb}%)`);
                   if (film.decAvg != null && wEra > 0) parts.push(`(${fmt(film.decAvg)} Era × ${wEra}%)`);
                   let s = parts.join(' + ') || 'Baseline';
-                  if (film.haloBoost > 0) s += ` + ${fmt(film.haloBoost)} boost`;
+                  if (film.haloBoost > 0) s += ` + ${fmt(film.haloBoost)} halo`;
+                  if (film.thematicBonus != null && film.thematicBonus !== 0) {
+                    s += ` ${film.thematicBonus > 0 ? '+' : '-'} ${fmt(Math.abs(film.thematicBonus))} theme`;
+                  }
                   return s;
                 })()}
               </span>

@@ -263,6 +263,52 @@ export default function Predictions() {
             </div>
           </div>
 
+          {/* ── Club Thematic Wheelhouse Profile ── */}
+          {data.clubTasteProfile && (
+            <div className="preds-taste-profile-card">
+              <div className="preds-taste-header">
+                <div className="preds-taste-title-wrap">
+                  <h2 className="preds-section-title">
+                    <span>🏷️ Club Thematic Wheelhouse</span>
+                  </h2>
+                  <span className="preds-taste-sub">
+                    Subgenres & themes with strongest statistical affinity across your library (baseline avg: {fmt(data.clubTasteProfile.globalMean)}★)
+                  </span>
+                </div>
+              </div>
+
+              <div className="preds-taste-content">
+                <div className="preds-taste-group">
+                  <span className="preds-taste-group-label">🔥 Highest Affinity Themes</span>
+                  <div className="preds-taste-chips">
+                    {data.clubTasteProfile.topAffinities?.map(k => (
+                      <span key={k.keyword} className="preds-taste-chip chip-pos" title={`Raw avg: ${fmt(k.rawAvg)}★ across ${k.count} films rated`}>
+                        <span className="chip-name">{k.keyword}</span>
+                        <span className="chip-score">{fmt(k.score)}★</span>
+                        <span className="chip-delta">+{fmt(k.delta)}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {data.clubTasteProfile.lowAffinities?.length > 0 && (
+                  <div className="preds-taste-group">
+                    <span className="preds-taste-group-label">❄️ Lower Affinity Themes</span>
+                    <div className="preds-taste-chips">
+                      {data.clubTasteProfile.lowAffinities?.map(k => (
+                        <span key={k.keyword} className="preds-taste-chip chip-neg" title={`Raw avg: ${fmt(k.rawAvg)}★ across ${k.count} films rated`}>
+                          <span className="chip-name">{k.keyword}</span>
+                          <span className="chip-score">{fmt(k.score)}★</span>
+                          <span className="chip-delta">{fmt(k.delta)}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* ── Top 10 Highlights & Extremes (Minimal info: Pred, Act, Diff) ── */}
           <div className="preds-highlights-section">
             <div className="preds-highlights-header">
@@ -520,6 +566,14 @@ export default function Predictions() {
                           {(f.imdb_id || f.letterboxd_rating != null) && (
                             <LetterboxdPill imdbId={f.imdb_id} score={f.letterboxd_rating} />
                           )}
+                          {f.thematicMatches && f.thematicMatches.length > 0 && (
+                            <span
+                              className={`badge badge-thematic ${f.thematicMatches[0].delta >= 0 ? 'thematic-pos' : 'thematic-neg'}`}
+                              title={`Club avg for "${f.thematicMatches[0].keyword}": ${fmt(f.thematicMatches[0].score)}★ (${f.thematicMatches[0].count} films)`}
+                            >
+                              🏷️ {f.thematicMatches[0].keyword} {f.thematicMatches[0].delta > 0 ? `+${fmt(f.thematicMatches[0].delta)}` : fmt(f.thematicMatches[0].delta)}★
+                            </span>
+                          )}
                         </div>
                         <div className="preds-film-sub">
                           {f.director}{f.year ? ` · ${f.year}` : ''}
@@ -567,6 +621,14 @@ export default function Predictions() {
                         <span className="preds-m-title">{f.title}</span>
                         {f.mn && <span className="badge badge-mn">MN</span>}
                         <WatchlistBadge id={f.id} watchlist={f.watchlist} onToggle={handleWatchlistToggle} />
+                        {f.thematicMatches && f.thematicMatches.length > 0 && (
+                          <span
+                            className={`badge badge-thematic ${f.thematicMatches[0].delta >= 0 ? 'thematic-pos' : 'thematic-neg'}`}
+                            title={`Club avg for "${f.thematicMatches[0].keyword}": ${fmt(f.thematicMatches[0].score)}★`}
+                          >
+                            🏷️ {f.thematicMatches[0].keyword}
+                          </span>
+                        )}
                       </div>
                       <span className="preds-m-sub">{f.director}{f.year ? ` · ${f.year}` : ''}</span>
                     </div>

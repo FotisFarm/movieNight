@@ -5,6 +5,17 @@ const { VOTERS, GROUP_SIZE } = require('../config');
 
 const router = express.Router();
 
+function parseKeywords(raw) {
+  if (Array.isArray(raw)) return raw;
+  if (!raw || typeof raw !== 'string') return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 // POST /api/session/contenders
 // Calculates personalized consensus contenders for "Tonight's Session"
 // tailored to the exact attendees in the room.
@@ -44,7 +55,7 @@ router.post('/contenders', ah(async (req, res) => {
 
   // Independent full-table reads in one concurrent round-trip
   const [allMovies, allRatings, allTop3, allGroupStatus, allGroupWlVotes, legacyWlVotes] = await Promise.all([
-    db.all('SELECT id, title, year, director, runtime, poster_path, watchlist, mn, cinobo, stream_gr FROM movies'),
+    db.all('SELECT id, title, year, director, runtime, poster_path, watchlist, mn, cinobo, stream_gr, keywords FROM movies'),
     db.all('SELECT movie_id, voter, score FROM ratings'),
     db.all('SELECT movie_id, voter, rank FROM top3'),
     db.all('SELECT movie_id, mn, watchlist FROM group_movie_status WHERE group_id = ?', groupId),
@@ -62,6 +73,7 @@ router.post('/contenders', ah(async (req, res) => {
     const st = statusByMovie.get(m.id);
     m.watchlist = st ? st.watchlist : 0;
     m.mn = st ? st.mn : 0;
+    m.parsedKeywords = parseKeywords(m.keywords);
   }
 
   const movieById = new Map(allMovies.map(m => [m.id, m]));
@@ -71,15 +83,20 @@ router.post('/contenders', ah(async (req, res) => {
   const voterRatings = {};
   const voterDecadeAvg = {};
   const voterDirAvg = {};
+  const voterKwScores = {};
+  const groupKwScores = {};
+  const groupRatingsList = [];
 
   for (const v of groupVoters) {
     voterRatings[v] = [];
     voterDecadeAvg[v] = {};
     voterDirAvg[v] = {};
+    voterKwScores[v] = {};
   }
 
   for (const r of allRatings) {
     if (groupVoters.includes(r.voter)) {
+      groupRatingsList.push(r);
       (ratingsByMovie[r.movie_id] ||= []).push(r);
       if (voterRatings[r.voter]) {
         voterRatings[r.voter].push(r);
@@ -92,6 +109,10 @@ router.post('/contenders', ah(async (req, res) => {
           if (m.director) {
             (voterDirAvg[r.voter][m.director] ||= []).push(r.score);
           }
+          for (const kw of (m.parsedKeywords || [])) {
+            (voterKwScores[r.voter][kw] ||= []).push(r.score);
+            (groupKwScores[kw] ||= []).push(r.score);
+          }
         }
       }
     }
@@ -99,9 +120,12 @@ router.post('/contenders', ah(async (req, res) => {
 
   // Voter baselines & means
   const voterMean = {};
+  const voterKwAvg = {};
   for (const v of groupVoters) {
+    voterKwAvg[v] = {};
     const scores = voterRatings[v].map(r => r.score);
-    voterMean[v] = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 7.0;
+    const vMean = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 7.0;
+    voterMean[v] = vMean;
     for (const dec in voterDecadeAvg[v]) {
       const arr = voterDecadeAvg[v][dec];
       voterDecadeAvg[v][dec] = arr.reduce((a, b) => a + b, 0) / arr.length;
@@ -109,6 +133,27 @@ router.post('/contenders', ah(async (req, res) => {
     for (const dir in voterDirAvg[v]) {
       const arr = voterDirAvg[v][dir];
       voterDirAvg[v][dir] = arr.reduce((a, b) => a + b, 0) / arr.length;
+    }
+    for (const kw in voterKwScores[v]) {
+      const arr = voterKwScores[v][kw];
+      const n = arr.length;
+      const raw = arr.reduce((a, b) => a + b, 0) / n;
+      voterKwAvg[v][kw] = (n / (n + 2)) * raw + (2 / (n + 2)) * vMean;
+    }
+  }
+
+  // Group-wide keyword affinity
+  const groupMean = groupRatingsList.length > 0
+    ? groupRatingsList.reduce((a, b) => a + b.score, 0) / groupRatingsList.length
+    : 7.0;
+  const roomKwStats = new Map();
+  for (const [kw, scores] of Object.entries(groupKwScores)) {
+    if (scores.length >= 2) {
+      const n = scores.length;
+      const raw = scores.reduce((a, b) => a + b.score, 0) / n;
+      const shrunk = (n / (n + 2)) * raw + (2 / (n + 2)) * groupMean;
+      const delta = shrunk - groupMean;
+      roomKwStats.set(kw, { keyword: kw, count: n, score: shrunk, delta });
     }
   }
 
@@ -217,6 +262,21 @@ router.post('/contenders', ah(async (req, res) => {
     const wlVoters = wlVotesByMovie[m.id] || new Set();
     const existingRatingsMap = new Map((ratingsByMovie[m.id] || []).map(r => [r.voter, r.score]));
 
+    // Room thematic keyword affinity for this film
+    const matchedKws = [];
+    for (const kw of (m.parsedKeywords || [])) {
+      const stat = roomKwStats.get(kw);
+      if (stat && stat.count >= 2) matchedKws.push(stat);
+    }
+    matchedKws.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+
+    let thematicBadge = null;
+    if (matchedKws.length > 0 && Math.abs(matchedKws[0].delta) >= 0.25) {
+      const topTag = matchedKws[0];
+      const sgn = topTag.delta > 0 ? '+' : '';
+      thematicBadge = `🏷️ ${topTag.keyword} (${sgn}${topTag.delta.toFixed(1)}★)`;
+    }
+
     const attendeeBreakdown = attendees.map(voter => {
       const actualScore = existingRatingsMap.get(voter);
       if (actualScore != null) {
@@ -235,6 +295,20 @@ router.post('/contenders', ah(async (req, res) => {
 
       // Bayesian blend of director track record & decade affinity for this voter
       let pred = vDir !== null ? (vDir * 0.55 + vDec * 0.45) : vDec;
+
+      // Personal keyword affinity modifier for this attendee
+      let voterKwBonus = 0;
+      const vMatches = [];
+      for (const kw of (m.parsedKeywords || [])) {
+        if (voterKwAvg[voter]?.[kw] !== undefined) {
+          vMatches.push(voterKwAvg[voter][kw] - vMean);
+        }
+      }
+      if (vMatches.length > 0) {
+        const avgVoterDelta = vMatches.reduce((a, b) => a + b, 0) / vMatches.length;
+        voterKwBonus = Math.max(-0.4, Math.min(0.4, avgVoterDelta));
+        pred += voterKwBonus;
+      }
 
       // Top 10 director halo boost
       const hasTop10 = voterTopDirs[voter]?.has(m.director) || false;
@@ -337,6 +411,14 @@ router.post('/contenders', ah(async (req, res) => {
       wildcard: spread >= 1.6,
       spread,
       vibeBadge,
+      thematicBadge,
+      thematicMatches: matchedKws.slice(0, 3).map(k => ({
+        keyword: k.keyword,
+        count: k.count,
+        score: Math.round(k.score * 10) / 10,
+        delta: Math.round(k.delta * 10) / 10,
+      })),
+      keywords: m.parsedKeywords || [],
       attendeeBreakdown,
     };
   });

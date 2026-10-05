@@ -562,6 +562,14 @@ export default function Recommendations() {
                             🎬 Halo
                           </span>
                         )}
+                        {f.thematicMatches && f.thematicMatches.length > 0 && (
+                          <span
+                            className={`badge badge-thematic ${f.thematicMatches[0].delta >= 0 ? 'thematic-pos' : 'thematic-neg'}`}
+                            title={`Club avg for "${f.thematicMatches[0].keyword}": ${f.thematicMatches[0].score}★ (${f.thematicMatches[0].count} films rated)`}
+                          >
+                            🏷️ {f.thematicMatches[0].keyword} {f.thematicMatches[0].delta > 0 ? `+${f.thematicMatches[0].delta.toFixed(1)}` : `${f.thematicMatches[0].delta.toFixed(1)}`}★
+                          </span>
+                        )}
                         {f.voterCount === 0 && (f.letterboxd_rating >= 3.8 || f.predictedScore >= 8.0) && (
                           <span className="badge badge-gem" title="Unrated hidden gem with strong acclaim">
                             💎 Gem

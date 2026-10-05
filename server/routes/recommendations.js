@@ -6,6 +6,17 @@ const ah = require('../asyncHandler');
 const router = express.Router();
 const { GROUP_SIZE, VOTERS } = require('../config');
 
+function parseKeywords(raw) {
+  if (Array.isArray(raw)) return raw;
+  if (!raw || typeof raw !== 'string') return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 router.get('/', ah(async (req, res) => {
   // Parse bias weights from query params (default 0.35 / 0.40 / 0.25 / 0.10)
   const rawDw  = Math.max(0, parseFloat(req.query.dw  !== undefined ? req.query.dw  : 0.35));
@@ -42,6 +53,7 @@ router.get('/', ah(async (req, res) => {
     const st = statusByMovie.get(m.id);
     m.watchlist = st ? st.watchlist : 0;
     m.mn = st ? st.mn : 0;
+    m.parsedKeywords = parseKeywords(m.keywords);
   }
 
   const movieById  = new Map(allMovies.map(m => [m.id, m]));
@@ -68,21 +80,50 @@ router.get('/', ah(async (req, res) => {
     return Math.min(10, fair + boost);
   }
 
-  // Build director and decade averages from fully-eligible rated films (≥ minGroupVoters)
+  // Build director, decade, and keyword averages from fully-eligible rated films (≥ minGroupVoters)
   const dirScores      = {};  // director → [fairBoosted]
   const decadeScores   = {};  // decade   → [fairBoosted]
   const top3ByDirector = {};  // director → [top3 rows]
+  const kwFilms        = {};  // keyword  → [fairBoosted]
+  const allRatedScores = [];
 
   for (const m of allMovies) {
     const fb = computeFairBoosted(m.id);
-    if (fb !== null && m.director) {
-      (dirScores[m.director] = dirScores[m.director] || []).push(fb);
-    }
-    if (fb !== null && m.year) {
-      const decade = Math.floor(parseInt(m.year) / 10) * 10;
-      if (!isNaN(decade)) (decadeScores[decade] = decadeScores[decade] || []).push(fb);
+    if (fb !== null) {
+      allRatedScores.push(fb);
+      if (m.director) {
+        (dirScores[m.director] = dirScores[m.director] || []).push(fb);
+      }
+      if (m.year) {
+        const decade = Math.floor(parseInt(m.year) / 10) * 10;
+        if (!isNaN(decade)) (decadeScores[decade] = decadeScores[decade] || []).push(fb);
+      }
+      for (const kw of m.parsedKeywords) {
+        (kwFilms[kw] = kwFilms[kw] || []).push(fb);
+      }
     }
   }
+
+  const globalMean = allRatedScores.length > 0 ? (allRatedScores.reduce((a, b) => a + b, 0) / allRatedScores.length) : 7.0;
+
+  // Build shrunk keyword affinity table (Empirical Bayes shrinkage, C=2)
+  const keywordStats = new Map();
+  for (const [kw, scores] of Object.entries(kwFilms)) {
+    if (scores.length >= 2) {
+      const n = scores.length;
+      const rawAvg = scores.reduce((a, b) => a + b, 0) / n;
+      const shrunk = (n / (n + 2)) * rawAvg + (2 / (n + 2)) * globalMean;
+      const delta = shrunk - globalMean;
+      keywordStats.set(kw, {
+        keyword: kw,
+        count: n,
+        rawAvg,
+        score: shrunk,
+        delta,
+      });
+    }
+  }
+
   for (const t of groupTop3) {
     const m = movieById.get(t.movie_id);
     if (m?.director) {
@@ -145,12 +186,35 @@ router.get('/', ah(async (req, res) => {
       haloBoost = Math.min(0.75, priorPoints * breadthMultiplier * twRate);
     }
 
-    // Prior: Base expectation + Top 10 Halo Boost (capped at 10.0)
+    // Thematic / Keyword matches
+    const matchedKws = [];
+    for (const kw of (m.parsedKeywords || [])) {
+      const stat = keywordStats.get(kw);
+      if (stat) matchedKws.push(stat);
+    }
+    matchedKws.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+
+    let thematicBonus = 0;
+    if (matchedKws.length > 0) {
+      const topKws = matchedKws.slice(0, 5);
+      const totalW = topKws.reduce((a, k) => a + (k.count / (k.count + 2)), 0);
+      const avgDelta = topKws.reduce((a, k) => a + k.delta * (k.count / (k.count + 2)), 0) / totalW;
+      thematicBonus = Math.max(-0.60, Math.min(0.60, avgDelta));
+    }
+
+    const thematicMatches = matchedKws.slice(0, 3).map(k => ({
+      keyword: k.keyword,
+      count: k.count,
+      score: Math.round(k.score * 10) / 10,
+      delta: Math.round(k.delta * 10) / 10,
+    }));
+
+    // Prior: Base expectation + Top 10 Halo Boost + Thematic Bonus (bounded 1.0 to 10.0)
     let prior = null;
     if (base !== null) {
-      prior = Math.min(10.0, base + haloBoost);
-    } else if (haloBoost > 0) {
-      prior = haloBoost;
+      prior = Math.min(10.0, Math.max(1.0, base + haloBoost + thematicBonus));
+    } else if (haloBoost > 0 || thematicBonus !== 0) {
+      prior = Math.min(10.0, Math.max(1.0, globalMean + haloBoost + thematicBonus));
     }
 
     // Bayesian blend: trust actual score more as voterCount grows
@@ -177,7 +241,13 @@ router.get('/', ah(async (req, res) => {
     if (dirAvg !== null && rawDw > 0) {
       parts.push(`${m.director} avg ${dirAvg.toFixed(1)} (${dirVals.length} film${dirVals.length !== 1 ? 's' : ''})`);
     } else if (m.director && rawDw > 0) {
-      parts.push(`${m.director} (debut)`);
+      if (thematicMatches.length > 0) {
+        const top = thematicMatches[0];
+        const sgn = top.delta > 0 ? '+' : '';
+        parts.push(`${m.director} (debut · fit: ${top.keyword} ${sgn}${top.delta.toFixed(1)}★)`);
+      } else {
+        parts.push(`${m.director} (debut)`);
+      }
     }
     if (decAvg !== null && decade && rawEw > 0) {
       parts.push(`${decade}s avg ${decAvg.toFixed(1)}`);
@@ -185,6 +255,11 @@ router.get('/', ah(async (req, res) => {
     if (haloBoost > 0) {
       const filmText = priorUniqueFilms > 1 ? `${priorUniqueFilms} masterworks` : '1 masterwork';
       parts.push(`Top 10 boost +${haloBoost.toFixed(2)} (${filmText})`);
+    }
+    if (dirAvg !== null && thematicMatches.length > 0 && Math.abs(thematicBonus) >= 0.15) {
+      const top = thematicMatches[0];
+      const sgn = top.delta > 0 ? '+' : '';
+      parts.push(`Theme: ${top.keyword} (${sgn}${top.delta.toFixed(1)}★)`);
     }
     if (actualScore !== null) {
       parts.push(`${voterCount} vote${voterCount > 1 ? 's' : ''} so far`);
@@ -209,6 +284,9 @@ router.get('/', ah(async (req, res) => {
       decAvg:  decAvg  !== null ? Math.round(decAvg  * 100) / 100 : null,
       decade,
       top10Bonus: Math.round(haloBoost * 100) / 100,
+      thematicBonus: Math.round(thematicBonus * 100) / 100,
+      thematicMatches,
+      keywords: m.parsedKeywords || [],
       explanation,
     };
   });
@@ -284,23 +362,36 @@ router.get('/accuracy', ah(async (req, res) => {
     if (fb !== null) fairBoostedMap.set(m.id, fb);
   }
 
-  // Index eligible movies by director and decade
+  // Index eligible movies by director, decade, and keywords
   const dirFilmsMap = {};
   const decadeFilmsMap = {};
+  const kwFilmsMap = {};
+  const allEligibleScores = [];
+
   for (const m of allMovies) {
+    m.parsedKeywords = parseKeywords(m.keywords);
     const fb = fairBoostedMap.get(m.id);
-    if (fb != null && m.director) {
-      if (!dirFilmsMap[m.director]) dirFilmsMap[m.director] = [];
-      dirFilmsMap[m.director].push({ id: m.id, score: fb });
-    }
-    if (fb != null && m.year) {
-      const dec = Math.floor(parseInt(m.year) / 10) * 10;
-      if (!isNaN(dec)) {
-        if (!decadeFilmsMap[dec]) decadeFilmsMap[dec] = [];
-        decadeFilmsMap[dec].push({ id: m.id, score: fb });
+    if (fb != null) {
+      allEligibleScores.push(fb);
+      if (m.director) {
+        if (!dirFilmsMap[m.director]) dirFilmsMap[m.director] = [];
+        dirFilmsMap[m.director].push({ id: m.id, score: fb });
+      }
+      if (m.year) {
+        const dec = Math.floor(parseInt(m.year) / 10) * 10;
+        if (!isNaN(dec)) {
+          if (!decadeFilmsMap[dec]) decadeFilmsMap[dec] = [];
+          decadeFilmsMap[dec].push({ id: m.id, score: fb });
+        }
+      }
+      for (const kw of m.parsedKeywords) {
+        if (!kwFilmsMap[kw]) kwFilmsMap[kw] = [];
+        kwFilmsMap[kw].push({ id: m.id, score: fb });
       }
     }
   }
+
+  const globalMean = allEligibleScores.length > 0 ? (allEligibleScores.reduce((a, b) => a + b, 0) / allEligibleScores.length) : 7.0;
 
   // Index top3 picks by director
   const top3ByDirector = {};
@@ -337,6 +428,35 @@ router.get('/accuracy', ah(async (req, res) => {
       ? otherDecFilms.reduce((a, b) => a + b.score, 0) / otherDecFilms.length
       : null;
 
+    // Leave-One-Out for keywords: exclude m.id
+    const matchedKws = [];
+    for (const kw of (m.parsedKeywords || [])) {
+      const otherKwFilms = (kwFilmsMap[kw] || []).filter(x => x.id !== m.id);
+      if (otherKwFilms.length >= 2) {
+        const n = otherKwFilms.length;
+        const rawAvg = otherKwFilms.reduce((a, b) => a + b.score, 0) / n;
+        const shrunk = (n / (n + 2)) * rawAvg + (2 / (n + 2)) * globalMean;
+        const delta = shrunk - globalMean;
+        matchedKws.push({ keyword: kw, count: n, score: shrunk, delta });
+      }
+    }
+    matchedKws.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+
+    let thematicBonus = 0;
+    if (matchedKws.length > 0) {
+      const topKws = matchedKws.slice(0, 5);
+      const totalW = topKws.reduce((a, k) => a + (k.count / (k.count + 2)), 0);
+      const avgDelta = topKws.reduce((a, k) => a + k.delta * (k.count / (k.count + 2)), 0) / totalW;
+      thematicBonus = Math.max(-0.60, Math.min(0.60, avgDelta));
+    }
+
+    const thematicMatches = matchedKws.slice(0, 3).map(k => ({
+      keyword: k.keyword,
+      count: k.count,
+      score: Math.round(k.score * 10) / 10,
+      delta: Math.round(k.delta * 10) / 10,
+    }));
+
     const lbScore = (m.letterboxd_rating != null && !isNaN(m.letterboxd_rating)) ? m.letterboxd_rating * 2.0 : null;
 
     // Base prior from dynamically weighted components (Director, Letterboxd, Decade Era)
@@ -364,9 +484,9 @@ router.get('/accuracy', ah(async (req, res) => {
 
     let prior = null;
     if (base !== null) {
-      prior = Math.min(10.0, base + haloBoost);
-    } else if (haloBoost > 0) {
-      prior = haloBoost;
+      prior = Math.min(10.0, Math.max(1.0, base + haloBoost + thematicBonus));
+    } else if (haloBoost > 0 || thematicBonus !== 0) {
+      prior = Math.min(10.0, Math.max(1.0, globalMean + haloBoost + thematicBonus));
     }
 
     if (prior === null) continue;
@@ -425,6 +545,9 @@ router.get('/accuracy', ah(async (req, res) => {
       dirAvg: dirAvg !== null ? Math.round(dirAvg * 100) / 100 : null,
       decAvg: decAvg !== null ? Math.round(decAvg * 100) / 100 : null,
       haloBoost: Math.round(haloBoost * 100) / 100,
+      thematicBonus: Math.round(thematicBonus * 100) / 100,
+      thematicMatches,
+      keywords: m.parsedKeywords || [],
       hasDirectorTrack: dirAvg !== null,
       otherDirFilmsCount: otherDirFilms.length,
       otherDecFilmsCount: otherDecFilms.length,
@@ -458,6 +581,27 @@ router.get('/accuracy', ah(async (req, res) => {
     ? Math.round((withDir.reduce((a, b) => a + b.absError, 0) / withDir.length) * 100) / 100
     : null;
 
+  // Aggregate club taste profile across all rated films
+  const clubKeywords = [];
+  for (const [kw, list] of Object.entries(kwFilmsMap)) {
+    if (list.length >= 3) {
+      const n = list.length;
+      const rawAvg = list.reduce((a, b) => a + b.score, 0) / n;
+      const shrunk = (n / (n + 2)) * rawAvg + (2 / (n + 2)) * globalMean;
+      const delta = shrunk - globalMean;
+      clubKeywords.push({
+        keyword: kw,
+        count: n,
+        score: Math.round(shrunk * 10) / 10,
+        rawAvg: Math.round(rawAvg * 10) / 10,
+        delta: Math.round(delta * 10) / 10,
+      });
+    }
+  }
+
+  const topClubAffinities = [...clubKeywords].filter(k => k.delta > 0).sort((a, b) => b.delta - a.delta).slice(0, 12);
+  const lowClubAffinities = [...clubKeywords].filter(k => k.delta < 0).sort((a, b) => a.delta - b.delta).slice(0, 8);
+
   // Top 10 highlights & extremes
   const topBullseyes = [...evaluatedFilms].sort((a, b) => a.absError - b.absError).slice(0, 10);
   const topSurprises = [...evaluatedFilms].sort((a, b) => b.diff - a.diff).slice(0, 10);
@@ -473,6 +617,12 @@ router.get('/accuracy', ah(async (req, res) => {
       withinOneCount: withinOne,
       withinOnePct: total > 0 ? Math.round((withinOne / total) * 100) : 0,
       directorTrackCount: withDir.length,
+      globalMean: Math.round(globalMean * 100) / 100,
+    },
+    clubTasteProfile: {
+      globalMean: Math.round(globalMean * 100) / 100,
+      topAffinities: topClubAffinities,
+      lowAffinities: lowClubAffinities,
     },
     topBullseyes,
     topSurprises,

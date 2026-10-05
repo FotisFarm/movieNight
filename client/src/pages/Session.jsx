@@ -1087,6 +1087,14 @@ export default function Session({ voter }) {
                             {movie.vibeBadge}
                           </span>
                         )}
+                        {movie.thematicBadge && (
+                          <span
+                            className="signal-badge thematic-badge"
+                            title={movie.thematicMatches?.map(m => `${m.keyword}: ${m.delta > 0 ? '+' : ''}${m.delta}★ (${m.count} films)`).join(' · ') || movie.thematicBadge}
+                          >
+                            {movie.thematicBadge}
+                          </span>
+                        )}
                         {movie.attendeeBreakdown?.map(a => (
                           <span
                             key={a.voter}

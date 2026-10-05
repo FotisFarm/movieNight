@@ -7,6 +7,17 @@ const db = require('./db');
 const { rankBonus } = require('./scoring');
 const { VOTERS, GROUP_SIZE } = require('./config');
 
+function parseKeywords(raw) {
+  if (Array.isArray(raw)) return raw;
+  if (!raw || typeof raw !== 'string') return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 let cachedGroup1 = null;
 let cachedGroup1Time = 0;
 async function getOriginalsGroup() {
@@ -153,6 +164,7 @@ async function enrichMovie(movie, options = {}) {
 
   return {
     ...movie,
+    keywords: parseKeywords(movie.keywords),
     mn: isMn,
     watchlist: isWatchlist,
     ratings: ratingsMap,
@@ -345,6 +357,7 @@ async function enrichMoviesBatch(movies, options = {}) {
 
     return {
       ...movie,
+      keywords: parseKeywords(movie.keywords),
       mn,
       watchlist,
       ratings,

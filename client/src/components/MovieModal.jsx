@@ -416,6 +416,15 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                   {editYear ? ` · ${editYear}` : ''}
                   {movie.runtime ? ` · ${formatRuntime(movie.runtime)}` : ''}
                 </div>
+                {movie.keywords && movie.keywords.length > 0 && (
+                  <div className="movie-modal-keywords">
+                    {movie.keywords.map(kw => (
+                      <span key={kw} className="movie-modal-kw-tag">
+                        🏷️ {kw}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </div>

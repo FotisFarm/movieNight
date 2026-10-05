@@ -250,6 +250,30 @@ async function getMovieWatchProviders(imdbId, title, year, region = 'GR') {
   }
 }
 
+// Fetches TMDB keywords (themes, subgenres, tone) for a movie
+async function getMovieKeywords(imdbId, title, year, knownTmdbId) {
+  let tmdbId = knownTmdbId || null;
+  if (!tmdbId && imdbId) {
+    const byId = await findByImdbId(imdbId);
+    if (byId?.tmdbId) tmdbId = byId.tmdbId;
+  }
+  if (!tmdbId && title) {
+    const [first] = await searchMovie(title, year);
+    if (first?.tmdbId) tmdbId = first.tmdbId;
+  }
+  if (!tmdbId) return [];
+
+  try {
+    const data = await tmdbFetch(`/movie/${tmdbId}/keywords`);
+    const list = data?.keywords || [];
+    return list
+      .map(k => ({ id: k.id, name: String(k.name || '').toLowerCase().trim() }))
+      .filter(k => k.name.length > 0);
+  } catch {
+    return [];
+  }
+}
+
 module.exports = {
   findByImdbId,
   searchMovie,
@@ -261,5 +285,8 @@ module.exports = {
   lookupMovieRuntime,
   getMovieTrailer,
   getMovieWatchProviders,
+  getMovieKeywords,
+  tmdbFetch,
 };
+
 

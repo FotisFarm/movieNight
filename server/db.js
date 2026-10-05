@@ -131,8 +131,17 @@ async function init() {
       watchlist INTEGER NOT NULL DEFAULT 0,
       cinobo    TEXT    DEFAULT '',
       tokens    TEXT    DEFAULT '',
-      token_pts INTEGER NOT NULL DEFAULT 0
+      token_pts INTEGER NOT NULL DEFAULT 0,
+      keywords  TEXT    DEFAULT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS movie_keywords (
+      movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+      keyword  TEXT    NOT NULL COLLATE NOCASE,
+      PRIMARY KEY (movie_id, keyword)
+    );
+    CREATE INDEX IF NOT EXISTS idx_movie_keywords_kw ON movie_keywords(keyword);
+    CREATE INDEX IF NOT EXISTS idx_movie_keywords_movie ON movie_keywords(movie_id);
 
     CREATE TABLE IF NOT EXISTS ratings (
       id       INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -277,6 +286,19 @@ async function init() {
   // Letterboxd rating (5-star scale with 2 decimals)
   try { await client.execute('ALTER TABLE movies ADD COLUMN letterboxd_rating REAL DEFAULT NULL'); } catch (_) {}
   try { await client.execute('ALTER TABLE movies ADD COLUMN letterboxd_updated_at TEXT DEFAULT NULL'); } catch (_) {}
+  // TMDB keywords & thematic metadata
+  try { await client.execute('ALTER TABLE movies ADD COLUMN keywords TEXT DEFAULT NULL'); } catch (_) {}
+  try {
+    await client.executeMultiple(`
+      CREATE TABLE IF NOT EXISTS movie_keywords (
+        movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+        keyword  TEXT    NOT NULL COLLATE NOCASE,
+        PRIMARY KEY (movie_id, keyword)
+      );
+      CREATE INDEX IF NOT EXISTS idx_movie_keywords_kw ON movie_keywords(keyword);
+      CREATE INDEX IF NOT EXISTS idx_movie_keywords_movie ON movie_keywords(movie_id);
+    `);
+  } catch (_) {}
 
   // Readable list URLs (/lists/christougenna-2026). The column is added
   // nullable — SQLite can't add a UNIQUE column — then every list without one
@@ -291,6 +313,7 @@ async function init() {
     await backfillInitialLetterboxd();
     await backfillInitialBackdrops();
     await backfillInitialStreaming();
+    await backfillInitialKeywords();
     await backfillListSlugs();
   }
 
@@ -451,10 +474,12 @@ async function init() {
         backdrop_path     TEXT    DEFAULT NULL,
         stream_gr         TEXT    DEFAULT NULL,
         runtime           INTEGER DEFAULT NULL,
-        letterboxd_rating REAL    DEFAULT NULL
+        letterboxd_rating REAL    DEFAULT NULL,
+        keywords          TEXT    DEFAULT NULL
       );
       try { await client.execute('ALTER TABLE sandbox_movies ADD COLUMN backdrop_path TEXT DEFAULT NULL'); } catch (_) {}
       try { await client.execute('ALTER TABLE sandbox_movies ADD COLUMN stream_gr TEXT DEFAULT NULL'); } catch (_) {}
+      try { await client.execute('ALTER TABLE sandbox_movies ADD COLUMN keywords TEXT DEFAULT NULL'); } catch (_) {}
 
       CREATE TABLE IF NOT EXISTS sandbox_lists (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -497,7 +522,7 @@ async function init() {
         m.rank_global, m.mn,
         COALESCE(s.watchlist, m.watchlist) AS watchlist,
         m.cinobo, m.tokens, m.token_pts,
-        m.imdb_id, m.imdb_rating, m.letterboxd_rating, m.poster_path, m.backdrop_path, m.stream_gr, m.runtime
+        m.imdb_id, m.imdb_rating, m.letterboxd_rating, m.poster_path, m.backdrop_path, m.stream_gr, m.runtime, m.keywords
       FROM movies m
       LEFT JOIN sandbox_watchlist_overrides s ON s.movie_id = m.id
       UNION ALL
@@ -506,7 +531,7 @@ async function init() {
         sm.rank_global, sm.mn,
         COALESCE(s.watchlist, sm.watchlist) AS watchlist,
         sm.cinobo, sm.tokens, sm.token_pts,
-        sm.imdb_id, sm.imdb_rating, sm.letterboxd_rating, sm.poster_path, sm.backdrop_path, sm.stream_gr, sm.runtime
+        sm.imdb_id, sm.imdb_rating, sm.letterboxd_rating, sm.poster_path, sm.backdrop_path, sm.stream_gr, sm.runtime, sm.keywords
       FROM sandbox_movies sm
       LEFT JOIN sandbox_watchlist_overrides s ON s.movie_id = sm.id;
 
@@ -580,7 +605,7 @@ async function init() {
       SELECT
         m.id, m.director, m.title, m.year,
         m.mn, m.watchlist, m.cinobo, m.tokens, m.token_pts,
-        m.imdb_id, m.imdb_rating, m.letterboxd_rating, m.poster_path, m.backdrop_path, m.stream_gr, m.runtime,
+        m.imdb_id, m.imdb_rating, m.letterboxd_rating, m.poster_path, m.backdrop_path, m.stream_gr, m.runtime, m.keywords,
         r.voter_count,
         r.score_sum,
         r.fair_score,
@@ -622,7 +647,7 @@ async function init() {
       SELECT
         m.id, m.director, m.title, m.year,
         m.mn, m.watchlist, m.cinobo, m.tokens, m.token_pts,
-        m.imdb_id, m.imdb_rating, m.letterboxd_rating, m.poster_path, m.backdrop_path, m.stream_gr, m.runtime,
+        m.imdb_id, m.imdb_rating, m.letterboxd_rating, m.poster_path, m.backdrop_path, m.stream_gr, m.runtime, m.keywords,
         r.voter_count,
         r.score_sum,
         r.fair_score,
@@ -818,6 +843,54 @@ async function backfillInitialStreaming() {
   }
 }
 
+async function backfillInitialKeywords() {
+  try {
+    const existing = await get("SELECT COUNT(keywords) AS c FROM movies WHERE keywords IS NOT NULL AND keywords != ''");
+    if (existing && Number(existing.c) >= 500) {
+      return;
+    }
+
+    let data;
+    try {
+      data = require('./initial-keywords.json');
+    } catch (_) {
+      try {
+        data = require('./data/initial-keywords.json');
+      } catch (e) {
+        console.warn('[db] Could not load initial-keywords.json:', e.message);
+        return;
+      }
+    }
+
+    const entries = Object.entries(data).filter(([_, kws]) => Array.isArray(kws) && kws.length > 0);
+    if (!entries.length) return;
+    console.log(`[db] Backfilling ${entries.length} movie keywords into database...`);
+
+    const CHUNK = 100;
+    for (let i = 0; i < entries.length; i += CHUNK) {
+      const slice = entries.slice(i, i + CHUNK);
+      const whenClauses = slice.map(([id, kws]) => `WHEN ${parseInt(id, 10)} THEN '${JSON.stringify(kws).replace(/'/g, "''")}'`).join(' ');
+      const ids = slice.map(([id]) => parseInt(id, 10)).join(',');
+      const sql = `UPDATE movies SET keywords = CASE id ${whenClauses} END WHERE id IN (${ids}) AND (keywords IS NULL OR keywords = '')`;
+      await run(sql);
+    }
+
+    for (const [idStr, kws] of entries) {
+      const movieId = parseInt(idStr, 10);
+      for (const kw of kws) {
+        try {
+          await run('INSERT OR IGNORE INTO movie_keywords (movie_id, keyword) VALUES (?, ?)', movieId, kw);
+        } catch (_) {}
+      }
+    }
+
+    const after = await get("SELECT COUNT(keywords) AS c FROM movies WHERE keywords IS NOT NULL AND keywords != ''");
+    console.log(`[db] Movie keywords backfilled successfully. Total with keywords: ${after?.c}`);
+  } catch (err) {
+    console.warn('[db] Note: backfillInitialKeywords notice:', err.message);
+  }
+}
+
 async function initMultiGroup() {
   try {
     const userCountRow = await get('SELECT COUNT(*) AS c FROM users');
@@ -925,4 +998,19 @@ async function initMultiGroup() {
   }
 }
 
-module.exports = { client, get, all, run, transaction, init, rewriteSql };
+async function saveMovieKeywords(movieId, keywords) {
+  if (!movieId || !Array.isArray(keywords)) return;
+  const kwJson = JSON.stringify(keywords);
+  const targetTable = (SANDBOX_MODE && movieId >= 1000000) ? 'sandbox_movies' : 'movies';
+  await run(`UPDATE ${targetTable} SET keywords = ? WHERE id = ?`, kwJson, movieId);
+  if (!SANDBOX_MODE || movieId < 1000000) {
+    await run('DELETE FROM movie_keywords WHERE movie_id = ?', movieId);
+    for (const kw of keywords) {
+      if (typeof kw === 'string' && kw.trim()) {
+        await run('INSERT OR IGNORE INTO movie_keywords (movie_id, keyword) VALUES (?, ?)', movieId, kw.trim().toLowerCase());
+      }
+    }
+  }
+}
+
+module.exports = { client, get, all, run, transaction, init, rewriteSql, saveMovieKeywords };

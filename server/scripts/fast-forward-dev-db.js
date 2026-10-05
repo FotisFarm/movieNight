@@ -281,6 +281,30 @@ async function testWriteAccess(httpsUrl, token) {
   }
 
   // 6. Execute restore cleanly
+  console.log(`⚡ Disabling foreign keys for restore...`);
+  try { await client.execute('PRAGMA foreign_keys = OFF'); } catch (_) {}
+
+  // Ensure base users and groups tables exist so FK definitions in dump don't fail
+  try {
+    await client.executeMultiple(`
+      CREATE TABLE IF NOT EXISTS users (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        username      TEXT    NOT NULL COLLATE NOCASE UNIQUE,
+        display_name  TEXT    NOT NULL,
+        password_hash TEXT    NOT NULL,
+        is_admin      INTEGER NOT NULL DEFAULT 0,
+        avatar_url    TEXT    DEFAULT NULL,
+        created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE TABLE IF NOT EXISTS groups (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        name       TEXT    NOT NULL,
+        slug       TEXT    NOT NULL COLLATE NOCASE UNIQUE,
+        created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
+    `);
+  } catch (_) {}
+
   console.log(`⚡ Dropping existing tables and views in reverse dependency order...`);
   try {
     await client.execute('DROP VIEW IF EXISTS movie_scores');
@@ -317,6 +341,8 @@ async function testWriteAccess(httpsUrl, token) {
     const chunk = inserts.slice(i, i + BATCH_SIZE);
     await client.batch(chunk, 'deferred');
   }
+
+  try { await client.execute('PRAGMA foreign_keys = ON'); } catch (_) {}
   console.log(`✅ All tables and rows restored successfully!`);
 
   // 7. Recreate view and run migrations via db.init()

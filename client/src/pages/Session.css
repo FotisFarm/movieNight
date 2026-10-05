@@ -849,6 +849,14 @@
   border-color: rgba(168, 85, 247, 0.35);
 }
 
+.signal-badge.thematic-badge {
+  background: rgba(99, 102, 241, 0.16);
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.4);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
 /* ── Mobile & Responsive Breakpoints ── */
 @media (max-width: 900px) {
   .session-main-layout {
