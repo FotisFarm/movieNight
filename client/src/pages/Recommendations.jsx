@@ -31,7 +31,43 @@ function VoterPills({ ratings, voters }) {
 }
 
 const DEFAULTS = { search: '', filterMn: false, filterWl: false, filterDir: '', filterYear: '', filterMinLb: '', filterGems: false };
-const DEFAULT_WEIGHTS = { dw: 0.35, lbw: 0.40, ew: 0.25, tw: 0.10, maxVoters: 2, minDirFilms: 2 };
+
+export const VIBE_PRESETS = [
+  {
+    id: 'safe',
+    icon: '🛡️',
+    label: 'Safe Bet',
+    sub: 'Crowd Pleaser',
+    desc: 'High consensus blend prioritizing proven group satisfaction and low dispute risk.',
+    weights: { dw: 0.30, lbw: 0.45, ew: 0.25, tw: 0.08, maxVoters: 2, minDirFilms: 2 },
+  },
+  {
+    id: 'dna',
+    icon: '🎬',
+    label: 'Club DNA',
+    sub: 'Our Wheelhouse',
+    desc: 'Dials in heavily on your group\'s favorite directors & personal Top 10 lists.',
+    weights: { dw: 0.55, lbw: 0.25, ew: 0.20, tw: 0.16, maxVoters: 2, minDirFilms: 2 },
+  },
+  {
+    id: 'gems',
+    icon: '💎',
+    label: 'Hidden Gems',
+    sub: 'Fresh Acclaim',
+    desc: 'Top Letterboxd critical acclaim, unvoted by your club, revealing overlooked masterpieces.',
+    weights: { dw: 0.15, lbw: 0.65, ew: 0.20, tw: 0.04, maxVoters: 0, minDirFilms: 1 },
+  },
+  {
+    id: 'wildcard',
+    icon: '⚡',
+    label: 'Wildcard',
+    sub: 'Sparks & Debates',
+    desc: 'Unconventional picks spanning distant eras, inviting fresh group opinions and discussion.',
+    weights: { dw: 0.35, lbw: 0.20, ew: 0.45, tw: 0.00, maxVoters: 3, minDirFilms: 1 },
+  },
+];
+
+const DEFAULT_WEIGHTS = VIBE_PRESETS[0].weights;
 
 export default function Recommendations() {
   const { voters, activeGroup } = useAppConfig();
@@ -48,6 +84,7 @@ export default function Recommendations() {
   const [filterMinLb, setFilterMinLb] = useState(DEFAULTS.filterMinLb);
   const [filterGems,  setFilterGems]  = useState(DEFAULTS.filterGems);
 
+  const [activeVibe, setActiveVibe] = useState('safe');
   const [dw, setDw]   = useState(DEFAULT_WEIGHTS.dw);
   const [lbw, setLbw] = useState(DEFAULT_WEIGHTS.lbw);
   const [ew, setEw]   = useState(DEFAULT_WEIGHTS.ew);
@@ -130,7 +167,31 @@ export default function Recommendations() {
     localStorage.removeItem('mn_onePerDirector');
   }
 
-  const weightsModified = Boolean(
+  function selectVibe(vibeId) {
+    const preset = VIBE_PRESETS.find(p => p.id === vibeId);
+    if (!preset) return;
+    setActiveVibe(vibeId);
+    setDw(preset.weights.dw);
+    setLbw(preset.weights.lbw);
+    setEw(preset.weights.ew);
+    setTw(preset.weights.tw);
+    setMaxVoters(preset.weights.maxVoters);
+    changeMinDirFilms(preset.weights.minDirFilms);
+  }
+
+  function handleWeightChange(setter, val) {
+    setter(val);
+    setActiveVibe('custom');
+  }
+
+  function resetWeights() {
+    selectVibe('safe');
+  }
+
+  const activePreset = VIBE_PRESETS.find(p => p.id === activeVibe);
+  const isCustom = activeVibe === 'custom';
+
+  const weightsModified = isCustom || Boolean(
     Math.abs(dw - DEFAULT_WEIGHTS.dw) > 0.001 ||
     Math.abs(lbw - DEFAULT_WEIGHTS.lbw) > 0.001 ||
     Math.abs(ew - DEFAULT_WEIGHTS.ew) > 0.001 ||
@@ -138,15 +199,6 @@ export default function Recommendations() {
     maxVoters !== DEFAULT_WEIGHTS.maxVoters ||
     minDirFilms !== DEFAULT_WEIGHTS.minDirFilms
   );
-
-  function resetWeights() {
-    setDw(DEFAULT_WEIGHTS.dw);
-    setLbw(DEFAULT_WEIGHTS.lbw);
-    setEw(DEFAULT_WEIGHTS.ew);
-    setTw(DEFAULT_WEIGHTS.tw);
-    setMaxVoters(DEFAULT_WEIGHTS.maxVoters);
-    changeMinDirFilms(DEFAULT_WEIGHTS.minDirFilms);
-  }
 
   const seenDirectors = new Set();
   const films = allFilms.filter(f => {
@@ -352,59 +404,102 @@ export default function Recommendations() {
         </div>
       </div>
 
+      {/* ── Human-Centric Discovery Vibes Bar ── */}
+      <section className="recs-vibes-section">
+        <div className="recs-vibes-header">
+          <div className="recs-vibes-title-block">
+            <span className="recs-vibes-label">🎭 Discovery Vibe</span>
+            <span className="recs-vibes-desc">
+              {activePreset ? activePreset.desc : 'Custom fine-tuned weights active.'}
+            </span>
+          </div>
+          <button
+            type="button"
+            className={`btn-fine-tune-toggle${modelOpen ? ' open' : ''}${isCustom ? ' is-custom' : ''}`}
+            onClick={() => setModelOpen(o => !o)}
+            aria-expanded={modelOpen}
+          >
+            <span>⚙️ Fine-Tune Weights</span>
+            <span className="fine-tune-status-chip">
+              {isCustom ? 'Custom' : activePreset?.label || 'Preset'}
+            </span>
+            <span className="fine-tune-chevron">{modelOpen ? '▲ Close' : '▼ Tune'}</span>
+          </button>
+        </div>
+
+        <div className="recs-vibes-grid">
+          {VIBE_PRESETS.map(preset => {
+            const isSelected = activeVibe === preset.id;
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                className={`recs-vibe-card${isSelected ? ' active' : ''}`}
+                onClick={() => selectVibe(preset.id)}
+              >
+                <span className="recs-vibe-icon">{preset.icon}</span>
+                <div className="recs-vibe-info">
+                  <span className="recs-vibe-title">{preset.label}</span>
+                  <span className="recs-vibe-sub">{preset.sub}</span>
+                </div>
+                {isSelected && <span className="recs-vibe-check">✓</span>}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
       {/* ── Prediction Model & Weights Toolbar (Collapsible) ── */}
       <div className={`recs-biases${modelOpen ? ' recs-biases-open' : ''}`}>
-        <button
-          type="button"
-          className="recs-model-header-btn"
-          onClick={() => setModelOpen(o => !o)}
-          aria-expanded={modelOpen}
-        >
-          <div className="recs-model-badge">⚡ Model Weights</div>
-          <span className="recs-model-summary">
-            Dir {pDir}% · LB {pLb}% · Era {pEra}% {tw > 0 ? `· Boost ${boostLabel}` : ''}
-          </span>
-          <span className="recs-model-chevron">{modelOpen ? '▲ Close' : '▼ Tune Model'}</span>
-        </button>
-
         <div className="recs-biases-body">
-          <label className="recs-bias-item">
-            <span>Director Track <em>{pDir}%</em></span>
-            <div className="recs-slider-wrap" style={trackStyle(dw, 1)}>
-              <input type="range" min={0} max={1} step={0.05} value={dw}
-                onChange={e => setDw(parseFloat(e.target.value))} />
-            </div>
-          </label>
+          <div className="recs-bias-col">
+            <label className="recs-bias-item">
+              <span>Director Track <em>{pDir}%</em></span>
+              <div className="recs-slider-wrap" style={trackStyle(dw, 1)}>
+                <input type="range" min={0} max={1} step={0.05} value={dw}
+                  onChange={e => handleWeightChange(setDw, parseFloat(e.target.value))} />
+              </div>
+            </label>
+          </div>
 
-          <label className="recs-bias-item">
-            <span>Letterboxd <em>{pLb}%</em></span>
-            <div className="recs-slider-wrap" style={trackStyle(lbw, 1)}>
-              <input type="range" min={0} max={1} step={0.05} value={lbw}
-                onChange={e => setLbw(parseFloat(e.target.value))} />
-            </div>
-          </label>
+          <div className="recs-bias-col">
+            <label className="recs-bias-item">
+              <span>Letterboxd <em>{pLb}%</em></span>
+              <div className="recs-slider-wrap" style={trackStyle(lbw, 1)}>
+                <input type="range" min={0} max={1} step={0.05} value={lbw}
+                  onChange={e => handleWeightChange(setLbw, parseFloat(e.target.value))} />
+              </div>
+            </label>
+          </div>
 
-          <label className="recs-bias-item">
-            <span>Decade Era <em>{pEra}%</em></span>
-            <div className="recs-slider-wrap" style={trackStyle(ew, 1)}>
-              <input type="range" min={0} max={1} step={0.05} value={ew}
-                onChange={e => setEw(parseFloat(e.target.value))} />
-            </div>
-          </label>
+          <div className="recs-bias-col">
+            <label className="recs-bias-item">
+              <span>Decade Era <em>{pEra}%</em></span>
+              <div className="recs-slider-wrap" style={trackStyle(ew, 1)}>
+                <input type="range" min={0} max={1} step={0.05} value={ew}
+                  onChange={e => handleWeightChange(setEw, parseFloat(e.target.value))} />
+              </div>
+            </label>
+          </div>
 
-          <label className="recs-bias-item" style={{ minWidth: 140 }}>
-            <span>Top 10 Boost <em className="halo-boost-val">{boostLabel}</em></span>
-            <div className="recs-slider-wrap" style={trackStyle(tw, 0.20)}>
-              <input type="range" min={0} max={0.20} step={0.02} value={tw}
-                onChange={e => setTw(parseFloat(e.target.value))} />
-            </div>
-          </label>
+          <div className="recs-bias-col">
+            <label className="recs-bias-item" style={{ minWidth: 140 }}>
+              <span>Top 10 Boost <em className="halo-boost-val">{boostLabel}</em></span>
+              <div className="recs-slider-wrap" style={trackStyle(tw, 0.20)}>
+                <input type="range" min={0} max={0.20} step={0.02} value={tw}
+                  onChange={e => handleWeightChange(setTw, parseFloat(e.target.value))} />
+              </div>
+            </label>
+          </div>
 
           <div className="recs-bias-sep" />
 
           <label className="recs-bias-item recs-bias-item--inline">
             <span className="recs-bias-label">Candidates</span>
-            <select className="select select-sm" value={maxVoters} onChange={e => setMaxVoters(parseInt(e.target.value))}>
+            <select className="select select-sm" value={maxVoters} onChange={e => {
+              setMaxVoters(parseInt(e.target.value));
+              setActiveVibe('custom');
+            }}>
               {[0, 1, 2, 3, 4].map(n => (
                 <option key={n} value={n}>≤ {n} {n === 1 ? 'vote' : 'votes'}</option>
               ))}
@@ -413,7 +508,10 @@ export default function Recommendations() {
 
           <label className="recs-bias-item recs-bias-item--inline">
             <span className="recs-bias-label">Min dir films</span>
-            <select className="select select-sm" value={minDirFilms} onChange={e => changeMinDirFilms(parseInt(e.target.value))}>
+            <select className="select select-sm" value={minDirFilms} onChange={e => {
+              changeMinDirFilms(parseInt(e.target.value));
+              setActiveVibe('custom');
+            }}>
               {[1, 2, 3, 4].map(n => (
                 <option key={n} value={n}>{n === 1 ? 'No min (1)' : `≥ ${n} films`}</option>
               ))}
@@ -424,12 +522,11 @@ export default function Recommendations() {
 
           <button
             type="button"
-            className={`btn btn-sm btn-ghost${weightsModified ? ' filter-reset-active' : ''}`}
+            className="btn btn-sm btn-ghost filter-reset-active"
             onClick={resetWeights}
-            disabled={!weightsModified}
-            title="Reset model weights to default"
+            title="Reset model weights to Safe Bet preset"
           >
-            Reset Model
+            Reset to Safe Bet
           </button>
         </div>
       </div>
@@ -459,6 +556,21 @@ export default function Recommendations() {
                         <WatchlistBadge id={f.id} watchlist={f.watchlist} onToggle={handleWatchlistToggle} />
                         {(f.imdb_id || f.letterboxd_rating != null) && (
                           <LetterboxdPill imdbId={f.imdb_id} score={f.letterboxd_rating} />
+                        )}
+                        {f.top10Bonus > 0 && (
+                          <span className="badge badge-top10" title={`Top 10 Boost +${f.top10Bonus.toFixed(2)} from group favorites`}>
+                            🎬 Halo
+                          </span>
+                        )}
+                        {f.voterCount === 0 && (f.letterboxd_rating >= 3.8 || f.predictedScore >= 8.0) && (
+                          <span className="badge badge-gem" title="Unrated hidden gem with strong acclaim">
+                            💎 Gem
+                          </span>
+                        )}
+                        {f.dirAvg != null && f.dirAvg >= 8.0 && (
+                          <span className="badge badge-proven-dir" title={`${f.director} avg ${f.dirAvg.toFixed(1)} in club`}>
+                            ⭐ Proven Dir
+                          </span>
                         )}
                       </div>
                     </div>
