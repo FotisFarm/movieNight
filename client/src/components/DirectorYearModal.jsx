@@ -22,6 +22,7 @@ export default function DirectorYearModal({ type, value, scoreKey = 'fairBoosted
     const param =
       type === 'director' ? { director: value }
       : type === 'decade' ? { yearMin: value, yearMax: value + 9 }
+      : type === 'keyword' ? { keyword: value }
       : { year: value };
     if (mnOnly) param.mn = '1';
     api.getMovies(param)
@@ -78,9 +79,9 @@ export default function DirectorYearModal({ type, value, scoreKey = 'fairBoosted
       <div className="modal dy-modal">
         <div className="modal-header">
           <div className="modal-header-text">
-            <div className="modal-title">{type === 'decade' ? `${value}s` : value}</div>
+            <div className="modal-title">{type === 'decade' ? `${value}s` : type === 'keyword' ? `🏷️ ${value}` : value}</div>
             <div className="modal-sub">
-              {type === 'director' ? 'Director' : type === 'decade' ? 'Decade' : 'Year'}
+              {type === 'director' ? 'Director' : type === 'decade' ? 'Decade' : type === 'keyword' ? 'Theme' : 'Year'}
               {mnOnly ? ' · MN only' : ''}
               {' · '}
               {voter ? `${voter}'s score` : scoreKey === 'boostedScore' ? 'Group score' : 'Fair score'}

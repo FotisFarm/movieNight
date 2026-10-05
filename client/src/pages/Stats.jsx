@@ -408,21 +408,45 @@ export default function Stats({ voter }) {
               </div>
 
               {s.favDirector && (
-                <div className="stats-fav">
+                <div
+                  className="stats-fav stats-fav-clickable"
+                  title={`View ${s.voter}'s films directed by ${s.favDirector}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedVoter(s.voter);
+                    setDyTarget({ type: 'director', value: s.favDirector });
+                  }}
+                >
                   <span className="stats-fav-lbl">Fav director</span>
                   <span className="stats-fav-val">{s.favDirector}</span>
                 </div>
               )}
               {s.favDecade && (
-                <div className="stats-fav">
+                <div
+                  className="stats-fav stats-fav-clickable"
+                  title={`View ${s.voter}'s films from the ${s.favDecade}s`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedVoter(s.voter);
+                    setDyTarget({ type: 'decade', value: s.favDecade });
+                  }}
+                >
                   <span className="stats-fav-lbl">Fav decade</span>
                   <span className="stats-fav-val">{s.favDecade}s</span>
                 </div>
               )}
               {s.topKeyword && (
-                <div className="stats-fav">
+                <div
+                  className="stats-fav stats-fav-clickable"
+                  title={`View ${s.voter}'s films tagged with ${s.topKeyword.name} (average ${fmt(s.topKeyword.mean)} over ${s.topKeyword.count} films)`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedVoter(s.voter);
+                    setDyTarget({ type: 'keyword', value: s.topKeyword.name });
+                  }}
+                >
                   <span className="stats-fav-lbl">Fav theme</span>
-                  <span className="stats-fav-val" title={`Average ${fmt(s.topKeyword.mean)} over ${s.topKeyword.count} films`}>
+                  <span className="stats-fav-val">
                     🏷️ {s.topKeyword.name} ({fmt(s.topKeyword.mean, 1)})
                   </span>
                 </div>
@@ -549,7 +573,11 @@ export default function Stats({ voter }) {
                       <div style={{ fontSize: 11, color: 'var(--text3)', padding: '4px 6px' }}>Need ≥2 films per theme</div>
                     ) : (
                       sel.favKeywords.map(k => (
-                        <div key={k.name} className="vd-bd-row">
+                        <div
+                          key={k.name}
+                          className="vd-bd-row vd-clickable"
+                          onClick={() => setDyTarget({ type: 'keyword', value: k.name })}
+                        >
                           <span className="vd-bd-name" title={`Rated ${fmt(k.mean)} on ${k.count} films`}>🏷️ {k.name}</span>
                           <span className="vd-bd-count">{k.count}</span>
                           <span className={`vd-bd-mean ${scoreClass(k.mean)}`}>
@@ -562,7 +590,11 @@ export default function Stats({ voter }) {
                       <>
                         <div className="vd-col-title" style={{ marginTop: 14 }}>Least Fav Themes</div>
                         {sel.lowKeywords.map(k => (
-                          <div key={k.name} className="vd-bd-row">
+                          <div
+                            key={k.name}
+                            className="vd-bd-row vd-clickable"
+                            onClick={() => setDyTarget({ type: 'keyword', value: k.name })}
+                          >
                             <span className="vd-bd-name" title={`Rated ${fmt(k.mean)} on ${k.count} films`}>🏷️ {k.name}</span>
                             <span className="vd-bd-count">{k.count}</span>
                             <span className={`vd-bd-mean ${scoreClass(k.mean)}`}>

@@ -164,10 +164,18 @@
 .stats-voter-card.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 
 /* ── Voter drill-down modal ── */
-.vd-modal { max-width: 1060px; width: 94%; }
+.vd-modal { max-width: 1200px; width: 95%; }
 .vd-body { padding: 18px; overflow-y: auto; }
 .vd-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 1080px) {
+  .vd-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
 }
 .vd-col { display: flex; flex-direction: column; gap: 2px; }
 .vd-col-title {
@@ -209,6 +217,19 @@
 .stats-fav { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .stats-fav-lbl { font-size: 11px; color: var(--text2); white-space: nowrap; }
 .stats-fav-val { font-size: 12px; font-weight: 600; text-align: right; color: var(--text); }
+.stats-fav-clickable {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  padding: 2px 4px;
+  margin: -2px -4px;
+  transition: background .15s;
+}
+.stats-fav-clickable:hover {
+  background: var(--surface2);
+}
+.stats-fav-clickable:hover .stats-fav-val {
+  color: var(--accent);
+}
 
 /* Score distribution */
 .stats-dist { }

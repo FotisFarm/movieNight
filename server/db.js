@@ -1005,6 +1005,16 @@ async function initMultiGroup() {
       await run('UPDATE lists SET group_id = 1 WHERE group_id IS NULL');
       console.log('[db] Multi-group migration completed successfully.');
     }
+
+    const gmsCount = await get('SELECT COUNT(*) AS c FROM group_movie_status WHERE group_id = 1');
+    if (!gmsCount || Number(gmsCount.c) === 0) {
+      await run(`
+        INSERT OR IGNORE INTO group_movie_status (group_id, movie_id, mn, watchlist)
+        SELECT 1, id, mn, watchlist
+        FROM movies
+        WHERE mn = 1 OR watchlist = 1
+      `);
+    }
   } catch (err) {
     console.warn('[db] Multi-group migration warning:', err.message);
   }

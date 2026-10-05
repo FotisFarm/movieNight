@@ -22,7 +22,7 @@ function VoterPills({ voters, top3 }) {
   );
 }
 
-export default function RankingSection({ title, rows, onMovieClick, onDirectorClick, onYearClick, onDecadeClick, scoreKey = 'fairBoosted', rowScoreKey = 'fairBoosted', mn = false }) {
+export default function RankingSection({ title, rows, onMovieClick, onDirectorClick, onYearClick, onDecadeClick, onKeywordClick, scoreKey = 'fairBoosted', rowScoreKey = 'fairBoosted', mn = false }) {
   const [expanded, setExpanded] = useState(false);
   return (
     <div className="rank-section">
@@ -35,15 +35,16 @@ export default function RankingSection({ title, rows, onMovieClick, onDirectorCl
           <tbody>
             {(expanded ? rows : rows.slice(0, 10)).map((row, i) => {
               const val = row[scoreKey] ?? row.avg ?? null;
-              const isClickable = row.id || row.director || row.year || row.decade;
+              const isClickable = row.id || row.director || row.year || row.decade || row.keyword;
               function handleClick() {
                 if (row.id)            onMovieClick?.(row.id);
                 else if (row.director) onDirectorClick?.(row.director, rowScoreKey, mn);
                 else if (row.year)     onYearClick?.(String(row.year), rowScoreKey, mn);
                 else if (row.decade)   onDecadeClick?.(row.decade, rowScoreKey, mn);
+                else if (row.keyword)  onKeywordClick?.(row.keyword, rowScoreKey, mn);
               }
               return (
-                <tr key={row.id ?? row.director ?? row.year ?? row.decade ?? i}
+                <tr key={row.id ?? row.director ?? row.year ?? row.decade ?? row.keyword ?? i}
                     className={isClickable ? 'clickable' : ''}
                     onClick={handleClick}>
                   <td className={`rank-num ${i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : ''}`}>
@@ -51,7 +52,7 @@ export default function RankingSection({ title, rows, onMovieClick, onDirectorCl
                   </td>
                   <td>
                     <div className="rank-name">
-                      {row.title ?? row.director ?? (row.year ? `${row.year}` : null) ?? (row.decade ? `${row.decade}s` : null)}
+                      {row.title ?? row.director ?? (row.year ? `${row.year}` : null) ?? (row.decade ? `${row.decade}s` : null) ?? (row.keyword ? `🏷️ ${row.keyword}` : null)}
                       {row.mn && <span className="rank-mn">MN</span>}
                     </div>
                     {row.title && <div className="rank-sub">{row.director} · {row.year}</div>}

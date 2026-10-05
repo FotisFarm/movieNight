@@ -42,6 +42,16 @@ async function getAllEnriched(mnOnly = false, group = null) {
     }
     const boost = Object.values(top3Map).reduce((acc, rank) => acc + rankBonus(rank), 0);
 
+    let parsedKeywords = [];
+    if (m.keywords) {
+      try {
+        parsedKeywords = typeof m.keywords === 'string' ? JSON.parse(m.keywords) : m.keywords;
+        if (!Array.isArray(parsedKeywords)) parsedKeywords = [];
+      } catch (_) {
+        parsedKeywords = [];
+      }
+    }
+
     return {
       id: m.id,
       title: m.title,
@@ -51,6 +61,7 @@ async function getAllEnriched(mnOnly = false, group = null) {
       tokens: m.tokens,
       imdb_id: m.imdb_id ?? null,
       imdb_rating: m.imdb_rating ?? null,
+      keywords: parsedKeywords,
       n,
       top3_count: m.top3_count || 0,
       boost,
@@ -97,32 +108,55 @@ router.get('/', ah(async (req, res) => {
       .slice(0, 25);
   };
 
+  const topByKeyword = (arr, scoreKey, { minCount = 1 } = {}) => {
+    const map = {};
+    for (const m of arr) {
+      if (!m.keywords || !m.keywords.length) continue;
+      const seen = new Set();
+      for (const kw of m.keywords) {
+        const k = String(kw).trim().toLowerCase();
+        if (!k || seen.has(k)) continue;
+        seen.add(k);
+        if (!map[k]) map[k] = { sum: 0, count: 0 };
+        map[k].sum += m[scoreKey];
+        map[k].count++;
+      }
+    }
+    return Object.entries(map)
+      .map(([k, v]) => ({ keyword: k, avg: Math.round((v.sum / v.count) * 100) / 100, count: v.count }))
+      .filter(e => e.count >= minCount)
+      .sort((a, b) => b.avg - a.avg || b.count - a.count)
+      .slice(0, 25);
+  };
+
   const gate = { minCount: minDirFilms };
 
   res.json({
     // Fair score (÷voters + tokens)
-    fairAll:      top(all, 'fairBoosted'),
-    fairDirsAll:  topByField(all, 'director', 'fairBoosted', gate),
-    fairYearsAll: topByField(all, 'year', 'fairBoosted', gate),
+    fairAll:         top(all, 'fairBoosted'),
+    fairDirsAll:     topByField(all, 'director', 'fairBoosted', gate),
+    fairYearsAll:    topByField(all, 'year', 'fairBoosted', gate),
+    fairDecadesAll:  topByField(all, 'decade', 'fairBoosted', gate),
+    fairKeywordsAll: topByKeyword(all, 'fairBoosted', gate),
 
-    fairMn:       top(mn,  'fairBoosted'),
-    fairDirsMn:   topByField(mn,  'director', 'fairBoosted', gate),
-    fairYearsMn:  topByField(mn,  'year', 'fairBoosted', gate),
+    fairMn:          top(mn,  'fairBoosted'),
+    fairDirsMn:      topByField(mn,  'director', 'fairBoosted', gate),
+    fairYearsMn:     topByField(mn,  'year', 'fairBoosted', gate),
+    fairDecadesMn:   topByField(mn,  'decade', 'fairBoosted', gate),
+    fairKeywordsMn:  topByKeyword(mn,  'fairBoosted', gate),
 
     // Group score (÷groupSize + tokens)
-    groupAll:      top(all, 'boostedScore'),
-    groupDirsAll:  topByField(all, 'director', 'boostedScore', gate),
-    groupYearsAll: topByField(all, 'year', 'boostedScore', gate),
+    groupAll:         top(all, 'boostedScore'),
+    groupDirsAll:     topByField(all, 'director', 'boostedScore', gate),
+    groupYearsAll:    topByField(all, 'year', 'boostedScore', gate),
+    groupDecadesAll:  topByField(all, 'decade', 'boostedScore', gate),
+    groupKeywordsAll: topByKeyword(all, 'boostedScore', gate),
 
-    groupMn:       top(mn,  'boostedScore'),
-    groupDirsMn:   topByField(mn,  'director', 'boostedScore', gate),
-    groupYearsMn:  topByField(mn,  'year', 'boostedScore', gate),
-
-    // Decade panels
-    fairDecadesAll:  topByField(all, 'decade', 'fairBoosted', gate),
-    fairDecadesMn:   topByField(mn,  'decade', 'fairBoosted', gate),
-    groupDecadesAll: topByField(all, 'decade', 'boostedScore', gate),
-    groupDecadesMn:  topByField(mn,  'decade', 'boostedScore', gate),
+    groupMn:          top(mn,  'boostedScore'),
+    groupDirsMn:      topByField(mn,  'director', 'boostedScore', gate),
+    groupYearsMn:     topByField(mn,  'year', 'boostedScore', gate),
+    groupDecadesMn:   topByField(mn,  'decade', 'boostedScore', gate),
+    groupKeywordsMn:  topByKeyword(mn,  'boostedScore', gate),
   });
 }));
 

@@ -20,7 +20,7 @@ function isUserAdmin(req) {
 
 // GET /api/movies
 router.get('/', ah(async (req, res) => {
-  const { search, director, year, yearMin, yearMax, voter, voters, mn, watchlist, rated, minVoters, maxVoters, stream, provider, runtimeMin, runtimeMax, minLb, maxLb } = req.query;
+  const { search, director, year, yearMin, yearMax, voter, voters, mn, watchlist, rated, minVoters, maxVoters, stream, provider, runtimeMin, runtimeMax, minLb, maxLb, keyword } = req.query;
 
   let query = 'SELECT * FROM movies WHERE 1=1';
   const params = [];
@@ -35,6 +35,11 @@ router.get('/', ah(async (req, res) => {
   if (runtimeMax) { query += ' AND movies.runtime <= ?'; params.push(parseInt(runtimeMax, 10)); }
   if (minLb)      { query += ' AND movies.letterboxd_rating >= ?'; params.push(parseFloat(minLb)); }
   if (maxLb)      { query += ' AND movies.letterboxd_rating <= ?'; params.push(parseFloat(maxLb)); }
+  if (keyword) {
+    const kw = keyword.trim().toLowerCase();
+    query += ' AND (EXISTS (SELECT 1 FROM movie_keywords mk WHERE mk.movie_id = movies.id AND mk.keyword = ?) OR movies.keywords LIKE ?)';
+    params.push(kw, `%"${kw}"%`);
+  }
 
   const groupId = req.group?.id || 1;
   if (mn === '1') {

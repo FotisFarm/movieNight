@@ -17,10 +17,11 @@ const ROWS = [
     description: 'Score calculated as if the whole group always votes (sum ÷ group size), plus a Top 10 token bonus: 🥇+1.0 down to #10 +0.1, capped at 10. Films not yet seen by the whole group are penalised — a deliberate measure of collective buy-in.',
     rowScoreKey: 'boostedScore', mnOnly: false,
     panels: [
-      { title: '🏆 Top 10 Films',  key: 'groupAll',      scoreKey: 'boostedScore', clickable: true },
-      { title: '🎭 Top Directors', key: 'groupDirsAll',  scoreKey: 'avg' },
-      { title: '📅 Top Years',     key: 'groupYearsAll', scoreKey: 'avg' },
-      { title: '📆 Top Decades',   key: 'groupDecadesAll', scoreKey: 'avg' },
+      { title: '🏆 Top 10 Films',  key: 'groupAll',         scoreKey: 'boostedScore', clickable: true },
+      { title: '🎭 Top Directors', key: 'groupDirsAll',     scoreKey: 'avg' },
+      { title: '📅 Top Years',     key: 'groupYearsAll',    scoreKey: 'avg' },
+      { title: '📆 Top Decades',   key: 'groupDecadesAll',  scoreKey: 'avg' },
+      { title: '🏷️ Top Themes',    key: 'groupKeywordsAll', scoreKey: 'avg' },
     ],
   },
   {
@@ -29,10 +30,11 @@ const ROWS = [
     description: 'Group formula (÷5, Top 10 token bonus 🥇+1.0 … #10 +0.1, capped at 10) restricted to Movie Night films.',
     rowScoreKey: 'boostedScore', mnOnly: true,
     panels: [
-      { title: '🏆 Top 10 Films',  key: 'groupMn',      scoreKey: 'boostedScore', clickable: true },
-      { title: '🎭 Top Directors', key: 'groupDirsMn',  scoreKey: 'avg' },
-      { title: '📅 Top Years',     key: 'groupYearsMn', scoreKey: 'avg' },
-      { title: '📆 Top Decades',   key: 'groupDecadesMn', scoreKey: 'avg' },
+      { title: '🏆 Top 10 Films',  key: 'groupMn',          scoreKey: 'boostedScore', clickable: true },
+      { title: '🎭 Top Directors', key: 'groupDirsMn',      scoreKey: 'avg' },
+      { title: '📅 Top Years',     key: 'groupYearsMn',     scoreKey: 'avg' },
+      { title: '📆 Top Decades',   key: 'groupDecadesMn',   scoreKey: 'avg' },
+      { title: '🏷️ Top Themes',    key: 'groupKeywordsMn',  scoreKey: 'avg' },
     ],
   },
   {
@@ -41,10 +43,11 @@ const ROWS = [
     description: 'Average of actual votes cast (÷ number of voters), plus a Top 10 token bonus: #1 +1.0 down to #10 +0.1 (−0.1 per rank). Scores are capped at 10. Films rated by fewer than 2 people are excluded.',
     rowScoreKey: 'fairBoosted', mnOnly: false,
     panels: [
-      { title: '🏆 Top 10 Films',  key: 'fairAll',      scoreKey: 'fairBoosted', clickable: true },
-      { title: '🎭 Top Directors', key: 'fairDirsAll',  scoreKey: 'avg' },
-      { title: '📅 Top Years',     key: 'fairYearsAll', scoreKey: 'avg' },
-      { title: '📆 Top Decades',   key: 'fairDecadesAll', scoreKey: 'avg' },
+      { title: '🏆 Top 10 Films',  key: 'fairAll',          scoreKey: 'fairBoosted', clickable: true },
+      { title: '🎭 Top Directors', key: 'fairDirsAll',      scoreKey: 'avg' },
+      { title: '📅 Top Years',     key: 'fairYearsAll',     scoreKey: 'avg' },
+      { title: '📆 Top Decades',   key: 'fairDecadesAll',   scoreKey: 'avg' },
+      { title: '🏷️ Top Themes',    key: 'fairKeywordsAll',  scoreKey: 'avg' },
     ],
   },
   {
@@ -53,10 +56,11 @@ const ROWS = [
     description: 'Same formula (÷ voters, Top 10 token bonus 🥇+1.0 … #10 +0.1, capped at 10), restricted to films screened during a Movie Night session.',
     rowScoreKey: 'fairBoosted', mnOnly: true,
     panels: [
-      { title: '🏆 Top 10 Films',  key: 'fairMn',      scoreKey: 'fairBoosted', clickable: true },
-      { title: '🎭 Top Directors', key: 'fairDirsMn',  scoreKey: 'avg' },
-      { title: '📅 Top Years',     key: 'fairYearsMn', scoreKey: 'avg' },
-      { title: '📆 Top Decades',   key: 'fairDecadesMn', scoreKey: 'avg' },
+      { title: '🏆 Top 10 Films',  key: 'fairMn',          scoreKey: 'fairBoosted', clickable: true },
+      { title: '🎭 Top Directors', key: 'fairDirsMn',      scoreKey: 'avg' },
+      { title: '📅 Top Years',     key: 'fairYearsMn',     scoreKey: 'avg' },
+      { title: '📆 Top Decades',   key: 'fairDecadesMn',   scoreKey: 'avg' },
+      { title: '🏷️ Top Themes',    key: 'fairKeywordsMn',  scoreKey: 'avg' },
     ],
   },
 ];
@@ -72,16 +76,18 @@ const SCOPES = [
 ];
 
 const PANEL_TYPES = [
-  { key: 'films',    label: '🏆 Films' },
+  { key: 'films',     label: '🏆 Films' },
   { key: 'directors', label: '🎭 Directors' },
-  { key: 'years',    label: '📅 Years' },
-  { key: 'decades',  label: '📆 Decades' },
+  { key: 'years',     label: '📅 Years' },
+  { key: 'decades',   label: '📆 Decades' },
+  { key: 'keywords',  label: '🏷️ Themes' },
 ];
 
 function panelType(panelKey) {
-  if (panelKey.includes('Dirs'))    return 'directors';
-  if (panelKey.includes('Decades')) return 'decades';
-  if (panelKey.includes('Years'))   return 'years';
+  if (panelKey.includes('Dirs'))     return 'directors';
+  if (panelKey.includes('Decades'))  return 'decades';
+  if (panelKey.includes('Years'))    return 'years';
+  if (panelKey.includes('Keywords')) return 'keywords';
   return 'films';
 }
 
@@ -214,6 +220,7 @@ export default function Rankings() {
                 onDirectorClick={(d, sk, mnOnly) => setSelectedLabel({ type: 'director', value: d, scoreKey: sk, mnOnly })}
                 onYearClick={(y, sk, mnOnly) => setSelectedLabel({ type: 'year', value: String(y), scoreKey: sk, mnOnly })}
                 onDecadeClick={(d, sk, mnOnly) => setSelectedLabel({ type: 'decade', value: parseInt(d), scoreKey: sk, mnOnly })}
+                onKeywordClick={(k, sk, mnOnly) => setSelectedLabel({ type: 'keyword', value: k, scoreKey: sk, mnOnly })}
               />
             ))}
           </div>
