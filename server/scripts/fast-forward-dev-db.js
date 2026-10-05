@@ -302,6 +302,14 @@ async function testWriteAccess(httpsUrl, token) {
         slug       TEXT    NOT NULL COLLATE NOCASE UNIQUE,
         created_at TEXT    NOT NULL DEFAULT (datetime('now'))
       );
+      INSERT OR IGNORE INTO groups (id, name, slug) VALUES (1, 'The Originals', 'the-originals');
+      INSERT OR IGNORE INTO users (id, username, display_name, password_hash, is_admin) VALUES
+        (1, 'fotis', 'Φώτης', 'migrated', 0),
+        (3, 'mitseas', 'Μητσέας', 'migrated', 0),
+        (5, 'pantelis', 'Παντελής', 'migrated', 0),
+        (7, 'stelias', 'Στέλιας', 'migrated', 0),
+        (9, 'leontios', 'Λεόντιος', 'migrated', 0),
+        (11, 'claire', 'Κλαίρη', 'migrated', 0);
     `);
   } catch (_) {}
 
@@ -338,7 +346,7 @@ async function testWriteAccess(httpsUrl, token) {
   console.log(`⚡ Inserting ${inserts.length} rows in batches of 50 via Turso batch API...`);
   const BATCH_SIZE = 50;
   for (let i = 0; i < inserts.length; i += BATCH_SIZE) {
-    const chunk = inserts.slice(i, i + BATCH_SIZE);
+    const chunk = ['PRAGMA foreign_keys = OFF;', ...inserts.slice(i, i + BATCH_SIZE)];
     await client.batch(chunk, 'deferred');
   }
 

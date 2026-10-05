@@ -308,15 +308,6 @@ async function init() {
 
   await initMultiGroup();
 
-  if (!SANDBOX_MODE) {
-    await backfillInitialRuntimes();
-    await backfillInitialLetterboxd();
-    await backfillInitialBackdrops();
-    await backfillInitialStreaming();
-    await backfillInitialKeywords();
-    await backfillListSlugs();
-  }
-
   // Widen top3 rank constraint 1-3 -> 1-10 (SQLite can't ALTER a CHECK, so rebuild). Idempotent.
   try {
     const t = await get("SELECT sql FROM sqlite_master WHERE type='table' AND name='top3'");
@@ -676,6 +667,15 @@ async function init() {
       ) t ON t.movie_id = m.id
     `);
   }
+
+  if (!SANDBOX_MODE) {
+    await backfillInitialRuntimes();
+    await backfillInitialLetterboxd();
+    await backfillInitialBackdrops();
+    await backfillInitialStreaming();
+    await backfillInitialKeywords();
+    await backfillListSlugs();
+  }
 }
 
 // Give every list a slug — lists created before the slug column existed have
@@ -875,13 +875,25 @@ async function backfillInitialKeywords() {
       await run(sql);
     }
 
+    // Batch inserts for junction table in chunks of 100 pairs
+    const pairs = [];
     for (const [idStr, kws] of entries) {
       const movieId = parseInt(idStr, 10);
       for (const kw of kws) {
-        try {
-          await run('INSERT OR IGNORE INTO movie_keywords (movie_id, keyword) VALUES (?, ?)', movieId, kw);
-        } catch (_) {}
+        if (typeof kw === 'string' && kw.trim()) {
+          pairs.push([movieId, kw.trim().toLowerCase()]);
+        }
       }
+    }
+
+    const INSERT_CHUNK = 100;
+    for (let i = 0; i < pairs.length; i += INSERT_CHUNK) {
+      const chunk = pairs.slice(i, i + INSERT_CHUNK);
+      const placeholders = chunk.map(() => '(?, ?)').join(',');
+      const params = chunk.flat();
+      try {
+        await run(`INSERT OR IGNORE INTO movie_keywords (movie_id, keyword) VALUES ${placeholders}`, ...params);
+      } catch (_) {}
     }
 
     const after = await get("SELECT COUNT(keywords) AS c FROM movies WHERE keywords IS NOT NULL AND keywords != ''");
