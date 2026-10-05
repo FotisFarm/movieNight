@@ -241,6 +241,36 @@ router.get('/directors', ah(async (_req, res) => {
   res.json(rows.map(r => r.director));
 }));
 
+// GET /api/movies/keywords  — distinct keywords with film counts. Must be before /:id
+router.get('/keywords', ah(async (_req, res) => {
+  let rows = await db.all(`
+    SELECT keyword, COUNT(*) AS count
+    FROM movie_keywords
+    WHERE keyword != ''
+    GROUP BY keyword
+    ORDER BY count DESC, keyword COLLATE NOCASE ASC
+  `);
+  if (!rows || rows.length === 0) {
+    const all = await db.all("SELECT keywords FROM movies WHERE keywords IS NOT NULL AND keywords != ''");
+    const counts = {};
+    for (const row of all) {
+      try {
+        const kws = typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords;
+        if (Array.isArray(kws)) {
+          for (const kw of kws) {
+            const k = String(kw).trim().toLowerCase();
+            if (k) counts[k] = (counts[k] || 0) + 1;
+          }
+        }
+      } catch (_) {}
+    }
+    rows = Object.entries(counts)
+      .map(([keyword, count]) => ({ keyword, count }))
+      .sort((a, b) => b.count - a.count || a.keyword.localeCompare(b.keyword));
+  }
+  res.json(rows);
+}));
+
 // GET /api/movies/top10-counts  — { voter: number of top picks }. Must be before /:id.
 router.get('/top10-counts', ah(async (req, res) => {
   const rows = await db.all('SELECT voter, COUNT(*) AS n FROM top3 GROUP BY voter');

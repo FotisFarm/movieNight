@@ -30,6 +30,7 @@ export const api = {
   getMovieTrailer: (id) => request(`/movies/${id}/trailer`),
   getMovieWatchProviders: (id) => request(`/movies/${id}/watch-providers`),
   getDirectors: () => request('/movies/directors'),
+  getKeywords: () => request('/movies/keywords'),
   imdbSearch: (title, year) => request(`/movies/imdb-search?title=${encodeURIComponent(title)}&year=${encodeURIComponent(year || '')}`),
   imdbDetail: (imdbId) => request(`/movies/imdb-detail?imdbId=${encodeURIComponent(imdbId)}`),
   reorderTop10: (order, voter) => request('/movies/top10', { method: 'PUT', body: voter ? { order, voter } : { order } }),

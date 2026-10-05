@@ -52,6 +52,7 @@ const DEFAULTS = {
   filterProvider: '',
   filterVoters: [],
   filterDirector: '',
+  filterKeyword: '',
   filterYearMin: '',
   filterYearMax: '',
   filterMinVoters: '',
@@ -77,6 +78,7 @@ export default function Films() {
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(() =>
     !!(
       searchParams.get('director') ||
+      searchParams.get('keyword') ||
       searchParams.get('yearMin') ||
       searchParams.get('yearMax') ||
       searchParams.get('minVoters') ||
@@ -101,6 +103,7 @@ export default function Films() {
   const [filterProvider, setFilterProvider] = useState(() => searchParams.get('provider') || DEFAULTS.filterProvider);
   const [filterVoters, setFilterVoters] = useState(() => searchParams.get('voters') ? searchParams.get('voters').split(',') : DEFAULTS.filterVoters);
   const [filterDirector, setFilterDirector] = useState(() => searchParams.get('director') || DEFAULTS.filterDirector);
+  const [filterKeyword, setFilterKeyword]   = useState(() => searchParams.get('keyword') || DEFAULTS.filterKeyword);
   const [filterYearMin, setFilterYearMin]   = useState(() => searchParams.get('yearMin') || DEFAULTS.filterYearMin);
   const [filterYearMax, setFilterYearMax]   = useState(() => searchParams.get('yearMax') || DEFAULTS.filterYearMax);
   const [filterMinVoters, setFilterMinVoters] = useState(() => searchParams.get('minVoters') || DEFAULTS.filterMinVoters);
@@ -110,6 +113,7 @@ export default function Films() {
   const [filterRuntimeMax, setFilterRuntimeMax] = useState(() => searchParams.get('runtimeMax') || DEFAULTS.filterRuntimeMax);
   const [filterMinLb, setFilterMinLb]       = useState(() => searchParams.get('minLb') || DEFAULTS.filterMinLb);
   const [directors, setDirectors]           = useState([]);
+  const [keywordsList, setKeywordsList]     = useState([]);
 
   const lastSearchStringRef           = useRef(new URLSearchParams(searchParams).toString());
 
@@ -138,6 +142,7 @@ export default function Films() {
     const newProvider = searchParams.get('provider') || DEFAULTS.filterProvider;
     const newVoters = searchParams.get('voters') ? searchParams.get('voters').split(',').map(s => s.trim()).filter(Boolean) : DEFAULTS.filterVoters;
     const newDirector = searchParams.get('director') || DEFAULTS.filterDirector;
+    const newKeyword = searchParams.get('keyword') || DEFAULTS.filterKeyword;
     const newYearMin = searchParams.get('yearMin') || DEFAULTS.filterYearMin;
     const newYearMax = searchParams.get('yearMax') || DEFAULTS.filterYearMax;
     const newMinVoters = searchParams.get('minVoters') || DEFAULTS.filterMinVoters;
@@ -157,6 +162,7 @@ export default function Films() {
     setFilterProvider(newProvider);
     setFilterVoters(newVoters);
     setFilterDirector(newDirector);
+    setFilterKeyword(newKeyword);
     setFilterYearMin(newYearMin);
     setFilterYearMax(newYearMax);
     setFilterMinVoters(newMinVoters);
@@ -181,6 +187,7 @@ export default function Films() {
     if (filterProvider)                       p.provider = filterProvider;
     if (filterVoters.length)                  p.voters = filterVoters.join(',');
     if (filterDirector)                       p.director = filterDirector;
+    if (filterKeyword)                        p.keyword = filterKeyword;
     if (filterYearMin)                        p.yearMin = filterYearMin;
     if (filterYearMax)                        p.yearMax = filterYearMax;
     if (filterMinVoters)                      p.minVoters = filterMinVoters;
@@ -196,12 +203,12 @@ export default function Films() {
       lastSearchStringRef.current = newSearchString;
       setSearchParams(p, { replace: true });
     }
-  }, [search, sortBy, sortVoter, filterMn, filterRated, filterWl, filterStream, filterProvider, filterVoters, filterDirector, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, filterRuntime, filterRuntimeMin, filterRuntimeMax, filterMinLb, searchParams, setSearchParams]);
+  }, [search, sortBy, sortVoter, filterMn, filterRated, filterWl, filterStream, filterProvider, filterVoters, filterDirector, filterKeyword, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, filterRuntime, filterRuntimeMin, filterRuntimeMax, filterMinLb, searchParams, setSearchParams]);
 
   const searchTimer = useRef(null);
 
   const advancedFilterCount = [
-    !!filterDirector, !!filterYearMin, !!filterYearMax,
+    !!filterDirector, !!filterKeyword, !!filterYearMin, !!filterYearMax,
     !!filterMinVoters, !!filterMaxVoters, !!filterProvider,
     !!filterRuntime || !!filterRuntimeMin || !!filterRuntimeMax,
     !!filterMinLb,
@@ -225,6 +232,7 @@ export default function Films() {
     filterProvider: setFilterProvider,
     filterVoters: setFilterVoters,
     filterDirector: setFilterDirector,
+    filterKeyword: setFilterKeyword,
     filterYearMin: setFilterYearMin,
     filterYearMax: setFilterYearMax,
     filterMinVoters: setFilterMinVoters,
@@ -273,6 +281,7 @@ export default function Films() {
   useEffect(() => {
     refreshAllMovies();
     api.getDirectors().then(setDirectors).catch(() => {});
+    api.getKeywords().then(setKeywordsList).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -305,6 +314,7 @@ export default function Films() {
         rated:      filterRated     || undefined,
         voters:     effectiveVoters,
         director:   filterDirector  || undefined,
+        keyword:    filterKeyword   || undefined,
         yearMin:    filterYearMin   || undefined,
         yearMax:    filterYearMax   || undefined,
         minVoters:  filterMinVoters || undefined,
@@ -314,7 +324,7 @@ export default function Films() {
         minLb:      filterMinLb      || undefined,
       });
     }, 250);
-  }, [search, sortBy, sortVoter, filterMn, filterWl, filterStream, filterProvider, filterRated, filterVoters, filterDirector, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, filterRuntimeMin, filterRuntimeMax, filterMinLb, fetchMovies]);
+  }, [search, sortBy, sortVoter, filterMn, filterWl, filterStream, filterProvider, filterRated, filterVoters, filterDirector, filterKeyword, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, filterRuntimeMin, filterRuntimeMax, filterMinLb, fetchMovies]);
 
   const rankMap = useRankMap(allMovies);
 
@@ -332,10 +342,23 @@ export default function Films() {
     return (parseInt(a.year) || 9999) - (parseInt(b.year) || 9999);
   }
 
-  const searchFiltered = search
+  const searchFiltered = (search || filterKeyword)
     ? movies.filter(m => {
-        const q = search.toLowerCase();
-        return m.title.toLowerCase().includes(q) || m.director?.toLowerCase().includes(q);
+        if (filterKeyword) {
+          const kw = filterKeyword.trim().toLowerCase();
+          if (!Array.isArray(m.keywords) || !m.keywords.some(k => k.toLowerCase() === kw)) {
+            return false;
+          }
+        }
+        if (search) {
+          const q = search.toLowerCase();
+          return (
+            m.title.toLowerCase().includes(q) ||
+            m.director?.toLowerCase().includes(q) ||
+            (Array.isArray(m.keywords) && m.keywords.some(k => k.toLowerCase().includes(q)))
+          );
+        }
+        return true;
       })
     : movies;
 
@@ -607,6 +630,12 @@ export default function Films() {
               <button type="button" onClick={() => setFilterDirector('')} title="Remove director filter">✕</button>
             </span>
           )}
+          {filterKeyword && (
+            <span className="active-chip active-chip-keyword">
+              🏷️ {filterKeyword}
+              <button type="button" onClick={() => setFilterKeyword('')} title="Remove theme filter">✕</button>
+            </span>
+          )}
           {(filterYearMin || filterYearMax) && (
             <span className="active-chip">
               📅 {filterYearMin || '…'}–{filterYearMax || '…'}
@@ -816,6 +845,37 @@ export default function Films() {
           </div>
 
           <div className="advanced-filter-item">
+            <label className="advanced-label" htmlFor="filter-keyword">Theme / Keyword</label>
+            <div className="keyword-input-wrapper">
+              <input
+                id="filter-keyword"
+                list="keyword-suggestions"
+                className="input input-sm advanced-select"
+                placeholder="Search or pick theme…"
+                value={filterKeyword}
+                onChange={e => setFilterKeyword(e.target.value)}
+              />
+              {filterKeyword && (
+                <button
+                  type="button"
+                  className="keyword-clear-btn"
+                  onClick={() => setFilterKeyword('')}
+                  title="Clear theme filter"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <datalist id="keyword-suggestions">
+              {keywordsList.map(({ keyword, count }) => (
+                <option key={keyword} value={keyword}>
+                  {`${keyword} (${count} films)`}
+                </option>
+              ))}
+            </datalist>
+          </div>
+
+          <div className="advanced-filter-item">
             <span className="advanced-label">Release Year</span>
             <div className="advanced-range-inputs">
               <input
@@ -941,6 +1001,7 @@ export default function Films() {
               className="btn btn-sm btn-ghost advanced-clear-btn"
               onClick={() => {
                 setFilterDirector('');
+                setFilterKeyword('');
                 setFilterYearMin('');
                 setFilterYearMax('');
                 setFilterMinVoters('');
@@ -955,6 +1016,26 @@ export default function Films() {
             >
               Clear advanced
             </button>
+          )}
+
+          {keywordsList.length > 0 && (
+            <div className="advanced-keyword-quick-pills">
+              <span className="quick-pills-label">Popular Themes:</span>
+              {keywordsList.slice(0, 8).map(({ keyword, count }) => {
+                const isSelected = filterKeyword.toLowerCase() === keyword.toLowerCase();
+                return (
+                  <button
+                    key={keyword}
+                    type="button"
+                    className={`keyword-pill-btn${isSelected ? ' active' : ''}`}
+                    onClick={() => setFilterKeyword(isSelected ? '' : keyword)}
+                    title={`${count} films tagged with "${keyword}"`}
+                  >
+                    🏷️ {keyword} <span className="pill-count">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
       )}
@@ -1234,6 +1315,56 @@ export default function Films() {
                   <option value="">All Directors ({directors.length})</option>
                   {directors.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
+              </div>
+
+              {/* Theme / Keyword section */}
+              <div className="mobile-drawer-section">
+                <label className="mobile-section-label" htmlFor="mobile-filter-keyword">Theme / Keyword</label>
+                <div className="keyword-input-wrapper" style={{ width: '100%' }}>
+                  <input
+                    id="mobile-filter-keyword"
+                    list="keyword-suggestions-mobile"
+                    className="input input-sm"
+                    style={{ width: '100%', paddingRight: 26 }}
+                    placeholder="Search or pick theme (e.g. neo-noir, heist)..."
+                    value={filterKeyword}
+                    onChange={e => setFilterKeyword(e.target.value)}
+                  />
+                  {filterKeyword && (
+                    <button
+                      type="button"
+                      className="keyword-clear-btn"
+                      onClick={() => setFilterKeyword('')}
+                      title="Clear theme filter"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+                <datalist id="keyword-suggestions-mobile">
+                  {keywordsList.map(({ keyword, count }) => (
+                    <option key={keyword} value={keyword}>
+                      {`${keyword} (${count} films)`}
+                    </option>
+                  ))}
+                </datalist>
+                {keywordsList.length > 0 && (
+                  <div className="mobile-keyword-quick-pills">
+                    {keywordsList.slice(0, 8).map(({ keyword, count }) => {
+                      const isSelected = filterKeyword.toLowerCase() === keyword.toLowerCase();
+                      return (
+                        <button
+                          key={keyword}
+                          type="button"
+                          className={`keyword-pill-btn${isSelected ? ' active' : ''}`}
+                          onClick={() => setFilterKeyword(isSelected ? '' : keyword)}
+                        >
+                          🏷️ {keyword} <span className="pill-count">{count}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Release Year */}
