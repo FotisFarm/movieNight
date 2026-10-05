@@ -154,6 +154,7 @@ export default function Session({ voter }) {
   const [durationFilter, setDurationFilter] = useState('any');
   const [streamingFilter, setStreamingFilter] = useState('any');
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [vibe, setVibe] = useState('safe'); // 'safe' | 'dna' | 'gems' | 'wildcard'
 
   // Contenders state from backend
   const [contenders, setContenders] = useState([]);
@@ -211,7 +212,7 @@ export default function Session({ voter }) {
   // Reset candidate limit when core filters or search change
   useEffect(() => {
     setCandidateLimit(16);
-  }, [attendees, pool, selectedListId, historyMode, durationFilter, streamingFilter, debouncedSearch]);
+  }, [attendees, pool, vibe, selectedListId, historyMode, durationFilter, streamingFilter, debouncedSearch]);
 
   // Fetch contenders when filters change
   const fetchContenders = useCallback(async () => {
@@ -233,6 +234,7 @@ export default function Session({ voter }) {
       const res = await api.getSessionContenders({
         attendees,
         pool,
+        vibe,
         listId: pool === 'list' ? selectedListId : undefined,
         historyMode,
         minRuntime: dur.min,
@@ -268,7 +270,7 @@ export default function Session({ voter }) {
     } finally {
       setLoading(false);
     }
-  }, [attendees, pool, selectedListId, historyMode, durationFilter, streamingFilter, debouncedSearch, candidateLimit]);
+  }, [attendees, pool, vibe, selectedListId, historyMode, durationFilter, streamingFilter, debouncedSearch, candidateLimit]);
 
   useEffect(() => {
     fetchContenders();
@@ -635,6 +637,40 @@ export default function Session({ voter }) {
           </div>
         </div>
 
+        {/* Tonight's Vibe Preset Selector */}
+        <div className="control-group session-vibe-group">
+          <div className="control-header">
+            <span className="control-label">🎭 Tonight's Vibe</span>
+            <span className="control-hint">
+              {vibe === 'safe' && '🛡️ Safe Bet: High consensus — protects against anyone disliking the pick.'}
+              {vibe === 'dna' && '🎬 Club Wheelhouse: Prioritizes attendees\' favorite directors and masterworks.'}
+              {vibe === 'gems' && '💎 Fresh Gems: Unrated discoveries with high Letterboxd acclaim.'}
+              {vibe === 'wildcard' && '⚡ Wildcard Debate: High opinion spread for lively post-movie debate.'}
+            </span>
+          </div>
+          <div className="vibe-preset-grid">
+            {[
+              { id: 'safe', icon: '🛡️', title: 'Safe Bet', desc: 'Crowd pleaser & low risk' },
+              { id: 'dna', icon: '🎬', title: 'Club Wheelhouse', desc: 'Favorite directors & masterworks' },
+              { id: 'gems', icon: '💎', title: 'Fresh Gems', desc: 'Unrated critical acclaim' },
+              { id: 'wildcard', icon: '⚡', title: 'Wildcard Debate', desc: 'Sparks, debate & high spread' },
+            ].map(item => (
+              <button
+                key={item.id}
+                type="button"
+                className={`vibe-chip-card ${vibe === item.id ? 'active' : ''}`}
+                onClick={() => setVibe(item.id)}
+              >
+                <span className="vibe-chip-icon">{item.icon}</span>
+                <div className="vibe-chip-text">
+                  <span className="vibe-chip-title">{item.title}</span>
+                  <span className="vibe-chip-desc">{item.desc}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Pool & Duration Filters */}
         <div className="session-filter-row">
           {/* Candidate Pool */}
@@ -848,6 +884,7 @@ export default function Session({ voter }) {
                       <span className={`score-badge ${scoreClass(winner.sessionScore)}`}>
                         {winner.sessionScore} / 10 Match
                       </span>
+                      {winner.vibeBadge && <span className="badge badge-vibe">{winner.vibeBadge}</span>}
                       {winner.crowdPleaser && <span className="badge badge-crowd">🤝 High Agreement</span>}
                       {winner.stream_gr && (
                         <StreamBadge streamGr={winner.stream_gr} />
@@ -1045,6 +1082,11 @@ export default function Session({ voter }) {
 
                       {/* Attendee Predicted Scores Breakdown */}
                       <div className="attendee-breakdown-row">
+                        {movie.vibeBadge && (
+                          <span className={`signal-badge vibe-badge vibe-badge--${vibe}`} title={movie.vibeBadge}>
+                            {movie.vibeBadge}
+                          </span>
+                        )}
                         {movie.attendeeBreakdown?.map(a => (
                           <span
                             key={a.voter}

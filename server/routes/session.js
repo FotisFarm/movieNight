@@ -22,6 +22,7 @@ router.post('/contenders', ah(async (req, res) => {
     provider,
     limit = 16,
     search,
+    vibe = 'safe',
   } = req.body;
 
   // Resolve effective history mode:
@@ -262,9 +263,42 @@ router.post('/contenders', ah(async (req, res) => {
     const attendeeWlCount = attendeeBreakdown.filter(a => a.onWatchlist).length;
     const unanimousWatchlist = attendeeWlCount === attendees.length && attendees.length > 1;
 
-    // Consensus Session Match Formula:
-    // 70% average satisfaction + 30% worst-case attendee satisfaction - spread penalty
-    let sessionScore = (avgPred * 0.70) + (minPred * 0.30) - (spread * 0.08);
+    const top10Count = attendeeBreakdown.filter(a => a.hasTop10).length;
+
+    // Vibe-adjusted Consensus Session Match Formula:
+    let sessionScore;
+    let vibeBadge = null;
+
+    if (vibe === 'wildcard') {
+      // Rewards taste divergence / sparks for spirited debate
+      sessionScore = (avgPred * 0.75) + (spread * 0.22);
+      if (spread >= 2.0) {
+        vibeBadge = `⚡ High Spark (Spread: ${spread}★)`;
+      } else {
+        vibeBadge = `⚡ Wildcard Pick`;
+      }
+    } else if (vibe === 'dna') {
+      // Prioritizes attendees' historical favorites & masterwork directors
+      sessionScore = (avgPred * 0.75) + (minPred * 0.25) + (top10Count > 0 ? 0.45 : 0) - (spread * 0.08);
+      if (top10Count > 0) {
+        vibeBadge = `🎬 Masterwork Pick`;
+      } else {
+        vibeBadge = `🎬 Wheelhouse Film`;
+      }
+    } else if (vibe === 'gems') {
+      // Hidden gems: unrated discoveries with strong acclaim
+      sessionScore = (avgPred * 0.65) + (minPred * 0.35) - (spread * 0.10);
+      vibeBadge = `💎 Hidden Gem`;
+    } else {
+      // Default: 'safe' (High Consensus)
+      // 60% average satisfaction + 40% worst-case attendee protection - stronger spread penalty
+      sessionScore = (avgPred * 0.60) + (minPred * 0.40) - (spread * 0.14);
+      if (spread <= 1.0) {
+        vibeBadge = `🛡️ Safe Bet (Consensus)`;
+      } else {
+        vibeBadge = `🛡️ Crowd Pleaser`;
+      }
+    }
 
     // Watchlist bonus (unanimous interest gives strong signal)
     if (unanimousWatchlist) sessionScore += 0.35;
@@ -302,6 +336,7 @@ router.post('/contenders', ah(async (req, res) => {
       crowdPleaser: spread <= 0.8,
       wildcard: spread >= 1.6,
       spread,
+      vibeBadge,
       attendeeBreakdown,
     };
   });
