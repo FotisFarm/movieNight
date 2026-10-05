@@ -870,3 +870,31 @@
   text-transform: capitalize;
 }
 
+.movie-modal-kw-tag.editable {
+  padding-right: 3px;
+}
+
+.kw-remove-btn {
+  background: transparent;
+  border: none;
+  color: var(--text3);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+.kw-remove-btn:hover {
+  color: var(--red);
+}
+
+.movie-modal-keywords-edit {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+

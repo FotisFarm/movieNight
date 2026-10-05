@@ -68,7 +68,36 @@ function computeStats(movies, voters) {
     const topFilms = ranked.slice(0, 10);
     const bottomFilms = ranked.slice(-10).reverse();
 
-    return { voter, ratedCount: myFilms.length, mean, top3Count, topPicks, favDirector, favDecade, dist, dirBreakdown, decBreakdown, topFilms, bottomFilms };
+    // Keyword / Thematic breakdown for this voter
+    const kwMap = {};
+    for (const m of myFilms) {
+      const kws = Array.isArray(m.keywords) ? m.keywords : [];
+      const score = m.ratings[voter];
+      for (const kw of kws) {
+        if (!kw || typeof kw !== 'string') continue;
+        const cleanKw = kw.trim().toLowerCase();
+        if (!kwMap[cleanKw]) kwMap[cleanKw] = [];
+        kwMap[cleanKw].push(score);
+      }
+    }
+    const kwBreakdown = Object.entries(kwMap)
+      .filter(([_, sList]) => sList.length >= 2)
+      .map(([name, sList]) => {
+        const kMean = avg(sList);
+        return {
+          name,
+          count: sList.length,
+          mean: kMean,
+          delta: mean != null ? kMean - mean : 0,
+        };
+      })
+      .sort((a, b) => b.delta - a.delta || b.count - a.count);
+
+    const favKeywords = kwBreakdown.filter(k => k.delta > 0).slice(0, 6);
+    const lowKeywords = [...kwBreakdown].filter(k => k.delta < 0).sort((a, b) => a.delta - b.delta).slice(0, 4);
+    const topKeyword = favKeywords[0] || null;
+
+    return { voter, ratedCount: myFilms.length, mean, top3Count, topPicks, favDirector, favDecade, dist, dirBreakdown, decBreakdown, topFilms, bottomFilms, topKeyword, favKeywords, lowKeywords, kwBreakdown };
   });
 }
 
@@ -390,6 +419,14 @@ export default function Stats({ voter }) {
                   <span className="stats-fav-val">{s.favDecade}s</span>
                 </div>
               )}
+              {s.topKeyword && (
+                <div className="stats-fav">
+                  <span className="stats-fav-lbl">Fav theme</span>
+                  <span className="stats-fav-val" title={`Average ${fmt(s.topKeyword.mean)} over ${s.topKeyword.count} films`}>
+                    🏷️ {s.topKeyword.name} ({fmt(s.topKeyword.mean, 1)})
+                  </span>
+                </div>
+              )}
 
               {/* Score distribution */}
               <div className="stats-dist">
@@ -505,6 +542,36 @@ export default function Stats({ voter }) {
                         <span className={`vd-bd-mean ${scoreClass(d.mean)}`}>{fmt(d.mean, 1)}</span>
                       </div>
                     ))}
+                  </div>
+                  <div className="vd-col">
+                    <div className="vd-col-title">Favorite Themes ({sel.favKeywords.length})</div>
+                    {sel.favKeywords.length === 0 ? (
+                      <div style={{ fontSize: 11, color: 'var(--text3)', padding: '4px 6px' }}>Need ≥2 films per theme</div>
+                    ) : (
+                      sel.favKeywords.map(k => (
+                        <div key={k.name} className="vd-bd-row">
+                          <span className="vd-bd-name" title={`Rated ${fmt(k.mean)} on ${k.count} films`}>🏷️ {k.name}</span>
+                          <span className="vd-bd-count">{k.count}</span>
+                          <span className={`vd-bd-mean ${scoreClass(k.mean)}`}>
+                            {fmt(k.mean, 1)} <span style={{ fontSize: 10, opacity: 0.8 }}>(+{k.delta.toFixed(1)})</span>
+                          </span>
+                        </div>
+                      ))
+                    )}
+                    {sel.lowKeywords.length > 0 && (
+                      <>
+                        <div className="vd-col-title" style={{ marginTop: 14 }}>Least Fav Themes</div>
+                        {sel.lowKeywords.map(k => (
+                          <div key={k.name} className="vd-bd-row">
+                            <span className="vd-bd-name" title={`Rated ${fmt(k.mean)} on ${k.count} films`}>🏷️ {k.name}</span>
+                            <span className="vd-bd-count">{k.count}</span>
+                            <span className={`vd-bd-mean ${scoreClass(k.mean)}`}>
+                              {fmt(k.mean, 1)} <span style={{ fontSize: 10, opacity: 0.8 }}>({k.delta.toFixed(1)})</span>
+                            </span>
+                          </div>
+                        ))}
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

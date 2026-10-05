@@ -164,7 +164,7 @@
 .stats-voter-card.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 
 /* ── Voter drill-down modal ── */
-.vd-modal { max-width: 920px; width: 92%; }
+.vd-modal { max-width: 1060px; width: 94%; }
 .vd-body { padding: 18px; overflow-y: auto; }
 .vd-grid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;

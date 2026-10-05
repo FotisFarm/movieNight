@@ -87,6 +87,8 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   const [trailerOpen, setTrailerOpen] = useState(false);
   const [providers, setProviders] = useState(null);
   const [providersLoading, setProvidersLoading] = useState(false);
+  const [editKeywords, setEditKeywords] = useState([]);
+  const [newKeyword, setNewKeyword] = useState('');
 
   const onMovieUpdatedRef = useRef(onMovieUpdated);
   useEffect(() => {
@@ -234,6 +236,8 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
       setEditYear(m.year || '');
       setEditRuntime(m.runtime != null ? String(m.runtime) : '');
       setEditImdbId(m.imdb_id || '');
+      setEditKeywords(Array.isArray(m.keywords) ? m.keywords : []);
+      setNewKeyword('');
       setImdbCandidates(null);
       setImdbDetail(null);
       setImdbOpen(false);
@@ -343,6 +347,9 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
       const rInt = parseInt(editRuntime, 10);
       payload.runtime = (!isNaN(rInt) && rInt > 0) ? rInt : null;
     }
+    if (editKeywords !== undefined) {
+      payload.keywords = editKeywords;
+    }
     // Only send imdb_id when it actually changed — avoids a needless OMDb re-fetch on every save.
     // Compare the extracted id so pasting a URL for the same film is not treated as a change.
     const cleanId = extractImdbId(editImdbId);
@@ -406,6 +413,51 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                   <input className="input" placeholder="Director" value={editDirector} onChange={e => setEditDirector(e.target.value)} />
                   <input className="input" placeholder="Year" value={editYear} onChange={e => setEditYear(e.target.value)} style={{ maxWidth: 75 }} />
                   <input className="input" placeholder="Mins" type="number" value={editRuntime} onChange={e => setEditRuntime(e.target.value)} style={{ maxWidth: 75 }} title="Duration (minutes)" />
+                </div>
+                <div className="movie-modal-keywords-edit">
+                  <div className="movie-modal-keywords">
+                    {editKeywords.map(kw => (
+                      <span key={kw} className="movie-modal-kw-tag editable">
+                        🏷️ {kw}
+                        <button
+                          type="button"
+                          className="kw-remove-btn"
+                          onClick={() => setEditKeywords(prev => prev.filter(k => k !== kw))}
+                          title="Remove keyword"
+                        >✕</button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="kw-add-row" style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                    <input
+                      className="input input-sm"
+                      placeholder="Add theme / keyword..."
+                      value={newKeyword}
+                      onChange={e => setNewKeyword(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const val = newKeyword.trim().toLowerCase();
+                          if (val && !editKeywords.includes(val)) {
+                            setEditKeywords(prev => [...prev, val]);
+                            setNewKeyword('');
+                          }
+                        }
+                      }}
+                      style={{ fontSize: 12, padding: '4px 8px', maxWidth: 180 }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => {
+                        const val = newKeyword.trim().toLowerCase();
+                        if (val && !editKeywords.includes(val)) {
+                          setEditKeywords(prev => [...prev, val]);
+                          setNewKeyword('');
+                        }
+                      }}
+                    >＋ Add</button>
+                  </div>
                 </div>
               </div>
             ) : (

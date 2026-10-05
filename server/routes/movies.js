@@ -512,7 +512,7 @@ router.patch('/:id', ah(async (req, res) => {
   const movie = await db.get('SELECT * FROM movies WHERE id = ?', id);
   if (!movie) return res.status(404).json({ error: 'Not found' });
 
-  const { director, title, year, mn, watchlist, cinobo, imdb_id, runtime, ratings, comments, top3 } = req.body;
+  const { director, title, year, mn, watchlist, cinobo, imdb_id, runtime, ratings, comments, top3, keywords } = req.body;
   const sessionVoter = req.session.voter;
   const isAdmin = isUserAdmin(req);
 
@@ -542,6 +542,16 @@ router.patch('/:id', ah(async (req, res) => {
     // Note: mn and watchlist are group-scoped and stored exclusively in group_movie_status, not in shared movies table
     if (cinobo !== undefined)   updates.cinobo = cinobo;
     if (runtime !== undefined)  updates.runtime = (runtime === null || runtime === '') ? null : parseInt(runtime, 10);
+    if (keywords !== undefined) {
+      if (Array.isArray(keywords)) {
+        const cleanKws = keywords.map(k => String(k).trim().toLowerCase()).filter(Boolean);
+        updates.keywords = JSON.stringify(cleanKws);
+      } else if (typeof keywords === 'string') {
+        updates.keywords = keywords;
+      } else if (keywords === null) {
+        updates.keywords = null;
+      }
+    }
     // Setting/changing the IMDb id re-fetches the rating; clearing it wipes both.
     if (imdb_id !== undefined) {
       // The client may paste a full IMDb URL — store the extracted id, never the raw string.
