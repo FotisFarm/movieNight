@@ -36,25 +36,43 @@ export const VIBE_PRESETS = [
   {
     id: 'safe',
     icon: '🛡️',
-    label: 'Safe Bet',
-    sub: 'Crowd Pleaser',
-    desc: 'High consensus blend prioritizing proven group satisfaction and low dispute risk.',
-    weights: { dw: 0.30, lbw: 0.45, ew: 0.25, tw: 0.08, maxVoters: 2, minDirFilms: 2 },
+    label: 'Crowd Pleaser',
+    sub: 'Zero-Risk Consensus',
+    desc: 'Overwhelming global critical acclaim prioritizing a guaranteed high floor and zero controversy.',
+    tooltip: {
+      title: '🛡️ Crowd Pleaser (Zero-Risk Consensus)',
+      philosophy: 'Universal appeal with a guaranteed high satisfaction floor (outside-in).',
+      weightsText: 'Letterboxd Acclaim: 55% · Low Controversy · Proven Track Record',
+      bestFor: 'Mixed groups, casual nights, or when you want zero complaints.',
+    },
+    weights: { dw: 0.20, lbw: 0.55, ew: 0.25, tw: 0.04, maxVoters: 2, minDirFilms: 2 },
   },
   {
     id: 'dna',
     icon: '🎬',
     label: 'Club DNA',
-    sub: 'Our Wheelhouse',
-    desc: 'Dials in heavily on your group\'s favorite directors & personal Top 10 lists.',
-    weights: { dw: 0.55, lbw: 0.25, ew: 0.20, tw: 0.16, maxVoters: 2, minDirFilms: 2 },
+    sub: 'Our Signature Taste',
+    desc: 'Tailored to our group\'s unique obsessions — heavily elevates our favorite directors & Top 10 masterworks.',
+    tooltip: {
+      title: '🎬 Club DNA (Our Signature Taste)',
+      philosophy: 'Pure expression of our club\'s idiosyncratic identity (inside-out).',
+      weightsText: 'Director History: 60% · Top 10 Halo Boost: 2× · Thematic Fit',
+      bestFor: 'Core club nights when you want an unmistakable signature Movie Night experience.',
+    },
+    weights: { dw: 0.60, lbw: 0.15, ew: 0.15, tw: 0.20, maxVoters: 2, minDirFilms: 2 },
   },
   {
     id: 'gems',
     icon: '💎',
     label: 'Hidden Gems',
-    sub: 'Fresh Acclaim',
-    desc: 'Top Letterboxd critical acclaim, unvoted by your club, revealing overlooked masterpieces.',
+    sub: 'Fresh Discoveries',
+    desc: 'Top Letterboxd acclaim, strictly unvoted by our club, uncovering overlooked masterpieces.',
+    tooltip: {
+      title: '💎 Hidden Gems (Fresh Discoveries)',
+      philosophy: 'Top-tier critical treasures that nobody in our group has rated yet.',
+      weightsText: 'Letterboxd Acclaim: 65% · Strictly Unvoted (0 votes) · Debuts Allowed',
+      bestFor: 'When you want everyone to discover a fresh masterpiece together for the first time.',
+    },
     weights: { dw: 0.15, lbw: 0.65, ew: 0.20, tw: 0.04, maxVoters: 0, minDirFilms: 1 },
   },
   {
@@ -63,6 +81,12 @@ export const VIBE_PRESETS = [
     label: 'Wildcard',
     sub: 'Sparks & Debates',
     desc: 'Unconventional picks spanning distant eras, inviting fresh group opinions and discussion.',
+    tooltip: {
+      title: '⚡ Wildcard (Sparks & Debates)',
+      philosophy: 'Daring, era-spanning cinema that divides opinion for lively discussion.',
+      weightsText: 'Decade Exploration: 45% · Zero Top 10 Halo Bias · Polarizing Allowed',
+      bestFor: 'Nights when you want fiery post-movie debates rather than polite agreement.',
+    },
     weights: { dw: 0.35, lbw: 0.20, ew: 0.45, tw: 0.00, maxVoters: 3, minDirFilms: 1 },
   },
 ];
@@ -430,12 +454,14 @@ export default function Recommendations() {
         <div className="recs-vibes-grid">
           {VIBE_PRESETS.map(preset => {
             const isSelected = activeVibe === preset.id;
+            const tip = preset.tooltip;
             return (
               <button
                 key={preset.id}
                 type="button"
                 className={`recs-vibe-card${isSelected ? ' active' : ''}`}
                 onClick={() => selectVibe(preset.id)}
+                title={`${tip.title}\n${tip.philosophy}\n• Focus: ${tip.weightsText}\n• Best for: ${tip.bestFor}`}
               >
                 <span className="recs-vibe-icon">{preset.icon}</span>
                 <div className="recs-vibe-info">
@@ -443,6 +469,20 @@ export default function Recommendations() {
                   <span className="recs-vibe-sub">{preset.sub}</span>
                 </div>
                 {isSelected && <span className="recs-vibe-check">✓</span>}
+                <div className="recs-vibe-tooltip" role="tooltip">
+                  <div className="vibe-tip-header">
+                    <span className="vibe-tip-title">{tip.title}</span>
+                  </div>
+                  <p className="vibe-tip-desc">{tip.philosophy}</p>
+                  <div className="vibe-tip-row">
+                    <span className="vibe-tip-tag">⚖️ Focus:</span>
+                    <span className="vibe-tip-val">{tip.weightsText}</span>
+                  </div>
+                  <div className="vibe-tip-row">
+                    <span className="vibe-tip-tag">💡 Best for:</span>
+                    <span className="vibe-tip-val">{tip.bestFor}</span>
+                  </div>
+                </div>
               </button>
             );
           })}
@@ -524,9 +564,9 @@ export default function Recommendations() {
             type="button"
             className="btn btn-sm btn-ghost filter-reset-active"
             onClick={resetWeights}
-            title="Reset model weights to Safe Bet preset"
+            title="Reset model weights to Crowd Pleaser preset"
           >
-            Reset to Safe Bet
+            Reset to Crowd Pleaser
           </button>
         </div>
       </div>

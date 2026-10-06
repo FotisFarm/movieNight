@@ -642,29 +642,78 @@ export default function Session({ voter }) {
           <div className="control-header">
             <span className="control-label">🎭 Tonight's Vibe</span>
             <span className="control-hint">
-              {vibe === 'safe' && '🛡️ Safe Bet: High consensus — protects against anyone disliking the pick.'}
-              {vibe === 'dna' && '🎬 Club Wheelhouse: Prioritizes attendees\' favorite directors and masterworks.'}
+              {vibe === 'safe' && '🛡️ Crowd Pleaser: Zero-risk consensus — protects against anyone disliking the pick.'}
+              {vibe === 'dna' && '🎬 Club DNA: Tailored to our signature taste — boosts attendees\' favorite directors & Top 10 masterworks.'}
               {vibe === 'gems' && '💎 Fresh Gems: Unrated discoveries with high Letterboxd acclaim.'}
               {vibe === 'wildcard' && '⚡ Wildcard Debate: High opinion spread for lively post-movie debate.'}
             </span>
           </div>
           <div className="vibe-preset-grid">
             {[
-              { id: 'safe', icon: '🛡️', title: 'Safe Bet', desc: 'Crowd pleaser & low risk' },
-              { id: 'dna', icon: '🎬', title: 'Club Wheelhouse', desc: 'Favorite directors & masterworks' },
-              { id: 'gems', icon: '💎', title: 'Fresh Gems', desc: 'Unrated critical acclaim' },
-              { id: 'wildcard', icon: '⚡', title: 'Wildcard Debate', desc: 'Sparks, debate & high spread' },
+              {
+                id: 'safe',
+                icon: '🛡️',
+                title: 'Crowd Pleaser',
+                desc: 'Zero-risk consensus',
+                tipTitle: '🛡️ Crowd Pleaser (Zero-Risk Consensus)',
+                tipDesc: 'Maximizes the satisfaction floor so everyone enjoys the film with zero controversy risk.',
+                tipFocus: 'High consensus · Worst-case viewer protection (minPred: 45%)',
+                tipBest: 'Mixed groups, guests, or nights where you want zero friction.',
+              },
+              {
+                id: 'dna',
+                icon: '🎬',
+                title: 'Club DNA',
+                desc: 'Our signature taste',
+                tipTitle: '🎬 Club DNA (Our Signature Taste)',
+                tipDesc: 'Heavily elevates attendees\' historical favorite directors and personal Top 10 masterworks.',
+                tipFocus: 'Attendee director favorites · Top 10 halo bonus (+0.45★)',
+                tipBest: 'Core Movie Nights where you want our unmistakable group vibe.',
+              },
+              {
+                id: 'gems',
+                icon: '💎',
+                title: 'Fresh Gems',
+                desc: 'Unrated discoveries',
+                tipTitle: '💎 Fresh Gems (Unrated Discoveries)',
+                tipDesc: 'Overlooked critical masterpieces that nobody in tonight\'s room has rated yet.',
+                tipFocus: 'Strictly unrated by attendees · High Letterboxd acclaim (65%)',
+                tipBest: 'When everyone in attendance wants to experience a fresh discovery together.',
+              },
+              {
+                id: 'wildcard',
+                icon: '⚡',
+                title: 'Wildcard Debate',
+                desc: 'Sparks & high spread',
+                tipTitle: '⚡ Wildcard Debate (Sparks & Debate)',
+                tipDesc: 'Unconventional cinema that polarizes taste to ignite passionate post-movie discussion.',
+                tipFocus: 'Rewards opinion spread (+spread * 0.22) · Diverse eras',
+                tipBest: 'When you want spirited, lively post-movie debate instead of polite agreement.',
+              },
             ].map(item => (
               <button
                 key={item.id}
                 type="button"
                 className={`vibe-chip-card ${vibe === item.id ? 'active' : ''}`}
                 onClick={() => setVibe(item.id)}
+                title={`${item.tipTitle}\n${item.tipDesc}\n• Focus: ${item.tipFocus}\n• Best for: ${item.tipBest}`}
               >
                 <span className="vibe-chip-icon">{item.icon}</span>
                 <div className="vibe-chip-text">
                   <span className="vibe-chip-title">{item.title}</span>
                   <span className="vibe-chip-desc">{item.desc}</span>
+                </div>
+                <div className="vibe-chip-tooltip" role="tooltip">
+                  <div className="vibe-chip-tip-title">{item.tipTitle}</div>
+                  <p className="vibe-chip-tip-desc">{item.tipDesc}</p>
+                  <div className="vibe-chip-tip-row">
+                    <span className="vibe-chip-tip-label">⚖️ Focus:</span>
+                    <span>{item.tipFocus}</span>
+                  </div>
+                  <div className="vibe-chip-tip-row">
+                    <span className="vibe-chip-tip-label">💡 Best for:</span>
+                    <span>{item.tipBest}</span>
+                  </div>
                 </div>
               </button>
             ))}

@@ -396,6 +396,93 @@
   margin-left: auto;
 }
 
+/* ── Hover Explanation Tooltip on Vibe Card ── */
+.recs-vibe-tooltip {
+  position: absolute;
+  bottom: calc(100% + 9px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  width: 270px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recs-vibe-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--border) transparent transparent transparent;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .recs-vibe-card:hover .recs-vibe-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@media (hover: none) {
+  .recs-vibe-tooltip {
+    display: none;
+  }
+}
+
+.vibe-tip-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+
+.vibe-tip-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.vibe-tip-desc {
+  font-size: 11px;
+  color: var(--text2);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.vibe-tip-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 10.5px;
+  line-height: 1.3;
+}
+
+.vibe-tip-tag {
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  font-size: 9.5px;
+  letter-spacing: 0.03em;
+}
+
+.vibe-tip-val {
+  color: var(--text);
+  font-weight: 500;
+}
+
 /* ── Collapsible Fine-Tune Drawer ── */
 .recs-biases {
   background: var(--surface2);

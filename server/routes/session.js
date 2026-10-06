@@ -357,7 +357,7 @@ router.post('/contenders', ah(async (req, res) => {
       if (top10Count > 0) {
         vibeBadge = `🎬 Masterwork Pick`;
       } else {
-        vibeBadge = `🎬 Wheelhouse Film`;
+        vibeBadge = `🎬 Club DNA Pick`;
       }
     } else if (vibe === 'gems') {
       // Hidden gems: unrated discoveries with strong acclaim
@@ -368,9 +368,9 @@ router.post('/contenders', ah(async (req, res) => {
       // 60% average satisfaction + 40% worst-case attendee protection - stronger spread penalty
       sessionScore = (avgPred * 0.60) + (minPred * 0.40) - (spread * 0.14);
       if (spread <= 1.0) {
-        vibeBadge = `🛡️ Safe Bet (Consensus)`;
+        vibeBadge = `🛡️ Crowd Pleaser (Consensus)`;
       } else {
-        vibeBadge = `🛡️ Crowd Pleaser`;
+        vibeBadge = `🛡️ Low-Risk Pick`;
       }
     }
 
