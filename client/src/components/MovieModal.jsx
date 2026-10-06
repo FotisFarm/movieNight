@@ -89,6 +89,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
   const [providersLoading, setProvidersLoading] = useState(false);
   const [editKeywords, setEditKeywords] = useState([]);
   const [newKeyword, setNewKeyword] = useState('');
+  const [showKeywords, setShowKeywords] = useState(false);
 
   const onMovieUpdatedRef = useRef(onMovieUpdated);
   useEffect(() => {
@@ -106,6 +107,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
     setProviders(null);
     setProvidersLoading(false);
     lastFetchedProvidersIdRef.current = null;
+    setShowKeywords(false);
   }, [movieId]);
 
   useEffect(() => {
@@ -469,12 +471,24 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                   {movie.runtime ? ` · ${formatRuntime(movie.runtime)}` : ''}
                 </div>
                 {movie.keywords && movie.keywords.length > 0 && (
-                  <div className="movie-modal-keywords">
-                    {movie.keywords.map(kw => (
-                      <span key={kw} className="movie-modal-kw-tag">
-                        🏷️ {kw}
-                      </span>
-                    ))}
+                  <div className="movie-modal-keywords-row">
+                    <button
+                      type="button"
+                      className={`movie-modal-kw-toggle-btn${showKeywords ? ' active' : ''}`}
+                      onClick={() => setShowKeywords(s => !s)}
+                      title={showKeywords ? 'Hide themes' : 'Show themes'}
+                    >
+                      🏷️ Themes ({movie.keywords.length}) {showKeywords ? '▴' : '▾'}
+                    </button>
+                    {showKeywords && (
+                      <div className="movie-modal-keywords">
+                        {movie.keywords.map(kw => (
+                          <span key={kw} className="movie-modal-kw-tag">
+                            🏷️ {kw}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </>

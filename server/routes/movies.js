@@ -241,15 +241,33 @@ router.get('/directors', ah(async (_req, res) => {
   res.json(rows.map(r => r.director));
 }));
 
+let cachedKeywords = null;
+let cachedKeywordsTime = 0;
+const KEYWORDS_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+function invalidateKeywordsCache() {
+  cachedKeywords = null;
+  cachedKeywordsTime = 0;
+}
+
 // GET /api/movies/keywords  — distinct keywords with film counts. Must be before /:id
-router.get('/keywords', ah(async (_req, res) => {
+router.get('/keywords', ah(async (req, res) => {
+  const minCount = req.query.all === '1' ? 1 : 2;
+  const now = Date.now();
+  if (cachedKeywords && (now - cachedKeywordsTime < KEYWORDS_CACHE_TTL) && minCount === 2) {
+    return res.json(cachedKeywords);
+  }
+
   let rows = await db.all(`
     SELECT keyword, COUNT(*) AS count
     FROM movie_keywords
     WHERE keyword != ''
     GROUP BY keyword
+    HAVING count >= ?
     ORDER BY count DESC, keyword COLLATE NOCASE ASC
-  `);
+    LIMIT 400
+  `, minCount);
+
   if (!rows || rows.length === 0) {
     const all = await db.all("SELECT keywords FROM movies WHERE keywords IS NOT NULL AND keywords != ''");
     const counts = {};
@@ -265,8 +283,15 @@ router.get('/keywords', ah(async (_req, res) => {
       } catch (_) {}
     }
     rows = Object.entries(counts)
+      .filter(([, count]) => count >= minCount)
       .map(([keyword, count]) => ({ keyword, count }))
-      .sort((a, b) => b.count - a.count || a.keyword.localeCompare(b.keyword));
+      .sort((a, b) => b.count - a.count || a.keyword.localeCompare(b.keyword))
+      .slice(0, 400);
+  }
+
+  if (minCount === 2) {
+    cachedKeywords = rows;
+    cachedKeywordsTime = now;
   }
   res.json(rows);
 }));
@@ -531,6 +556,7 @@ router.post('/', ah(async (req, res) => {
         imdb?.imdbId ?? null, imdb?.imdbRating ?? null, letterboxdRating ?? null, posterPath ?? null, backdropPath ?? null, runtime ?? null, streamGr ?? null, movieKeywords.length ? JSON.stringify(movieKeywords) : null, lastInsertRowid);
       if (movieKeywords.length > 0) {
         await db.saveMovieKeywords(lastInsertRowid, movieKeywords);
+        invalidateKeywordsCache();
       }
     }
   } catch (_) { /* film is still added even if metadata lookup is unavailable */ }
@@ -638,6 +664,7 @@ router.patch('/:id', ah(async (req, res) => {
       const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');
       await db.run(`UPDATE ${targetTable} SET ${setClause} WHERE id = ?`, ...Object.values(updates), id);
       if (updates.keywords !== undefined) {
+        invalidateKeywordsCache();
         if (updates.keywords) {
           try {
             await db.saveMovieKeywords(id, JSON.parse(updates.keywords));

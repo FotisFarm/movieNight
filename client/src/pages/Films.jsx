@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import MovieCard from '../components/MovieCard';
@@ -327,6 +327,14 @@ export default function Films() {
   }, [search, sortBy, sortVoter, filterMn, filterWl, filterStream, filterProvider, filterRated, filterVoters, filterDirector, filterKeyword, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, filterRuntimeMin, filterRuntimeMax, filterMinLb, fetchMovies]);
 
   const rankMap = useRankMap(allMovies);
+
+  const keywordOptions = useMemo(() => {
+    return keywordsList.slice(0, 150).map(({ keyword, count }) => (
+      <option key={keyword} value={keyword}>
+        {`${keyword} (${count} films)`}
+      </option>
+    ));
+  }, [keywordsList]);
 
   function tiebreakScore(a, b) {
     if (b.voterCount !== a.voterCount) return b.voterCount - a.voterCount;
@@ -867,11 +875,7 @@ export default function Films() {
               )}
             </div>
             <datalist id="keyword-suggestions">
-              {keywordsList.map(({ keyword, count }) => (
-                <option key={keyword} value={keyword}>
-                  {`${keyword} (${count} films)`}
-                </option>
-              ))}
+              {keywordOptions}
             </datalist>
           </div>
 
@@ -1323,7 +1327,7 @@ export default function Films() {
                 <div className="keyword-input-wrapper" style={{ width: '100%' }}>
                   <input
                     id="mobile-filter-keyword"
-                    list="keyword-suggestions-mobile"
+                    list="keyword-suggestions"
                     className="input input-sm"
                     style={{ width: '100%', paddingRight: 26 }}
                     placeholder="Search or pick theme (e.g. neo-noir, heist)..."
@@ -1341,13 +1345,6 @@ export default function Films() {
                     </button>
                   )}
                 </div>
-                <datalist id="keyword-suggestions-mobile">
-                  {keywordsList.map(({ keyword, count }) => (
-                    <option key={keyword} value={keyword}>
-                      {`${keyword} (${count} films)`}
-                    </option>
-                  ))}
-                </datalist>
                 {keywordsList.length > 0 && (
                   <div className="mobile-keyword-quick-pills">
                     {keywordsList.slice(0, 8).map(({ keyword, count }) => {
