@@ -20949,7 +20949,28 @@
     "imdb_rating": null,
     "poster_path": "/1ATXKrIPJyKNwnJ6lcG088Sa6zi.jpg",
     "runtime": 101,
-    "ratings": {},
+    "ratings": {
+      "Φώτης": "9"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Park Chan-wook",
+    "movie": "Sympathy for Mr. Vengeance",
+    "year": "2002",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0310775",
+    "imdb_rating": 7.5,
+    "poster_path": "/uj42ubGbgVL65T10SvPVr0p9mJc.jpg",
+    "runtime": 129,
+    "ratings": {
+      "Στέλιας": "10"
+    },
     "top3": {},
     "watchlistVotes": []
   }
