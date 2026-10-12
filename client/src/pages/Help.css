@@ -536,3 +536,44 @@
   border-radius: 4px;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
 }
+
+/* ── Real-World Worked Examples ── */
+.help-example-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-top: 14px;
+}
+
+.help-example-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.help-example-step {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+
+.help-example-step strong {
+  color: var(--text);
+}
+
+.help-example-result {
+  background: #090c10;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  padding: 10px 14px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 13px;
+  color: #93c5fd;
+  margin-top: 10px;
+}

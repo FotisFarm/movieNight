@@ -795,6 +795,106 @@ export default function Help() {
                   MAE_director = (1 / N_dir) · Σ_(M ∈ HasDirTrack) |e_M|  (Isolates proven auteur accuracy)<br /><br />
                   Spot-on: |e_M| ≤ 0.50★,   Pleasant Surprise: e_M ≥ +1.00★,   Underperformed: e_M ≤ -1.00★
                 </div>
+
+                {/* ── Concrete Real-World Worked Examples ── */}
+                <h4 style={{ color: '#fbbf24', fontSize: 16, margin: '28px 0 10px' }}>
+                  💡 Step-by-Step Worked Film Examples
+                </h4>
+
+                {/* Example 1: Shrinkage */}
+                <div className="help-example-card">
+                  <div className="help-example-title">
+                    <span>🧪 Example 1: Empirical Bayes Shrinkage (cyberpunk vs. neo-noir)</span>
+                  </div>
+                  <div className="help-example-step">
+                    <strong>Scenario:</strong> Our club global mean is μ_0 = 7.00★. We compare two themes attached to <em>Blade Runner 2049</em>:
+                  </div>
+                  <div className="help-example-step">
+                    • <strong>cyberpunk</strong>: n = 2 rated films in club history, raw average x̄ = 9.00★.<br />
+                    • <strong>neo-noir</strong>: n = 8 rated films in club history, raw average x̄ = 8.50★.
+                  </div>
+                  <div className="help-example-step">
+                    <strong>Computation:</strong><br />
+                    • μ*_cyberpunk = (2 / [2+2]) · 9.00 + (2 / [2+2]) · 7.00 = 0.50 · 9.00 + 0.50 · 7.00 = <strong>8.00★</strong> (Δ = +1.00★)<br />
+                    • μ*_neo-noir = (8 / [8+2]) · 8.50 + (2 / [8+2]) · 7.00 = 0.80 · 8.50 + 0.20 · 7.00 = <strong>8.20★</strong> (Δ = +1.20★)
+                  </div>
+                  <div className="help-example-result">
+                    Winner: |Δ_neo-noir| = 1.20 &gt; |Δ_cyberpunk| = 1.00 ➔ Badge displays "🏷️ neo-noir +1.2★".<br />
+                    Notice how shrinkage pulls the 2-film 9.0 down by 1.0★, while 8 films provide high confidence!
+                  </div>
+                </div>
+
+                {/* Example 2: Prior */}
+                <div className="help-example-card">
+                  <div className="help-example-title">
+                    <span>🎯 Example 2: Multi-Component Prior Prediction (Dune: Part Two)</span>
+                  </div>
+                  <div className="help-example-step">
+                    <strong>Vibe Selected:</strong> Club DNA (w_dir: 60%, w_thematic: 20%, w_lb: 15%, w_dec: 15%, twRate: 0.20).
+                  </div>
+                  <div className="help-example-step">
+                    <strong>Data Inputs:</strong><br />
+                    • Denis Villeneuve club director average (Arrival, Sicario, Blade Runner 2049): S_dir = 8.40★<br />
+                    • Letterboxd global score: 4.40★ ➔ S_lb = 4.40 · 2 = 8.80★<br />
+                    • 2020s decade club average: S_dec = 7.20★<br />
+                    • Director Top-10 Halo: 2 films in member Top-10 lists (Arrival at #2, BR2049 at #4) ➔ Points = 1.6, Breadth = 1.20<br />
+                    • Matched thematic tags: desert, space opera, epic ➔ Thematic bonus = +0.35★
+                  </div>
+                  <div className="help-example-step">
+                    <strong>Math:</strong><br />
+                    • Base Anchor = (0.60 · 8.40 + 0.15 · 8.80 + 0.15 · 7.20) / 0.90 = 7.44 / 0.90 = <strong>8.27★</strong><br />
+                    • Halo Boost = min(0.75, 1.6 · 1.20 · 0.20) = <strong>+0.38★</strong><br />
+                    • Total Prior P(M) = clamp(8.27 + 0.38 + 0.35, 1.0, 10.0) = <strong>9.00★</strong>
+                  </div>
+                  <div className="help-example-result">
+                    Model Output: Predicted Score = 9.00★ ("🎬 Masterwork Pick · Villeneuve track 8.4★ · Halo +0.38")
+                  </div>
+                </div>
+
+                {/* Example 3: Session Shootout */}
+                <div className="help-example-card">
+                  <div className="help-example-title">
+                    <span>🍿 Example 3: Tonight's Session Shootout (Past Lives vs. The Substance)</span>
+                  </div>
+                  <div className="help-example-step">
+                    <strong>Couch Attendees:</strong> Fotis, Pantelis, and Stelias.<br />
+                    • <strong>Film A (Past Lives - Consensus Drama)</strong>: Predictions: Fotis 8.2★, Pantelis 8.0★, Stelias 7.8★.<br />
+                    &nbsp;&nbsp;Room Mean S̄ = 8.00★, Floor S_min = 7.80★, Polarization Spread Ω = 0.40★.<br />
+                    • <strong>Film B (The Substance - Divisive Body Horror)</strong>: Predictions: Fotis 9.5★, Pantelis 8.5★, Stelias 6.0★.<br />
+                    &nbsp;&nbsp;Room Mean S̄ = 8.00★, Floor S_min = 6.00★, Polarization Spread Ω = 3.50★.
+                  </div>
+                  <div className="help-example-step">
+                    <strong>Vibe Comparison:</strong><br />
+                    1. <strong>Under 🛡️ Crowd Pleaser</strong> (U = 0.60 · S̄ + 0.40 · S_min - 0.14 · Ω):<br />
+                    &nbsp;&nbsp;• Film A: (0.60 · 8.00) + (0.40 · 7.80) - (0.14 · 0.40) = 4.80 + 3.12 - 0.056 = <strong>7.86★ (79% Match) ➔ Winner!</strong><br />
+                    &nbsp;&nbsp;• Film B: (0.60 · 8.00) + (0.40 · 6.00) - (0.14 · 3.50) = 4.80 + 2.40 - 0.49 = <strong>6.71★ (67% Match)</strong><br />
+                    2. <strong>Under ⚡ Wildcard</strong> (U = 0.75 · S̄ + 0.22 · Ω):<br />
+                    &nbsp;&nbsp;• Film A: (0.75 · 8.00) + (0.22 · 0.40) = 6.00 + 0.088 = <strong>6.09★ (61% Match)</strong><br />
+                    &nbsp;&nbsp;• Film B: (0.75 · 8.00) + (0.22 · 3.50) = 6.00 + 0.77 = <strong>6.77★ (68% Match) ➔ Winner!</strong>
+                  </div>
+                  <div className="help-example-result">
+                    Takeaway: Crowd Pleaser protects Stelias from hating the film; Wildcard embraces the 3.5★ spread to spark post-movie debate!
+                  </div>
+                </div>
+
+                {/* Example 4: LOO Backtest */}
+                <div className="help-example-card">
+                  <div className="help-example-title">
+                    <span>🔮 Example 4: Leave-One-Out Backtesting (Parasite)</span>
+                  </div>
+                  <div className="help-example-step">
+                    <strong>Goal:</strong> Test what the model would have predicted for <em>Parasite</em> without knowing its actual score (9.20★).
+                  </div>
+                  <div className="help-example-step">
+                    • <strong>Isolation:</strong> <em>Parasite</em> is deleted from Bong Joon-ho's club history, leaving only <em>Memories of Murder</em> (9.0★) and <em>Snowpiercer</em> (8.0★) ➔ S_dir = 8.50★.<br />
+                    • <strong>Acclaim & Decade:</strong> Letterboxd 4.55★ ➔ S_lb = 9.10★. 2010s decade average = 7.40★.<br />
+                    • <strong>Calculated Prior:</strong> P_(-Parasite) = 8.85★.<br />
+                    • <strong>Residual Error:</strong> e = 9.20 - 8.85 = <strong>+0.35★</strong>.
+                  </div>
+                  <div className="help-example-result">
+                    Verdict: |e| = 0.35 ≤ 0.50★ ➔ Categorized as "🎯 Bullseye / Spot-On", validating model calibration!
+                  </div>
+                </div>
               </div>
             </div>
           </section>
