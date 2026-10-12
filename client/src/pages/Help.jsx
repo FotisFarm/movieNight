@@ -94,7 +94,7 @@ export default function Help() {
             className={`help-nav-tab ${activeTab === 'shortcuts' ? 'active' : ''}`}
             onClick={() => setActiveTab('shortcuts')}
           >
-            ⚙️ Themes, HAL & Tips
+            ⚙️ Themes & Shortcuts
           </button>
         </nav>
       </header>
@@ -693,19 +693,19 @@ export default function Help() {
           </section>
         )}
 
-        {/* ===================== TAB 6: THEMES, HAL & TIPS ===================== */}
+        {/* ===================== TAB 6: THEMES & SHORTCUTS ===================== */}
         {activeTab === 'shortcuts' && (
           <section className="help-section fade-in">
             <div className="help-card hero-card">
               <div className="help-card-header">
                 <span className="help-card-icon">⚙️</span>
                 <div>
-                  <h2 className="help-card-title">Customization, HAL 9000 & Pro Tips</h2>
-                  <p className="help-card-sub">Power-user features to elevate your MovieNights experience</p>
+                  <h2 className="help-card-title">Customization, Themes & Pro Tips</h2>
+                  <p className="help-card-sub">Personalizing your MovieNights experience and power-user tips</p>
                 </div>
               </div>
               <p className="help-text">
-                MovieNights includes rich visual themes, an integrated AI assistant, and keyboard shortcuts designed for speed and joy.
+                MovieNights includes rich visual themes, zoomable profile avatars, and keyboard shortcuts designed for speed and joy.
               </p>
             </div>
 
@@ -730,13 +730,14 @@ export default function Help() {
               </div>
 
               <div className="help-card">
-                <h3 className="help-subheading">👁️ Ask HAL 9000 (AI Film Assistant)</h3>
+                <h3 className="help-subheading">📷 Profile Avatars & Lightbox Zoom</h3>
                 <p className="help-text" style={{ marginBottom: 12 }}>
-                  MovieNights has a built-in AI concierge powered by Claude. HAL knows our club's entire catalog, history, and taste:
+                  Personalize your identity in the club:
                 </p>
                 <ul className="help-list">
-                  <li><strong>Shortcut:</strong> Press <kbd className="help-kbd">Ctrl</kbd> + <kbd className="help-kbd">K</kbd> anywhere in the app (or click HAL's red eye in the header).</li>
-                  <li><strong>Ask Anything:</strong> <em>"What should we watch tonight if Fotis and Pantelis are on the couch?"</em>, <em>"Who is our harshest critic on sci-fi?"</em>, or <em>"Suggest an unrated Korean thriller."</em></li>
+                  <li><strong>Custom Photos:</strong> Upload any image from your device via the User Menu &gt; <em>Change Profile Picture</em>.</li>
+                  <li><strong>Click-to-Zoom:</strong> Click any voter avatar in the Movie Modal or Leaderboards to pop open an enlarged lightbox preview.</li>
+                  <li><strong>Instant Password Change:</strong> Update your private voter password anytime in the Account menu.</li>
                 </ul>
               </div>
             </div>
@@ -747,26 +748,27 @@ export default function Help() {
                 <table className="help-table">
                   <tbody>
                     <tr>
-                      <td><kbd className="help-kbd">Ctrl</kbd> + <kbd className="help-kbd">K</kbd></td>
-                      <td>Open or close HAL 9000 AI drawer</td>
-                    </tr>
-                    <tr>
                       <td><kbd className="help-kbd">Esc</kbd></td>
-                      <td>Close Movie Modal, Zoom Lightbox, or Drawer</td>
+                      <td>Close Movie Modal, Zoom Lightbox, or Menus</td>
                     </tr>
                     <tr>
                       <td><kbd className="help-kbd">Space</kbd></td>
-                      <td>Trigger the Spin Wheel in Tonight's Session</td>
+                      <td>Trigger or spin the wheel in Tonight's Session</td>
+                    </tr>
+                    <tr>
+                      <td><kbd className="help-kbd">Tab</kbd> / <kbd className="help-kbd">Enter</kbd></td>
+                      <td>Quickly select autocomplete keywords in the Films filter</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
               <div className="help-card">
-                <h3 className="help-subheading">📷 Profile Avatars & Lightbox Zoom</h3>
+                <h3 className="help-subheading">💡 Pro Tips & Tricks</h3>
                 <ul className="help-list">
-                  <li><strong>Custom Pictures:</strong> Upload any image from your device via the User Menu &gt; <em>Change Profile Picture</em>.</li>
-                  <li><strong>Click-to-Zoom:</strong> Click any voter avatar in the Movie Modal or Leaderboards to pop open an enlarged lightbox preview.</li>
+                  <li><strong>URL Deep-Linking:</strong> Keyword and voter filters sync directly to the browser URL (e.g. <code>?keyword=neo-noir</code>), making it easy to bookmark or share specific catalogs.</li>
+                  <li><strong>Leave-One-Out Integrity:</strong> The accuracy engine mathematically removes the film being evaluated so historical predictions are 100% untainted by data leakage.</li>
+                  <li><strong>Multi-Group Support:</strong> If you belong to multiple movie clubs, switch active groups seamlessly from the header dropdown.</li>
                 </ul>
               </div>
             </div>
