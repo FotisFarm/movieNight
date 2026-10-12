@@ -14,6 +14,7 @@ import Session from './pages/Session';
 import Chat from './pages/Chat';
 import Login from './pages/Login';
 import Admin from './pages/Admin';
+import Help from './pages/Help';
 import { api } from './api';
 import { ThemeProvider } from './ThemeContext';
 import { AppConfigProvider, useAppConfig } from './AppConfigContext';
@@ -154,6 +155,8 @@ function AppInner() {
               still resolves server-side and redirects to the canonical URL. */}
           <Route path="/lists/:key" element={<Lists voter={voter} />} />
           <Route path="/compare" element={<Compare />} />
+          <Route path="/help" element={<Help />} />
+          <Route path="/guide" element={<Navigate to="/help" replace />} />
           <Route
             path="/admin"
             element={user?.isAdmin || voter === 'mnAdmin' ? <Admin /> : <Navigate to="/films" replace />}

@@ -279,6 +279,14 @@ function MobileUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar })
               <span>🔑</span>
               <span>Change Password</span>
             </button>
+            <NavLink
+              to="/help"
+              className="mobile-user-menu-item"
+              onClick={() => setOpen(false)}
+            >
+              <span>💡</span>
+              <span>Algorithm Guide</span>
+            </NavLink>
             {onLogout && (
               <button
                 type="button"
@@ -362,6 +370,14 @@ function DesktopUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar }
               <span>🔑</span>
               <span>Change Password</span>
             </button>
+            <NavLink
+              to="/help"
+              className="desktop-user-menu-item"
+              onClick={() => setOpen(false)}
+            >
+              <span>💡</span>
+              <span>Algorithm Guide</span>
+            </NavLink>
             {onLogout && (
               <button
                 type="button"
@@ -714,6 +730,17 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
                       <span className="nav-item-desc">Polarization & Divergence</span>
                     </div>
                   </NavLink>
+                  <NavLink
+                    to="/help"
+                    className={({ isActive }) => isActive ? 'nav-dropdown-item active' : 'nav-dropdown-item'}
+                    onClick={() => setRankingsOpen(false)}
+                  >
+                    <span className="nav-item-icon">💡</span>
+                    <div className="nav-item-text">
+                      <span className="nav-item-title">Algorithm Guide</span>
+                      <span className="nav-item-desc">Themes, Vibes & Prior Models</span>
+                    </div>
+                  </NavLink>
                 </div>
               )}
             </div>
@@ -992,6 +1019,19 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
                   <div className="hub-card-desc">Polarization & Score Divergence</div>
                 </div>
                 {pathname.startsWith('/controversy') && <span className="hub-card-check">✓</span>}
+              </NavLink>
+
+              <NavLink
+                to="/help"
+                className={({ isActive }) => isActive ? 'hub-card active' : 'hub-card'}
+                onClick={() => setMobileRankingsOpen(false)}
+              >
+                <div className="hub-card-icon">💡</div>
+                <div className="hub-card-text">
+                  <div className="hub-card-title">Algorithm Guide</div>
+                  <div className="hub-card-desc">Themes, Vibes & Prior Models</div>
+                </div>
+                {pathname.startsWith('/help') && <span className="hub-card-check">✓</span>}
               </NavLink>
             </div>
           </div>
