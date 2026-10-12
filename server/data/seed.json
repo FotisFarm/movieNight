@@ -20974,5 +20974,24 @@
     },
     "top3": {},
     "watchlistVotes": []
+  },
+  {
+    "director": "Park Chan-wook",
+    "movie": "Sympathy for Lady Vengeance",
+    "year": "2005",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0451094",
+    "imdb_rating": 7.5,
+    "poster_path": "/ifcxaKfzNQ6W8uSLpnGo7AfiSL8.jpg",
+    "runtime": 115,
+    "ratings": {
+      "Στέλιας": "10"
+    },
+    "top3": {},
+    "watchlistVotes": []
   }
 ]
