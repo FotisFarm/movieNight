@@ -421,6 +421,54 @@ export default function Help() {
                 </ul>
               </div>
             </div>
+
+            {/* Deep Technical Architecture of Session */}
+            <div className="help-card" style={{ marginTop: 20, borderLeft: '4px solid #34d399' }}>
+              <div className="help-card-header">
+                <span className="help-card-icon">⚙️</span>
+                <div>
+                  <h3 className="help-card-title" style={{ color: '#6ee7b7' }}>Technical Mechanics of Tonight's Session</h3>
+                  <p className="help-card-sub">History partitioning, candidate pools, and wheel kinematics</p>
+                </div>
+              </div>
+
+              <div className="help-grid-2" style={{ marginTop: 14 }}>
+                <div>
+                  <h4 style={{ color: '#fff', fontSize: 14, marginBottom: 8 }}>1. The 3 Attendee History Modes</h4>
+                  <ul className="help-list" style={{ fontSize: 13 }}>
+                    <li>
+                      <strong>Fresh Discoveries (fresh):</strong> Filters candidates where <code>seenCount == 0</code> among attendees. Strictly virgin viewings for everyone in the room.
+                    </li>
+                    <li>
+                      <strong>Share a Favorite (share):</strong> For groups, enforces <code>0 &lt; seenCount &lt; totalAttendees</code>. Exactly 1 or more attendees have seen it, but not everyone, allowing a member to introduce a beloved film to others.
+                    </li>
+                    <li>
+                      <strong>All Films (all):</strong> Unrestricted library. If <code>seenCount == totalAttendees</code> (100% seen), applies the <strong>-0.60★ Novelty Discount</strong> to prevent legendary re-watches from drowning out discoveries.
+                    </li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 style={{ color: '#fff', fontSize: 14, marginBottom: 8 }}>2. Candidate Pool Scoping</h4>
+                  <ul className="help-list" style={{ fontSize: 13 }}>
+                    <li><strong>Watchlist Pool:</strong> Evaluates exclusively films with <code>watchlist == 1</code>.</li>
+                    <li><strong>Catalog Pool:</strong> Evaluates the entire global MovieNights database.</li>
+                    <li><strong>Unwatched Pool:</strong> Restricts to films with zero total club votes.</li>
+                    <li><strong>Custom List Pool:</strong> Dynamically scopes candidate pool to movies inside a selected curated list.</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 16 }}>
+                <h4 style={{ color: '#fff', fontSize: 14, marginBottom: 8 }}>3. Spin Wheel Kinematics & Angular Audio Triggering</h4>
+                <div className="help-formula-box" style={{ fontSize: 12 }}>
+                  Winning slice k ∈ [0, n - 1] selected via uniform or weighted random draw.<br />
+                  Target angle: θ_target = -π/2 - (k · θ_slice + θ_slice / 2) + extra_rotations (6 to 9 full spins).<br />
+                  Kinematics: Quartic Ease-Out curve f(t) = 1 - (1 - t)⁴ executed over 4,800 ms.<br />
+                  Audio: Browser AudioContext synthesizes dynamic click frequencies whenever slice boundary modulo 2π transitions.
+                </div>
+              </div>
+            </div>
           </section>
         )}
 
@@ -712,12 +760,14 @@ export default function Help() {
                   Badge(M) = argmax_(w ∈ K(M)) |Δ_w|  (Maximum Saliency Selection)
                 </div>
 
-                <h4 style={{ color: '#fff', fontSize: 15, margin: '18px 0 8px' }}>2. Multi-Component Bayesian Prior Formulation</h4>
+                <h4 style={{ color: '#fff', fontSize: 15, margin: '18px 0 8px' }}>2. Multi-Component Bayesian Prior & Dynamic Weight Redistribution</h4>
                 <p className="help-text">
-                  The candidate prior P(M) combines the dynamic weighted baseline, catalog Top-10 halo boost, and bounded thematic bonus:
+                  The candidate prior P(M) combines the dynamic weighted baseline, catalog Top-10 halo boost, and bounded thematic bonus. If a director has no prior films in the club, the active weights dynamically redistribute so remaining anchors always sum to 100%:
                 </p>
                 <div className="help-formula-box">
-                  Base(M) = [w_dir · S_dir + w_lb · S_lb + w_dec · S_dec] / [active_weights]<br /><br />
+                  active_total = w_dir · 𝕀(S_dir ≠ ∅) + w_lb · 𝕀(S_lb ≠ ∅) + w_dec · 𝕀(S_dec ≠ ∅)<br /><br />
+                  w_dir* = w_dir / active_total,   w_lb* = w_lb / active_total,   w_dec* = w_dec / active_total<br /><br />
+                  Base(M) = w_dir* · S_dir + w_lb* · S_lb + w_dec* · S_dec<br /><br />
                   HaloBoost(M) = min(0.75, (Σ B(r)) · [1.0 + 0.20 · max(0, unique_films - 1)] · twRate)<br /><br />
                   ThematicBonus(M) = clamp([Σ Δ_i · (n_i / (n_i + 2))] / [Σ (n_i / (n_i + 2))], -0.60, +0.60)<br /><br />
                   P(M) = clamp(Base(M) + HaloBoost(M) + ThematicBonus(M), 1.0, 10.0)
@@ -734,14 +784,16 @@ export default function Help() {
                   U_Wildcard(M)     = 0.75 · S̄_A + 0.22 · Ω  (Convex Spark Optimization)
                 </div>
 
-                <h4 style={{ color: '#fff', fontSize: 15, margin: '18px 0 8px' }}>4. Leave-One-Out (LOO) Validation & Residual Loss</h4>
+                <h4 style={{ color: '#fff', fontSize: 15, margin: '18px 0 8px' }}>4. Leave-One-Out (LOO) Validation & Stratified Accuracy Loss</h4>
                 <p className="help-text">
-                  To eliminate data leakage during backtesting, movie M is strictly partitioned out of director, decade, and keyword training sets:
+                  To eliminate data leakage during backtesting, movie M is strictly partitioned out of director, decade, and keyword training sets. Accuracy is stratified by director track record:
                 </p>
                 <div className="help-formula-box">
-                  D_(-M) = D \ (M),   K_(-M) = K \ (M)<br /><br />
+                  D_(-M) = D \ (M),   K_(-M) = K \ (M),   E_(-M) = E \ (M)<br /><br />
                   e_M = S_fair(M) - P_(-M)(M)<br /><br />
-                  MAE = (1 / N) · Σ |e_M|,   RMSE = √[(1 / N) · Σ e_M²]
+                  MAE_overall = (1 / N) · Σ |e_M|<br /><br />
+                  MAE_director = (1 / N_dir) · Σ_(M ∈ HasDirTrack) |e_M|  (Isolates proven auteur accuracy)<br /><br />
+                  Spot-on: |e_M| ≤ 0.50★,   Pleasant Surprise: e_M ≥ +1.00★,   Underperformed: e_M ≤ -1.00★
                 </div>
               </div>
             </div>
