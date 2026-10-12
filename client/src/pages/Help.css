@@ -1,6 +1,6 @@
 .help-page {
   min-height: calc(100vh - 60px);
-  padding-bottom: 60px;
+  padding-bottom: 70px;
   background: var(--bg);
   color: var(--text);
 }
@@ -27,7 +27,7 @@
 }
 
 .help-hero-title {
-  font-size: 32px;
+  font-size: 34px;
   font-weight: 800;
   margin-bottom: 10px;
   letter-spacing: -0.02em;
@@ -37,7 +37,7 @@
 }
 
 .help-hero-sub {
-  max-width: 680px;
+  max-width: 720px;
   margin: 0 auto 24px;
   color: var(--text2);
   font-size: 15px;
@@ -59,7 +59,7 @@
   color: var(--text2);
   font-size: 14px;
   font-weight: 600;
-  padding: 8px 16px;
+  padding: 9px 18px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.18s ease;
@@ -154,13 +154,194 @@
   margin-top: 20px;
 }
 
-/* Vibe specific cards */
+/* ── Interactive Goal Finder ── */
+.help-goal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+}
+
+.help-goal-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  text-align: left;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  color: var(--text);
+}
+
+.help-goal-btn:hover {
+  border-color: var(--accent);
+  background: rgba(229, 169, 59, 0.06);
+  transform: translateY(-2px);
+}
+
+.goal-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.goal-text strong {
+  display: block;
+  font-size: 13px;
+  color: #fff;
+  margin-bottom: 2px;
+}
+
+.goal-text span {
+  display: block;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+/* ── Interactive Checklist ── */
+.help-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.checklist-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.checklist-item:hover {
+  border-color: var(--accent);
+}
+
+.checklist-item.done {
+  border-color: rgba(52, 211, 153, 0.4);
+  background: rgba(52, 211, 153, 0.05);
+}
+
+.checklist-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: #34d399;
+  cursor: pointer;
+}
+
+.checklist-item strong {
+  display: block;
+  font-size: 14px;
+  color: #fff;
+}
+
+.checklist-item.done strong {
+  text-decoration: line-through;
+  color: #9ca3af;
+}
+
+.checklist-item p {
+  font-size: 12px;
+  color: var(--text2);
+  margin-top: 3px;
+}
+
+/* ── Rating Scale Cards ── */
+.help-rating-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rating-pill-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.rating-score-badge {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-weight: 800;
+  font-size: 14px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  min-width: 80px;
+  text-align: center;
+}
+
+.rating-score-badge.gold { background: rgba(229, 169, 59, 0.2); color: #facc15; border: 1px solid rgba(229, 169, 59, 0.4); }
+.rating-score-badge.green { background: rgba(52, 211, 153, 0.2); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.4); }
+.rating-score-badge.blue { background: rgba(96, 165, 250, 0.2); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.4); }
+.rating-score-badge.orange { background: rgba(251, 146, 60, 0.2); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.4); }
+.rating-score-badge.red { background: rgba(248, 113, 113, 0.2); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.4); }
+
+.rating-pill-card strong {
+  font-size: 13px;
+  color: #fff;
+  display: block;
+}
+
+.rating-pill-card p {
+  font-size: 12px;
+  color: var(--text2);
+  margin: 0;
+}
+
+/* ── 5-Step Workflow Grid ── */
+.help-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.step-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  position: relative;
+}
+
+.step-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.step-box strong {
+  display: block;
+  font-size: 14px;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.step-box p {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* ── Vibe Specific Cards ── */
 .vibe-card-safe { border-top: 3px solid #34d399; }
 .vibe-card-dna { border-top: 3px solid #60a5fa; }
 .vibe-card-gems { border-top: 3px solid #a78bfa; }
 .vibe-card-wildcard { border-top: 3px solid #f87171; }
 
-/* Formulas */
+/* ── Formulas & Code ── */
 .help-formula-box {
   background: #090c10;
   border: 1px solid var(--border);
@@ -179,7 +360,7 @@
   font-style: italic;
 }
 
-/* Interactive Tool Box */
+/* ── Interactive Tool Box ── */
 .help-tool-box {
   background: var(--surface);
   border: 1px solid var(--accent);
@@ -251,7 +432,7 @@
 .help-result-delta.pos { color: #34d399; }
 .help-result-delta.neg { color: #f87171; }
 
-/* Tables */
+/* ── Tables & Pills ── */
 .help-table-wrap {
   overflow-x: auto;
 }
@@ -279,7 +460,6 @@
   background: rgba(255, 255, 255, 0.02);
 }
 
-/* Pills & Tags */
 .help-tag-row {
   display: flex;
   gap: 8px;
@@ -303,7 +483,7 @@
 .help-pill.badge-blue { background: rgba(96, 165, 250, 0.15); color: #93c5fd; border-color: rgba(96, 165, 250, 0.3); }
 .help-pill.badge-purple { background: rgba(167, 139, 250, 0.15); color: #c4b5fd; border-color: rgba(167, 139, 250, 0.3); }
 .help-pill.badge-red { background: rgba(248, 113, 113, 0.15); color: #fca5a5; border-color: rgba(248, 113, 113, 0.3); }
-.help-pill.badge-gold { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3); }
+.help-pill.badge-gold { background: rgba(229, 169, 59, 0.15); color: #fbbf24; border-color: rgba(229, 169, 59, 0.3); }
 
 .help-callout {
   background: rgba(229, 169, 59, 0.08);
@@ -327,4 +507,32 @@
 
 .help-list strong {
   color: var(--text);
+}
+
+/* ── Themes & Keyboard Shortcuts ── */
+.help-theme-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.theme-tag {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.help-kbd {
+  display: inline-block;
+  padding: 2px 7px;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  color: #fff;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
 }
