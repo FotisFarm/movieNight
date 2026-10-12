@@ -690,6 +690,61 @@ export default function Help() {
                 </div>
               </div>
             </div>
+
+            {/* Mathematical Formalization */}
+            <div className="help-card" style={{ marginTop: 24, borderLeft: '4px solid #60a5fa' }}>
+              <div className="help-card-header">
+                <span className="help-card-icon">📐</span>
+                <div>
+                  <h3 className="help-card-title" style={{ color: '#93c5fd' }}>Mathematical Formalization & System Equations</h3>
+                  <p className="help-card-sub">Exact formulations of all Bayesian, optimization, and shrinkage models</p>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 14 }}>
+                <h4 style={{ color: '#fff', fontSize: 15, marginBottom: 8 }}>1. Empirical Bayes Shrinkage (Thematic Wheelhouse)</h4>
+                <p className="help-text">
+                  For each TMDB keyword w with n club ratings, observed mean x̄_w, shrinkage pseudo-count C = 2, and global club prior mean μ_0 ≈ 7.00★:
+                </p>
+                <div className="help-formula-box">
+                  μ_w* = [n / (n + C)] · x̄_w + [C / (n + C)] · μ_0<br /><br />
+                  Δ_w = μ_w* - μ_0 = [n / (n + 2)] · (x̄_w - μ_0)<br /><br />
+                  Badge(M) = argmax_(w ∈ K(M)) |Δ_w|  (Maximum Saliency Selection)
+                </div>
+
+                <h4 style={{ color: '#fff', fontSize: 15, margin: '18px 0 8px' }}>2. Multi-Component Bayesian Prior Formulation</h4>
+                <p className="help-text">
+                  The candidate prior P(M) combines the dynamic weighted baseline, catalog Top-10 halo boost, and bounded thematic bonus:
+                </p>
+                <div className="help-formula-box">
+                  Base(M) = [w_dir · S_dir + w_lb · S_lb + w_dec · S_dec] / [active_weights]<br /><br />
+                  HaloBoost(M) = min(0.75, (Σ B(r)) · [1.0 + 0.20 · max(0, unique_films - 1)] · twRate)<br /><br />
+                  ThematicBonus(M) = clamp([Σ Δ_i · (n_i / (n_i + 2))] / [Σ (n_i / (n_i + 2))], -0.60, +0.60)<br /><br />
+                  P(M) = clamp(Base(M) + HaloBoost(M) + ThematicBonus(M), 1.0, 10.0)
+                </div>
+
+                <h4 style={{ color: '#fff', fontSize: 15, margin: '18px 0 8px' }}>3. Room Consensus Objective Functions (Tonight's Session)</h4>
+                <p className="help-text">
+                  For attendee room A with predicted mean S̄_A, floor satisfaction S_min = min_(v ∈ A) ŝ_v, and polarization spread Ω = S_max - S_min:
+                </p>
+                <div className="help-formula-box">
+                  U_CrowdPleaser(M) = 0.60 · S̄_A + 0.40 · S_min - 0.14 · Ω  (Maximin Rawlsian Floor)<br /><br />
+                  U_ClubDNA(M)      = 0.75 · S̄_A + 0.25 · S_min + (0.45 · 𝕀_Top10) - 0.08 · Ω  (Auteur Identity)<br /><br />
+                  U_FreshGems(M)    = 0.65 · S̄_A + 0.35 · S_min - 0.10 · Ω  (Discovery Acclaim)<br /><br />
+                  U_Wildcard(M)     = 0.75 · S̄_A + 0.22 · Ω  (Convex Spark Optimization)
+                </div>
+
+                <h4 style={{ color: '#fff', fontSize: 15, margin: '18px 0 8px' }}>4. Leave-One-Out (LOO) Validation & Residual Loss</h4>
+                <p className="help-text">
+                  To eliminate data leakage during backtesting, movie M is strictly partitioned out of director, decade, and keyword training sets:
+                </p>
+                <div className="help-formula-box">
+                  D_(-M) = D \ (M),   K_(-M) = K \ (M)<br /><br />
+                  e_M = S_fair(M) - P_(-M)(M)<br /><br />
+                  MAE = (1 / N) · Σ |e_M|,   RMSE = √[(1 / N) · Σ e_M²]
+                </div>
+              </div>
+            </div>
           </section>
         )}
 
