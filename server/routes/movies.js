@@ -26,7 +26,11 @@ router.get('/', ah(async (req, res) => {
   const params = [];
 
 
-  if (search)   { query += ' AND title LIKE ?'; params.push(`%${search}%`); }
+  if (search && String(search).trim()) {
+    const s = `%${String(search).trim()}%`;
+    query += ' AND (movies.title LIKE ? OR movies.director LIKE ? OR movies.keywords LIKE ?)';
+    params.push(s, s, s);
+  }
   if (director) { query += ' AND director = ?'; params.push(director); }
   if (year)     { query += ' AND year = ?';     params.push(year); }
   if (yearMin)  { query += ' AND CAST(year AS INTEGER) >= ?'; params.push(parseInt(yearMin)); }
@@ -548,7 +552,10 @@ router.post('/', ah(async (req, res) => {
 
     let movieKeywords = [];
     try {
-      movieKeywords = await getMovieKeywords(imdb?.imdbId, title.trim(), year.trim(), tmdbMovieId);
+      const rawKw = await getMovieKeywords(imdb?.imdbId, title.trim(), year.trim(), tmdbMovieId);
+      if (Array.isArray(rawKw)) {
+        movieKeywords = rawKw.map(k => typeof k === 'string' ? k.toLowerCase().trim() : (k?.name || '').toLowerCase().trim()).filter(Boolean);
+      }
     } catch (_) { /* best effort */ }
 
     if (imdb?.imdbId || runtime || posterPath || backdropPath || letterboxdRating != null || streamGr || (movieKeywords && movieKeywords.length > 0)) {
@@ -652,9 +659,10 @@ router.patch('/:id', ah(async (req, res) => {
         }
 
         try {
-          const movieKeywords = await getMovieKeywords(cleanId, updates.title || movie.title, updates.year || movie.year, tmdbMovieId);
-          if (movieKeywords && movieKeywords.length > 0) {
-            updates.keywords = JSON.stringify(movieKeywords);
+          const rawKw = await getMovieKeywords(cleanId, updates.title || movie.title, updates.year || movie.year, tmdbMovieId);
+          if (Array.isArray(rawKw) && rawKw.length > 0) {
+            const cleanKw = rawKw.map(k => typeof k === 'string' ? k.toLowerCase().trim() : (k?.name || '').toLowerCase().trim()).filter(Boolean);
+            updates.keywords = JSON.stringify(cleanKw);
           }
         } catch (_) {}
       }

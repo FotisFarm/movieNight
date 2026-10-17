@@ -7,6 +7,7 @@ import AddMovieModal from '../components/AddMovieModal';
 import { useToast } from '../hooks/useToast.jsx';
 import { useRankMap } from '../hooks/useRankMap';
 import { useAppConfig } from '../AppConfigContext';
+import { matchesMovieSearch } from '../utils';
 import './Films.css';
 
 const PAGE_SIZE = 60;
@@ -93,7 +94,7 @@ export default function Films() {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const { toast, Toast }              = useToast();
 
-  const [search, setSearch]           = useState(() => searchParams.get('q') || DEFAULTS.search);
+  const [search, setSearch]           = useState(() => searchParams.get('q') || searchParams.get('search') || DEFAULTS.search);
   const [sortBy, setSortBy]           = useState(() => searchParams.get('sort') || DEFAULTS.sortBy);
   const [sortVoter, setSortVoter]     = useState(() => searchParams.get('sortVoter') || DEFAULTS.sortVoter);
   const [filterMn, setFilterMn]       = useState(() => searchParams.get('mn') === '1');
@@ -132,7 +133,7 @@ export default function Films() {
     if (currentParamsString === lastSearchStringRef.current) return;
     lastSearchStringRef.current = currentParamsString;
 
-    const newQ = searchParams.get('q') || DEFAULTS.search;
+    const newQ = searchParams.get('q') || searchParams.get('search') || DEFAULTS.search;
     const newSort = searchParams.get('sort') || DEFAULTS.sortBy;
     const newSortVoter = searchParams.get('sortVoter') || DEFAULTS.sortVoter;
     const newMn = searchParams.get('mn') === '1';
@@ -221,8 +222,14 @@ export default function Films() {
     !!filterRated, advancedFilterCount > 0,
   ].filter(Boolean).length;
 
+  function handleSearchChange(e) {
+    const val = typeof e === 'string' ? e : e?.target?.value ?? '';
+    setSearch(val);
+    setPage(1);
+  }
+
   const setters = {
-    search: setSearch,
+    search: handleSearchChange,
     sortBy: setSortBy,
     sortVoter: setSortVoter,
     filterMn: setFilterMn,
@@ -324,7 +331,7 @@ export default function Films() {
         minLb:      filterMinLb      || undefined,
       });
     }, 250);
-  }, [search, sortBy, sortVoter, filterMn, filterWl, filterStream, filterProvider, filterRated, filterVoters, filterDirector, filterKeyword, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, filterRuntimeMin, filterRuntimeMax, filterMinLb, fetchMovies]);
+  }, [sortBy, sortVoter, filterMn, filterWl, filterStream, filterProvider, filterRated, filterVoters, filterDirector, filterKeyword, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, filterRuntimeMin, filterRuntimeMax, filterMinLb, fetchMovies]);
 
   const rankMap = useRankMap(allMovies);
 
@@ -354,17 +361,15 @@ export default function Films() {
     ? movies.filter(m => {
         if (filterKeyword) {
           const kw = filterKeyword.trim().toLowerCase();
-          if (!Array.isArray(m.keywords) || !m.keywords.some(k => k.toLowerCase() === kw)) {
+          const mKeywords = Array.isArray(m.keywords)
+            ? m.keywords.map(k => typeof k === 'string' ? k.toLowerCase().trim() : (k?.name || '').toLowerCase().trim())
+            : [];
+          if (!mKeywords.some(k => k === kw)) {
             return false;
           }
         }
         if (search) {
-          const q = search.toLowerCase();
-          return (
-            m.title.toLowerCase().includes(q) ||
-            m.director?.toLowerCase().includes(q) ||
-            (Array.isArray(m.keywords) && m.keywords.some(k => k.toLowerCase().includes(q)))
-          );
+          return matchesMovieSearch(m, search);
         }
         return true;
       })
@@ -395,7 +400,8 @@ export default function Films() {
   }
 
   const scoreSortActive = sortBy === 'score-desc' || sortBy === 'score-asc' || sortBy === 'group-desc' || sortBy === 'group-asc' || sortBy === 'controversial';
-  const sortBase = scoreSortActive && filterRated !== 'unvoted' ? filteredList.filter(m => m.voterCount >= minVoters) : filteredList;
+  const hasSearch = Boolean(search && search.trim());
+  const sortBase = (scoreSortActive && filterRated !== 'unvoted' && !hasSearch) ? filteredList.filter(m => m.voterCount >= minVoters) : filteredList;
 
   const sorted = [...sortBase].sort((a, b) => {
     switch (sortBy) {
@@ -500,10 +506,10 @@ export default function Films() {
             className="input search-input"
             placeholder="Search films, directors…"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={handleSearchChange}
           />
           {search && (
-            <button className="search-clear" onClick={() => setSearch('')}>✕</button>
+            <button className="search-clear" onClick={() => handleSearchChange('')}>✕</button>
           )}
         </div>
 
@@ -831,7 +837,7 @@ export default function Films() {
             </button>
           )}
           <span className="filter-count-badge">
-            {searchFiltered.length} / {movies.length}
+            {sorted.length} / {movies.length}
           </span>
         </div>
       </div>
@@ -1109,7 +1115,7 @@ export default function Films() {
             <div className="mobile-drawer-header">
               <div className="mobile-drawer-title-wrap">
                 <h2 className="mobile-drawer-title">Filters</h2>
-                <span className="mobile-drawer-count">{searchFiltered.length} / {movies.length} films</span>
+                <span className="mobile-drawer-count">{sorted.length} / {movies.length} films</span>
               </div>
               <div className="mobile-drawer-header-actions">
                 {filtersActive && (
@@ -1424,7 +1430,7 @@ export default function Films() {
                 className="btn btn-primary mobile-drawer-apply"
                 onClick={() => setMobileDrawerOpen(false)}
               >
-                Show {searchFiltered.length} Films
+                Show {sorted.length} Films
               </button>
             </div>
           </div>

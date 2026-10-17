@@ -58,3 +58,72 @@ export function formatRuntime(minutes) {
   if (m === 0) return `${h}h`;
   return `${h}h ${m}m`;
 }
+
+// Greek to Latin transliteration table for Greeklish search support
+const GREEK_CHAR_MAP = {
+  α: 'a', β: 'v', γ: 'g', δ: 'd', ε: 'e', ζ: 'z', η: 'i', θ: 'th',
+  ι: 'i', κ: 'k', λ: 'l', μ: 'm', ν: 'n', ξ: 'x', ο: 'o', π: 'p',
+  ρ: 'r', σ: 's', ς: 's', τ: 't', υ: 'y', φ: 'f', χ: 'ch', ψ: 'ps', ω: 'o',
+  ά: 'a', έ: 'e', ή: 'i', ί: 'i', ό: 'o', ύ: 'y', ώ: 'o',
+  ϊ: 'i', ϋ: 'y', ΐ: 'i', ΰ: 'y',
+};
+
+export function transliterateGreek(text) {
+  if (!text) return '';
+  let out = '';
+  const lower = String(text).toLowerCase().replace(/[οό][υύ]/g, 'ou');
+  for (const char of lower) {
+    out += GREEK_CHAR_MAP[char] ?? char;
+  }
+  return out;
+}
+
+export function normalizeSearchText(text) {
+  if (!text) return '';
+  return String(text)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * Robust movie search matcher:
+ * - Multi-token: Every word in the query must match title, director, year, or keywords.
+ * - Diacritic-insensitive: Strips accents and tones (e.g. Amélie -> amelie, Βοσκοί -> βοσκοι).
+ * - Greeklish-aware: Matches Greek titles when searched in Latin characters (e.g. voskoi -> Οι Βοσκοί).
+ * - Trims whitespace safely.
+ * - 100% immune to null directors or malformed keyword structures.
+ */
+export function matchesMovieSearch(movie, searchQuery) {
+  if (!searchQuery || !searchQuery.trim()) return true;
+  if (!movie) return false;
+
+  const rawTokens = searchQuery.trim().split(/\s+/).filter(Boolean);
+  const normalizedTokens = rawTokens.map(normalizeSearchText);
+  if (!normalizedTokens.length) return true;
+
+  const kwList = Array.isArray(movie.keywords)
+    ? movie.keywords.map(k => typeof k === 'string' ? k : (k?.name || '')).filter(Boolean)
+    : [];
+
+  const rawStrings = [
+    movie.title,
+    movie.director,
+    movie.year != null ? String(movie.year) : '',
+    ...kwList
+  ].filter(Boolean);
+
+  const corpusPieces = [];
+  for (const s of rawStrings) {
+    const norm = normalizeSearchText(s);
+    corpusPieces.push(norm);
+    const trans = transliterateGreek(s);
+    if (trans && trans !== norm) {
+      corpusPieces.push(normalizeSearchText(trans));
+    }
+  }
+
+  const corpus = corpusPieces.join(' ');
+  return normalizedTokens.every(token => corpus.includes(token));
+}
