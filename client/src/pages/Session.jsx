@@ -190,6 +190,45 @@ export default function Session({ voter }) {
   const animFrameRef = useRef(null);
   const lastTickSliceRef = useRef(-1);
 
+  const resetSessionFilters = useCallback(() => {
+    if (configVoters && configVoters.length > 0) {
+      setAttendees(configVoters);
+    }
+    setPool('watchlist');
+    setHistoryMode('fresh');
+    setDurationFilter('any');
+    setStreamingFilter('any');
+    setVibe('safe');
+    setSearch('');
+    setDebouncedSearch('');
+    setSelectedIds(new Set());
+    setWinner(null);
+    setDetailMovieId(null);
+    setTrailerMovie(null);
+    if (window.location.search) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, [configVoters]);
+
+  const currentGroupIdRef = useRef(activeGroup?.id);
+
+  useEffect(() => {
+    if (activeGroup?.id !== undefined && currentGroupIdRef.current !== undefined && activeGroup?.id !== currentGroupIdRef.current) {
+      currentGroupIdRef.current = activeGroup?.id;
+      resetSessionFilters();
+    } else {
+      currentGroupIdRef.current = activeGroup?.id;
+    }
+  }, [activeGroup?.id, resetSessionFilters]);
+
+  useEffect(() => {
+    const handleClear = () => {
+      resetSessionFilters();
+    };
+    window.addEventListener('clear-all-filters', handleClear);
+    return () => window.removeEventListener('clear-all-filters', handleClear);
+  }, [resetSessionFilters]);
+
   // Ensure attendees synchronize if active group or configVoters change
   useEffect(() => {
     if (configVoters && configVoters.length > 0) {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor,
@@ -113,12 +113,44 @@ export default function Watchlist({ voter }) {
 
   const sortedMovies = movies.slice().sort((a, b) => sortWithManual(a, b, manualOrder));
 
+  const resetWatchlistState = useCallback(() => {
+    setSelectedId(null);
+    setTrailerMovie(null);
+    setConfirmRemoveId(null);
+    setResetOpen(false);
+    try { localStorage.removeItem('wl-tied-order'); } catch (_) {}
+    setManualOrder({});
+    if (window.location.search) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
+
+  const currentGroupIdRef = useRef(activeGroup?.id);
+
   useEffect(() => {
+    if (activeGroup?.id !== undefined && currentGroupIdRef.current !== undefined && activeGroup?.id !== currentGroupIdRef.current) {
+      currentGroupIdRef.current = activeGroup?.id;
+      resetWatchlistState();
+    } else {
+      currentGroupIdRef.current = activeGroup?.id;
+    }
+  }, [activeGroup?.id, resetWatchlistState]);
+
+  useEffect(() => {
+    const handleClear = () => {
+      resetWatchlistState();
+    };
+    window.addEventListener('clear-all-filters', handleClear);
+    return () => window.removeEventListener('clear-all-filters', handleClear);
+  }, [resetWatchlistState]);
+
+  useEffect(() => {
+    setLoading(true);
     api.getMovies({ watchlist: '1' })
       .then(ms => setMovies(ms))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [activeGroup?.id]);
 
   // Prune stale manual order groups when vote counts change
   useEffect(() => {

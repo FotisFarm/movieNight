@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
 import RankIcon from '../components/RankIcon';
@@ -69,7 +69,7 @@ const AGG = [
 ];
 
 export default function Compare() {
-  const { voters: VOTERS } = useAppConfig();
+  const { voters: VOTERS, activeGroup } = useAppConfig();
   const [movies, setMovies]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [mode, setMode]       = useState('movies'); // 'movies' | 'voters'
@@ -82,6 +82,39 @@ export default function Compare() {
   const [vA, setVA] = useState('');
   const [vB, setVB] = useState('');
 
+  const resetCompareFilters = useCallback(() => {
+    setMode('movies');
+    setAId(null);
+    setBId(null);
+    setModalId(null);
+    if (VOTERS.length > 0) {
+      setVA(VOTERS[0]);
+      setVB(VOTERS[Math.min(1, VOTERS.length - 1)]);
+    }
+    if (window.location.search) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, [VOTERS]);
+
+  const currentGroupIdRef = useRef(activeGroup?.id);
+
+  useEffect(() => {
+    if (activeGroup?.id !== undefined && currentGroupIdRef.current !== undefined && activeGroup?.id !== currentGroupIdRef.current) {
+      currentGroupIdRef.current = activeGroup?.id;
+      resetCompareFilters();
+    } else {
+      currentGroupIdRef.current = activeGroup?.id;
+    }
+  }, [activeGroup?.id, resetCompareFilters]);
+
+  useEffect(() => {
+    const handleClear = () => {
+      resetCompareFilters();
+    };
+    window.addEventListener('clear-all-filters', handleClear);
+    return () => window.removeEventListener('clear-all-filters', handleClear);
+  }, [resetCompareFilters]);
+
   useEffect(() => {
     if (VOTERS.length > 0) {
       setVA(v => VOTERS.includes(v) ? v : VOTERS[0]);
@@ -90,8 +123,9 @@ export default function Compare() {
   }, [VOTERS]);
 
   useEffect(() => {
+    setLoading(true);
     api.getMovies({}).then(setMovies).finally(() => setLoading(false));
-  }, []);
+  }, [activeGroup?.id]);
 
   function handleSaved(updated) {
     setMovies(ms => ms.map(m => m.id === updated.id ? { ...m, ...updated } : m));

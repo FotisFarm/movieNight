@@ -121,6 +121,15 @@ export default function Admin() {
     if (!targetId) return;
     try {
       setIsSwitchingActiveClub(true);
+      if (window.location.search) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+      try {
+        localStorage.removeItem('wl-tied-order');
+        localStorage.removeItem('mn_onePerDirector');
+      } catch (_) {}
+      window.dispatchEvent(new CustomEvent('clear-all-filters'));
+
       const res = await api.switchGroup(targetId);
       if (res?.ok) {
         await refreshConfig?.();

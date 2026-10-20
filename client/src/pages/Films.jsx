@@ -65,7 +65,7 @@ const DEFAULTS = {
 };
 
 export default function Films() {
-  const { voters, minVoters, sandboxMode } = useAppConfig();
+  const { voters, minVoters, sandboxMode, activeGroup } = useAppConfig();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [movies, setMovies]           = useState([]);
@@ -180,7 +180,7 @@ export default function Films() {
     const p = {};
     if (search)                               p.q = search;
     if (sortBy !== DEFAULTS.sortBy)           p.sort = sortBy;
-    if (sortVoter !== DEFAULTS.sortVoter)     p.sortVoter = sortVoter;
+    if (sortVoter !== (voters?.[0] || DEFAULTS.sortVoter)) p.sortVoter = sortVoter;
     if (filterMn)                             p.mn = '1';
     if (filterRated)                          p.rated = filterRated;
     if (filterWl)                             p.wl = '1';
@@ -204,7 +204,7 @@ export default function Films() {
       lastSearchStringRef.current = newSearchString;
       setSearchParams(p, { replace: true });
     }
-  }, [search, sortBy, sortVoter, filterMn, filterRated, filterWl, filterStream, filterProvider, filterVoters, filterDirector, filterKeyword, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, filterRuntime, filterRuntimeMin, filterRuntimeMax, filterMinLb, searchParams, setSearchParams]);
+  }, [search, sortBy, sortVoter, filterMn, filterRated, filterWl, filterStream, filterProvider, filterVoters, filterDirector, filterKeyword, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, filterRuntime, filterRuntimeMin, filterRuntimeMax, filterMinLb, searchParams, setSearchParams, voters]);
 
   const searchTimer = useRef(null);
 
@@ -249,9 +249,49 @@ export default function Films() {
     filterRuntimeMax: setFilterRuntimeMax,
     filterMinLb: setFilterMinLb,
   };
-  function resetFilters() {
-    Object.entries(DEFAULTS).forEach(([k, v]) => setters[k]?.(v));
-  }
+  const resetFilters = useCallback(() => {
+    const defaultSortVoter = voters?.[0] || 'Φώτης';
+    Object.entries(DEFAULTS).forEach(([k, v]) => {
+      if (k === 'sortVoter') setters[k]?.(defaultSortVoter);
+      else setters[k]?.(v);
+    });
+    setMoreFiltersOpen(false);
+    setMobileDrawerOpen(false);
+    setPage(1);
+    setSelectedId(null);
+    lastSearchStringRef.current = '';
+    setSearchParams({}, { replace: true });
+    if (window.location.search) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, [voters, setSearchParams]);
+
+  const currentGroupIdRef = useRef(activeGroup?.id);
+
+  useEffect(() => {
+    if (activeGroup?.id !== undefined && currentGroupIdRef.current !== undefined && activeGroup?.id !== currentGroupIdRef.current) {
+      currentGroupIdRef.current = activeGroup?.id;
+      resetFilters();
+    } else {
+      currentGroupIdRef.current = activeGroup?.id;
+    }
+  }, [activeGroup?.id, resetFilters]);
+
+  useEffect(() => {
+    const handleClear = () => {
+      resetFilters();
+    };
+    window.addEventListener('clear-all-filters', handleClear);
+    return () => window.removeEventListener('clear-all-filters', handleClear);
+  }, [resetFilters]);
+
+  // Purge any voters in filterVoters or sortVoter that aren't in current group's voters
+  useEffect(() => {
+    if (voters && voters.length > 0) {
+      setFilterVoters(prev => prev.filter(v => voters.includes(v)));
+      setSortVoter(prev => voters.includes(prev) ? prev : voters[0]);
+    }
+  }, [voters]);
   function toggleVoter(v, e) {
     if (e && (e.shiftKey || e.ctrlKey || e.metaKey)) {
       setFilterVoters(vs => vs.includes(v) ? vs.filter(x => x !== v) : [...vs, v]);
@@ -289,7 +329,7 @@ export default function Films() {
     refreshAllMovies();
     api.getDirectors().then(setDirectors).catch(() => {});
     api.getKeywords().then(setKeywordsList).catch(() => {});
-  }, []);
+  }, [activeGroup?.id]);
 
   useEffect(() => {
     if (mobileDrawerOpen) {
@@ -331,7 +371,7 @@ export default function Films() {
         minLb:      filterMinLb      || undefined,
       });
     }, 250);
-  }, [sortBy, sortVoter, filterMn, filterWl, filterStream, filterProvider, filterRated, filterVoters, filterDirector, filterKeyword, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, filterRuntimeMin, filterRuntimeMax, filterMinLb, fetchMovies]);
+  }, [sortBy, sortVoter, filterMn, filterWl, filterStream, filterProvider, filterRated, filterVoters, filterDirector, filterKeyword, filterYearMin, filterYearMax, filterMinVoters, filterMaxVoters, filterRuntimeMin, filterRuntimeMax, filterMinLb, fetchMovies, activeGroup?.id]);
 
   const rankMap = useRankMap(allMovies);
 

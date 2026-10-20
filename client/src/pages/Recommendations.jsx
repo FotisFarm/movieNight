@@ -124,10 +124,6 @@ export default function Recommendations() {
   const weightTimer = useRef(null);
 
   useEffect(() => {
-    setUnvotedBy(new Set());
-  }, [activeGroup?.id]);
-
-  useEffect(() => {
     clearTimeout(weightTimer.current);
     weightTimer.current = setTimeout(() => {
       setLoading(true);
@@ -211,6 +207,43 @@ export default function Recommendations() {
   function resetWeights() {
     selectVibe('safe');
   }
+
+  const resetAll = useCallback(() => {
+    resetFilters();
+    selectVibe('safe');
+    setModalId(null);
+    if (window.location.search) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
+
+  const currentGroupIdRef = useRef(activeGroup?.id);
+
+  useEffect(() => {
+    if (activeGroup?.id !== undefined && currentGroupIdRef.current !== undefined && activeGroup?.id !== currentGroupIdRef.current) {
+      currentGroupIdRef.current = activeGroup?.id;
+      resetAll();
+    } else {
+      currentGroupIdRef.current = activeGroup?.id;
+    }
+  }, [activeGroup?.id, resetAll]);
+
+  useEffect(() => {
+    const handleClear = () => {
+      resetAll();
+    };
+    window.addEventListener('clear-all-filters', handleClear);
+    return () => window.removeEventListener('clear-all-filters', handleClear);
+  }, [resetAll]);
+
+  useEffect(() => {
+    if (voters && voters.length > 0) {
+      setUnvotedBy(prev => {
+        const next = new Set([...prev].filter(v => voters.includes(v)));
+        return next.size === prev.size ? prev : next;
+      });
+    }
+  }, [voters]);
 
   const activePreset = VIBE_PRESETS.find(p => p.id === activeVibe);
   const isCustom = activeVibe === 'custom';

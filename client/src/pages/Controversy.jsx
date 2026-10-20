@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
 import { useToast } from '../hooks/useToast.jsx';
@@ -14,7 +14,7 @@ function stdDevClass(v) {
 }
 
 export default function Controversy() {
-  const { voters } = useAppConfig();
+  const { voters, activeGroup } = useAppConfig();
   const [allFilms, setAllFilms] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [modalId, setModalId]   = useState(null);
@@ -23,11 +23,41 @@ export default function Controversy() {
   const [search, setSearch] = useState('');
   const { toast, Toast }        = useToast();
 
+  const resetControversyFilters = useCallback(() => {
+    setSearch('');
+    setFilterMn(false);
+    setMinVoters(2);
+    setModalId(null);
+    if (window.location.search) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
+
+  const currentGroupIdRef = useRef(activeGroup?.id);
+
   useEffect(() => {
+    if (activeGroup?.id !== undefined && currentGroupIdRef.current !== undefined && activeGroup?.id !== currentGroupIdRef.current) {
+      currentGroupIdRef.current = activeGroup?.id;
+      resetControversyFilters();
+    } else {
+      currentGroupIdRef.current = activeGroup?.id;
+    }
+  }, [activeGroup?.id, resetControversyFilters]);
+
+  useEffect(() => {
+    const handleClear = () => {
+      resetControversyFilters();
+    };
+    window.addEventListener('clear-all-filters', handleClear);
+    return () => window.removeEventListener('clear-all-filters', handleClear);
+  }, [resetControversyFilters]);
+
+  useEffect(() => {
+    setLoading(true);
     api.getMovies({ rated: '1' })
       .then(data => setAllFilms(data.filter(m => m.voterCount >= 2 && m.stdDev != null)))
       .finally(() => setLoading(false));
-  }, []);
+  }, [activeGroup?.id]);
 
   function handleSaved(updated) {
     setAllFilms(fs => fs.map(f => f.id === updated.id ? { ...f, ...updated } : f));

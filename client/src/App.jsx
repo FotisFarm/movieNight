@@ -110,10 +110,29 @@ function AppInner() {
 
   const handleSwitchGroup = async (groupId) => {
     try {
+      // Clear URL query parameters immediately before switching
+      if (window.location.search) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+
+      // Clear any group-specific local storage
+      try {
+        localStorage.removeItem('wl-tied-order');
+        localStorage.removeItem('mn_onePerDirector');
+      } catch (_) {}
+
+      // Dispatch global clear event so any active page immediately clears all filters
+      window.dispatchEvent(new CustomEvent('clear-all-filters'));
+
+      // If viewing a group-specific list, transition to /films
+      const targetPath = window.location.pathname.startsWith('/lists/')
+        ? '/films'
+        : window.location.pathname;
+
       const res = await api.switchGroup(groupId);
       if (res?.ok) {
         await refreshConfig?.();
-        window.location.reload();
+        window.location.href = targetPath;
       }
     } catch (err) {
       console.error('Failed to switch group:', err);

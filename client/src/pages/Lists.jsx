@@ -142,6 +142,7 @@ function ListDetail({ listKey, voter }) {
   const [draftDesc, setDraftDesc]   = useState('');
   const [modalId, setModalId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const { sandboxMode, isAdmin: configIsAdmin, activeGroup } = useAppConfig();
   const { toast, Toast } = useToast();
 
   const sensors = useSensors(
@@ -160,12 +161,11 @@ function ListDetail({ listKey, voter }) {
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [listKey]);
+  }, [listKey, activeGroup?.id]);
 
   if (loading) return <div className="spinner" />;
   if (error || !list) return <div className="lists-empty">{error || "List not found"}</div>;
 
-  const { sandboxMode, isAdmin: configIsAdmin, activeGroup } = useAppConfig();
   const isGroupAdmin = Boolean(activeGroup?.members?.some(m => (m.displayName === voter || m.username === voter) && m.role === 'admin'));
   const isAdmin = Boolean(configIsAdmin || sessionStorage.getItem('isAdmin') === 'true' || voter === 'mnAdmin' || isGroupAdmin);
   const isSandboxList = sandboxMode && (list.id >= 1000000);

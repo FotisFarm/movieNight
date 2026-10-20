@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { api } from '../api';
 import RankingSection from '../components/RankingSection';
 import MovieModal from '../components/MovieModal';
 import DirectorYearModal from '../components/DirectorYearModal';
 import { useToast } from '../hooks/useToast.jsx';
+import { useAppConfig } from '../AppConfigContext';
 import './Rankings.css';
 
 // One row group per (score mode × scope) combination. The page shows the one
@@ -92,6 +93,7 @@ function panelType(panelKey) {
 }
 
 export default function Rankings() {
+  const { activeGroup }               = useAppConfig();
   const [data, setData]               = useState(null);
   const [loading, setLoading]         = useState(true);
   const [selectedId, setSelectedId]   = useState(null);
@@ -108,13 +110,40 @@ export default function Rankings() {
   const { toast, Toast }              = useToast();
   const location                      = useLocation();
 
+  const resetRankingsState = useCallback(() => {
+    setSelectedId(null);
+    setSelectedLabel(null);
+    if (window.location.search) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
+
+  const currentGroupIdRef = useRef(activeGroup?.id);
+
+  useEffect(() => {
+    if (activeGroup?.id !== undefined && currentGroupIdRef.current !== undefined && activeGroup?.id !== currentGroupIdRef.current) {
+      currentGroupIdRef.current = activeGroup?.id;
+      resetRankingsState();
+    } else {
+      currentGroupIdRef.current = activeGroup?.id;
+    }
+  }, [activeGroup?.id, resetRankingsState]);
+
+  useEffect(() => {
+    const handleClear = () => {
+      resetRankingsState();
+    };
+    window.addEventListener('clear-all-filters', handleClear);
+    return () => window.removeEventListener('clear-all-filters', handleClear);
+  }, [resetRankingsState]);
+
   useEffect(() => {
     setLoading(true);
     api.getRankings({ minDirFilms })
       .then(setData)
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [location.key, minDirFilms]);
+  }, [location.key, minDirFilms, activeGroup?.id]);
 
   function changeMinDirFilms(n) {
     setMinDirFilms(n);

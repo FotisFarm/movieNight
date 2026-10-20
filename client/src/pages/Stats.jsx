@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors,
 } from '@dnd-kit/core';
@@ -218,9 +218,40 @@ export default function Stats({ voter }) {
     useSensor(TouchSensor,   { activationConstraint: { delay: 150, tolerance: 5 } }),
   );
 
-  useEffect(() => {
-    api.getMovies({}).then(setMovies).finally(() => setLoading(false));
+  const resetStatsState = useCallback(() => {
+    setModalId(null);
+    setSelectedVoter(null);
+    setDyTarget(null);
+    setFilmList(null);
+    setShowAllDirs(false);
+    if (window.location.search) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
   }, []);
+
+  const currentGroupIdRef = useRef(activeGroup?.id);
+
+  useEffect(() => {
+    if (activeGroup?.id !== undefined && currentGroupIdRef.current !== undefined && activeGroup?.id !== currentGroupIdRef.current) {
+      currentGroupIdRef.current = activeGroup?.id;
+      resetStatsState();
+    } else {
+      currentGroupIdRef.current = activeGroup?.id;
+    }
+  }, [activeGroup?.id, resetStatsState]);
+
+  useEffect(() => {
+    const handleClear = () => {
+      resetStatsState();
+    };
+    window.addEventListener('clear-all-filters', handleClear);
+    return () => window.removeEventListener('clear-all-filters', handleClear);
+  }, [resetStatsState]);
+
+  useEffect(() => {
+    setLoading(true);
+    api.getMovies({}).then(setMovies).finally(() => setLoading(false));
+  }, [activeGroup?.id]);
 
   useEffect(() => {
     function onKey(e) {

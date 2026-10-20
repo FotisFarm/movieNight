@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
@@ -49,6 +49,39 @@ export default function Predictions() {
   const [search, setSearch] = useState('');
   const [verdictFilter, setVerdictFilter] = useState('all');
   const [sortKey, setSortKey] = useState('score-desc');
+
+  const resetPredictionsFilters = useCallback(() => {
+    setSearch('');
+    setVerdictFilter('all');
+    setSortKey('score-desc');
+    setActiveTab('bullseye');
+    setMinVoters(2);
+    setMinDirFilms(2);
+    setActiveFilm(null);
+    setMovieModalId(null);
+    if (window.location.search) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
+
+  const currentGroupIdRef = useRef(activeGroup?.id);
+
+  useEffect(() => {
+    if (activeGroup?.id !== undefined && currentGroupIdRef.current !== undefined && activeGroup?.id !== currentGroupIdRef.current) {
+      currentGroupIdRef.current = activeGroup?.id;
+      resetPredictionsFilters();
+    } else {
+      currentGroupIdRef.current = activeGroup?.id;
+    }
+  }, [activeGroup?.id, resetPredictionsFilters]);
+
+  useEffect(() => {
+    const handleClear = () => {
+      resetPredictionsFilters();
+    };
+    window.addEventListener('clear-all-filters', handleClear);
+    return () => window.removeEventListener('clear-all-filters', handleClear);
+  }, [resetPredictionsFilters]);
 
   useEffect(() => {
     setLoading(true);
