@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import RankIcon from './RankIcon';
 import WatchlistBadge from './WatchlistBadge';
 import { fmtScore10 as fmt, scoreClass, posterUrl, formatRuntime } from '../utils';
