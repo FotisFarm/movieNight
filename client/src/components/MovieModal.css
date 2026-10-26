@@ -100,6 +100,10 @@
   background: linear-gradient(180deg, var(--surface2) 0%, rgba(124, 106, 247, 0.04) 100%);
 }
 
+.voter-rating-card.guest-rating-card {
+  border: 1px dashed var(--border);
+}
+
 .voter-card-header {
   display: flex;
   align-items: center;

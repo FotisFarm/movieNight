@@ -680,12 +680,11 @@ export default function Session({ voter }) {
                   key={v}
                   type="button"
                   className={`attendee-chip guest-attendee-chip ${isPresent ? 'active' : ''}`}
-                  style={{ borderStyle: 'dashed' }}
                   onClick={() => toggleAttendee(v)}
                   title={isPresent ? `Click to remove guest ${v}` : `Click to include guest ${v}`}
                 >
                   <span className="attendee-indicator">{isPresent ? '✓' : '+'}</span>
-                  <span className="attendee-name">🎟️ {v} <span style={{ fontSize: '0.75em', opacity: 0.8 }}>(Guest)</span></span>
+                  <span className="attendee-name">{v} <span style={{ fontSize: '0.75em', opacity: 0.6 }}>(Guest)</span></span>
                 </button>
               );
             })}

@@ -109,6 +109,10 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
+.attendee-chip.guest-attendee-chip {
+  border-style: dashed;
+}
+
 .attendee-indicator {
   font-size: 12px;
   font-weight: 800;

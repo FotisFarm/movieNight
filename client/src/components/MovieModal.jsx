@@ -987,13 +987,12 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                   <div
                     key={v}
                     className={`voter-rating-card guest-rating-card${isOn ? '' : ' rating-off'}${!canEdit ? ' rating-locked' : ''}${isSelf ? ' voter-card-self' : ''}`}
-                    style={{ borderStyle: 'dashed' }}
                   >
                     <div className="voter-card-header">
                       <div className="voter-card-user">
                         <UserAvatar name={v} avatarUrl={voterAvatars[v]} size={40} className="voter-avatar-circle" zoomable />
                         <span className="voter-name-label">
-                          🎟️ {v} <span style={{ fontSize: '0.8em', opacity: 0.75 }}>(Guest{isSelf ? ', You' : ''})</span>
+                          {v} <span style={{ fontSize: '0.8em', opacity: 0.6, fontWeight: 400 }}>(Guest{isSelf ? ', You' : ''})</span>
                         </span>
                       </div>
 

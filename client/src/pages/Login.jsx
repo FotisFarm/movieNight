@@ -76,10 +76,10 @@ export default function Login({ onLogin }) {
                       key={gv}
                       type="button"
                       className="btn btn-ghost"
-                      style={{ justifyContent: 'center', padding: '8px', fontSize: 13, fontWeight: 500, borderStyle: 'dashed' }}
+                      style={{ justifyContent: 'center', padding: '8px', fontSize: 13, fontWeight: 500, border: '1px dashed var(--border)' }}
                       onClick={() => { setSelected(gv); setError(''); setPassword(''); }}
                     >
-                      🎟️ {gv} (Guest)
+                      {gv} (Guest)
                     </button>
                   ))}
                 </div>

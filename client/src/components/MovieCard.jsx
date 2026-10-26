@@ -73,17 +73,16 @@ function VoterPills({ movieId, title, ratings, top3, voters, guestVoters = [] })
           <span
             key={v}
             className={`voter-pill rh-has-history voter-pill-guest${openVoter === v ? ' rh-open' : ''}`}
-            style={{ borderStyle: 'dashed' }}
             role="button"
             tabIndex={0}
             aria-label={`Guest ${v} rated ${score} — show rating history`}
-            title={`Guest rating by ${v}: ${score}`}
+            title={`Guest: ${v} (${score})`}
             onMouseEnter={e => { const el = e.currentTarget; hover.enter(() => { setOpenVoter(v); setAnchorEl(el); }); }}
             onMouseLeave={() => hover.leave(close)}
             onClick={e => handleClick(e, v)}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(e, v); } }}
           >
-            <span className="voter-abbr">🎟️{v.slice(0, 2)}</span>
+            <span className="voter-abbr">{v.slice(0, 3)}</span>
             <span className={`voter-score ${scoreClass(score)}`}>
               {Number.isInteger(score) ? score : score.toFixed(1)}
             </span>

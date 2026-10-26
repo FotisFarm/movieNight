@@ -647,7 +647,7 @@ export default function Admin() {
                                       }
                                       title={g.role === 'admin' ? `Group Admin of ${g.name}` : (g.role === 'guest' ? `Guest in ${g.name}` : `Member of ${g.name}`)}
                                     >
-                                      {g.role === 'guest' ? '🎟️' : '🎬'} {g.name}{g.role === 'admin' ? ' (Admin)' : (g.role === 'guest' ? ' (Guest)' : '')}
+                                      🎬 {g.name}{g.role === 'admin' ? ' (Admin)' : (g.role === 'guest' ? ' (Guest)' : '')}
                                     </span>
                                   ))
                                 ) : (
@@ -691,7 +691,7 @@ export default function Admin() {
                                 }}
                                 title="Guest attendee"
                               >
-                                🎟️ Guest
+                                Guest
                               </span>
                             ) : (
                               <span className="admin-role-badge member">Member</span>
@@ -774,7 +774,7 @@ export default function Admin() {
                               }}
                               title="Guest attendee"
                             >
-                              🎟️ Guest
+                              Guest
                             </span>
                           ) : (
                             <span className="admin-role-badge member">Member</span>
@@ -804,7 +804,7 @@ export default function Admin() {
                                       }
                                       title={g.role === 'admin' ? `Group Admin of ${g.name}` : (g.role === 'guest' ? `Guest in ${g.name}` : `Member of ${g.name}`)}
                                     >
-                                      {g.role === 'guest' ? '🎟️' : '🎬'} {g.name}{g.role === 'admin' ? ' (Admin)' : (g.role === 'guest' ? ' (Guest)' : '')}
+                                      🎬 {g.name}{g.role === 'admin' ? ' (Admin)' : (g.role === 'guest' ? ' (Guest)' : '')}
                                     </span>
                                   ))
                                 ) : (
@@ -1336,7 +1336,7 @@ export default function Admin() {
                           >
                             <option value="member">👤 Member</option>
                             <option value="admin">👑 Group Admin</option>
-                            <option value="guest">🎟️ Guest</option>
+                            <option value="guest">Guest</option>
                           </select>
                         </div>
                       )}
@@ -1351,7 +1351,7 @@ export default function Admin() {
                   👑 <strong>Group Admins</strong> can enter ratings, adjust rankings, and manage lists on behalf of any member during group watch sessions, but cannot see or access other clubs or the system admin console.
                 </div>
                 <div style={{ marginTop: 6, color: 'var(--text2)' }}>
-                  🎟️ <strong>Guests</strong> partake in group watch sessions and ratings without altering the club's permanent group size denominator or recommendation algorithms.
+                  <strong>Guests</strong> partake in group watch sessions and ratings without altering the club's permanent group size denominator or recommendation algorithms.
                 </div>
               </div>
             </div>
@@ -1647,11 +1647,11 @@ export default function Admin() {
                     >
                       <option value="member">👤 Regular Member</option>
                       <option value="admin">👑 Group Admin</option>
-                      <option value="guest">🎟️ Guest (Temporary / Sporadic Attendee)</option>
+                      <option value="guest">Guest (Temporary / Sporadic Attendee)</option>
                     </select>
                     <div className="admin-form-desc">
                       {newGroupRole === 'guest'
-                        ? '🎟️ Guests partake in scoring on films they attend without being counted towards permanent group size or recommendation algorithms.'
+                        ? 'Guests partake in scoring on films they attend without being counted towards permanent group size or recommendation algorithms.'
                         : newGroupRole === 'admin'
                         ? '👑 Can enter ratings & manage lists for anyone during group watch sessions (cannot access other clubs or Admin console).'
                         : '👤 Standard club member with full ratings and top 10 access.'}
