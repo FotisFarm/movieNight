@@ -44,6 +44,7 @@ app.get('/api/config', async (req, res) => {
   if (!isLoggedIn) {
     return res.json({
       voters: group.voters,
+      guestVoters: group.guestVoters || [],
       groupSize: group.groupSize,
       minVoters: group.minVoters,
       activeGroup: { id: group.id, name: group.name, slug: group.slug },
@@ -61,6 +62,7 @@ app.get('/api/config', async (req, res) => {
   const isAdmin = isSiteAdmin || isGroupAdmin;
   res.json({
     voters: group.voters,
+    guestVoters: group.guestVoters || [],
     groupSize: group.groupSize,
     minVoters: group.minVoters,
     activeGroup: { id: group.id, name: group.name, slug: group.slug, members: group.members },

@@ -85,7 +85,7 @@ router.post('/users', ah(async (req, res) => {
   const newUserId = ins.lastInsertRowid;
 
   if (groupId) {
-    const role = (adminFlag || groupRole === 'admin') ? 'admin' : 'member';
+    const role = (adminFlag || groupRole === 'admin') ? 'admin' : (groupRole === 'guest' ? 'guest' : 'member');
     await db.run(
       'INSERT OR IGNORE INTO group_members (group_id, user_id, role) VALUES (?, ?, ?)',
       Number(groupId), newUserId, role
@@ -164,7 +164,7 @@ router.post('/users/:id/groups', ah(async (req, res) => {
 
   await db.run(
     'INSERT OR REPLACE INTO group_members (group_id, user_id, role) VALUES (?, ?, ?)',
-    Number(groupId), userId, role === 'admin' ? 'admin' : 'member'
+    Number(groupId), userId, role === 'admin' ? 'admin' : (role === 'guest' ? 'guest' : 'member')
   );
 
   res.json({ ok: true });
@@ -186,13 +186,13 @@ router.put('/users/:id/groups', ah(async (req, res) => {
     ? memberships
     : groupIds.map(gid => ({
         groupId: Number(gid),
-        role: roles[gid] === 'admin' ? 'admin' : 'member',
+        role: roles[gid] === 'admin' ? 'admin' : (roles[gid] === 'guest' ? 'guest' : 'member'),
       }));
 
   await db.run('DELETE FROM group_members WHERE user_id = ?', userId);
   for (const m of targetMemberships) {
     const gid = Number(m.groupId || m.id);
-    const role = m.role === 'admin' ? 'admin' : 'member';
+    const role = m.role === 'admin' ? 'admin' : (m.role === 'guest' ? 'guest' : 'member');
     if (gid) {
       await db.run(
         'INSERT OR REPLACE INTO group_members (group_id, user_id, role) VALUES (?, ?, ?)',

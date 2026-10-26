@@ -6,6 +6,8 @@ const DEFAULT_GROUP = {
   name: 'The Originals',
   slug: 'the-originals',
   voters: VOTERS,
+  guestVoters: [],
+  allVoters: VOTERS,
   members: VOTERS.map((v, i) => ({ id: i + 1, username: v, displayName: v, role: v === 'Φώτης' ? 'admin' : 'member' })),
   groupSize: GROUP_SIZE,
   minVoters: MIN_VOTERS,
@@ -36,7 +38,12 @@ async function getGroupWithMembers(groupIdOrSlug) {
       ORDER BY gm.id ASC
     `, group.id);
 
-    const voters = memberRows.map(m => m.display_name);
+    const coreMembers = memberRows.filter(m => m.role !== 'guest');
+    const guestMembers = memberRows.filter(m => m.role === 'guest');
+
+    const voters = coreMembers.map(m => m.display_name);
+    const guestVoters = guestMembers.map(m => m.display_name);
+    const allVoters = memberRows.map(m => m.display_name);
     const size = voters.length || 1;
 
     return {
@@ -44,6 +51,8 @@ async function getGroupWithMembers(groupIdOrSlug) {
       name: group.name,
       slug: group.slug,
       voters,
+      guestVoters,
+      allVoters,
       members: memberRows.map(m => ({
         id: m.user_id,
         username: m.username,

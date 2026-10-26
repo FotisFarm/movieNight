@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 
 const DEFAULTS = {
   voters: ['Φώτης', 'Μητσέας', 'Παντελής', 'Στέλιας', 'Λεόντιος', 'Κλαίρη'],
+  guestVoters: [],
   groupSize: 6,
   minVoters: 2,
   activeGroup: { id: 1, name: 'The Originals', slug: 'the-originals' },

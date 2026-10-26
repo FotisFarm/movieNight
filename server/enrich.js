@@ -41,12 +41,13 @@ function resolveGroupParams(options = {}) {
   const voters = (group?.voters && group.voters.length > 0)
     ? group.voters
     : (Array.isArray(options.voters) && options.voters.length > 0 ? options.voters : VOTERS);
+  const guestVoters = group?.guestVoters || options.guestVoters || [];
   const groupSize = group?.groupSize || (typeof options.groupSize === 'number' ? options.groupSize : voters.length) || GROUP_SIZE;
-  return { groupId, voters, groupSize };
+  return { groupId, voters, guestVoters, groupSize };
 }
 
 async function enrichMovie(movie, options = {}) {
-  const { groupId, voters, groupSize } = resolveGroupParams(options);
+  const { groupId, voters, guestVoters, groupSize } = resolveGroupParams(options);
 
   const [ratings, top3, groupStatusRow, groupWlRows, legacyWlRows, origStatusRow] = await Promise.all([
     db.all('SELECT voter, score, comment FROM ratings WHERE movie_id = ?', movie.id),
@@ -77,7 +78,7 @@ async function enrichMovie(movie, options = {}) {
 
   for (const r of ratings) {
     if (r.score != null) allScores.push(r.score);
-    if (voters.includes(r.voter)) {
+    if (voters.includes(r.voter) || guestVoters.includes(r.voter)) {
       ratingsMap[r.voter] = r.score;
       if (r.comment) commentsMap[r.voter] = r.comment;
     }
@@ -90,7 +91,9 @@ async function enrichMovie(movie, options = {}) {
     }
   }
 
-  const scores = voters.map(v => ratingsMap[v]).filter(s => s != null);
+  const coreScores = voters.map(v => ratingsMap[v]).filter(s => s != null);
+  const guestScores = guestVoters.map(v => ratingsMap[v]).filter(s => s != null);
+  const scores = [...coreScores, ...guestScores];
   const n = scores.length;
   let score = null, fairScore = null, boostedScore = null, fairBoosted = null;
 
@@ -99,7 +102,8 @@ async function enrichMovie(movie, options = {}) {
   let stdDev = null;
   if (n > 0) {
     const sum = scores.reduce((a, b) => a + b, 0);
-    score = Math.round((sum / groupSize) * 100) / 100;
+    const effectiveDenominator = Math.max(groupSize, n);
+    score = Math.round((sum / effectiveDenominator) * 100) / 100;
     fairScore = Math.round((sum / n) * 100) / 100;
     boostedScore = Math.round(Math.min(10, score + boost) * 100) / 100;
     fairBoosted = Math.round(Math.min(10, fairScore + boost) * 100) / 100;
@@ -120,14 +124,16 @@ async function enrichMovie(movie, options = {}) {
   if (groupId !== 1) {
     const originalsGroup = await getOriginalsGroup();
     const origVoters = originalsGroup?.voters || VOTERS;
+    const origGuestVoters = originalsGroup?.guestVoters || [];
     const origGroupSize = originalsGroup?.groupSize || origVoters.length || 5;
     const origScores = [];
     const origRatingsMap = {};
+    const allOrigVoters = [...origVoters, ...origGuestVoters];
 
     for (const r of ratings) {
-      if (origVoters.includes(r.voter)) {
+      if (allOrigVoters.includes(r.voter)) {
         if (r.score != null) origScores.push(r.score);
-        const t = top3.find(x => x.voter === r.voter);
+        const t = origVoters.includes(r.voter) ? top3.find(x => x.voter === r.voter) : null;
         origRatingsMap[r.voter] = {
           score: r.score,
           comment: r.comment || '',
@@ -141,7 +147,8 @@ async function enrichMovie(movie, options = {}) {
     if (nOrig > 0) {
       const origSum = origScores.reduce((a, b) => a + b, 0);
       const origFair = origSum / nOrig;
-      const origGroup = origSum / origGroupSize;
+      const origEffectiveDenom = Math.max(origGroupSize, nOrig);
+      const origGroup = origSum / origEffectiveDenom;
       const origBoost = origVoters
         .map(v => origRatingsMap[v]?.rank)
         .filter(r => r != null)
@@ -191,7 +198,7 @@ async function enrichMovie(movie, options = {}) {
 
 async function enrichMoviesBatch(movies, options = {}) {
   if (!movies.length) return [];
-  const { groupId, voters, groupSize } = resolveGroupParams(options);
+  const { groupId, voters, guestVoters, groupSize } = resolveGroupParams(options);
   const ids = movies.map(m => m.id);
   const placeholders = ids.map(() => '?').join(',');
 
@@ -217,10 +224,12 @@ async function enrichMoviesBatch(movies, options = {}) {
   const allScoresMap = {};
 
   let originalsVoters = null;
+  let originalsGuestVoters = [];
   let originalsGroupSize = 5;
   if (groupId !== 1) {
     const originalsGroup = await getOriginalsGroup();
     originalsVoters = originalsGroup?.voters || VOTERS;
+    originalsGuestVoters = originalsGroup?.guestVoters || [];
     originalsGroupSize = originalsGroup?.groupSize || originalsVoters.length || 5;
   }
 
@@ -229,7 +238,7 @@ async function enrichMoviesBatch(movies, options = {}) {
     if (!allMovieRatingsMap[r.movie_id]) allMovieRatingsMap[r.movie_id] = {};
     allMovieRatingsMap[r.movie_id][r.voter] = { score: r.score, comment: r.comment || '' };
 
-    if (voters.includes(r.voter)) {
+    if (voters.includes(r.voter) || guestVoters.includes(r.voter)) {
       if (!ratingsMap[r.movie_id]) ratingsMap[r.movie_id] = {};
       if (!commentsMap[r.movie_id]) commentsMap[r.movie_id] = {};
       ratingsMap[r.movie_id][r.voter] = r.score;
@@ -282,7 +291,9 @@ async function enrichMoviesBatch(movies, options = {}) {
     const mn = st ? st.mn === 1 : false;
     const watchlist = st ? st.watchlist === 1 : false;
 
-    const scores = voters.map(v => ratings[v]).filter(s => s != null);
+    const coreScores = voters.map(v => ratings[v]).filter(s => s != null);
+    const guestScores = guestVoters.map(v => ratings[v]).filter(s => s != null);
+    const scores = [...coreScores, ...guestScores];
     const n = scores.length;
     let score = null, fairScore = null, boostedScore = null, fairBoosted = null;
 
@@ -291,7 +302,8 @@ async function enrichMoviesBatch(movies, options = {}) {
     let stdDev = null;
     if (n > 0) {
       const sum = scores.reduce((a, b) => a + b, 0);
-      score = Math.round((sum / groupSize) * 100) / 100;
+      const effectiveDenominator = Math.max(groupSize, n);
+      score = Math.round((sum / effectiveDenominator) * 100) / 100;
       fairScore = Math.round((sum / n) * 100) / 100;
       boostedScore = Math.round(Math.min(10, score + boost) * 100) / 100;
       fairBoosted = Math.round(Math.min(10, fairScore + boost) * 100) / 100;
@@ -314,12 +326,13 @@ async function enrichMoviesBatch(movies, options = {}) {
       const origRatingsMap = {};
       const movieRatings = allMovieRatingsMap[movie.id] || {};
       const movieTop3 = allMovieTop3Map[movie.id] || {};
+      const allOrigVoters = [...originalsVoters, ...originalsGuestVoters];
 
-      for (const v of originalsVoters) {
+      for (const v of allOrigVoters) {
         const r = movieRatings[v];
         if (r && r.score != null) {
           origScores.push(r.score);
-          const tRank = movieTop3[v] || null;
+          const tRank = originalsVoters.includes(v) ? (movieTop3[v] || null) : null;
           origRatingsMap[v] = {
             score: r.score,
             comment: r.comment || '',
@@ -333,7 +346,8 @@ async function enrichMoviesBatch(movies, options = {}) {
       if (nOrig > 0) {
         const origSum = origScores.reduce((a, b) => a + b, 0);
         const origFair = origSum / nOrig;
-        const origGroup = origSum / originalsGroupSize;
+        const origEffectiveDenom = Math.max(originalsGroupSize, nOrig);
+        const origGroup = origSum / origEffectiveDenom;
         const origBoost = originalsVoters
           .map(v => origRatingsMap[v]?.rank)
           .filter(r => r != null)

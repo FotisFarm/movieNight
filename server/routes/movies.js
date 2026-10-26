@@ -78,13 +78,13 @@ router.get('/', ah(async (req, res) => {
   }
 
   if (minVoters) {
-    const vList = req.group?.voters || VOTERS;
+    const vList = [...(req.group?.voters || VOTERS), ...(req.group?.guestVoters || [])];
     const vPh = vList.map(() => '?').join(',');
     query += ` AND (SELECT COUNT(*) FROM ratings WHERE movie_id = movies.id AND voter IN (${vPh})) >= ?`;
     params.push(...vList, parseInt(minVoters));
   }
   if (maxVoters !== undefined && maxVoters !== '') {
-    const vList = req.group?.voters || VOTERS;
+    const vList = [...(req.group?.voters || VOTERS), ...(req.group?.guestVoters || [])];
     const vPh = vList.map(() => '?').join(',');
     query += ` AND (SELECT COUNT(*) FROM ratings WHERE movie_id = movies.id AND voter IN (${vPh})) <= ?`;
     params.push(...vList, parseInt(maxVoters));
@@ -707,7 +707,7 @@ router.patch('/:id', ah(async (req, res) => {
   }
 
   if (ratings) {
-    const activeVoters = req.group?.voters || VOTERS;
+    const activeVoters = [...(req.group?.voters || VOTERS), ...(req.group?.guestVoters || [])];
     const votersToRate = (isAdmin || activeVoters.includes(sessionVoter)) ? activeVoters : [sessionVoter];
     // One transaction so `ratings` and its history can't disagree — the history
     // is append-only, so a half-applied write here would never self-heal.
@@ -748,7 +748,7 @@ router.patch('/:id', ah(async (req, res) => {
   }
 
   if (comments) {
-    const activeVoters = req.group?.voters || VOTERS;
+    const activeVoters = [...(req.group?.voters || VOTERS), ...(req.group?.guestVoters || [])];
     const votersToComment = (isAdmin || activeVoters.includes(sessionVoter)) ? activeVoters : [sessionVoter];
     for (const voter of votersToComment) {
       if (voter in comments) {

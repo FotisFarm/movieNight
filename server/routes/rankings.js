@@ -8,10 +8,12 @@ const router = express.Router();
 
 async function getAllEnriched(mnOnly = false, group = null) {
   const voters = (group?.voters && group.voters.length > 0) ? group.voters : VOTERS;
+  const guestVoters = group?.guestVoters || [];
+  const allVoters = [...voters, ...guestVoters];
   const groupSize = group?.groupSize || voters.length || GROUP_SIZE;
   const minVoters = Math.min(2, voters.length);
   const groupId = group?.id || 1;
-  const vPh = voters.map(() => '?').join(',');
+  const vPh = allVoters.map(() => '?').join(',');
 
   let movies = await db.all(
     `SELECT m.*,
@@ -24,20 +26,21 @@ async function getAllEnriched(mnOnly = false, group = null) {
      FROM movies m
      WHERE voter_count >= ? ${mnOnly ? 'AND group_mn = 1' : ''}
     `,
-    ...voters, ...voters, ...voters, ...voters, ...voters, groupId, minVoters
+    ...allVoters, ...allVoters, ...allVoters, ...allVoters, ...allVoters, groupId, minVoters
   );
 
   return movies.map(m => {
     const n = m.voter_count;
     const sum = m.score_sum || 0;
-    const score = sum / groupSize;
+    const effectiveDenom = Math.max(groupSize, n);
+    const score = sum / effectiveDenom;
     const fairScore = n > 0 ? sum / n : 0;
 
     const top3Map = {};
     if (m.top3_entries) {
       for (const entry of m.top3_entries.split('|')) {
         const [voter, rank] = entry.split(':');
-        if (voter) top3Map[voter] = parseInt(rank, 10);
+        if (voters.includes(voter)) top3Map[voter] = parseInt(rank, 10);
       }
     }
     const boost = Object.values(top3Map).reduce((acc, rank) => acc + rankBonus(rank), 0);
