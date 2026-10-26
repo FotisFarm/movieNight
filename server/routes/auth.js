@@ -334,7 +334,7 @@ router.post('/groups/:id/members', ah(async (req, res) => {
 
   await db.run(
     'INSERT OR REPLACE INTO group_members (group_id, user_id, role) VALUES (?, ?, ?)',
-    groupId, targetUserId, role === 'admin' ? 'admin' : 'member'
+    groupId, targetUserId, role === 'admin' ? 'admin' : (role === 'guest' ? 'guest' : 'member')
   );
 
   res.json({ ok: true, group: await getGroupWithMembers(groupId) });

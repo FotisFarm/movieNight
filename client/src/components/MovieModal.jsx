@@ -39,12 +39,34 @@ function rankClass(r) {
 }
 
 export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankData, onMovieUpdated }) {
-  const { voters: configVoters, groupSize, sandboxMode, activeGroup, isAdmin: configIsAdmin, isSiteAdmin, isGroupAdmin: configIsGroupAdmin } = useAppConfig();
+  const { voters: configVoters, guestVoters = [], groupSize, sandboxMode, activeGroup, isAdmin: configIsAdmin, isSiteAdmin, isGroupAdmin: configIsGroupAdmin } = useAppConfig();
   const currentVoter = sessionStorage.getItem('voter');
   const isGroupAdmin = Boolean(configIsGroupAdmin || activeGroup?.members?.some(m => (m.displayName === currentVoter || m.username === currentVoter) && m.role === 'admin'));
   const isGlobalAdmin = Boolean(isSiteAdmin || sessionStorage.getItem('isAdmin') === 'true' || currentVoter === 'mnAdmin');
   const isAdmin = Boolean(configIsAdmin || isGlobalAdmin || isGroupAdmin);
-  const isGhost = !configVoters.includes(currentVoter) && currentVoter !== 'mnAdmin' && !isAdmin && !!currentVoter;
+  const isGuest = guestVoters.includes(currentVoter) || activeGroup?.members?.some(m => (m.displayName === currentVoter || m.username === currentVoter) && m.role === 'guest');
+  const isGhost = !configVoters.includes(currentVoter) && !isGuest && currentVoter !== 'mnAdmin' && !isAdmin && !!currentVoter;
+
+  const [movie, setMovie]     = useState(null);
+
+  const displayedGuests = useMemo(() => {
+    const set = new Set(guestVoters);
+    if (movie?.ratings) {
+      Object.keys(movie.ratings).forEach(v => {
+        if (!configVoters.includes(v)) {
+          const isGuestMember = activeGroup?.members?.some(m => (m.displayName === v || m.username === v) && m.role === 'guest');
+          if (isGuestMember || guestVoters.includes(v)) {
+            set.add(v);
+          }
+        }
+      });
+    }
+    if (isGuest && currentVoter) {
+      set.add(currentVoter);
+    }
+    return Array.from(set);
+  }, [guestVoters, configVoters, movie?.ratings, activeGroup?.members, currentVoter, isGuest]);
+
   const voterAvatars = useMemo(() => {
     const map = {};
     activeGroup?.members?.forEach(m => {
@@ -52,7 +74,6 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
     });
     return map;
   }, [activeGroup]);
-  const [movie, setMovie]     = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
 
@@ -224,6 +245,10 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
         c[v] = m.comments?.[v] ?? '';
         t[v] = m.top3?.[v] ?? null;
       });
+      displayedGuests.forEach(v => {
+        r[v] = m.ratings?.[v] ?? null;
+        c[v] = m.comments?.[v] ?? '';
+      });
       if (isGhost) {
         r[currentVoter] = m.ratings?.[currentVoter] ?? null;
         c[currentVoter] = m.comments?.[currentVoter] ?? '';
@@ -329,6 +354,12 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
       ratingPayload[v] = ratings[v];
       if (ratings[v] != null) commentPayload[v] = comments[v];
       top3Payload[v] = top3[v] ?? null;
+    });
+    displayedGuests.forEach(v => {
+      if (v in ratings) {
+        ratingPayload[v] = ratings[v];
+        if (ratings[v] != null) commentPayload[v] = comments[v] ?? '';
+      }
     });
     if (isGhost) {
       ratingPayload[currentVoter] = ratings[currentVoter] ?? null;
@@ -935,6 +966,77 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                           type="text"
                           className="rating-comment"
                           placeholder={canEdit ? 'Add a note or review…' : ''}
+                          maxLength={300}
+                          value={comments[v] || ''}
+                          onChange={e => canEdit && setComments(c => ({ ...c, [v]: e.target.value }))}
+                          readOnly={!canEdit}
+                        />
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+
+              {displayedGuests.map(v => {
+                const val = ratings[v];
+                const isOn = val != null;
+                const canEdit = isAdmin || v === currentVoter;
+                const isSelf = v === currentVoter;
+
+                return (
+                  <div
+                    key={v}
+                    className={`voter-rating-card guest-rating-card${isOn ? '' : ' rating-off'}${!canEdit ? ' rating-locked' : ''}${isSelf ? ' voter-card-self' : ''}`}
+                    style={{ borderStyle: 'dashed' }}
+                  >
+                    <div className="voter-card-header">
+                      <div className="voter-card-user">
+                        <UserAvatar name={v} avatarUrl={voterAvatars[v]} size={40} className="voter-avatar-circle" zoomable />
+                        <span className="voter-name-label">
+                          🎟️ {v} <span style={{ fontSize: '0.8em', opacity: 0.75 }}>(Guest{isSelf ? ', You' : ''})</span>
+                        </span>
+                      </div>
+
+                      <div className="voter-card-controls">
+                        {isOn && (
+                          <input
+                            type="number"
+                            key={`${movieId}-${v}-${isOn}`}
+                            className={`rating-number-input ${scoreClass(val)}`}
+                            min={0} max={10} step={0.5}
+                            defaultValue={val}
+                            onChange={e => canEdit && setScore(v, e.target.value)}
+                            readOnly={!canEdit}
+                          />
+                        )}
+
+                        {canEdit && (
+                          <button
+                            className="btn btn-sm btn-ghost rating-toggle"
+                            onClick={() => toggleVoter(v)}
+                            title={isOn ? 'Remove rating' : 'Add rating'}
+                          >
+                            {isOn ? '✕' : '+'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {isOn && (
+                      <>
+                        <div className="score-bar">
+                          <div
+                            className="score-bar-fill"
+                            style={{
+                              width: `${(val / 10) * 100}%`,
+                              background: val >= 7.5 ? 'var(--green)' : val >= 5 ? 'var(--gold)' : 'var(--red)'
+                            }}
+                          />
+                        </div>
+                        <input
+                          type="text"
+                          className="rating-comment"
+                          placeholder={canEdit ? `Add a review as ${v}…` : ''}
                           maxLength={300}
                           value={comments[v] || ''}
                           onChange={e => canEdit && setComments(c => ({ ...c, [v]: e.target.value }))}

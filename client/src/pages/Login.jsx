@@ -3,7 +3,7 @@ import { api } from '../api';
 import { useAppConfig } from '../AppConfigContext';
 
 export default function Login({ onLogin }) {
-  const { voters = [] } = useAppConfig() || {};
+  const { voters = [], guestVoters = [] } = useAppConfig() || {};
   const [selected, setSelected] = useState(null);
   const [customUser, setCustomUser] = useState(false);
   const [customIdentifier, setCustomIdentifier] = useState('');
@@ -65,6 +65,26 @@ export default function Login({ onLogin }) {
                 </button>
               ))}
             </div>
+            {guestVoters.length > 0 && (
+              <div style={{ borderTop: '1px dashed var(--border)', paddingTop: 10, marginTop: 4 }}>
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 6, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Guest Attendees
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 6 }}>
+                  {guestVoters.map(gv => (
+                    <button
+                      key={gv}
+                      type="button"
+                      className="btn btn-ghost"
+                      style={{ justifyContent: 'center', padding: '8px', fontSize: 13, fontWeight: 500, borderStyle: 'dashed' }}
+                      onClick={() => { setSelected(gv); setError(''); setPassword(''); }}
+                    >
+                      🎟️ {gv} (Guest)
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
               <button
                 type="button"

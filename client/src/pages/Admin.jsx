@@ -43,7 +43,7 @@ export default function Admin() {
   const [newGroupId, setNewGroupId] = useState('1');
   const [newPassword, setNewPassword] = useState('movieNight5');
   const [newIsAdmin, setNewIsAdmin] = useState(false);
-  const [newIsGroupAdmin, setNewIsGroupAdmin] = useState(false);
+  const [newGroupRole, setNewGroupRole] = useState('member'); // 'member' | 'admin' | 'guest'
   const [formError, setFormError] = useState('');
 
   // Create Club Form State
@@ -110,7 +110,8 @@ export default function Admin() {
       const matchRole = roleFilter === 'all'
         || (roleFilter === 'admin' || roleFilter === 'siteAdmin' ? u.isAdmin : false)
         || (roleFilter === 'groupAdmin' ? (!u.isAdmin && u.groups?.some(g => g.role === 'admin')) : false)
-        || (roleFilter === 'member' ? (!u.isAdmin && !u.groups?.some(g => g.role === 'admin')) : false);
+        || (roleFilter === 'guest' ? (!u.isAdmin && u.groups?.some(g => g.role === 'guest')) : false)
+        || (roleFilter === 'member' ? (!u.isAdmin && !u.groups?.some(g => g.role === 'admin' || g.role === 'guest')) : false);
       return matchSearch && matchGroup && matchRole;
     });
   }, [users, search, groupFilter, roleFilter]);
@@ -148,7 +149,7 @@ export default function Admin() {
     setNewDisplayName('');
     setNewPassword('movieNight5');
     setNewIsAdmin(false);
-    setNewIsGroupAdmin(false);
+    setNewGroupRole('member');
     setFormError('');
     if (groups.length > 0) setNewGroupId(String(groups[0].id));
     setAddUserOpen(true);
@@ -170,7 +171,7 @@ export default function Admin() {
         groupId: Number(newGroupId) || 1,
         password: newPassword.trim() || 'movieNight5',
         isAdmin: newIsAdmin,
-        groupRole: (!newIsAdmin && newIsGroupAdmin) ? 'admin' : 'member',
+        groupRole: (!newIsAdmin && newGroupRole === 'admin') ? 'admin' : (newGroupRole === 'guest' ? 'guest' : 'member'),
       });
 
       if (res.ok) {
@@ -587,6 +588,7 @@ export default function Admin() {
                 <option value="all">All Roles</option>
                 <option value="siteAdmin">Site Admins Only</option>
                 <option value="groupAdmin">Group Admins Only</option>
+                <option value="guest">Guests Only</option>
                 <option value="member">Regular Members</option>
               </select>
             </div>
@@ -636,10 +638,16 @@ export default function Admin() {
                                     <span
                                       key={g.id}
                                       className="admin-group-tag"
-                                      style={g.role === 'admin' ? { borderColor: '#ffd54f', color: '#ffd54f', background: 'rgba(255, 213, 79, 0.12)' } : undefined}
-                                      title={g.role === 'admin' ? `Group Admin of ${g.name}` : `Member of ${g.name}`}
+                                      style={
+                                        g.role === 'admin'
+                                          ? { borderColor: '#ffd54f', color: '#ffd54f', background: 'rgba(255, 213, 79, 0.12)' }
+                                          : g.role === 'guest'
+                                          ? { borderColor: '#ce93d8', color: '#ce93d8', background: 'rgba(156, 39, 176, 0.12)', borderStyle: 'dashed' }
+                                          : undefined
+                                      }
+                                      title={g.role === 'admin' ? `Group Admin of ${g.name}` : (g.role === 'guest' ? `Guest in ${g.name}` : `Member of ${g.name}`)}
                                     >
-                                      🎬 {g.name}{g.role === 'admin' ? ' (Admin)' : ''}
+                                      {g.role === 'guest' ? '🎟️' : '🎬'} {g.name}{g.role === 'admin' ? ' (Admin)' : (g.role === 'guest' ? ' (Guest)' : '')}
                                     </span>
                                   ))
                                 ) : (
@@ -671,6 +679,19 @@ export default function Admin() {
                                 title={`Group Admin of: ${u.groups.filter(g => g.role === 'admin').map(g => g.name).join(', ')}`}
                               >
                                 👑 Group Admin
+                              </span>
+                            ) : u.groups?.every(g => g.role === 'guest') && u.groups.length > 0 ? (
+                              <span
+                                className="admin-role-badge guest"
+                                style={{
+                                  background: 'rgba(156, 39, 176, 0.15)',
+                                  color: '#ce93d8',
+                                  border: '1px dashed rgba(206, 147, 216, 0.5)',
+                                  fontWeight: 600,
+                                }}
+                                title="Guest attendee"
+                              >
+                                🎟️ Guest
                               </span>
                             ) : (
                               <span className="admin-role-badge member">Member</span>
@@ -742,6 +763,19 @@ export default function Admin() {
                             >
                               👑 Group Admin
                             </span>
+                          ) : u.groups?.every(g => g.role === 'guest') && u.groups.length > 0 ? (
+                            <span
+                              className="admin-role-badge guest"
+                              style={{
+                                background: 'rgba(156, 39, 176, 0.15)',
+                                color: '#ce93d8',
+                                border: '1px dashed rgba(206, 147, 216, 0.5)',
+                                fontWeight: 600,
+                              }}
+                              title="Guest attendee"
+                            >
+                              🎟️ Guest
+                            </span>
                           ) : (
                             <span className="admin-role-badge member">Member</span>
                           )}
@@ -761,10 +795,16 @@ export default function Admin() {
                                     <span
                                       key={g.id}
                                       className="admin-group-tag"
-                                      style={g.role === 'admin' ? { borderColor: '#ffd54f', color: '#ffd54f', background: 'rgba(255, 213, 79, 0.12)' } : undefined}
-                                      title={g.role === 'admin' ? `Group Admin of ${g.name}` : `Member of ${g.name}`}
+                                      style={
+                                        g.role === 'admin'
+                                          ? { borderColor: '#ffd54f', color: '#ffd54f', background: 'rgba(255, 213, 79, 0.12)' }
+                                          : g.role === 'guest'
+                                          ? { borderColor: '#ce93d8', color: '#ce93d8', background: 'rgba(156, 39, 176, 0.12)', borderStyle: 'dashed' }
+                                          : undefined
+                                      }
+                                      title={g.role === 'admin' ? `Group Admin of ${g.name}` : (g.role === 'guest' ? `Guest in ${g.name}` : `Member of ${g.name}`)}
                                     >
-                                      🎬 {g.name}{g.role === 'admin' ? ' (Admin)' : ''}
+                                      {g.role === 'guest' ? '🎟️' : '🎬'} {g.name}{g.role === 'admin' ? ' (Admin)' : (g.role === 'guest' ? ' (Guest)' : '')}
                                     </span>
                                   ))
                                 ) : (
@@ -1287,15 +1327,16 @@ export default function Admin() {
                               padding: '5px 9px',
                               fontSize: 12,
                               borderRadius: 6,
-                              background: currentRole === 'admin' ? 'rgba(255, 213, 79, 0.15)' : 'var(--bg3)',
-                              color: currentRole === 'admin' ? '#ffd54f' : 'var(--text)',
-                              border: currentRole === 'admin' ? '1px solid rgba(255, 213, 79, 0.4)' : '1px solid var(--border)',
-                              fontWeight: currentRole === 'admin' ? 600 : 400,
+                              background: currentRole === 'admin' ? 'rgba(255, 213, 79, 0.15)' : (currentRole === 'guest' ? 'rgba(156, 39, 176, 0.15)' : 'var(--bg3)'),
+                              color: currentRole === 'admin' ? '#ffd54f' : (currentRole === 'guest' ? '#ce93d8' : 'var(--text)'),
+                              border: currentRole === 'admin' ? '1px solid rgba(255, 213, 79, 0.4)' : (currentRole === 'guest' ? '1px dashed rgba(206, 147, 216, 0.5)' : '1px solid var(--border)'),
+                              fontWeight: (currentRole === 'admin' || currentRole === 'guest') ? 600 : 400,
                               cursor: 'pointer',
                             }}
                           >
                             <option value="member">👤 Member</option>
                             <option value="admin">👑 Group Admin</option>
+                            <option value="guest">🎟️ Guest</option>
                           </select>
                         </div>
                       )}
@@ -1308,6 +1349,9 @@ export default function Admin() {
                 <div>* Users can belong to multiple clubs. Their ratings and top 10 lists remain scoped to their respective clubs.</div>
                 <div style={{ marginTop: 6, color: 'var(--text2)' }}>
                   👑 <strong>Group Admins</strong> can enter ratings, adjust rankings, and manage lists on behalf of any member during group watch sessions, but cannot see or access other clubs or the system admin console.
+                </div>
+                <div style={{ marginTop: 6, color: 'var(--text2)' }}>
+                  🎟️ <strong>Guests</strong> partake in group watch sessions and ratings without altering the club's permanent group size denominator or recommendation algorithms.
                 </div>
               </div>
             </div>
@@ -1595,17 +1639,23 @@ export default function Admin() {
 
                 {!newIsAdmin && (
                   <div className="admin-form-group">
-                    <label className="admin-checkbox-row">
-                      <input
-                        type="checkbox"
-                        checked={newIsGroupAdmin}
-                        onChange={e => setNewIsGroupAdmin(e.target.checked)}
-                      />
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: 13, color: '#ffd54f' }}>👑 Grant Group Admin for this Club</div>
-                        <div style={{ fontSize: 11.5, color: 'var(--text2)' }}>Can enter ratings & manage lists for anyone during group watch sessions (cannot access other clubs or Admin console).</div>
-                      </div>
-                    </label>
+                    <label>Role in Selected Club</label>
+                    <select
+                      className="admin-form-input"
+                      value={newGroupRole}
+                      onChange={e => setNewGroupRole(e.target.value)}
+                    >
+                      <option value="member">👤 Regular Member</option>
+                      <option value="admin">👑 Group Admin</option>
+                      <option value="guest">🎟️ Guest (Temporary / Sporadic Attendee)</option>
+                    </select>
+                    <div className="admin-form-desc">
+                      {newGroupRole === 'guest'
+                        ? '🎟️ Guests partake in scoring on films they attend without being counted towards permanent group size or recommendation algorithms.'
+                        : newGroupRole === 'admin'
+                        ? '👑 Can enter ratings & manage lists for anyone during group watch sessions (cannot access other clubs or Admin console).'
+                        : '👤 Standard club member with full ratings and top 10 access.'}
+                    </div>
                   </div>
                 )}
               </div>

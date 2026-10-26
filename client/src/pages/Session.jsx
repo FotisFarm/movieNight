@@ -143,7 +143,7 @@ class ConfettiSystem {
 }
 
 export default function Session({ voter }) {
-  const { voters: configVoters, activeGroup } = useAppConfig();
+  const { voters: configVoters, guestVoters = [], activeGroup } = useAppConfig();
 
   // Attendees state: defaults to all config voters
   const [attendees, setAttendees] = useState(configVoters || []);
@@ -670,6 +670,22 @@ export default function Session({ voter }) {
                 >
                   <span className="attendee-indicator">{isPresent ? '✓' : '+'}</span>
                   <span className="attendee-name">{v}</span>
+                </button>
+              );
+            })}
+            {guestVoters.map(v => {
+              const isPresent = attendees.includes(v);
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  className={`attendee-chip guest-attendee-chip ${isPresent ? 'active' : ''}`}
+                  style={{ borderStyle: 'dashed' }}
+                  onClick={() => toggleAttendee(v)}
+                  title={isPresent ? `Click to remove guest ${v}` : `Click to include guest ${v}`}
+                >
+                  <span className="attendee-indicator">{isPresent ? '✓' : '+'}</span>
+                  <span className="attendee-name">🎟️ {v} <span style={{ fontSize: '0.75em', opacity: 0.8 }}>(Guest)</span></span>
                 </button>
               );
             })}

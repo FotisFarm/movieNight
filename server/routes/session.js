@@ -45,17 +45,19 @@ router.post('/contenders', ah(async (req, res) => {
     : (allowWatched ? 'share' : 'fresh');
 
   const groupVoters = req.group?.voters || VOTERS;
+  const guestVoters = req.group?.guestVoters || [];
+  const allAllowedAttendees = [...groupVoters, ...guestVoters];
   const groupId = req.group?.id || 1;
 
-  // Validate and sanitize attendees (fallback to all registered group voters)
+  // Validate and sanitize attendees (fallback to all registered core group voters)
   const validAttendees = Array.isArray(reqAttendees) && reqAttendees.length > 0
-    ? reqAttendees.filter(v => groupVoters.includes(v))
+    ? reqAttendees.filter(v => allAllowedAttendees.includes(v))
     : groupVoters;
   const attendees = validAttendees.length > 0 ? validAttendees : groupVoters;
 
   // Independent full-table reads in one concurrent round-trip
   const [allMovies, allRatings, allTop3, allGroupStatus, allGroupWlVotes, legacyWlVotes] = await Promise.all([
-    db.all('SELECT id, title, year, director, runtime, poster_path, watchlist, mn, cinobo, stream_gr, keywords FROM movies'),
+    db.all('SELECT id, title, year, director, runtime, poster_path, watchlist, mn, cinobo, stream_gr, keywords, letterboxd_rating, imdb_rating FROM movies'),
     db.all('SELECT movie_id, voter, score FROM ratings'),
     db.all('SELECT movie_id, voter, rank FROM top3'),
     db.all('SELECT movie_id, mn, watchlist FROM group_movie_status WHERE group_id = ?', groupId),
@@ -289,12 +291,25 @@ router.post('/contenders', ah(async (req, res) => {
         };
       }
 
-      const vMean = voterMean[voter] || 7.0;
-      const vDec = (mDecade && voterDecadeAvg[voter]?.[mDecade]) ?? vMean;
+      // Movie-level public critical baseline (scaled to 0-10) for cold-start / guest fallback
+      const lbBaseline = (m.letterboxd_rating != null && !isNaN(m.letterboxd_rating))
+        ? m.letterboxd_rating * 2.0
+        : (m.imdb_rating != null && !isNaN(m.imdb_rating) ? m.imdb_rating : null);
+
+      const vMean = voterMean[voter] || lbBaseline || 7.0;
+      const vDec = (mDecade && voterDecadeAvg[voter]?.[mDecade]) ?? (lbBaseline || vMean);
       const vDir = (m.director && voterDirAvg[voter]?.[m.director]) ?? null;
 
-      // Bayesian blend of director track record & decade affinity for this voter
-      let pred = vDir !== null ? (vDir * 0.55 + vDec * 0.45) : vDec;
+      // Bayesian blend of director track record & decade affinity for this voter.
+      // If the attendee is a guest or has no personal history, use the Letterboxd baseline!
+      let pred;
+      if (vDir !== null) {
+        pred = vDir * 0.55 + vDec * 0.45;
+      } else if (mDecade && voterDecadeAvg[voter]?.[mDecade] !== undefined) {
+        pred = vDec;
+      } else {
+        pred = lbBaseline || vMean;
+      }
 
       // Personal keyword affinity modifier for this attendee
       let voterKwBonus = 0;
