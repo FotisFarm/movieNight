@@ -5,6 +5,7 @@ const DEFAULT_GROUP = {
   id: 1,
   name: 'The Originals',
   slug: 'the-originals',
+  includeGuests: false,
   voters: VOTERS,
   guestVoters: [],
   allVoters: VOTERS,
@@ -17,13 +18,13 @@ async function getGroupWithMembers(groupIdOrSlug) {
   try {
     let group = null;
     if (typeof groupIdOrSlug === 'number' || /^\d+$/.test(String(groupIdOrSlug))) {
-      group = await db.get('SELECT id, name, slug FROM groups WHERE id = ?', Number(groupIdOrSlug));
+      group = await db.get('SELECT id, name, slug, include_guests FROM groups WHERE id = ?', Number(groupIdOrSlug));
     } else if (typeof groupIdOrSlug === 'string' && groupIdOrSlug.trim()) {
-      group = await db.get('SELECT id, name, slug FROM groups WHERE slug = ?', groupIdOrSlug.trim());
+      group = await db.get('SELECT id, name, slug, include_guests FROM groups WHERE slug = ?', groupIdOrSlug.trim());
     }
 
     if (!group) {
-      group = await db.get('SELECT id, name, slug FROM groups ORDER BY id ASC LIMIT 1');
+      group = await db.get('SELECT id, name, slug, include_guests FROM groups ORDER BY id ASC LIMIT 1');
     }
 
     if (!group) {
@@ -50,6 +51,7 @@ async function getGroupWithMembers(groupIdOrSlug) {
       id: group.id,
       name: group.name,
       slug: group.slug,
+      includeGuests: Boolean(group.include_guests),
       voters,
       guestVoters,
       allVoters,

@@ -274,6 +274,7 @@ async function init() {
   try { await client.execute('ALTER TABLE top3 ADD COLUMN user_id INTEGER REFERENCES users(id)'); } catch (_) {}
   try { await client.execute('ALTER TABLE lists ADD COLUMN group_id INTEGER REFERENCES groups(id)'); } catch (_) {}
   try { await client.execute('UPDATE lists SET group_id = 1 WHERE group_id IS NULL'); } catch (_) {}
+  try { await client.execute('ALTER TABLE groups ADD COLUMN include_guests INTEGER DEFAULT 0'); } catch (_) {}
   try { await client.execute('ALTER TABLE movies ADD COLUMN imdb_id TEXT DEFAULT NULL'); } catch (_) {}
   try { await client.execute('ALTER TABLE movies ADD COLUMN imdb_rating REAL DEFAULT NULL'); } catch (_) {}
   // TMDB poster path (e.g. '/3bhkrj58Vtu7enYsRolD1fZdja1.jpg'), not a full

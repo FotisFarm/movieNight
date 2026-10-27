@@ -298,12 +298,17 @@ export default function Stats({ voter }) {
   }
 
   const targetVoters = useMemo(() => {
-    if (!includeGuests) return voters;
+    const isSelfGuest = voter && (guestVoters || []).includes(voter);
     const activeGuests = (guestVoters || []).filter(gv =>
-      movies.some(m => m.ratings?.[gv] != null || m.top3?.[gv] != null)
+      movies.some(m => m.ratings?.[gv] != null || m.top3?.[gv] != null) || (voter && gv === voter)
     );
-    return [...voters, ...activeGuests];
-  }, [voters, guestVoters, includeGuests, movies]);
+
+    if (includeGuests) {
+      return Array.from(new Set([...voters, ...activeGuests]));
+    }
+
+    return isSelfGuest ? Array.from(new Set([...voters, voter])) : voters;
+  }, [voters, guestVoters, includeGuests, movies, voter]);
 
   const stats       = useMemo(() => computeStats(movies, targetVoters), [movies, targetVoters]);
   const globalStats = useMemo(() => computeGlobalStats(movies, groupSize), [movies, groupSize]);

@@ -45,6 +45,7 @@ app.get('/api/config', async (req, res) => {
     return res.json({
       voters: group.voters,
       guestVoters: group.guestVoters || [],
+      includeGuests: Boolean(group.includeGuests),
       groupSize: group.groupSize,
       minVoters: group.minVoters,
       activeGroup: { id: group.id, name: group.name, slug: group.slug },
@@ -63,6 +64,7 @@ app.get('/api/config', async (req, res) => {
   res.json({
     voters: group.voters,
     guestVoters: group.guestVoters || [],
+    includeGuests: Boolean(group.includeGuests),
     groupSize: group.groupSize,
     minVoters: group.minVoters,
     activeGroup: { id: group.id, name: group.name, slug: group.slug, members: group.members },
@@ -75,6 +77,20 @@ app.get('/api/config', async (req, res) => {
     isGroupAdmin,
     currentUser: req.session.voter || req.session.displayName,
   });
+});
+
+app.post('/api/config/toggle-guests', async (req, res) => {
+  const group = req.group;
+  if (!group) return res.status(400).json({ error: 'No active group' });
+  const isSiteAdmin = Boolean(req.session?.isAdmin || req.session?.voter === 'mnAdmin' || req.session?.username === 'mnAdmin');
+  const isGroupAdmin = Boolean(group?.members?.some(m => (m.id === req.session?.userId || m.displayName === req.session?.voter || m.username === req.session?.voter) && m.role === 'admin'));
+  if (!isSiteAdmin && !isGroupAdmin) {
+    return res.status(403).json({ error: 'Forbidden: only group or site admins can toggle guest inclusion' });
+  }
+  const next = req.body.includeGuests !== undefined ? (req.body.includeGuests ? 1 : 0) : (group.includeGuests ? 0 : 1);
+  const db = require('./db');
+  await db.run('UPDATE groups SET include_guests = ? WHERE id = ?', next, group.id);
+  res.json({ ok: true, includeGuests: Boolean(next) });
 });
 
 function requireAuth(req, res, next) {

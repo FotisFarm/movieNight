@@ -50,8 +50,6 @@ export function AppConfigProvider({ children }) {
   );
   const canToggleGuests = !isGuestUser && (isSiteAdminUser || isGroupAdminUser);
 
-  const effectiveIncludeGuests = canToggleGuests ? includeGuests : false;
-
   const setIncludeGuests = useCallback((val) => {
     if (!canToggleGuests) return;
     setIncludeGuestsState(prev => {
@@ -59,6 +57,11 @@ export function AppConfigProvider({ children }) {
       try {
         localStorage.setItem('mn_include_guests', String(next));
       } catch (_) {}
+      fetch('/api/config/toggle-guests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ includeGuests: next })
+      }).catch(() => {});
       return next;
     });
   }, [canToggleGuests]);
@@ -72,7 +75,15 @@ export function AppConfigProvider({ children }) {
     return fetch('/api/config')
       .then(r => r.json())
       .then(d => {
-        setConfig(prev => ({ ...prev, ...d }));
+        if (d) {
+          setConfig(prev => ({ ...prev, ...d }));
+          if (d.includeGuests !== undefined) {
+            setIncludeGuestsState(Boolean(d.includeGuests));
+            try {
+              localStorage.setItem('mn_include_guests', String(Boolean(d.includeGuests)));
+            } catch (_) {}
+          }
+        }
         return d;
       })
       .catch(() => {});
@@ -85,7 +96,7 @@ export function AppConfigProvider({ children }) {
   return (
     <AppConfigContext.Provider value={{
       ...config,
-      includeGuests: effectiveIncludeGuests,
+      includeGuests,
       canToggleGuests,
       setIncludeGuests,
       toggleIncludeGuests,
