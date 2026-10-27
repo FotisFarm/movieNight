@@ -201,7 +201,7 @@ function GroupDropdown({ activeGroup, groups = [], onSwitchGroup, isAdmin }) {
   );
 }
 
-function MobileUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar, guestVoters = [], includeGuests = false, toggleIncludeGuests }) {
+function MobileUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar, guestVoters = [], includeGuests = false, toggleIncludeGuests, canToggleGuests = false }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const { theme, setTheme } = useTheme();
@@ -215,7 +215,8 @@ function MobileUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar, g
   }, []);
 
   if (!voter) return null;
-  const roleLabel = user?.isAdmin ? '👑 Site Admin' : (user?.isGroupAdmin ? '⭐ Group Admin' : 'Member');
+  const isGuest = guestVoters.includes(voter) || user?.role === 'guest';
+  const roleLabel = user?.isAdmin ? '👑 Site Admin' : (user?.isGroupAdmin ? '⭐ Group Admin' : (isGuest ? '🎟️ Guest' : 'Member'));
   const myFilmsUrl = `/films?voters=${encodeURIComponent(voter)}&sort=voter-desc&sortVoter=${encodeURIComponent(voter)}`;
 
   return (
@@ -254,7 +255,7 @@ function MobileUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar, g
             </select>
           </div>
 
-          {guestVoters.length > 0 && (
+          {guestVoters.length > 0 && canToggleGuests && (
             <div className="mobile-user-dropdown-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0' }}>
               <label className="mobile-user-section-label" style={{ margin: 0 }}>👥 Include Guests</label>
               <button
@@ -331,7 +332,8 @@ function DesktopUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar }
   }, []);
 
   if (!voter) return null;
-  const roleLabel = user?.isAdmin ? '👑 Site Admin' : (user?.isGroupAdmin ? '⭐ Group Admin' : 'Member');
+  const isGuest = user?.role === 'guest';
+  const roleLabel = user?.isAdmin ? '👑 Site Admin' : (user?.isGroupAdmin ? '⭐ Group Admin' : (isGuest ? '🎟️ Guest' : 'Member'));
   const myFilmsUrl = `/films?voters=${encodeURIComponent(voter)}&sort=voter-desc&sortVoter=${encodeURIComponent(voter)}`;
 
   return (
@@ -505,8 +507,37 @@ function ChangePasswordModal({ onClose }) {
 }
 
 export default function Header({ voter, user, activeGroup, groups = [], onSwitchGroup, onLogout, onUpdateAvatar }) {
-  const { sandboxMode, hideHal, guestVoters = [], includeGuests, toggleIncludeGuests } = useAppConfig() || {};
-  const isAdmin = Boolean(user?.isAdmin || voter === 'mnAdmin' || user?.is_admin === 1);
+  const {
+    sandboxMode,
+    hideHal,
+    guestVoters = [],
+    includeGuests,
+    toggleIncludeGuests,
+    canToggleGuests: ctxCanToggleGuests,
+    isAdmin: configIsAdmin,
+    isSiteAdmin,
+    isGroupAdmin: configIsGroupAdmin,
+  } = useAppConfig() || {};
+
+  const isGuest = Boolean(
+    guestVoters.includes(voter) ||
+    user?.role === 'guest' ||
+    activeGroup?.members?.some(m => (m.displayName === voter || m.username === voter) && m.role === 'guest')
+  );
+  const isSiteAdminUser = Boolean(
+    isSiteAdmin ||
+    user?.isAdmin ||
+    voter === 'mnAdmin' ||
+    user?.is_admin === 1 ||
+    sessionStorage.getItem('isAdmin') === 'true'
+  );
+  const isGroupAdminUser = Boolean(
+    configIsGroupAdmin ||
+    user?.isGroupAdmin ||
+    activeGroup?.members?.some(m => (m.displayName === voter || m.username === voter) && m.role === 'admin')
+  );
+  const canToggleGuests = Boolean(ctxCanToggleGuests ?? (!isGuest && (isSiteAdminUser || isGroupAdminUser)));
+  const isAdmin = isSiteAdminUser;
   const location = useLocation();
   const pathname = location.pathname;
   const { isUnlocked, isOpen, toggleHal, lockHal } = useHal() || {};
@@ -847,7 +878,7 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
             )}
             {/* Desktop User Controls (> 640px) */}
             <div className="desktop-user-group">
-              {guestVoters.length > 0 && (
+              {guestVoters.length > 0 && canToggleGuests && (
                 <button
                   type="button"
                   className={`btn btn-sm guest-toggle-btn ${includeGuests ? 'active' : ''}`}
@@ -891,6 +922,7 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
                 guestVoters={guestVoters}
                 includeGuests={includeGuests}
                 toggleIncludeGuests={toggleIncludeGuests}
+                canToggleGuests={canToggleGuests}
               />
             </div>
           </div>

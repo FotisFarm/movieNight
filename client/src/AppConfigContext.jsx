@@ -33,7 +33,27 @@ export function AppConfigProvider({ children }) {
     }
   });
 
+  const currentVoter = typeof window !== 'undefined' ? sessionStorage.getItem('voter') : null;
+  const isGuestUser = Boolean(
+    config.guestVoters?.includes(currentVoter) ||
+    config.activeGroup?.members?.some(m => (m.displayName === currentVoter || m.username === currentVoter) && m.role === 'guest')
+  );
+  const isSiteAdminUser = Boolean(
+    config.isSiteAdmin ||
+    config.isAdmin ||
+    sessionStorage.getItem('isAdmin') === 'true' ||
+    currentVoter === 'mnAdmin'
+  );
+  const isGroupAdminUser = Boolean(
+    config.isGroupAdmin ||
+    config.activeGroup?.members?.some(m => (m.displayName === currentVoter || m.username === currentVoter) && m.role === 'admin')
+  );
+  const canToggleGuests = !isGuestUser && (isSiteAdminUser || isGroupAdminUser);
+
+  const effectiveIncludeGuests = canToggleGuests ? includeGuests : false;
+
   const setIncludeGuests = useCallback((val) => {
+    if (!canToggleGuests) return;
     setIncludeGuestsState(prev => {
       const next = typeof val === 'function' ? val(prev) : Boolean(val);
       try {
@@ -41,11 +61,12 @@ export function AppConfigProvider({ children }) {
       } catch (_) {}
       return next;
     });
-  }, []);
+  }, [canToggleGuests]);
 
   const toggleIncludeGuests = useCallback(() => {
+    if (!canToggleGuests) return;
     setIncludeGuests(prev => !prev);
-  }, [setIncludeGuests]);
+  }, [canToggleGuests, setIncludeGuests]);
 
   const refreshConfig = useCallback(() => {
     return fetch('/api/config')
@@ -64,7 +85,8 @@ export function AppConfigProvider({ children }) {
   return (
     <AppConfigContext.Provider value={{
       ...config,
-      includeGuests,
+      includeGuests: effectiveIncludeGuests,
+      canToggleGuests,
       setIncludeGuests,
       toggleIncludeGuests,
       refreshConfig
