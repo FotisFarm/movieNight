@@ -65,7 +65,10 @@ const DEFAULTS = {
 };
 
 export default function Films() {
-  const { voters, minVoters, sandboxMode, activeGroup } = useAppConfig();
+  const { voters, guestVoters = [], includeGuests = false, minVoters, sandboxMode, activeGroup } = useAppConfig();
+  const allowedVoters = useMemo(() => {
+    return includeGuests ? [...voters, ...guestVoters] : voters;
+  }, [voters, guestVoters, includeGuests]);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [movies, setMovies]           = useState([]);
@@ -287,11 +290,11 @@ export default function Films() {
 
   // Purge any voters in filterVoters or sortVoter that aren't in current group's voters
   useEffect(() => {
-    if (voters && voters.length > 0) {
-      setFilterVoters(prev => prev.filter(v => voters.includes(v)));
-      setSortVoter(prev => voters.includes(prev) ? prev : voters[0]);
+    if (allowedVoters && allowedVoters.length > 0) {
+      setFilterVoters(prev => prev.filter(v => allowedVoters.includes(v)));
+      setSortVoter(prev => allowedVoters.includes(prev) ? prev : allowedVoters[0]);
     }
-  }, [voters]);
+  }, [allowedVoters]);
   function toggleVoter(v, e) {
     if (e && (e.shiftKey || e.ctrlKey || e.metaKey)) {
       setFilterVoters(vs => vs.includes(v) ? vs.filter(x => x !== v) : [...vs, v]);
@@ -586,7 +589,11 @@ export default function Films() {
               onChange={e => setSortVoter(e.target.value)}
               title="Select voter to sort by"
             >
-              {voters.map(v => <option key={v} value={v}>{v}</option>)}
+              {allowedVoters.map(v => (
+                <option key={v} value={v}>
+                  {v}{guestVoters.includes(v) ? ' (Guest)' : ''}
+                </option>
+              ))}
             </select>
           )}
         </div>
@@ -787,17 +794,20 @@ export default function Films() {
             >
               All
             </button>
-            {voters.map(v => (
-              <button
-                key={v}
-                type="button"
-                className={`voter-pill${filterVoters.includes(v) ? ' active' : ''}`}
-                onClick={e => toggleVoter(v, e)}
-                title={`Filter films by ${v} (click to select, Shift-click to multi-select)`}
-              >
-                {v}
-              </button>
-            ))}
+            {allowedVoters.map(v => {
+              const isGuest = guestVoters.includes(v);
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  className={`voter-pill${isGuest ? ' voter-pill-guest' : ''}${filterVoters.includes(v) ? ' active' : ''}`}
+                  onClick={e => toggleVoter(v, e)}
+                  title={isGuest ? `Filter films by guest ${v}` : `Filter films by ${v} (click to select, Shift-click to multi-select)`}
+                >
+                  {v}{isGuest ? ' (Guest)' : ''}
+                </button>
+              );
+            })}
           </div>
 
           <div className="filter-status-seg">
@@ -1222,16 +1232,19 @@ export default function Films() {
                     >
                       All
                     </button>
-                    {voters.map(v => (
-                      <button
-                        key={v}
-                        type="button"
-                        className={`voter-pill${filterVoters.includes(v) ? ' active' : ''}`}
-                        onClick={e => toggleVoter(v, e)}
-                      >
-                        {v}
-                      </button>
-                    ))}
+                    {allowedVoters.map(v => {
+                      const isGuest = guestVoters.includes(v);
+                      return (
+                        <button
+                          key={v}
+                          type="button"
+                          className={`voter-pill${isGuest ? ' voter-pill-guest' : ''}${filterVoters.includes(v) ? ' active' : ''}`}
+                          onClick={e => toggleVoter(v, e)}
+                        >
+                          {v}{isGuest ? ' (Guest)' : ''}
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <div className="filter-status-seg mobile-seg">

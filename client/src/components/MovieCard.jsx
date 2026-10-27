@@ -12,7 +12,7 @@ import './MovieCard.css';
 // Each pill is the entry point to that voter's rating history: hover (or tap)
 // floats a small stepped graph, clicking opens the detail window. The history
 // itself is only fetched once a pill is actually hovered — see RatingHistory.
-function VoterPills({ movieId, title, ratings, top3, voters, guestVoters = [] }) {
+function VoterPills({ movieId, title, ratings, top3, voters, guestVoters = [], includeGuests = false }) {
   const [openVoter, setOpenVoter] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const [detailVoter, setDetailVoter] = useState(null);
@@ -35,9 +35,9 @@ function VoterPills({ movieId, title, ratings, top3, voters, guestVoters = [] })
   };
 
   const ratedGuests = useMemo(() => {
-    if (!ratings) return [];
+    if (!includeGuests || !ratings) return [];
     return Object.keys(ratings).filter(v => !voters.includes(v) && ratings[v] != null);
-  }, [ratings, voters]);
+  }, [ratings, voters, includeGuests]);
 
   return (
     <>
@@ -69,6 +69,7 @@ function VoterPills({ movieId, title, ratings, top3, voters, guestVoters = [] })
       {ratedGuests.map(v => {
         const score = ratings?.[v];
         if (score == null) return null;
+        const rank = top3?.[v];
         return (
           <span
             key={v}
@@ -82,6 +83,7 @@ function VoterPills({ movieId, title, ratings, top3, voters, guestVoters = [] })
             onClick={e => handleClick(e, v)}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(e, v); } }}
           >
+            {rank && <span className="voter-medal"><RankIcon rank={rank} /></span>}
             <span className="voter-abbr">{v.slice(0, 3)}</span>
             <span className={`voter-score ${scoreClass(score)}`}>
               {Number.isInteger(score) ? score : score.toFixed(1)}
@@ -250,7 +252,7 @@ export function StreamBadge({ streamGr }) {
 }
 
 export default function MovieCard({ movie, onClick, listView = false, scoreMode = 'fair', onWatchlistToggle }) {
-  const { voters, guestVoters = [], minVoters } = useAppConfig();
+  const { voters, guestVoters = [], includeGuests = false, minVoters } = useAppConfig();
   const { id, title, director, year, runtime, mn, watchlist, rank_global, mn_rank, ratings, top3, fairBoosted, voterCount, imdb_rating, imdb_id, letterboxd_rating, poster_path, stream_gr, otherRatings, originalsScore, originalsBoostedScore, originalsVoterCount, originalsMn } = movie;
 
   const hasScore = voterCount >= minVoters;
@@ -293,7 +295,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
         </div>
 
         <div className="card-ratings">
-          <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} guestVoters={guestVoters} />
+          <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} guestVoters={guestVoters} includeGuests={includeGuests} />
           {LetterboxdBadge}
           <OriginalsCompanionPill
             originalsScore={originalsScore}
@@ -345,7 +347,7 @@ export default function MovieCard({ movie, onClick, listView = false, scoreMode 
         {hasRatingsOrLb && (
           <div className="card-ratings">
             {hasVoterRatings && (
-              <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} guestVoters={guestVoters} />
+              <VoterPills movieId={id} title={title} ratings={ratings} top3={top3} voters={voters} guestVoters={guestVoters} includeGuests={includeGuests} />
             )}
             {LetterboxdBadge}
             <OriginalsCompanionPill

@@ -51,8 +51,8 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
 
   const displayedGuests = useMemo(() => {
     const set = new Set(guestVoters);
-    if (movie?.ratings) {
-      Object.keys(movie.ratings).forEach(v => {
+    if (movie?.ratings || movie?.top3) {
+      Object.keys({ ...(movie.ratings || {}), ...(movie.top3 || {}) }).forEach(v => {
         if (!configVoters.includes(v)) {
           const isGuestMember = activeGroup?.members?.some(m => (m.displayName === v || m.username === v) && m.role === 'guest');
           if (isGuestMember || guestVoters.includes(v)) {
@@ -65,7 +65,7 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
       set.add(currentVoter);
     }
     return Array.from(set);
-  }, [guestVoters, configVoters, movie?.ratings, activeGroup?.members, currentVoter, isGuest]);
+  }, [guestVoters, configVoters, movie?.ratings, movie?.top3, activeGroup?.members, currentVoter, isGuest]);
 
   const voterAvatars = useMemo(() => {
     const map = {};
@@ -248,10 +248,12 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
       displayedGuests.forEach(v => {
         r[v] = m.ratings?.[v] ?? null;
         c[v] = m.comments?.[v] ?? '';
+        t[v] = m.top3?.[v] ?? null;
       });
       if (isGhost) {
         r[currentVoter] = m.ratings?.[currentVoter] ?? null;
         c[currentVoter] = m.comments?.[currentVoter] ?? '';
+        t[currentVoter] = m.top3?.[currentVoter] ?? null;
       }
       setRatings(r);
       setComments(c);
@@ -356,14 +358,16 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
       top3Payload[v] = top3[v] ?? null;
     });
     displayedGuests.forEach(v => {
-      if (v in ratings) {
+      if (v in ratings || v in top3) {
         ratingPayload[v] = ratings[v];
         if (ratings[v] != null) commentPayload[v] = comments[v] ?? '';
+        top3Payload[v] = top3[v] ?? null;
       }
     });
     if (isGhost) {
       ratingPayload[currentVoter] = ratings[currentVoter] ?? null;
       if (ratings[currentVoter] != null) commentPayload[currentVoter] = comments[currentVoter] ?? '';
+      top3Payload[currentVoter] = top3[currentVoter] ?? null;
     }
 
     const payload = {
@@ -982,6 +986,12 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                 const isOn = val != null;
                 const canEdit = isAdmin || v === currentVoter;
                 const isSelf = v === currentVoter;
+                const currentRank = top3[v] ?? null;
+                const voterCount = top10Counts[v] ?? 0;
+                const maxRank = Math.max(currentRank || 1, Math.min(10, voterCount + (currentRank != null ? 0 : 1)));
+                const opts = canEdit
+                  ? Array.from({ length: maxRank }, (_, i) => i + 1)
+                  : (currentRank != null ? [currentRank] : []);
 
                 return (
                   <div
@@ -997,6 +1007,32 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                       </div>
 
                       <div className="voter-card-controls">
+                        {isOn && (
+                          <select
+                            className="select select-sm voter-top10-select"
+                            value={currentRank ?? ''}
+                            disabled={!canEdit}
+                            title={canEdit ? "Assign to Top 10 rank" : "Top 10 Rank"}
+                            onChange={e => setTop3(t => ({ ...t, [v]: e.target.value ? parseInt(e.target.value) : null }))}
+                          >
+                            <option value="">Top 10: —</option>
+                            {opts.map(rank => (
+                              <option key={rank} value={rank}>{rankLabel(rank)}</option>
+                            ))}
+                          </select>
+                        )}
+
+                        {canEdit && isOn && (voterCount >= 1 || currentRank != null) && (
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm voter-reorder-btn"
+                            title={`Reorder ${isSelf ? 'your' : v + "'s"} Top 10`}
+                            onClick={() => setReorderVoter(v)}
+                          >
+                            <span className="reorder-icon">⠿</span> Reorder
+                          </button>
+                        )}
+
                         {isOn && (
                           <input
                             type="number"
@@ -1051,6 +1087,11 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                 const v = currentVoter;
                 const val = ratings[v];
                 const isOn = val != null;
+                const currentRank = top3[v] ?? null;
+                const voterCount = top10Counts[v] ?? 0;
+                const maxRank = Math.max(currentRank || 1, Math.min(10, voterCount + (currentRank != null ? 0 : 1)));
+                const opts = Array.from({ length: maxRank }, (_, i) => i + 1);
+
                 return (
                   <div className={`voter-rating-card${isOn ? '' : ' rating-off'} voter-card-self`}>
                     <div className="voter-card-header">
@@ -1060,6 +1101,31 @@ export default function MovieModal({ movieId, onClose, onSaved, onDeleted, rankD
                       </div>
 
                       <div className="voter-card-controls">
+                        {isOn && (
+                          <select
+                            className="select select-sm voter-top10-select"
+                            value={currentRank ?? ''}
+                            title="Assign to Top 10 rank"
+                            onChange={e => setTop3(t => ({ ...t, [v]: e.target.value ? parseInt(e.target.value) : null }))}
+                          >
+                            <option value="">Top 10: —</option>
+                            {opts.map(rank => (
+                              <option key={rank} value={rank}>{rankLabel(rank)}</option>
+                            ))}
+                          </select>
+                        )}
+
+                        {isOn && (voterCount >= 1 || currentRank != null) && (
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm voter-reorder-btn"
+                            title="Reorder your Top 10"
+                            onClick={() => setReorderVoter(v)}
+                          >
+                            <span className="reorder-icon">⠿</span> Reorder
+                          </button>
+                        )}
+
                         {isOn && (
                           <input
                             type="number"

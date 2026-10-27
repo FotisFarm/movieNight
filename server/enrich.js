@@ -86,7 +86,7 @@ async function enrichMovie(movie, options = {}) {
 
   const top3Map = {};
   for (const t of top3) {
-    if (voters.includes(t.voter)) {
+    if (voters.includes(t.voter) || guestVoters.includes(t.voter)) {
       top3Map[t.voter] = t.rank;
     }
   }
@@ -133,7 +133,7 @@ async function enrichMovie(movie, options = {}) {
     for (const r of ratings) {
       if (allOrigVoters.includes(r.voter)) {
         if (r.score != null) origScores.push(r.score);
-        const t = origVoters.includes(r.voter) ? top3.find(x => x.voter === r.voter) : null;
+        const t = allOrigVoters.includes(r.voter) ? top3.find(x => x.voter === r.voter) : null;
         origRatingsMap[r.voter] = {
           score: r.score,
           comment: r.comment || '',
@@ -251,7 +251,7 @@ async function enrichMoviesBatch(movies, options = {}) {
     if (!allMovieTop3Map[t.movie_id]) allMovieTop3Map[t.movie_id] = {};
     allMovieTop3Map[t.movie_id][t.voter] = t.rank;
 
-    if (voters.includes(t.voter)) {
+    if (voters.includes(t.voter) || guestVoters.includes(t.voter)) {
       if (!top3Map[t.movie_id]) top3Map[t.movie_id] = {};
       top3Map[t.movie_id][t.voter] = t.rank;
     }
@@ -332,7 +332,7 @@ async function enrichMoviesBatch(movies, options = {}) {
         const r = movieRatings[v];
         if (r && r.score != null) {
           origScores.push(r.score);
-          const tRank = originalsVoters.includes(v) ? (movieTop3[v] || null) : null;
+          const tRank = allOrigVoters.includes(v) ? (movieTop3[v] || null) : null;
           origRatingsMap[v] = {
             score: r.score,
             comment: r.comment || '',

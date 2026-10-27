@@ -304,7 +304,7 @@ router.get('/keywords', ah(async (req, res) => {
 router.get('/top10-counts', ah(async (req, res) => {
   const rows = await db.all('SELECT voter, COUNT(*) AS n FROM top3 GROUP BY voter');
   const counts = {};
-  const voterList = req.group?.voters || VOTERS;
+  const voterList = [...(req.group?.voters || VOTERS), ...(req.group?.guestVoters || [])];
   for (const v of voterList) counts[v] = 0;
   for (const r of rows) {
     if (voterList.includes(r.voter)) counts[r.voter] = r.n;
@@ -316,7 +316,8 @@ router.get('/top10-counts', ah(async (req, res) => {
 router.get('/top10/:voter', ah(async (req, res) => {
   const { voter } = req.params;
   const user = await db.get('SELECT id FROM users WHERE display_name = ? OR username = ?', voter, voter);
-  if (!VOTERS.includes(voter) && !user) return res.status(404).json({ error: 'Voter not found' });
+  const activeVoters = [...(req.group?.voters || VOTERS), ...(req.group?.guestVoters || [])];
+  if (!activeVoters.includes(voter) && !user) return res.status(404).json({ error: 'Voter not found' });
   const rows = await db.all(`
     SELECT m.id, m.title, m.year, m.director, m.poster_path, t.rank
     FROM top3 t
@@ -759,7 +760,7 @@ router.patch('/:id', ah(async (req, res) => {
   }
 
   if (top3) {
-    const activeVoters = req.group?.voters || VOTERS;
+    const activeVoters = [...(req.group?.voters || VOTERS), ...(req.group?.guestVoters || [])];
     const movieIdNum = Number(id);
     const touched = new Set();
 

@@ -201,7 +201,7 @@ function GroupDropdown({ activeGroup, groups = [], onSwitchGroup, isAdmin }) {
   );
 }
 
-function MobileUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar }) {
+function MobileUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar, guestVoters = [], includeGuests = false, toggleIncludeGuests }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const { theme, setTheme } = useTheme();
@@ -253,6 +253,20 @@ function MobileUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar })
               ))}
             </select>
           </div>
+
+          {guestVoters.length > 0 && (
+            <div className="mobile-user-dropdown-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0' }}>
+              <label className="mobile-user-section-label" style={{ margin: 0 }}>👥 Include Guests</label>
+              <button
+                type="button"
+                className={`btn btn-xs ${includeGuests ? 'btn-primary' : 'btn-ghost'}`}
+                style={{ border: '1px solid var(--border)', borderRadius: 999, padding: '3px 12px', fontSize: 11 }}
+                onClick={toggleIncludeGuests}
+              >
+                {includeGuests ? 'ON' : 'OFF'}
+              </button>
+            </div>
+          )}
 
           <div className="mobile-user-dropdown-actions">
             <NavLink
@@ -491,7 +505,7 @@ function ChangePasswordModal({ onClose }) {
 }
 
 export default function Header({ voter, user, activeGroup, groups = [], onSwitchGroup, onLogout, onUpdateAvatar }) {
-  const { sandboxMode, hideHal } = useAppConfig() || {};
+  const { sandboxMode, hideHal, guestVoters = [], includeGuests, toggleIncludeGuests } = useAppConfig() || {};
   const isAdmin = Boolean(user?.isAdmin || voter === 'mnAdmin' || user?.is_admin === 1);
   const location = useLocation();
   const pathname = location.pathname;
@@ -833,6 +847,17 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
             )}
             {/* Desktop User Controls (> 640px) */}
             <div className="desktop-user-group">
+              {guestVoters.length > 0 && (
+                <button
+                  type="button"
+                  className={`btn btn-sm guest-toggle-btn ${includeGuests ? 'active' : ''}`}
+                  onClick={toggleIncludeGuests}
+                  title={includeGuests ? 'Guests are included in stats, Top 10s & filters (Click to hide)' : 'Include guests in stats, Top 10s & filters'}
+                >
+                  <span className="guest-toggle-dot">{includeGuests ? '●' : '○'}</span>
+                  <span>Guests: {includeGuests ? 'ON' : 'OFF'}</span>
+                </button>
+              )}
               <ThemeDropdown />
               {voter && (
                 <DesktopUserMenu
@@ -863,6 +888,9 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
                 onLogout={onLogout}
                 onOpenPassword={() => setShowPasswordModal(true)}
                 onOpenAvatar={() => setShowAvatarModal(true)}
+                guestVoters={guestVoters}
+                includeGuests={includeGuests}
+                toggleIncludeGuests={toggleIncludeGuests}
               />
             </div>
           </div>

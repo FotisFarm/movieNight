@@ -201,7 +201,7 @@ function Top10SortableRow({ m, voter, onOpen }) {
 }
 
 export default function Stats({ voter }) {
-  const { voters, groupSize, isAdmin: configIsAdmin, activeGroup } = useAppConfig();
+  const { voters, guestVoters = [], includeGuests = false, groupSize, isAdmin: configIsAdmin, activeGroup } = useAppConfig();
   const isGroupAdmin = Boolean(activeGroup?.members?.some(m => (m.displayName === voter || m.username === voter) && m.role === 'admin'));
   const isAdmin = Boolean(configIsAdmin || sessionStorage.getItem('isAdmin') === 'true' || voter === 'mnAdmin' || isGroupAdmin);
   const [movies, setMovies]   = useState([]);
@@ -297,7 +297,15 @@ export default function Stats({ voter }) {
     }));
   }
 
-  const stats       = useMemo(() => computeStats(movies, voters), [movies, voters]);
+  const targetVoters = useMemo(() => {
+    if (!includeGuests) return voters;
+    const activeGuests = (guestVoters || []).filter(gv =>
+      movies.some(m => m.ratings?.[gv] != null || m.top3?.[gv] != null)
+    );
+    return [...voters, ...activeGuests];
+  }, [voters, guestVoters, includeGuests, movies]);
+
+  const stats       = useMemo(() => computeStats(movies, targetVoters), [movies, targetVoters]);
   const globalStats = useMemo(() => computeGlobalStats(movies, groupSize), [movies, groupSize]);
 
   const rankMap = useRankMap(movies);
@@ -422,7 +430,14 @@ export default function Stats({ voter }) {
               className={`stats-voter-card${selectedVoter === s.voter ? ' active' : ''}`}
               onClick={() => { setSelectedVoter(v => v === s.voter ? null : s.voter); setShowAllDirs(false); }}
             >
-              <div className="stats-voter-name">{s.voter}</div>
+              <div className="stats-voter-name">
+                {s.voter}
+                {guestVoters.includes(s.voter) && (
+                  <span style={{ fontSize: 11, fontWeight: 500, opacity: 0.65, marginLeft: 6, fontStyle: 'italic' }}>
+                    (Guest)
+                  </span>
+                )}
+              </div>
 
               <div className="stats-kv-grid">
                 <div className="stats-kv">
@@ -522,6 +537,11 @@ export default function Stats({ voter }) {
               <div key={s.voter} className={`top10-card${editable ? ' top10-card-editable' : ''}`}>
                 <div className="top10-name">
                   {s.voter}
+                  {guestVoters.includes(s.voter) && (
+                    <span style={{ fontSize: 11, fontWeight: 500, opacity: 0.65, marginLeft: 6, fontStyle: 'italic' }}>
+                      (Guest)
+                    </span>
+                  )}
                   {editable && <span className="top10-hint">drag to reorder</span>}
                 </div>
                 {s.topPicks.length === 0 ? (
@@ -564,7 +584,7 @@ export default function Stats({ voter }) {
             <div className="modal vd-modal">
               <div className="modal-header">
                 <div className="modal-header-text">
-                  <div className="modal-title">{selectedVoter}</div>
+                  <div className="modal-title">{selectedVoter}{guestVoters.includes(selectedVoter) ? ' (Guest)' : ''}</div>
                   <div className="modal-sub">{sel.ratedCount} films rated · {sel.top3Count} in Top 10</div>
                 </div>
                 {sel.mean != null && (

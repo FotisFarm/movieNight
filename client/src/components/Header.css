@@ -848,6 +848,37 @@ button.nav-link {
   gap: 10px;
 }
 
+.guest-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  font-size: 11.5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.guest-toggle-btn:hover {
+  background: var(--surface3);
+  color: var(--text);
+  border-color: var(--text3);
+}
+
+.guest-toggle-btn.active {
+  background: rgba(124, 106, 247, 0.15);
+  border-color: rgba(124, 106, 247, 0.45);
+  color: #a78bfa;
+}
+
+.guest-toggle-dot {
+  font-size: 10px;
+  line-height: 1;
+}
+
 .mobile-user-group {
   display: none;
 }
