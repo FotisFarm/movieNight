@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import { api } from '../api';
 import MovieModal from '../components/MovieModal';
@@ -9,14 +9,16 @@ import { useAppConfig } from '../AppConfigContext';
 import { fmt, scoreClass, formatRuntime } from '../utils';
 import './Recommendations.css';
 
-function VoterPills({ ratings, voters }) {
+function VoterPills({ ratings, voters, guestVoters = [], includeGuests = false }) {
+  const displayVoters = includeGuests ? [...voters, ...guestVoters] : voters;
   return (
     <div className="rec-voter-pills">
-      {voters.map(v => {
+      {displayVoters.map(v => {
         const score = ratings?.[v];
         const rated = score != null;
+        const isGuest = guestVoters.includes(v);
         return (
-          <span key={v} className={`voter-pill${rated ? '' : ' voter-pill-empty'}`}>
+          <span key={v} className={`voter-pill${rated ? '' : ' voter-pill-empty'}${isGuest ? ' voter-pill-guest' : ''}`}>
             <span className="voter-abbr">{v.slice(0, 3)}</span>
             {rated && (
               <span className={`voter-score ${scoreClass(score)}`}>
@@ -94,7 +96,10 @@ export const VIBE_PRESETS = [
 const DEFAULT_WEIGHTS = VIBE_PRESETS[0].weights;
 
 export default function Recommendations() {
-  const { voters, activeGroup } = useAppConfig();
+  const { voters = [], guestVoters = [], includeGuests = false, activeGroup } = useAppConfig();
+  const allowedVoters = useMemo(() => {
+    return includeGuests ? [...voters, ...guestVoters] : voters;
+  }, [voters, guestVoters, includeGuests]);
   const [allFilms, setAllFilms] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [modalId, setModalId]   = useState(null);
@@ -237,13 +242,13 @@ export default function Recommendations() {
   }, [resetAll]);
 
   useEffect(() => {
-    if (voters && voters.length > 0) {
+    if (allowedVoters && allowedVoters.length > 0) {
       setUnvotedBy(prev => {
-        const next = new Set([...prev].filter(v => voters.includes(v)));
+        const next = new Set([...prev].filter(v => allowedVoters.includes(v)));
         return next.size === prev.size ? prev : next;
       });
     }
-  }, [voters]);
+  }, [allowedVoters]);
 
   const activePreset = VIBE_PRESETS.find(p => p.id === activeVibe);
   const isCustom = activeVibe === 'custom';
@@ -398,17 +403,20 @@ export default function Recommendations() {
           <div className="recs-unvoted-cluster">
             <span className="recs-filter-tag">Unvoted by</span>
             <div className="recs-unvoted-pills">
-              {voters.map(v => (
-                <button
-                  key={v}
-                  type="button"
-                  className={`voter-pill-toggle${unvotedBy.has(v) ? ' active' : ''}`}
-                  onClick={() => toggleUnvotedBy(v)}
-                  title={`Show only films not yet rated by ${v}`}
-                >
-                  {v.slice(0, 3)}
-                </button>
-              ))}
+              {allowedVoters.map(v => {
+                const isGuest = guestVoters.includes(v);
+                return (
+                  <button
+                    key={v}
+                    type="button"
+                    className={`voter-pill-toggle${isGuest ? ' voter-pill-guest' : ''}${unvotedBy.has(v) ? ' active' : ''}`}
+                    onClick={() => toggleUnvotedBy(v)}
+                    title={isGuest ? `Show only films not yet rated by guest ${v}` : `Show only films not yet rated by ${v}`}
+                  >
+                    {v.slice(0, 3)}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -667,7 +675,7 @@ export default function Recommendations() {
                 </div>
 
                 <div className="rec-bottom">
-                  <VoterPills ratings={f.ratings} voters={voters} />
+                  <VoterPills ratings={f.ratings} voters={voters} guestVoters={guestVoters} includeGuests={includeGuests} />
                   <div className="rec-detail">
                     {f.actualScore != null && (
                       <span className="rec-actual">

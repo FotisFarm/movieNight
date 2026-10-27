@@ -1627,7 +1627,7 @@ export default function Admin() {
                       checked={newIsAdmin}
                       onChange={e => {
                         setNewIsAdmin(e.target.checked);
-                        if (e.target.checked) setNewIsGroupAdmin(false);
+                        if (e.target.checked) setNewGroupRole('admin');
                       }}
                     />
                     <div>
