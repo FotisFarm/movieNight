@@ -2318,20 +2318,20 @@
   },
   {
     "director": "Francis Ford Coppola",
-    "movie": "Bram Stoker's Dracula",
+    "movie": "Dracula",
     "year": "1992",
     "rank": 93,
     "mn": "",
     "watchlist": "",
     "tokens": "",
     "tokenPts": 0,
-    "imdb_id": "tt0263696",
-    "imdb_rating": 7.2,
-    "poster_path": "/2H2kkADkCD1IRzAtoiIQqZwTLE.jpg",
-    "runtime": 29,
+    "imdb_id": "tt0103874",
+    "imdb_rating": 7.4,
+    "poster_path": "/wpRrdm6g8zWtJnzVqME5QwSKkn7.jpg",
+    "runtime": 128,
     "ratings": {
       "Μητσέας": "7",
-      "Φώτης": "8"
+      "Φώτης": "9.5"
     },
     "top3": {},
     "watchlistVotes": []
@@ -21072,6 +21072,44 @@
     "poster_path": "/lbBWwxBht4JFP5PsuJ5onpMqugW.jpg",
     "runtime": 161,
     "ratings": {},
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Satoshi Kon",
+    "movie": "Paprika",
+    "year": "2007",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0851578",
+    "imdb_rating": 7.7,
+    "poster_path": "/nHJljo2Pi7XimYEgV9hvRchQWmg.jpg",
+    "runtime": 90,
+    "ratings": {
+      "Φώτης": "9"
+    },
+    "top3": {},
+    "watchlistVotes": []
+  },
+  {
+    "director": "Sam Raimi",
+    "movie": "The Evil Dead",
+    "year": "1983",
+    "rank": null,
+    "mn": "",
+    "watchlist": "",
+    "tokens": "",
+    "tokenPts": 0,
+    "imdb_id": "tt0083907",
+    "imdb_rating": 7.3,
+    "poster_path": "/54C1qdaiSijIU5NeNb4WsPJdNkG.jpg",
+    "runtime": 85,
+    "ratings": {
+      "Φώτης": "7.5"
+    },
     "top3": {},
     "watchlistVotes": []
   }
