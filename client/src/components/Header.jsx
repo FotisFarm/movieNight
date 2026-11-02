@@ -289,6 +289,17 @@ function MobileUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar, g
           )}
 
           <div className="mobile-user-dropdown-actions">
+            {showRecap && recapInfo && (
+              <NavLink
+                to="/recap"
+                className="mobile-user-menu-item"
+                style={{ background: 'linear-gradient(135deg, rgba(247, 120, 186, 0.15), rgba(88, 166, 255, 0.15))', border: '1px solid rgba(188, 140, 255, 0.3)' }}
+                onClick={() => setOpen(false)}
+              >
+                <span>{recapInfo.icon}</span>
+                <span>{recapInfo.label}{!recapEnabled ? ' (Preview)' : ''}</span>
+              </NavLink>
+            )}
             <NavLink
               to={myFilmsUrl}
               className="mobile-user-menu-item"
@@ -863,6 +874,19 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
                       <span className="nav-item-desc">Film & Voter Matchups</span>
                     </div>
                   </NavLink>
+                  {showRecap && (
+                    <NavLink
+                      to="/recap"
+                      className={({ isActive }) => isActive ? 'nav-dropdown-item active' : 'nav-dropdown-item'}
+                      onClick={() => setStatsOpen(false)}
+                    >
+                      <span className="nav-item-icon">{recapInfo.icon}</span>
+                      <div className="nav-item-text">
+                        <span className="nav-item-title">{recapInfo.label}{!recap?.enabled ? ' (Preview)' : ''}</span>
+                        <span className="nav-item-desc">Year-End Recap & Superlatives</span>
+                      </div>
+                    </NavLink>
+                  )}
                 </div>
               )}
             </div>
@@ -887,6 +911,17 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
             )}
             {isAdmin && (
               <GroupDropdown activeGroup={activeGroup} groups={groups} onSwitchGroup={onSwitchGroup} isAdmin={isAdmin} />
+            )}
+            {showRecap && (
+              <NavLink
+                to="/recap"
+                className={({ isActive }) => `recap-nav-btn ${isActive ? 'active' : ''}`}
+                title={`${recapInfo.label} — End of Year Recap${!recap?.enabled ? ' (Admin Preview)' : ''}`}
+              >
+                <span className="recap-nav-icon">{recapInfo.icon}</span>
+                <span className="recap-nav-text">{recapInfo.label}</span>
+                {!recap?.enabled && <span className="recap-preview-tag">Preview</span>}
+              </NavLink>
             )}
             {isAdmin && (
               <NavLink
@@ -945,6 +980,9 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
                 includeGuests={includeGuests}
                 toggleIncludeGuests={toggleIncludeGuests}
                 canToggleGuests={canToggleGuests}
+                showRecap={showRecap}
+                recapInfo={recapInfo}
+                recapEnabled={recap?.enabled}
               />
             </div>
           </div>
@@ -1167,6 +1205,20 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
                 </div>
                 {pathname.startsWith('/compare') && <span className="hub-card-check">✓</span>}
               </NavLink>
+              {showRecap && (
+                <NavLink
+                  to="/recap"
+                  className={({ isActive }) => isActive ? 'hub-card active recap-hub-card' : 'hub-card recap-hub-card'}
+                  onClick={() => setMobileStatsOpen(false)}
+                >
+                  <div className="hub-card-icon">{recapInfo.icon}</div>
+                  <div className="hub-card-text">
+                    <div className="hub-card-title">{recapInfo.label}{!recap?.enabled ? ' (Preview)' : ''}</div>
+                    <div className="hub-card-desc">Year-End Recap & Superlatives</div>
+                  </div>
+                  {pathname === '/recap' && <span className="hub-card-check">✓</span>}
+                </NavLink>
+              )}
 
               {isAdmin && (
                 <NavLink

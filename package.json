@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "concurrently -n server,client -c blue,green \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
-    "build": "npm run build --prefix client",
+    "build": "npm run build --prefix client && node -e \"require('fs').cpSync('client/dist', 'server/public', {recursive:true});\"",
     "start": "npm start --prefix server",
     "db:sync-prod": "node server/scripts/fast-forward-dev-db.js",
     "db:reset-sandbox": "node server/scripts/reset-sandbox.js"

@@ -606,6 +606,12 @@ export default function Admin() {
         >
           <span>🔄</span> Letterboxd Sync
         </button>
+        <button
+          className={`admin-nav-tab ${activeTab === 'recap' ? 'active' : ''}`}
+          onClick={() => setActiveTab('recap')}
+        >
+          <span>📼</span> Year-End Recap
+        </button>
       </div>
 
 
