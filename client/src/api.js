@@ -91,5 +91,12 @@ export const api = {
   adminGetLetterboxdSyncStatus: () => request('/admin/letterboxd-sync/status'),
   adminRunLetterboxdSync: (data) => request('/admin/letterboxd-sync/run', { method: 'POST', body: data }),
   adminStopLetterboxdSync: () => request('/admin/letterboxd-sync/stop', { method: 'POST' }),
+  getRecap: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v != null && v !== ''))
+    ).toString();
+    return request(`/recap${qs ? `?${qs}` : ''}`);
+  },
+  adminGetRecapSettings: () => request('/admin/recap/settings'),
+  adminUpdateRecapSettings: (data) => request('/admin/recap/settings', { method: 'POST', body: data }),
 };
-

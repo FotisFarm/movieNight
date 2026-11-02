@@ -41,6 +41,18 @@ app.get('/api/config', async (req, res) => {
   const { SANDBOX_MODE, SANDBOX_VOTER, HIDE_HAL, VOTERS, GROUP_SIZE, MIN_VOTERS } = require('./config');
   const group = req.group || { id: 1, name: 'The Originals', slug: 'the-originals', voters: VOTERS, groupSize: GROUP_SIZE, minVoters: MIN_VOTERS };
   const isLoggedIn = Boolean(req.session.voter || req.session.userId);
+  let recapConfig = { enabled: false, preset: 'rewind', customLabel: '', year: '2026' };
+  try {
+    const db = require('./db');
+    const settingsRows = await db.all('SELECT key, value FROM site_settings');
+    const settingsMap = Object.fromEntries(settingsRows.map(r => [r.key, r.value]));
+    recapConfig = {
+      enabled: settingsMap.recap_enabled === '1',
+      preset: settingsMap.recap_label_preset || 'rewind',
+      customLabel: settingsMap.recap_custom_label || '',
+      year: settingsMap.recap_year || '2026',
+    };
+  } catch (_) {}
   if (!isLoggedIn) {
     return res.json({
       voters: group.voters,
@@ -56,6 +68,7 @@ app.get('/api/config', async (req, res) => {
       isAdmin: false,
       isSiteAdmin: false,
       isGroupAdmin: false,
+      recap: recapConfig,
     });
   }
   const isSiteAdmin = Boolean(req.session?.isAdmin || req.session?.voter === 'mnAdmin' || req.session?.username === 'mnAdmin');
@@ -75,6 +88,7 @@ app.get('/api/config', async (req, res) => {
     isAdmin,
     isSiteAdmin,
     isGroupAdmin,
+    recap: recapConfig,
     currentUser: req.session.voter || req.session.displayName,
   });
 });
@@ -111,6 +125,7 @@ app.use('/api/recommendations', requireAuth, require('./routes/recommendations')
 app.use('/api/session', requireAuth, require('./routes/session'));
 app.use('/api/lists', requireAuth, require('./routes/lists'));
 app.use('/api/chat', requireAuth, require('./routes/chat'));
+app.use('/api/recap', requireAuth, require('./routes/recap'));
 
 if (IS_PROD) {
   const clientDist = path.join(__dirname, 'public');

@@ -14,6 +14,7 @@ const DEFAULTS = {
   isAdmin: false,
   isSiteAdmin: false,
   isGroupAdmin: false,
+  recap: { enabled: false, preset: 'rewind', customLabel: '', year: '2026' },
 };
 
 const AppConfigContext = createContext({

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '../api';
 import { useAppConfig } from '../AppConfigContext';
 import UserAvatar from '../components/UserAvatar';
+import { RECAP_PRESETS, getRecapLabel } from '../components/Header';
 import './Admin.css';
 
 export default function Admin() {
@@ -377,6 +378,57 @@ export default function Admin() {
 
   const [syncData, setSyncData] = useState(null);
   const [syncLoading, setSyncLoading] = useState(false);
+  
+  // Year-End Recap State
+  const [recapSettings, setRecapSettings] = useState({
+    enabled: false,
+    preset: 'rewind',
+    customLabel: '',
+    year: '2026',
+  });
+  const [recapLoading, setRecapLoading] = useState(false);
+  const [recapSaving, setRecapSaving] = useState(false);
+
+  const loadRecapSettings = async () => {
+    try {
+      setRecapLoading(true);
+      const res = await api.adminGetRecapSettings();
+      if (res) {
+        setRecapSettings({
+          enabled: Boolean(res.enabled),
+          preset: res.preset || 'rewind',
+          customLabel: res.customLabel || '',
+          year: res.year || '2026',
+        });
+      }
+    } catch (err) {
+      console.warn('Failed to load recap settings:', err);
+    } finally {
+      setRecapLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'recap') {
+      loadRecapSettings();
+    }
+  }, [activeTab]);
+
+  const handleSaveRecapSettings = async () => {
+    try {
+      setRecapSaving(true);
+      const res = await api.adminUpdateRecapSettings(recapSettings);
+      if (res?.ok) {
+        showNotification('Recap settings saved successfully!');
+        await refreshConfig?.();
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to save recap settings');
+    } finally {
+      setRecapSaving(false);
+    }
+  };
+
   const [isSyncTriggering, setIsSyncTriggering] = useState(false);
   const [forceAllSync, setForceAllSync] = useState(false);
 
@@ -1269,6 +1321,167 @@ export default function Admin() {
         </div>
       )}
 
+
+      
+      {/* VIEW 5: YEAR-END RECAP (WRAPPED) */}
+      {activeTab === 'recap' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Card 1: Visibility & Event Year */}
+          <div className="recap-admin-card">
+            <div className="recap-admin-header">
+              <div className="recap-admin-title">
+                <span>🎄</span>
+                <span>Year-End Recap (Wrapped) Visibility</span>
+              </div>
+              <div
+                className="recap-toggle-label"
+                onClick={() => setRecapSettings(s => ({ ...s, enabled: !s.enabled }))}
+              >
+                <div className={`recap-toggle-switch ${recapSettings.enabled ? 'active' : ''}`}>
+                  <div className="recap-toggle-thumb" />
+                </div>
+                <strong style={{ color: recapSettings.enabled ? 'var(--green)' : 'var(--text2)', fontSize: 13 }}>
+                  {recapSettings.enabled ? '● Active for Members' : '○ Admin Preview Only'}
+                </strong>
+              </div>
+            </div>
+
+            <p style={{ color: 'var(--text2)', fontSize: 13.5, lineHeight: 1.5, margin: '8px 0 16px 0' }}>
+              When enabled, all members in their active movie club can see the festive movie-reference button in the navigation bar and open their annual retrospective. When disabled, the feature is hidden from regular users, while Site Admins retain preview access.
+            </p>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                Target Recap Year:
+              </label>
+              <select
+                className="admin-select"
+                style={{ width: 140 }}
+                value={recapSettings.year}
+                onChange={e => setRecapSettings(s => ({ ...s, year: e.target.value }))}
+              >
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+                <option value="all">All-Time</option>
+              </select>
+              <span style={{ fontSize: 12, color: 'var(--text3)' }}>
+                Only screenings and ratings recorded during this period will be evaluated.
+              </span>
+            </div>
+          </div>
+
+          {/* Card 2: Button Appearance & Movie Reference Presets */}
+          <div className="recap-admin-card">
+            <div className="recap-admin-header">
+              <div className="recap-admin-title">
+                <span>🎬</span>
+                <span>Launch Button Appearance (Movie Reference)</span>
+              </div>
+            </div>
+
+            <p style={{ color: 'var(--text2)', fontSize: 13.5, marginBottom: 16 }}>
+              Select an iconic movie reference or holiday quote for the recap button displayed across desktop and mobile headers:
+            </p>
+
+            <div className="recap-presets-grid">
+              {Object.entries(RECAP_PRESETS).map(([key, item]) => {
+                const isSelected = recapSettings.preset === key;
+                return (
+                  <div
+                    key={key}
+                    className={`recap-preset-option ${isSelected ? 'selected' : ''}`}
+                    onClick={() => setRecapSettings(s => ({ ...s, preset: key }))}
+                  >
+                    <span style={{ fontSize: 22 }}>{item.icon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: isSelected ? 'var(--gold)' : '#fff' }}>
+                        {item.label}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                        {key === 'rewind' && 'Michel Gondry classic'}
+                        {key === 'wrap' && 'Hollywood wrap'}
+                        {key === 'home_alone' && 'Home Alone holiday classic'}
+                        {key === 'bell_rings' && "It's a Wonderful Life holiday classic"}
+                        {key === 'rosebud' && 'Citizen Kane retrospective'}
+                        {key === 'bttf' && 'Back to the Future time travel'}
+                      </div>
+                    </div>
+                    {isSelected && <span style={{ color: 'var(--gold)' }}>✓</span>}
+                  </div>
+                );
+              })}
+
+              {/* Custom Quote Option */}
+              <div
+                className={`recap-preset-option ${recapSettings.preset === 'custom' ? 'selected' : ''}`}
+                onClick={() => setRecapSettings(s => ({ ...s, preset: 'custom' }))}
+              >
+                <span style={{ fontSize: 22 }}>✍️</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: recapSettings.preset === 'custom' ? 'var(--gold)' : '#fff' }}>
+                    Custom Quote
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                    Type your own movie quote
+                  </div>
+                </div>
+                {recapSettings.preset === 'custom' && <span style={{ color: 'var(--gold)' }}>✓</span>}
+              </div>
+            </div>
+
+            {recapSettings.preset === 'custom' && (
+              <div style={{ marginTop: 14 }}>
+                <input
+                  type="text"
+                  className="admin-search-input"
+                  placeholder="e.g. I'll Be Back, Stay Gold Ponyboy, To Infinity and Beyond..."
+                  value={recapSettings.customLabel}
+                  onChange={e => setRecapSettings(s => ({ ...s, customLabel: e.target.value }))}
+                  style={{ maxWidth: 400 }}
+                />
+              </div>
+            )}
+
+            {/* Live Button Preview */}
+            <div style={{ marginTop: 24, padding: 18, background: 'var(--surface2)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--text3)', marginBottom: 6 }}>
+                  Live Navigation Button Preview:
+                </div>
+                <div style={{ display: 'inline-flex', alignItems: 'center' }}>
+                  <div className="recap-nav-btn active">
+                    <span>{getRecapLabel(recapSettings).icon}</span>
+                    <span>{getRecapLabel(recapSettings).label}</span>
+                    {!recapSettings.enabled && <span className="recap-preview-tag">Preview</span>}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleSaveRecapSettings}
+                  disabled={recapSaving}
+                >
+                  {recapSaving ? 'Saving...' : '💾 Save Recap Settings'}
+                </button>
+                <a
+                  href="/recap"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn-secondary"
+                  style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  <span>👀</span>
+                  <span>Preview {activeGroup?.name || 'Recap'}</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL: EDIT USER CLUBS */}
       {editClubsTargetUser && (

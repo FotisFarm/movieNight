@@ -15,6 +15,7 @@ import Chat from './pages/Chat';
 import Login from './pages/Login';
 import Admin from './pages/Admin';
 import Help from './pages/Help';
+import Recap from './pages/Recap';
 import { api } from './api';
 import { ThemeProvider } from './ThemeContext';
 import { AppConfigProvider, useAppConfig } from './AppConfigContext';
@@ -175,6 +176,7 @@ function AppInner() {
           <Route path="/lists/:key" element={<Lists voter={voter} />} />
           <Route path="/compare" element={<Compare />} />
           <Route path="/help" element={<Help />} />
+          <Route path="/recap" element={<Recap voter={voter} user={user} />} />
           <Route path="/guide" element={<Navigate to="/help" replace />} />
           <Route
             path="/admin"

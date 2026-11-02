@@ -264,6 +264,23 @@ async function init() {
     CREATE INDEX IF NOT EXISTS idx_sessions_expired ON sessions(expired);
   `);
 
+  // Site Settings table (for feature flags, seasonal events like year-end recap, etc.)
+  try {
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS site_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      );
+    `);
+    await client.execute(`
+      INSERT OR IGNORE INTO site_settings (key, value) VALUES
+        ('recap_enabled', '0'),
+        ('recap_label_preset', 'rewind'),
+        ('recap_custom_label', ''),
+        ('recap_year', '2026');
+    `);
+  } catch (_) {}
+
   // Prune expired sessions on boot
   try { await client.execute({ sql: 'DELETE FROM sessions WHERE expired <= ?', args: [Date.now()] }); } catch (_) {}
 

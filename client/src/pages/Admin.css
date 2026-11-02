@@ -795,3 +795,99 @@
     justify-content: center;
   }
 }
+
+
+/* ── Year-End Recap Admin Section ── */
+.recap-admin-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.recap-admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.recap-admin-title {
+  font-size: 17px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.recap-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.recap-toggle-switch {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  transition: background 0.2s;
+}
+
+.recap-toggle-switch.active {
+  background: var(--green);
+  border-color: var(--green);
+}
+
+.recap-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.recap-toggle-switch.active .recap-toggle-thumb {
+  transform: translateX(22px);
+}
+
+.recap-presets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.recap-preset-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.recap-preset-option:hover {
+  background: var(--surface3);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.recap-preset-option.selected {
+  border-color: var(--gold);
+  background: rgba(241, 224, 90, 0.08);
+}

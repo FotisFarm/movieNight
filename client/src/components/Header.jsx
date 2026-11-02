@@ -9,6 +9,25 @@ import UserAvatar from './UserAvatar';
 import ChangeAvatarModal from './ChangeAvatarModal';
 import './Header.css';
 
+
+export const RECAP_PRESETS = {
+  rewind: { label: 'Be Kind, Rewind', icon: '📼' },
+  wrap: { label: "That's a Wrap!", icon: '🎬' },
+  home_alone: { label: 'Ya Filthy Animal', icon: '🎁' },
+  bell_rings: { label: 'Every Time a Bell Rings', icon: '🔔' },
+  rosebud: { label: 'Rosebud', icon: '🌹' },
+  bttf: { label: '88 MPH', icon: '⚡' },
+};
+
+export function getRecapLabel(recapConfig) {
+  if (!recapConfig) return { label: 'Be Kind, Rewind', icon: '📼' };
+  if (recapConfig.preset === 'custom' && recapConfig.customLabel?.trim()) {
+    return { label: recapConfig.customLabel.trim(), icon: '📼' };
+  }
+  const found = RECAP_PRESETS[recapConfig.preset];
+  return found || { label: 'Be Kind, Rewind', icon: '📼' };
+}
+
 const THEMES = [
   { id: 'original',       label: 'Original'                 },
   { id: 'matrix',         label: 'The Matrix'               },
@@ -201,7 +220,7 @@ function GroupDropdown({ activeGroup, groups = [], onSwitchGroup, isAdmin }) {
   );
 }
 
-function MobileUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar, guestVoters = [], includeGuests = false, toggleIncludeGuests, canToggleGuests = false }) {
+function MobileUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar, guestVoters = [], includeGuests = false, toggleIncludeGuests, canToggleGuests = false, showRecap = false, recapInfo = null, recapEnabled = false }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const { theme, setTheme } = useTheme();
@@ -517,6 +536,7 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
     isAdmin: configIsAdmin,
     isSiteAdmin,
     isGroupAdmin: configIsGroupAdmin,
+    recap,
   } = useAppConfig() || {};
 
   const isGuest = Boolean(
@@ -538,6 +558,8 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
   );
   const canToggleGuests = Boolean(ctxCanToggleGuests ?? (!isGuest && (isSiteAdminUser || isGroupAdminUser)));
   const isAdmin = isSiteAdminUser;
+  const showRecap = Boolean(recap?.enabled || isSiteAdminUser);
+  const recapInfo = getRecapLabel(recap);
   const location = useLocation();
   const pathname = location.pathname;
   const { isUnlocked, isOpen, toggleHal, lockHal } = useHal() || {};

@@ -1126,3 +1126,71 @@ button.nav-link {
   color: var(--red);
 }
 
+
+
+/* ── Year-End Recap Festive Movie Reference Button ── */
+.recap-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  background: linear-gradient(135deg, rgba(247, 120, 186, 0.18), rgba(188, 140, 255, 0.18), rgba(88, 166, 255, 0.18));
+  border: 1px solid rgba(188, 140, 255, 0.45);
+  color: #f0f6fc;
+  box-shadow: 0 0 12px rgba(188, 140, 255, 0.22);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.recap-nav-btn:hover {
+  background: linear-gradient(135deg, rgba(247, 120, 186, 0.28), rgba(188, 140, 255, 0.28), rgba(88, 166, 255, 0.28));
+  border-color: rgba(188, 140, 255, 0.75);
+  box-shadow: 0 0 16px rgba(188, 140, 255, 0.4);
+  transform: translateY(-1px);
+  color: #fff;
+}
+
+.recap-nav-btn.active {
+  background: linear-gradient(135deg, #f778ba, #bc8cff, #58a6ff);
+  color: #0d1117;
+  border-color: transparent;
+  box-shadow: 0 0 18px rgba(188, 140, 255, 0.55);
+}
+
+.recap-preview-tag {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 10px;
+  background: rgba(241, 224, 90, 0.25);
+  color: #f1e05a;
+  border: 1px solid rgba(241, 224, 90, 0.45);
+  line-height: 1.2;
+}
+
+.recap-nav-btn.active .recap-preview-tag {
+  background: rgba(0, 0, 0, 0.25);
+  color: #0d1117;
+  border-color: rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 640px) {
+  .recap-nav-btn {
+    padding: 3px 8px;
+    font-size: 11px;
+    gap: 4px;
+    border-radius: 16px;
+    max-width: 130px;
+  }
+  .recap-nav-text {
+    max-width: 85px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

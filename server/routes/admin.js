@@ -391,5 +391,39 @@ router.post('/letterboxd-sync/stop', ah(async (_req, res) => {
   res.json(result);
 }));
 
+
+// GET /api/admin/recap/settings — read recap configuration
+router.get('/recap/settings', ah(async (_req, res) => {
+  const rows = await db.all('SELECT key, value FROM site_settings');
+  const map = Object.fromEntries(rows.map(r => [r.key, r.value]));
+  res.json({
+    enabled: map.recap_enabled === '1',
+    preset: map.recap_label_preset || 'rewind',
+    customLabel: map.recap_custom_label || '',
+    year: map.recap_year || '2026',
+  });
+}));
+
+// POST /api/admin/recap/settings — update recap configuration
+router.post('/recap/settings', ah(async (req, res) => {
+  const { enabled, preset = 'rewind', customLabel = '', year = '2026' } = req.body || {};
+  const enabledVal = enabled ? '1' : '0';
+  
+  await db.run("INSERT OR REPLACE INTO site_settings (key, value) VALUES ('recap_enabled', ?)", enabledVal);
+  await db.run("INSERT OR REPLACE INTO site_settings (key, value) VALUES ('recap_label_preset', ?)", String(preset));
+  await db.run("INSERT OR REPLACE INTO site_settings (key, value) VALUES ('recap_custom_label', ?)", String(customLabel));
+  await db.run("INSERT OR REPLACE INTO site_settings (key, value) VALUES ('recap_year', ?)", String(year));
+
+  res.json({
+    ok: true,
+    settings: {
+      enabled: Boolean(enabled),
+      preset,
+      customLabel,
+      year,
+    }
+  });
+}));
+
 module.exports = router;
 
