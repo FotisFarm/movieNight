@@ -1390,49 +1390,84 @@ export default function Admin() {
               Select an iconic movie reference or holiday quote for the recap button displayed across desktop and mobile headers:
             </p>
 
-            <div className="recap-presets-grid">
-              {Object.entries(RECAP_PRESETS).map(([key, item]) => {
-                const isSelected = recapSettings.preset === key;
-                return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Group 1: List-Themed */}
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--gold)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>📜</span>
+                  <span>List-Themed Movie References</span>
+                </div>
+                <div className="recap-presets-grid">
+                  {Object.entries(RECAP_PRESETS).filter(([, i]) => i.category === 'List').map(([key, item]) => {
+                    const isSelected = recapSettings.preset === key;
+                    return (
+                      <div
+                        key={key}
+                        className={`recap-preset-option ${isSelected ? 'selected' : ''}`}
+                        onClick={() => setRecapSettings(s => ({ ...s, preset: key }))}
+                      >
+                        <span style={{ fontSize: 22 }}>{item.icon}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: isSelected ? 'var(--gold)' : '#fff' }}>
+                            {item.label}
+                          </div>
+                          <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                            {item.desc}
+                          </div>
+                        </div>
+                        {isSelected && <span style={{ color: 'var(--gold)' }}>✓</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Group 2: Recap & Rewind-Themed */}
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#bc8cff', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>📼</span>
+                  <span>Recap & Rewind-Themed References</span>
+                </div>
+                <div className="recap-presets-grid">
+                  {Object.entries(RECAP_PRESETS).filter(([, i]) => i.category === 'Recap').map(([key, item]) => {
+                    const isSelected = recapSettings.preset === key;
+                    return (
+                      <div
+                        key={key}
+                        className={`recap-preset-option ${isSelected ? 'selected' : ''}`}
+                        onClick={() => setRecapSettings(s => ({ ...s, preset: key }))}
+                      >
+                        <span style={{ fontSize: 22 }}>{item.icon}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: isSelected ? 'var(--gold)' : '#fff' }}>
+                            {item.label}
+                          </div>
+                          <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                            {item.desc}
+                          </div>
+                        </div>
+                        {isSelected && <span style={{ color: 'var(--gold)' }}>✓</span>}
+                      </div>
+                    );
+                  })}
+
+                  {/* Custom Quote Option */}
                   <div
-                    key={key}
-                    className={`recap-preset-option ${isSelected ? 'selected' : ''}`}
-                    onClick={() => setRecapSettings(s => ({ ...s, preset: key }))}
+                    className={`recap-preset-option ${recapSettings.preset === 'custom' ? 'selected' : ''}`}
+                    onClick={() => setRecapSettings(s => ({ ...s, preset: 'custom' }))}
                   >
-                    <span style={{ fontSize: 22 }}>{item.icon}</span>
+                    <span style={{ fontSize: 22 }}>✍️</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: isSelected ? 'var(--gold)' : '#fff' }}>
-                        {item.label}
+                      <div style={{ fontWeight: 700, fontSize: 13, color: recapSettings.preset === 'custom' ? 'var(--gold)' : '#fff' }}>
+                        Custom Quote
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--text3)' }}>
-                        {key === 'rewind' && 'Michel Gondry classic'}
-                        {key === 'wrap' && 'Hollywood wrap'}
-                        {key === 'home_alone' && 'Home Alone holiday classic'}
-                        {key === 'bell_rings' && "It's a Wonderful Life holiday classic"}
-                        {key === 'rosebud' && 'Citizen Kane retrospective'}
-                        {key === 'bttf' && 'Back to the Future time travel'}
+                        Type your own movie quote
                       </div>
                     </div>
-                    {isSelected && <span style={{ color: 'var(--gold)' }}>✓</span>}
-                  </div>
-                );
-              })}
-
-              {/* Custom Quote Option */}
-              <div
-                className={`recap-preset-option ${recapSettings.preset === 'custom' ? 'selected' : ''}`}
-                onClick={() => setRecapSettings(s => ({ ...s, preset: 'custom' }))}
-              >
-                <span style={{ fontSize: 22 }}>✍️</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 13, color: recapSettings.preset === 'custom' ? 'var(--gold)' : '#fff' }}>
-                    Custom Quote
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>
-                    Type your own movie quote
+                    {recapSettings.preset === 'custom' && <span style={{ color: 'var(--gold)' }}>✓</span>}
                   </div>
                 </div>
-                {recapSettings.preset === 'custom' && <span style={{ color: 'var(--gold)' }}>✓</span>}
               </div>
             </div>
 

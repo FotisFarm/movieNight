@@ -11,21 +11,38 @@ import './Header.css';
 
 
 export const RECAP_PRESETS = {
-  rewind: { label: 'Be Kind, Rewind', icon: '📼' },
-  wrap: { label: "That's a Wrap!", icon: '🎬' },
-  home_alone: { label: 'Ya Filthy Animal', icon: '🎁' },
-  bell_rings: { label: 'Every Time a Bell Rings', icon: '🔔' },
-  rosebud: { label: 'Rosebud', icon: '🌹' },
-  bttf: { label: '88 MPH', icon: '⚡' },
+  // 📜 List-Themed References
+  bucket_list:    { label: 'The Bucket List',        icon: '🪣', category: 'List', desc: 'Jack Nicholson & Morgan Freeman' },
+  checking_twice: { label: 'Checking It Twice',      icon: '🎅', category: 'List', desc: 'Santa\'s Christmas list' },
+  schindler:      { label: 'The List is Life',       icon: '📜', category: 'List', desc: 'Schindler\'s List classic' },
+  naughty_nice:   { label: 'Naughty or Nice',        icon: '🎁', category: 'List', desc: 'Holiday film rankings' },
+  shortlist:      { label: 'The Shortlist',          icon: '🎯', category: 'List', desc: 'Festival & awards contenders' },
+  a_list:         { label: 'The A-List',             icon: '⭐', category: 'List', desc: 'Hollywood top tier' },
+  sight_sound:    { label: 'Sight & Sound',          icon: '📽️', category: 'List', desc: 'The decennial cinephile canon' },
+
+  // 📼 Recap & Rewind-Themed References
+  total_recall:   { label: 'Total Recall',           icon: '🧠', category: 'Recap', desc: 'Verhoeven / Schwarzenegger sci-fi' },
+  rewind:         { label: 'Be Kind, Rewind',        icon: '📼', category: 'Recap', desc: 'Michel Gondry tape store classic' },
+  wrap:           { label: "That's a Wrap!",         icon: '🎬', category: 'Recap', desc: 'Classic film production wrap' },
+  paradiso:       { label: 'Cinema Paradiso',        icon: '🎞️', category: 'Recap', desc: 'Iconic final montage of cinema' },
+  directors_cut:  { label: "The Director's Cut",     icon: '✂️', category: 'Recap', desc: 'The auteur\'s definitive retrospective' },
+  post_credits:   { label: 'Post-Credits Scene',     icon: '🍿', category: 'Recap', desc: 'The extra lookback after credits' },
+  memento:        { label: 'Memento',                icon: '📸', category: 'Recap', desc: 'Christopher Nolan\'s memory puzzle' },
+  bttf:           { label: '88 MPH',                 icon: '⚡', category: 'Recap', desc: 'Back to the Future time travel' },
+
+  // Legacy mappings for backwards compatibility
+  home_alone:     { label: 'Ya Filthy Animal',       icon: '🎁', category: 'Legacy', desc: 'Home Alone holiday classic' },
+  bell_rings:     { label: 'Every Time a Bell Rings', icon: '🔔', category: 'Legacy', desc: 'It\'s a Wonderful Life' },
+  rosebud:        { label: 'Rosebud',                icon: '🌹', category: 'Legacy', desc: 'Citizen Kane retrospective' },
 };
 
 export function getRecapLabel(recapConfig) {
-  if (!recapConfig) return { label: 'Be Kind, Rewind', icon: '📼' };
+  if (!recapConfig) return { label: 'The Bucket List', icon: '🪣' };
   if (recapConfig.preset === 'custom' && recapConfig.customLabel?.trim()) {
-    return { label: recapConfig.customLabel.trim(), icon: '📼' };
+    return { label: recapConfig.customLabel.trim(), icon: '📜' };
   }
   const found = RECAP_PRESETS[recapConfig.preset];
-  return found || { label: 'Be Kind, Rewind', icon: '📼' };
+  return found || { label: 'The Bucket List', icon: '🪣' };
 }
 
 const THEMES = [

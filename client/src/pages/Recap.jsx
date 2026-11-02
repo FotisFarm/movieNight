@@ -101,7 +101,7 @@ export default function Recap({ voter, user }) {
         sub: `Standard Deviation ±${gs.unanimousPeace.stdDev}`,
         statNum: String(gs.unanimousPeace.meanScore),
         statLabel: 'Lowest Room Controversy',
-        pills: Object.entries(gs.unanimousPeace.scores || {}).map(([v, s]) => `${v}: ${s}`),
+        pills: Object.entries(gs.unanimousPeace.ratingsDict || gs.unanimousPeace.scores || {}).map(([v, s]) => `${v}: ${s}`),
         backdropUrl: gs.unanimousPeace.backdropUrl || gs.unanimousPeace.posterUrl,
       });
     }
@@ -118,8 +118,8 @@ export default function Recap({ voter, user }) {
         title: `${gs.civilWar.title} (${gs.civilWar.year || ''})`,
         sub: `Standard Deviation ±${gs.civilWar.stdDev} (Most Divisive)`,
         statNum: div ? `${div.highScore} vs ${div.lowScore}` : `±${gs.civilWar.stdDev}`,
-        statLabel: div ? `${div.highVoter} vs ${div.lowVoter}` : 'Greatest Score Gap',
-        pills: Object.entries(gs.civilWar.scores || {}).map(([v, s]) => `${v}: ${s}`),
+        statLabel: div ? `${div.highVoter} (${div.highScore}) vs ${div.lowVoter} (${div.lowScore})` : 'Score Gap',
+        pills: Object.entries(gs.civilWar.ratingsDict || gs.civilWar.scores || {}).map(([v, s]) => `${v}: ${s}`),
         backdropUrl: gs.civilWar.backdropUrl || gs.civilWar.posterUrl,
       });
     }
@@ -134,7 +134,7 @@ export default function Recap({ voter, user }) {
         icon: '💎',
         title: `${gs.hiddenGem.title} (${gs.hiddenGem.year || ''})`,
         sub: 'Club rated much higher than Letterboxd',
-        statNum: `+${gs.hiddenGem.diff}`,
+        statNum: `+${gs.hiddenGem.diff ?? gs.hiddenGem.delta}`,
         statLabel: `Club ${gs.hiddenGem.meanScore} vs Letterboxd ${gs.hiddenGem.letterboxdRating}`,
         backdropUrl: gs.hiddenGem.backdropUrl || gs.hiddenGem.posterUrl,
       });
@@ -150,7 +150,7 @@ export default function Recap({ voter, user }) {
         icon: '📉',
         title: `${gs.overratedFlop.title} (${gs.overratedFlop.year || ''})`,
         sub: 'Letterboxd loved it, our club did not',
-        statNum: `${gs.overratedFlop.diff}`,
+        statNum: `${gs.overratedFlop.diff ?? gs.overratedFlop.delta}`,
         statLabel: `Club ${gs.overratedFlop.meanScore} vs Letterboxd ${gs.overratedFlop.letterboxdRating}`,
         backdropUrl: gs.overratedFlop.backdropUrl || gs.overratedFlop.posterUrl,
       });
@@ -203,7 +203,7 @@ export default function Recap({ voter, user }) {
         pills: [
           myVoterProfile.soulmate ? `🤝 Soulmate: ${myVoterProfile.soulmate.voter} (±${myVoterProfile.soulmate.meanDiff})` : null,
           myVoterProfile.rival ? `⚔️ Rival: ${myVoterProfile.rival.voter} (±${myVoterProfile.rival.meanDiff})` : null,
-          myVoterProfile.hotTake ? `🌶️ Hot Take: ${myVoterProfile.hotTake.title} (${myVoterProfile.hotTake.myScore} vs ${myVoterProfile.hotTake.groupAvg})` : null,
+          myVoterProfile.hotTake ? `🌶️ Hot Take: ${myVoterProfile.hotTake.title} (${myVoterProfile.hotTake.myScore ?? myVoterProfile.hotTake.voterScore} vs ${myVoterProfile.hotTake.groupAvg ?? myVoterProfile.hotTake.meanScore})` : null,
         ].filter(Boolean),
       });
     }
@@ -648,7 +648,7 @@ export default function Recap({ voter, user }) {
                   <div className="recap-super-tag red">⚔️ Civil War (Most Divisive)</div>
                   <div className="recap-super-title">{data.groupStats.civilWar.title}</div>
                   <div className="recap-super-meta">
-                    ±{data.groupStats.civilWar.stdDev} StdDev · {data.groupStats.civilWar.divergence?.highVoter} ({data.groupStats.civilWar.divergence?.highScore}) vs {data.groupStats.civilWar.divergence?.lowVoter} ({data.groupStats.civilWar.divergence?.lowScore})
+                    ±{data.groupStats.civilWar.stdDev} StdDev · {data.groupStats.civilWar.divergence ? `${data.groupStats.civilWar.divergence.highVoter} (${data.groupStats.civilWar.divergence.highScore}) vs ${data.groupStats.civilWar.divergence.lowVoter} (${data.groupStats.civilWar.divergence.lowScore})` : "Room polarization"}
                   </div>
                   <div className="recap-super-stat-row">
                     <span style={{ color: 'var(--text3)' }}>Room Polarization</span>
@@ -678,7 +678,7 @@ export default function Recap({ voter, user }) {
                   <div className="recap-super-meta">Club: {data.groupStats.hiddenGem.meanScore} · Letterboxd: {data.groupStats.hiddenGem.letterboxdRating}</div>
                   <div className="recap-super-stat-row">
                     <span style={{ color: 'var(--text3)' }}>Difference</span>
-                    <strong style={{ color: '#58a6ff' }}>+{data.groupStats.hiddenGem.diff}</strong>
+                    <strong style={{ color: '#58a6ff' }}>+{data.groupStats.hiddenGem.diff ?? data.groupStats.hiddenGem.delta}</strong>
                   </div>
                 </div>
               )}
@@ -691,7 +691,7 @@ export default function Recap({ voter, user }) {
                   <div className="recap-super-meta">Club: {data.groupStats.overratedFlop.meanScore} · Letterboxd: {data.groupStats.overratedFlop.letterboxdRating}</div>
                   <div className="recap-super-stat-row">
                     <span style={{ color: 'var(--text3)' }}>Difference</span>
-                    <strong style={{ color: '#bc8cff' }}>{data.groupStats.overratedFlop.diff}</strong>
+                    <strong style={{ color: '#bc8cff' }}>{data.groupStats.overratedFlop.diff ?? data.groupStats.overratedFlop.delta}</strong>
                   </div>
                 </div>
               )}
@@ -772,7 +772,7 @@ export default function Recap({ voter, user }) {
                         <div className="recap-voter-stat-line">
                           <span className="recap-voter-stat-muted">🌶️ Hot Take</span>
                           <span className="recap-voter-stat-val" style={{ fontSize: 12, color: 'var(--gold)' }}>
-                            {v.hotTake.title} ({v.hotTake.myScore} vs {v.hotTake.groupAvg})
+                            {v.hotTake.title} ({v.hotTake.myScore ?? v.hotTake.voterScore} vs {v.hotTake.groupAvg ?? v.hotTake.meanScore})
                           </span>
                         </div>
                       )}

@@ -2,11 +2,58 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
+function round(val, decimals = 1) {
+  if (val == null || isNaN(val)) return null;
+  return Number(Number(val).toFixed(decimals));
+}
+
 function stdDev(arr) {
   if (arr.length < 2) return 0;
   const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
   const variance = arr.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / arr.length;
   return Math.sqrt(variance);
+}
+
+function formatMovieStat(m) {
+  if (!m) return null;
+  const sortedRatings = [...(m.ratings || [])].sort((a, b) => b.score - a.score);
+  const high = sortedRatings[0];
+  const low = sortedRatings[sortedRatings.length - 1];
+
+  const posterUrl = m.poster_path ? `https://image.tmdb.org/t/p/w342${m.poster_path}` : null;
+  const backdropUrl = m.backdrop_path
+    ? `https://image.tmdb.org/t/p/w1280${m.backdrop_path}`
+    : (m.poster_path ? `https://image.tmdb.org/t/p/w780${m.poster_path}` : null);
+
+  const delta = m.delta != null ? round(m.delta, 1) : null;
+
+  return {
+    id: m.id,
+    title: m.title,
+    year: m.year,
+    director: m.director,
+    runtime: m.runtime,
+    poster_path: m.poster_path,
+    backdrop_path: m.backdrop_path,
+    posterUrl,
+    backdropUrl,
+    letterboxd_rating: round(m.letterboxd_rating, 2),
+    imdb_rating: round(m.imdb_rating, 1),
+    voterCount: m.voterCount,
+    meanScore: round(m.meanScore, 1),
+    stdDev: round(m.stdDev, 2),
+    diff: delta,
+    delta: delta,
+    scores: m.ratingsDict || {},
+    ratingsDict: m.ratingsDict || {},
+    divergence: (high && low) ? {
+      highVoter: high.voter,
+      highScore: round(high.score, 1),
+      lowVoter: low.voter,
+      lowScore: round(low.score, 1),
+      gap: round(Math.abs(high.score - low.score), 1),
+    } : null,
+  };
 }
 
 // GET /api/recap?year=2026&scope=mn
@@ -120,8 +167,6 @@ router.get('/', async (req, res) => {
       return true;
     });
 
-    const scopedMovieIds = [...new Set(scopedRatings.map(r => r.movie_id))];
-
     // Compute stats per movie
     const movieStats = [];
     const movieRatingsMap = new Map();
@@ -168,15 +213,15 @@ router.get('/', async (req, res) => {
 
     // 1. Film of the Year
     const byScore = [...qualifiedMovies].sort((a, b) => b.meanScore - a.meanScore || b.voterCount - a.voterCount);
-    const filmOfTheYear = byScore[0] || movieStats[0] || null;
+    const rawFilmOfTheYear = byScore[0] || movieStats[0] || null;
 
     // 2. Civil War (highest stdDev)
     const byStdDev = [...qualifiedMovies].sort((a, b) => b.stdDev - a.stdDev);
-    const civilWar = byStdDev[0] || null;
+    const rawCivilWar = byStdDev[0] || null;
 
     // 3. Unanimous Peace (lowest stdDev)
     const byPeace = [...qualifiedMovies].sort((a, b) => a.stdDev - b.stdDev);
-    const unanimousPeace = byPeace[0] || null;
+    const rawUnanimousPeace = byPeace[0] || null;
 
     // 4. Hidden Gem & Flop vs Letterboxd
     const withLb = qualifiedMovies.filter(m => m.letterboxd_rating != null).map(m => {
@@ -184,13 +229,22 @@ router.get('/', async (req, res) => {
       return { ...m, lb10, delta: m.meanScore - lb10 };
     });
     withLb.sort((a, b) => b.delta - a.delta);
-    const hiddenGem = withLb.length > 0 && withLb[0].delta > 0.5 ? withLb[0] : null;
-    const overratedFlop = withLb.length > 0 && withLb[withLb.length - 1].delta < -0.5 ? withLb[withLb.length - 1] : null;
+    const rawHiddenGem = withLb.length > 0 && withLb[0].delta > 0.4 ? withLb[0] : null;
+    const rawOverratedFlop = withLb.length > 0 && withLb[withLb.length - 1].delta < -0.4 ? withLb[withLb.length - 1] : null;
 
     // 5. Marathon & Sprint
     const withRuntime = movieStats.filter(m => m.runtime && m.runtime > 0).sort((a, b) => b.runtime - a.runtime);
-    const marathon = withRuntime[0] || null;
-    const sprint = withRuntime.length > 1 ? withRuntime[withRuntime.length - 1] : null;
+    const rawMarathon = withRuntime[0] || null;
+    const rawSprint = withRuntime.length > 1 ? withRuntime[withRuntime.length - 1] : null;
+
+    // Format all superlatives cleanly
+    const filmOfTheYear = formatMovieStat(rawFilmOfTheYear);
+    const civilWar = formatMovieStat(rawCivilWar);
+    const unanimousPeace = formatMovieStat(rawUnanimousPeace);
+    const hiddenGem = formatMovieStat(rawHiddenGem);
+    const overratedFlop = formatMovieStat(rawOverratedFlop);
+    const marathon = formatMovieStat(rawMarathon);
+    const sprint = formatMovieStat(rawSprint);
 
     // 6. Overall average group score
     const allScores = scopedRatings.map(r => r.score);
@@ -225,8 +279,8 @@ router.get('/', async (req, res) => {
         const ms = movieStats.find(m => m.id === mId);
         if (!ms) continue;
 
-        if (s > maxScore) { maxScore = s; personalBest = { title: ms.title, score: s }; }
-        if (s < minScore) { minScore = s; personalWorst = { title: ms.title, score: s }; }
+        if (s > maxScore) { maxScore = s; personalBest = { title: ms.title, score: round(s, 1) }; }
+        if (s < minScore) { minScore = s; personalWorst = { title: ms.title, score: round(s, 1) }; }
 
         if (ms.voterCount >= minRequiredVoters) {
           const diff = Math.abs(s - ms.meanScore);
@@ -234,9 +288,11 @@ router.get('/', async (req, res) => {
             maxDiff = diff;
             hotTake = {
               title: ms.title,
-              voterScore: s,
-              meanScore: Number(ms.meanScore.toFixed(1)),
-              diff: Number(diff.toFixed(2)),
+              voterScore: round(s, 1),
+              myScore: round(s, 1),
+              meanScore: round(ms.meanScore, 1),
+              groupAvg: round(ms.meanScore, 1),
+              diff: round(diff, 1),
               director: ms.director,
               year: ms.year,
             };
@@ -244,7 +300,7 @@ router.get('/', async (req, res) => {
         }
       }
 
-      // Mean Absolute Deviation from group mean (how "rebellious" or "consensus" they are)
+      // Mean Absolute Deviation from group mean
       let totalDev = 0, devCount = 0;
       for (const [mId, s] of vMovieScores.entries()) {
         const ms = movieStats.find(m => m.id === mId);
@@ -271,26 +327,30 @@ router.get('/', async (req, res) => {
 
         if (pDiff < lowestPairDiff) {
           lowestPairDiff = pDiff;
-          soulmate = { voter: v2, meanDiff: Number(pDiff.toFixed(2)), commonCount: commonIds.length };
+          soulmate = { voter: v2, meanDiff: round(pDiff, 2), commonCount: commonIds.length };
         }
         if (pDiff > highestPairDiff) {
           highestPairDiff = pDiff;
-          rival = { voter: v2, meanDiff: Number(pDiff.toFixed(2)), commonCount: commonIds.length };
+          rival = { voter: v2, meanDiff: round(pDiff, 2), commonCount: commonIds.length };
         }
       }
 
-      // Top 10 additions in this timeframe
-      const vTop10 = top10Rows.filter(t => t.voter === v).map(t => {
-        const m = movieMap.get(t.movie_id);
-        return { title: m ? m.title : 'Movie', rank: t.rank };
-      });
+      // Deduplicate Top 10 additions in this timeframe
+      const top10ByMovie = new Map();
+      for (const t of top10Rows.filter(t => t.voter === v)) {
+        top10ByMovie.set(t.movie_id, t.rank);
+      }
+      const vTop10 = [...top10ByMovie.entries()].map(([mId, rank]) => {
+        const m = movieMap.get(mId);
+        return { title: m ? m.title : 'Movie', rank };
+      }).sort((a, b) => a.rank - b.rank);
 
       voterSummaries.push({
         voter: v,
         avatarUrl: avatarMap.get(v) || null,
         count: scores.length,
-        average: Number(avg.toFixed(2)),
-        mad: Number(mad.toFixed(2)),
+        average: round(avg, 2),
+        mad: round(mad, 2),
         personalBest,
         personalWorst,
         hotTake,
@@ -316,7 +376,7 @@ router.get('/', async (req, res) => {
           s.archetypeDesc = 'Highest average rating awarded in the group';
         } else if (s.voter === criticVoter && byAvg.length >= 2) {
           s.archetype = '🧐 The Toughest Critic';
-          s.archetypeDesc = 'Lowest average rating; high standards for every frame';
+          s.archetypeDesc = 'Lowest average rating; highest standards for every frame';
         } else if (s.voter === oracleVoter && byMad.length >= 3) {
           s.archetype = '🔮 The Group Oracle';
           s.archetypeDesc = 'Scores most consistently aligned with the room consensus';
@@ -343,7 +403,7 @@ router.get('/', async (req, res) => {
     }
     const topDirectors = [...directorMap.entries()]
       .filter(([_, d]) => d.count >= 2)
-      .map(([name, d]) => ({ name, count: d.count, avgScore: Number((d.totalScore / d.count).toFixed(2)) }))
+      .map(([name, d]) => ({ name, count: d.count, avgScore: round(d.totalScore / d.count, 2) }))
       .sort((a, b) => b.count - a.count || b.avgScore - a.avgScore)
       .slice(0, 5);
 
@@ -370,8 +430,8 @@ router.get('/', async (req, res) => {
       isSiteAdmin,
       groupStats: {
         totalFilms: distinctFilmsCount,
-        totalScreenHours: Number((totalRuntimeMinutes / 60).toFixed(1)),
-        groupMeanScore: Number(groupMeanScore.toFixed(2)),
+        totalScreenHours: round(totalRuntimeMinutes / 60, 1),
+        groupMeanScore: round(groupMeanScore, 2),
         filmOfTheYear,
         civilWar,
         unanimousPeace,
