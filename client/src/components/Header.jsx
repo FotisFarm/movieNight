@@ -314,7 +314,7 @@ function MobileUserMenu({ voter, user, onLogout, onOpenPassword, onOpenAvatar, g
                 onClick={() => setOpen(false)}
               >
                 <span>{recapInfo.icon}</span>
-                <span>{recapInfo.label}{!recapEnabled ? ' (Preview)' : ''}</span>
+                <span>{recapInfo.label}</span>
               </NavLink>
             )}
             <NavLink
@@ -586,7 +586,7 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
   );
   const canToggleGuests = Boolean(ctxCanToggleGuests ?? (!isGuest && (isSiteAdminUser || isGroupAdminUser)));
   const isAdmin = isSiteAdminUser;
-  const showRecap = Boolean(recap?.enabled || isSiteAdminUser);
+  const showRecap = Boolean(recap?.enabled);
   const recapInfo = getRecapLabel(recap);
   const location = useLocation();
   const pathname = location.pathname;
@@ -899,7 +899,7 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
                     >
                       <span className="nav-item-icon">{recapInfo.icon}</span>
                       <div className="nav-item-text">
-                        <span className="nav-item-title">{recapInfo.label}{!recap?.enabled ? ' (Preview)' : ''}</span>
+                        <span className="nav-item-title">{recapInfo.label}</span>
                         <span className="nav-item-desc">Year-End Recap & Superlatives</span>
                       </div>
                     </NavLink>
@@ -933,11 +933,10 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
               <NavLink
                 to="/recap"
                 className={({ isActive }) => `recap-nav-btn ${isActive ? 'active' : ''}`}
-                title={`${recapInfo.label} — End of Year Recap${!recap?.enabled ? ' (Admin Preview)' : ''}`}
+                title={`${recapInfo.label} — End of Year Recap`}
               >
                 <span className="recap-nav-icon">{recapInfo.icon}</span>
                 <span className="recap-nav-text">{recapInfo.label}</span>
-                {!recap?.enabled && <span className="recap-preview-tag">Preview</span>}
               </NavLink>
             )}
             {isAdmin && (
@@ -1230,7 +1229,7 @@ export default function Header({ voter, user, activeGroup, groups = [], onSwitch
                 >
                   <div className="hub-card-icon">{recapInfo.icon}</div>
                   <div className="hub-card-text">
-                    <div className="hub-card-title">{recapInfo.label}{!recap?.enabled ? ' (Preview)' : ''}</div>
+                    <div className="hub-card-title">{recapInfo.label}</div>
                     <div className="hub-card-desc">Year-End Recap & Superlatives</div>
                   </div>
                   {pathname === '/recap' && <span className="hub-card-check">✓</span>}

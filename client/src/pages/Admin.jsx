@@ -414,6 +414,28 @@ export default function Admin() {
     }
   }, [activeTab]);
 
+  const handleToggleRecap = async () => {
+    if (recapSaving) return;
+    const nextEnabled = !recapSettings.enabled;
+    setRecapSettings(s => ({ ...s, enabled: nextEnabled }));
+    try {
+      setRecapSaving(true);
+      const res = await api.adminUpdateRecapSettings({
+        ...recapSettings,
+        enabled: nextEnabled,
+      });
+      if (res?.ok) {
+        showNotification(nextEnabled ? 'Year-End Recap enabled for all members!' : 'Year-End Recap disabled and hidden from navigation.');
+        await refreshConfig?.();
+      }
+    } catch (err) {
+      setRecapSettings(s => ({ ...s, enabled: !nextEnabled }));
+      alert(err.message || 'Failed to update recap visibility');
+    } finally {
+      setRecapSaving(false);
+    }
+  };
+
   const handleSaveRecapSettings = async () => {
     try {
       setRecapSaving(true);
@@ -1341,19 +1363,21 @@ export default function Admin() {
               </div>
               <div
                 className="recap-toggle-label"
-                onClick={() => setRecapSettings(s => ({ ...s, enabled: !s.enabled }))}
+                onClick={handleToggleRecap}
+                style={{ cursor: recapSaving ? 'wait' : 'pointer' }}
+                title={recapSettings.enabled ? 'Click to disable recap for all members' : 'Click to enable recap for all members'}
               >
                 <div className={`recap-toggle-switch ${recapSettings.enabled ? 'active' : ''}`}>
                   <div className="recap-toggle-thumb" />
                 </div>
                 <strong style={{ color: recapSettings.enabled ? 'var(--green)' : 'var(--text2)', fontSize: 13 }}>
-                  {recapSettings.enabled ? '● Active for Members' : '○ Admin Preview Only'}
+                  {recapSettings.enabled ? '● Enabled for Members' : '○ Disabled (Hidden)'}
                 </strong>
               </div>
             </div>
 
             <p style={{ color: 'var(--text2)', fontSize: 13.5, lineHeight: 1.5, margin: '8px 0 16px 0' }}>
-              When enabled, all members in their active movie club can see the festive movie-reference button in the navigation bar and open their annual retrospective. When disabled, the feature is hidden from regular users, while Site Admins retain preview access.
+              When enabled, all members in their active movie club can see the festive movie-reference button in the navigation bar and launch their annual retrospective. When disabled, the feature is completely hidden from the app navigation for everyone (Site Admins can still preview it anytime below).
             </p>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', paddingTop: 12, borderTop: '1px solid var(--border)' }}>
@@ -1494,7 +1518,7 @@ export default function Admin() {
                   <div className="recap-nav-btn active">
                     <span>{getRecapLabel(recapSettings).icon}</span>
                     <span>{getRecapLabel(recapSettings).label}</span>
-                    {!recapSettings.enabled && <span className="recap-preview-tag">Preview</span>}
+                    {!recapSettings.enabled && <span className="recap-preview-tag" style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.4)' }}>Disabled</span>}
                   </div>
                 </div>
               </div>

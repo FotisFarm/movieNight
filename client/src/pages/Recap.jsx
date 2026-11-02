@@ -329,6 +329,24 @@ export default function Recap({ voter, user }) {
 
   return (
     <div className="recap-page">
+      {!recap?.enabled && (
+        <div style={{
+          background: 'rgba(234, 179, 8, 0.12)',
+          borderBottom: '1px solid rgba(234, 179, 8, 0.3)',
+          color: 'var(--gold)',
+          textAlign: 'center',
+          padding: '8px 16px',
+          fontSize: 12.5,
+          fontWeight: 600,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+        }}>
+          <span>🔒</span>
+          <span>Admin Preview Mode — Year-End Recap is currently disabled and hidden from navigation for all members.</span>
+        </div>
+      )}
       {/* TOP TOOLBAR */}
       <div className="recap-toolbar">
         <div className="recap-toolbar-left">
